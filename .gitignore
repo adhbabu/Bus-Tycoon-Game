@@ -58,3 +58,15 @@ Thumbs.db
 # Mağaza ekran görüntüleri ve derleme çıktıları
 /[Ss]creenshots/
 /[Bb]uilds/
+
+# İmza anahtarları ve mağaza sırları — ASLA depoya eklemeyin (GitHub ▸ Settings ▸ Secrets'a koyun)
+*.keystore
+*.jks
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+*.ulf
+*_lic.ulf
+ios_dagitim_anahtari
+ios_dagitim_anahtari.pub

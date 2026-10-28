@@ -1,0 +1,151 @@
+# Android derlemesi (Google Play) — bilgisayarınızda Unity açmadan, GitHub'ın sunucusunda.
+# Kullanım: GitHub ▸ Actions ▸ "Android (Google Play)" ▸ Run workflow.
+# Gerekli sırlar ve ilk kurulum: store/BULUT-DERLEME.md
+name: Android (Google Play)
+
+on:
+  workflow_dispatch:
+    inputs:
+      format:
+        description: "Ne derlensin?"
+        type: choice
+        options:
+          - "aab - Google Play'e yüklenecek paket"
+          - "apk - kendi telefonumda deneme"
+        default: "aab - Google Play'e yüklenecek paket"
+      build_number:
+        description: "Sürüm kodu (boş = otomatik, her çalıştırmada artar)"
+        required: false
+        default: ""
+      play_upload:
+        description: "Google Play'e taslak olarak yükle (dahili test kanalı; PLAY_SERVICE_ACCOUNT_JSON gerekir)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Google Play'in güncel hedef API şartı (Ağustos 2026'dan itibaren Android 16 = API 36).
+  # Google şartı yükselttiğinde yalnızca bu satırı değiştirin.
+  ANDROID_TARGET_SDK: AndroidApiLevel36
+
+jobs:
+  android:
+    name: Unity ▸ Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      HAS_PLAY_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+      BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+      FORMAT: ${{ inputs.format }}
+      PLAY_UPLOAD: ${{ inputs.play_upload }}
+    steps:
+      - name: Sırları kontrol et
+        shell: bash
+        run: |
+          missing=0
+          for name in UNITY_LICENSE UNITY_EMAIL UNITY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::'$name' sırrı eksik. Bkz. store/BULUT-DERLEME.md"; missing=1; fi
+          done
+          if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Sürüm kodu yalnızca rakam olmalı (girilen: '$BUILD_NUMBER')."; missing=1
+          fi
+          if [[ "$FORMAT" == aab* && "$HAS_KEYSTORE" != "true" ]]; then
+            echo "::error::Google Play paketi için imza anahtarı gerekli: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASS, ANDROID_KEYALIAS_NAME (ve varsa ANDROID_KEYALIAS_PASS). Sadece denemek için 'apk' seçin."
+            missing=1
+          fi
+          if [[ "$PLAY_UPLOAD" == "true" && "$HAS_PLAY_ACCOUNT" != "true" ]]; then
+            echo "::error::Google Play'e otomatik yükleme için PLAY_SERVICE_ACCOUNT_JSON sırrı gerekli."
+            missing=1
+          fi
+          if [[ "$PLAY_UPLOAD" == "true" && "$FORMAT" != aab* ]]; then
+            echo "::error::Google Play'e yalnızca 'aab' yüklenebilir."
+            missing=1
+          fi
+          exit $missing
+
+      - uses: actions/checkout@v4
+
+      - name: Paket adını oku
+        id: app
+        shell: bash
+        run: |
+          id=$(sed -n 's/.*ApplicationId = "\([^"]*\)".*/\1/p' Assets/_Project/Scripts/Editor/StoreBuild.cs)
+          if [ -z "$id" ]; then echo "::error::StoreSettings.ApplicationId okunamadı"; exit 1; fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          if [[ "$FORMAT" == apk* ]]; then
+            echo "export_type=androidPackage" >> "$GITHUB_OUTPUT"
+            echo "extension=apk" >> "$GITHUB_OUTPUT"
+          else
+            echo "export_type=androidAppBundle" >> "$GITHUB_OUTPUT"
+            echo "extension=aab" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Disk alanı aç (Android Unity imajı büyüktür)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          large-packages: false
+
+      - name: Unity Library önbelleği
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-Android-
+
+      - name: Unity ile derle
+        uses: game-ci/unity-builder@v4
+        with:
+          targetPlatform: Android
+          buildName: OtobusImparatoru
+          versioning: None
+          buildMethod: BusTycoon.EditorTools.StoreBuild.BuildFromCommandLine
+          customParameters: -buildNumber ${{ env.BUILD_NUMBER }}
+          androidExportType: ${{ steps.app.outputs.export_type }}
+          androidTargetSdkVersion: ${{ env.ANDROID_TARGET_SDK }}
+          androidKeystoreName: upload.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+
+      - name: Çıktıyı bul
+        id: output
+        shell: bash
+        env:
+          EXTENSION: ${{ steps.app.outputs.extension }}
+        run: |
+          file=$(find build/Android -maxdepth 2 -name "*.$EXTENSION" | head -n 1)
+          if [ -z "$file" ]; then echo "::error::Derleme çıktısı bulunamadı"; exit 1; fi
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "### Android derlemesi hazır" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dosya: \`$(basename "$file")\` ($(du -h "$file" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Sürüm kodu: $BUILD_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          echo "- İndirmek için bu sayfanın altındaki **Artifacts** bölümüne bakın." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dosyayı indirilebilir yap
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ steps.app.outputs.extension }}-${{ env.BUILD_NUMBER }}
+          path: ${{ steps.output.outputs.file }}
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Google Play'e yükle (dahili test, taslak)
+        if: ${{ inputs.play_upload }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ steps.app.outputs.id }}
+          releaseFiles: ${{ steps.output.outputs.file }}
+          track: internal
+          status: draft

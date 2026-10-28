@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -10,6 +12,7 @@ namespace BusTycoon.EditorTools
     /// <summary>
     /// Mağaza kimliği — İLK YÜKLEMEDEN ÖNCE gözden geçirin. Özellikle ApplicationId mağazaya bir kez
     /// yüklendikten sonra DEĞİŞTİRİLEMEZ (Google Play paket adı / Apple Bundle ID).
+    /// Bulut derlemeleri (.github/workflows) ApplicationId'yi bu dosyadan okur.
     /// </summary>
     public static class StoreSettings
     {
@@ -17,7 +20,7 @@ namespace BusTycoon.EditorTools
         public const string CompanyName = "adhbabu";                          // kayıt klasörü adında kullanılır
         public const string ApplicationId = "com.adhbabu.otobusimparatoru";   // ters alan adı biçimi, küçük harf
         public const string Version = "1.0.0";                                // kullanıcıya görünen sürüm
-        public const int BuildNumber = 1;                                     // HER yüklemede 1 artırın
+        public const int BuildNumber = 1;                                     // HER yüklemede 1 artırın (bulutta otomatik)
 
         public const string IconPath = "Assets/_Project/Art/AppIcon.png";
         public const string ScenePath = "Assets/_Project/Scenes/Main.unity";
@@ -30,7 +33,8 @@ namespace BusTycoon.EditorTools
     ///  1) Ayarları uygula  → kimlik, sürüm, yatay ekran, IL2CPP + ARM64, AAB, ikon, sahne
     ///  2) Android (.aab)    → Google Play Console'a yüklenecek dosya
     ///  3) iOS (Xcode)       → Mac'te Xcode ile açılıp App Store Connect'e gönderilecek proje
-    /// Ayrıntılı yayın adımları: store/YAYIN-REHBERI.md
+    /// Mac'siz iOS ve otomatik Android derlemesi için <see cref="BuildFromCommandLine"/> (GitHub Actions).
+    /// Ayrıntılı yayın adımları: store/YAYIN-REHBERI.md ve store/BULUT-DERLEME.md
     /// </summary>
     public static class StoreBuild
     {
@@ -82,17 +86,159 @@ namespace BusTycoon.EditorTools
                     "Anahtarsız derleme yalnızca kendi cihazınızda test içindir.", "Yine de derle (test)", "İptal"))
                 return;
 
-            Build(BuildTarget.Android, BuildTargetGroup.Android, StoreSettings.AndroidOutput);
+            BuildFromMenu(BuildTarget.Android, BuildTargetGroup.Android, StoreSettings.AndroidOutput);
         }
 
         [MenuItem("Bus Tycoon/Mağaza/3 - iOS Xcode projesi üret (App Store)", priority = 102)]
         public static void BuildIos()
         {
             ApplySettings();
-            Build(BuildTarget.iOS, BuildTargetGroup.iOS, StoreSettings.IosOutput);
+            BuildFromMenu(BuildTarget.iOS, BuildTargetGroup.iOS, StoreSettings.IosOutput);
         }
 
-        static void Build(BuildTarget target, BuildTargetGroup group, string output)
+        /// <summary>
+        /// Bulut derlemesinin (GitHub Actions + GameCI) giriş noktası; Unity'yi pencere açmadan çalıştırır:
+        /// <code>
+        /// Unity -batchmode -quit -projectPath . -executeMethod BusTycoon.EditorTools.StoreBuild.BuildFromCommandLine
+        ///       -customBuildTarget Android -customBuildPath build/Android/Oyun.aab -buildNumber 12
+        ///       -androidKeystoreName user.keystore -androidKeystorePass … -androidKeyaliasName … -androidKeyaliasPass …
+        /// </code>
+        /// Yol .apk ile bitiyorsa telefonda denemelik APK üretilir (anahtar isteğe bağlı); .aab için anahtar zorunludur,
+        /// çünkü Google Play anahtarsız (debug) imzalı paketi kabul etmez. Şifreler yalnızca bu oturumda kullanılır,
+        /// depoya yazılmaz. Sonuç çıkış koduyla bildirilir (0 = başarılı).
+        /// </summary>
+        public static void BuildFromCommandLine()
+        {
+            bool success = false;
+            try
+            {
+                success = BuildFromArguments(ParseArguments(Environment.GetCommandLineArgs()));
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            EditorApplication.Exit(success ? 0 : 1);
+        }
+
+        static bool BuildFromArguments(Dictionary<string, string> args)
+        {
+            ApplySettings();
+
+            if (args.TryGetValue("buildNumber", out string number) && int.TryParse(number, out int buildNumber) && buildNumber > 0)
+            {
+                PlayerSettings.Android.bundleVersionCode = buildNumber;
+                PlayerSettings.iOS.buildNumber = buildNumber.ToString();
+            }
+
+            string targetName = args.TryGetValue("customBuildTarget", out string t) ? t : "";
+            args.TryGetValue("customBuildPath", out string output);
+
+            if (targetName.Equals("iOS", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrEmpty(output)) output = StoreSettings.IosOutput;
+                Debug.Log($"[Mağaza] iOS Xcode projesi derleniyor (build {PlayerSettings.iOS.buildNumber}) → {output}");
+                return Build(BuildTarget.iOS, BuildTargetGroup.iOS, output);
+            }
+
+            if (!targetName.Equals("Android", StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.LogError($"[Mağaza] Bilinmeyen hedef: '{targetName}'. -customBuildTarget Android veya iOS olmalı.");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(output)) output = StoreSettings.AndroidOutput;
+            bool appBundle = !output.EndsWith(".apk", StringComparison.OrdinalIgnoreCase);
+            EditorUserBuildSettings.buildAppBundle = appBundle;
+
+            if (args.TryGetValue("androidTargetSdkVersion", out string sdk) && TryParseSdkVersion(sdk, out var sdkVersion))
+                PlayerSettings.Android.targetSdkVersion = sdkVersion;
+
+            bool signed = ApplyKeystore(args);
+            if (!signed && appBundle)
+            {
+                Debug.LogError("[Mağaza] Google Play paketi (.aab) imza anahtarı olmadan derlenemez. " +
+                               "ANDROID_KEYSTORE_* sırlarını ekleyin (store/BULUT-DERLEME.md) ya da denemelik APK seçin.");
+                return false;
+            }
+            if (!signed) Debug.LogWarning("[Mağaza] İmza anahtarı yok: APK yalnızca test için (debug) imzalanacak.");
+
+            Debug.Log($"[Mağaza] Android {(appBundle ? "App Bundle" : "APK")} derleniyor " +
+                      $"(versionCode {PlayerSettings.Android.bundleVersionCode}, hedef API {PlayerSettings.Android.targetSdkVersion}) → {output}");
+            return Build(BuildTarget.Android, BuildTargetGroup.Android, output);
+        }
+
+        /// <summary>Komut satırından gelen anahtarı oturum için ayarlar; anahtar dosyası yoksa false.</summary>
+        static bool ApplyKeystore(Dictionary<string, string> args)
+        {
+            PlayerSettings.Android.useCustomKeystore = false;
+            if (!args.TryGetValue("androidKeystoreName", out string keystore) || string.IsNullOrEmpty(keystore)) return false;
+            if (!Path.IsPathRooted(keystore)) keystore = Path.Combine(Directory.GetParent(Application.dataPath).FullName, keystore);
+            if (!File.Exists(keystore))
+            {
+                Debug.LogWarning($"[Mağaza] İmza anahtarı dosyası bulunamadı: {keystore}");
+                return false;
+            }
+
+            args.TryGetValue("androidKeystorePass", out string keystorePass);
+            args.TryGetValue("androidKeyaliasName", out string aliasName);
+            args.TryGetValue("androidKeyaliasPass", out string aliasPass);
+            if (string.IsNullOrEmpty(keystorePass) || string.IsNullOrEmpty(aliasName))
+            {
+                Debug.LogWarning("[Mağaza] İmza anahtarının şifresi veya takma adı (alias) eksik.");
+                return false;
+            }
+
+            PlayerSettings.Android.useCustomKeystore = true;
+            PlayerSettings.Android.keystoreName = keystore;
+            PlayerSettings.Android.keystorePass = keystorePass;
+            PlayerSettings.Android.keyaliasName = aliasName;
+            // Unity'nin Keystore Manager'ı varsayılan olarak alias şifresini anahtar şifresiyle aynı yapar.
+            PlayerSettings.Android.keyaliasPass = string.IsNullOrEmpty(aliasPass) ? keystorePass : aliasPass;
+            return true;
+        }
+
+        /// <summary>"AndroidApiLevel36" ya da "36" biçimini kabul eder.</summary>
+        static bool TryParseSdkVersion(string value, out AndroidSdkVersions version)
+        {
+            version = AndroidSdkVersions.AndroidApiLevelAuto;
+            if (string.IsNullOrEmpty(value)) return false;
+            if (Enum.TryParse(value, out version)) return true;
+            const string prefix = "AndroidApiLevel";
+            string digits = value.StartsWith(prefix, StringComparison.Ordinal) ? value.Substring(prefix.Length) : value;
+            if (!int.TryParse(digits, out int level) || level <= 0) return false;
+            version = (AndroidSdkVersions)level;
+            return true;
+        }
+
+        /// <summary>"-anahtar değer" çiftlerini okur; değeri olmayan bayraklar boş değer alır.</summary>
+        static Dictionary<string, string> ParseArguments(string[] commandLine)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < commandLine.Length; i++)
+            {
+                string arg = commandLine[i];
+                if (arg.Length < 2 || arg[0] != '-') continue;
+                bool hasValue = i + 1 < commandLine.Length && !commandLine[i + 1].StartsWith("-", StringComparison.Ordinal);
+                result[arg.Substring(1)] = hasValue ? commandLine[++i] : "";
+            }
+            return result;
+        }
+
+        static void BuildFromMenu(BuildTarget target, BuildTargetGroup group, string output)
+        {
+            if (Build(target, group, output))
+            {
+                EditorUtility.RevealInFinder(output);
+                return;
+            }
+            EditorUtility.DisplayDialog("Derleme başarısız",
+                $"{target} derlemesi tamamlanamadı. Ayrıntılar Console penceresinde.\n\n" +
+                "Sık sebepler: ilgili platform modülü (Android/iOS Build Support) Unity Hub'dan kurulmamış, " +
+                "Android SDK/NDK eksik.", "Tamam");
+        }
+
+        static bool Build(BuildTarget target, BuildTargetGroup group, string output)
         {
             string directory = Path.GetDirectoryName(output);
             if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
@@ -110,15 +256,10 @@ namespace BusTycoon.EditorTools
             if (report.summary.result == BuildResult.Succeeded)
             {
                 Debug.Log($"[Mağaza] Derleme hazır: {output} ({report.summary.totalSize / (1024 * 1024)} MB)");
-                EditorUtility.RevealInFinder(output);
+                return true;
             }
-            else
-            {
-                EditorUtility.DisplayDialog("Derleme başarısız",
-                    $"{target} derlemesi tamamlanamadı ({report.summary.result}). Ayrıntılar Console penceresinde.\n\n" +
-                    "Sık sebepler: ilgili platform modülü (Android/iOS Build Support) Unity Hub'dan kurulmamış, " +
-                    "Android SDK/NDK eksik.", "Tamam");
-            }
+            Debug.LogError($"[Mağaza] {target} derlemesi tamamlanamadı: {report.summary.result} ({report.summary.totalErrors} hata)");
+            return false;
         }
 
         /// <summary>

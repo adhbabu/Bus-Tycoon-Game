@@ -19,6 +19,7 @@ yapabileceğiniz** adımları sırayla anlatır: hesaplar, imza anahtarı, derle
 | `store/listing-tr.md`, `store/listing-en.md` | Ad, kısa/uzun açıklama, anahtar kelimeler, kategori |
 | `store/privacy-policy.md` | Gizlilik politikası (TR + EN) — internette yayınlanmalı |
 | `Tools/make_store_art.py` | Görselleri yeniden üretir |
+| `store/BULUT-DERLEME.md` | **Mac'siz iOS** ve otomatik Android derlemesi (GitHub Actions) |
 
 ---
 
@@ -37,9 +38,10 @@ mağazada aynı/benzer adlı uygulama olup olmadığına bakın; App Store bireb
 
 ## 1. Unity'de hazırlık (her iki mağaza)
 
-1. Unity Hub ▸ Installs ▸ Unity 6 ▸ **Add modules**:
-   **Android Build Support** (OpenJDK + Android SDK & NDK Tools dahil) ve **iOS Build Support**.
-   Güncel bir Unity 6 yaması kullanın (Google Play'in güncel hedef API ve 16 KB sayfa boyutu şartları için).
+1. Unity Hub ▸ **Add ▸ Add project from disk** ▸ depo klasörü (proje sürümü: Unity 6.3 LTS, 6000.3.27f1).
+   Yerelde derleyecekseniz Installs ▸ bu sürüm ▸ **Add modules**: **Android Build Support** (OpenJDK + Android
+   SDK & NDK Tools dahil) ve **iOS Build Support**. Derlemeyi bulutta yapacaksanız modül gerekmez
+   ([BULUT-DERLEME.md](BULUT-DERLEME.md)).
 2. Projeyi açın ▸ **Bus Tycoon ▸ Mağaza ▸ 1 - Mağaza ayarlarını uygula**.
    Bu komut: kimlik, sürüm, yalnız yatay ekran, IL2CPP + ARM64, Android App Bundle (.aab), uygulama ikonu
    ve `Assets/_Project/Scenes/Main.unity` sahnesini (Build Settings'e ekli) ayarlar.
@@ -81,6 +83,9 @@ kendi anahtarıyla imzalar (Play App Signing). Anahtarı veya şifresini **asla*
 ### 2.3 Derleme
 **Bus Tycoon ▸ Mağaza ▸ 2 - Android derle** → `Builds/Android/OtobusImparatoru.aab`.
 
+*Bulutta:* GitHub ▸ Actions ▸ **Android (Google Play)** ▸ Run workflow — anahtar GitHub sırlarından okunur,
+sürüm kodu otomatik artar ([BULUT-DERLEME.md §2](BULUT-DERLEME.md#2-android-google-play)).
+
 *Cihazda test:* Android telefonu USB ile bağlayıp (Geliştirici seçenekleri ▸ USB hata ayıklama) File ▸ Build
 Profiles ▸ Android ▸ "Build App Bundle" işaretini kaldırıp **Build And Run** ile APK olarak yükleyin
 (sonra tekrar işaretleyin) — ya da .aab'yi Play Console'da "Dahili test" kanalına yükleyin.
@@ -101,10 +106,15 @@ Profiles ▸ Android ▸ "Build App Bundle" işaretini kaldırıp **Build And Ru
 ## 3. App Store (iOS)
 
 ### 3.1 Gerekenler
-* **Mac** ve güncel **Xcode** (Apple'ın istediği iOS SDK sürümüyle derlenmeli; Xcode günceldir).
 * [Apple Developer Program](https://developer.apple.com/programs/) üyeliği: **yıllık 99 $**.
+* Derleme için **ya** bir Mac ve güncel **Xcode** (§3.2) **ya da** Mac'siz bulut derlemesi (aşağıda).
 
-### 3.2 Derleme ve yükleme
+> **Mac'iniz yoksa:** GitHub ▸ Actions ▸ **iOS (App Store)** iş akışı Xcode projesini bulutta üretir, GitHub'ın
+> Mac sunucusunda imzalar ve doğrudan **TestFlight**'a yükler. Bir kerelik kurulum (Bundle ID, API anahtarı,
+> sertifika anahtarı): [BULUT-DERLEME.md §3](BULUT-DERLEME.md#3-ios-app-store--mac-olmadan). Bu durumda §3.2'yi
+> atlayıp §3.3 ile devam edin.
+
+### 3.2 Derleme ve yükleme (Mac ile)
 1. Mac'te Unity ▸ **Bus Tycoon ▸ Mağaza ▸ 3 - iOS Xcode projesi üret** → `Builds/iOS/`.
    (İhracat uyumu cevabı — şifreleme yok — `IosPostProcess` ile Info.plist'e otomatik yazılır.)
 2. `Builds/iOS/Unity-iPhone.xcodeproj`'u Xcode'da açın ▸ Unity-iPhone hedefi ▸ **Signing & Capabilities** ▸
@@ -149,4 +159,5 @@ Köşeli parantezleri doldurduktan sonra en kolay yollar:
 ## 6. Güncelleme yayınlamak
 
 `StoreSettings.BuildNumber`'ı (ve gerekirse `Version`'ı) artırın ▸ menüden yeniden derleyin ▸ Play'de yeni
-sürüm / Xcode'da yeni Archive ▸ yükleyin.
+sürüm / Xcode'da yeni Archive ▸ yükleyin. Bulut derlemesinde build numarası otomatik artar; yalnızca
+`Version`'ı değiştirip iş akışlarını yeniden çalıştırmanız yeterlidir.
