@@ -1,0 +1,102 @@
+# 🚌 Bus Tycoon — Otobüs İşletmeciliği Strateji Oyunu (Unity)
+
+Otobüsü sürmediğiniz, **tamamen şirketi yönettiğiniz** 3D bir tycoon oyunu. Gerçek harita üzerinde
+81 il + 12 komşu ülke şehri arasında hat açar, bilet fiyatını talep esnekliğine göre ayarlar, eski bir
+minibüsle başlayıp VIP ve çift katlı otobüslere kadar filonuzu büyütürsünüz.
+
+## ▶ Oynamak için (3 adım)
+
+1. **Unity Hub**'ı ve **Unity 6** (veya 2022.3 LTS) sürümünü kurun.
+2. Unity Hub → **New project** → **Universal 3D** (veya **3D Built-in**) şablonuyla boş bir proje oluşturun.
+   Proje açılınca bu depodaki **`Assets/_Project`** klasörünü projenin **`Assets`** klasörüne kopyalayın
+   (sürükle-bırak da olur). Unity scriptleri birkaç saniyede derler.
+3. Açık olan sahnede (şablonun `SampleScene`'i veya boş bir sahne) **Play ▶** tuşuna basın.
+
+Başka hiçbir şey gerekmez: sahne, prefab, asset bağlama, TextMeshPro kaynakları veya Input System ayarı yok.
+Oyun Play'e basınca kendini kodla kurar (`GameBootstrap`): kamera, ışık, gerçek harita dokusu, şehirler,
+hatlar, hareket eden otobüsler ve tüm arayüz.
+
+> **Not:** Bu depo Unity editörü olmayan bir ortamda geliştirildi. Kod, Unity API'lerini taklit eden bir test
+> katmanıyla derlendi; arayüz, 749 otomatik IMGUI tutarlılık kontrolü ve tam bir oyun akışı (menü → hat açma →
+> fiyat → filo → kaydet/yükle → zafer/iflas) ile sınandı. Yine de gerçek Unity'de ilk açılışta konsolda bir
+> uyarı/hata görürseniz mesajı paylaşın.
+
+## Nasıl oynanır?
+
+| Adım | Ne yapılır |
+|---|---|
+| **Şirketi kur** | Ana menü → Yeni Oyun → şirket adı → haritadan merkez şehri seçin (İstanbul: kolay başlangıç). 40.000 $ ve 2. el bir minibüsle başlarsınız. |
+| **Hat aç** | Haritada bir şehre, sonra varış şehrine tıklayın. Planlayıcı en kârlı hedefleri de önerir. Teklif kartında mesafe, talep, önerilen bilet ve otobüs sayısı görünür → **HATTI AÇ**. |
+| **Fiyatı ayarla** | Hat panelinin **Fiyat** sekmesinde kaydırıcıyı oynatın: kâr eğrisi, yeşil "ideal bölge" ve canlı yolcu/doluluk/kâr tahmini. Çok ucuz → otobüs dolar ama kâr kaçar; çok pahalı → yolcu kaçar. **UYGULA**. |
+| **Büyü** | Galeri'den otobüs alın, hatlara atayın. Yolcu taşıdıkça seviye atlarsınız: yeni otobüs modelleri, daha fazla hat ve yeni ülkeler (Bölgeler) açılır. |
+| **Kazan** | Görevleri takip edin (sol alt). Kasada **1.000.000 $**'a ulaşınca oyunu kazanırsınız; sonra serbest devam. Kasa 30 gün eksi kalırsa iflas. |
+
+**Kontroller:** Sol tık seç · sürükle / WASD / ok tuşları kaydır · tekerlek / Q-E yakınlaştır · sağ tık iptal ·
+Boşluk duraklat · 1/2/3 hız · N yeni hat · R hatlar · F filo · G galeri · K finans · B bölgeler · J görevler ·
+L günlük · H yardım · F5 kaydet · Esc geri / menü. Oyun her 7 günde ve çıkışta otomatik kaydeder.
+
+## İçerik
+
+* **Harita:** Natural Earth ülke sınırlarından üretilmiş Mercator dokusu (Türkiye, Balkanlar, Kafkasya).
+* **93 şehir:** 81 il merkezi (GeoNames koordinatları ve il nüfusları) + Bulgaristan, Yunanistan, Gürcistan, Romanya'dan 12 şehir.
+* **5 ülke / bölge:** Türkiye başlangıçta açık; diğerleri seviye + lisans ücretiyle açılır.
+* **8 otobüs modeli, 6 segment:** minibüs → midibüs → şehirlerarası → konfor → VIP 2+1 → çift katlı.
+* **Ekonomi:** çekim (gravity) talep modeli, yarı-logaritmik fiyat esnekliği, otomatik sefer planı, yakıt/şoför/bakım/otoyol/otogar/ikram/sigorta giderleri, arıza ve yıpranma, itibar döngüsü, pazar araştırması belirsizliği.
+* **12 görev** (öğretici zincir + ödüller), zafer ve iflas sonu, kayıt/yükleme.
+
+## Dokümanlar
+
+| # | Doküman | İçerik |
+|---|---|---|
+| 1 | [Mimari ve Dünya Haritası](docs/01-Mimari-ve-Dunya-Haritasi.md) | Katmanlı mimari, ScriptableObject ↔ save ayrımı, şehir/bölge verisi, projeksiyonlar, veri hattı |
+| 2 | [Hat ve Talep Esnekliği](docs/02-Hat-ve-Talep-Esnekligi.md) | Çekim modeli, esneklik formülü, kapasite, maliyetler, **sayısal örnek**, denge rehberi |
+| 3 | [Filo ve Progression](docs/03-Filo-ve-Progression.md) | Segmentler, kilitler, XP eğrisi, satın al / 2. el / takas / revizyon |
+| 4 | [UI Akış Planı](docs/04-UI-Akis-Plani.md) | Tasarım ilkeleri, ekran haritası, wireframe'ler, 3 tıkla hat açma, fiyat paneli |
+
+**Talep formülü (özet):**
+
+```
+Q(P) = Q_ref × e^(−ε_ref × (P/P_ref − 1))      →  kârı maksimize eden fiyat:  P* = c + P_ref / ε_ref
+Q_ref = K × √(Nüfus_A × Nüfus_B) × f(mesafe) × turizm × itibar × olgunluk × konfor
+```
+
+## Proje yapısı
+
+```
+Assets/_Project/
+├─ Resources/BusTycoon/   cities.csv (93 şehir), map.png (harita dokusu)
+├─ Scripts/
+│  ├─ Runtime/            BusTycoon.Runtime — oyun kuralları (Unity'den bağımsız test edilebilir)
+│  │  ├─ Core/            GameSession, SimulationClock, CsvUtility, OpResult
+│  │  ├─ Data/            CityData, RegionData, BusModelData, EconomyConfig, ProgressionConfig, DefaultContent ...
+│  │  ├─ World/           GeoCoordinate (Haversine), Mercator/Globe projeksiyon, WorldGraph
+│  │  ├─ Economy/         DemandModel, RouteEconomics, PriceOptimizer, PricingAdvisor, FinanceSystem
+│  │  ├─ Routes/          RouteSystem, RouteState, RouteAdvisor
+│  │  ├─ Fleet/           FleetSystem, BusInstance
+│  │  ├─ Progression/     ProgressionSystem
+│  │  └─ Save/            CompanyState, SaveSystem
+│  ├─ Game/               BusTycoon.Game — OYNANABİLİR KATMAN (kurulumsuz)
+│  │  ├─ GameBootstrap    Play'de her şeyi kurar
+│  │  ├─ WorldRenderer    3D harita, şehirler, hat yayları, hareket eden otobüsler
+│  │  ├─ MapCamera        kaydırma / yakınlaştırma / odaklanma
+│  │  ├─ GoalTracker      görev zinciri
+│  │  └─ UI/              GameUI (IMGUI arayüzü: menü, HUD, planlayıcı, fiyat, filo, galeri, finans ...)
+│  ├─ Presentation/       BusTycoon.Presentation — opsiyonel uGUI/TextMeshPro + prefab tabanlı arayüz iskeleti
+│  └─ Editor/             CSV şehir içe aktarıcı, "Create Default Content" (asset olarak düzenlemek için)
+└─ Tests/EditMode/        24 NUnit testi (talep modeli, ekonomi sistemleri, içerik)
+Tools/build_world_data.py  GeoNames + Natural Earth → cities.csv ve map.png üretir
+```
+
+**İki arayüz yolu:** Oynanabilir sürüm `BusTycoon.Game` içindeki IMGUI arayüzünü kullanır (sıfır kurulum).
+`BusTycoon.Presentation` ise sahne/prefab ile kurulacak daha cilalı bir uGUI arayüzünün scriptleridir; sahneye
+kendi `GameSession`'ınızı koyarsanız `GameBootstrap` devre dışı kalır ve o yolu kullanabilirsiniz.
+uGUI/TextMeshPro paketleri yoksa bu assembly derlenmez, oyunu etkilemez.
+
+**Dengeyi değiştirmek:** Tüm katsayılar `DefaultContent.cs` (otobüsler, bölgeler) ve `EconomyConfig` /
+`ProgressionConfig` varsayılanlarındadır. Inspector'da düzenlemek için **Bus Tycoon ▸ Create Default Content**
+asset'leri üretir. **Testler:** Window ▸ General ▸ Test Runner ▸ EditMode ▸ Run All.
+
+## Veri kaynakları
+
+* Harita: [Natural Earth](https://www.naturalearthdata.com/) (kamu malı)
+* Şehirler: [GeoNames](https://www.geonames.org/) (CC BY 4.0). Komşu ülke şehirlerinin nüfusları yaklaşık bölge/metro değerleridir.

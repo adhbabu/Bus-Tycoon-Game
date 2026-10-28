@@ -1,0 +1,386 @@
+using System;
+using BusTycoon.Core;
+using BusTycoon.Data;
+using BusTycoon.Save;
+using UnityEngine;
+
+namespace BusTycoon.Game
+{
+    // Ana menü, yeni oyun (başlangıç şehri), duraklatma/iflas/zafer pencereleri, kayıt-yükleme, yardım.
+    public sealed partial class GameUI
+    {
+        static readonly string[] QuickStartCityIds = { "TR_ISTANBUL", "TR_ANKARA", "TR_IZMIR", "TR_BURSA", "TR_ANTALYA", "TR_KONYA" };
+
+        string companyName = "Anadolu Turizm";
+        CityData startCity;
+        string startCityInfo;
+        string startDifficulty;
+        Color startDifficultyColor;
+        bool showMenuHelp;
+        string latestSaveSlot;
+        string latestSaveLabel;
+        Vector2 helpScroll;
+
+        // ------------------------------------------------------------------ ana menü
+
+        void EnterMainMenu()
+        {
+            mode = Mode.MainMenu;
+            modal = Modal.None;
+            panel = Panel.None;
+            showMenuHelp = false;
+            startCity = null;
+            mapCamera.AutoDrift = true;
+            if (session.IsRunning && session.Clock != null) session.Clock.SetSpeed(0);
+            RefreshLatestSave();
+        }
+
+        void RefreshLatestSave()
+        {
+            DateTime? manual = SaveSystem.GetLastWriteTimeUtc(SaveSlot);
+            DateTime? auto = SaveSystem.GetLastWriteTimeUtc(AutosaveSlot);
+            latestSaveSlot = null;
+            DateTime? latest = null;
+            if (manual.HasValue) { latestSaveSlot = SaveSlot; latest = manual; }
+            if (auto.HasValue && (!latest.HasValue || auto.Value > latest.Value)) { latestSaveSlot = AutosaveSlot; latest = auto; }
+            latestSaveLabel = latest.HasValue ? latest.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : null;
+        }
+
+        void DrawMainMenu()
+        {
+            var box = new Rect((W - 560f) * 0.5f, (H - 600f) * 0.5f, 560f, 600f);
+            uiRects.Add(box);
+            GUILayout.BeginArea(box, s.Modal);
+
+            GUILayout.Space(10f);
+            GUILayout.Label("BUS TYCOON", s.Title);
+            GUILayout.Label("Otobüs İşletmeciliği · Strateji ve Yönetim", s.Center);
+            GUILayout.Space(22f);
+
+            if (showMenuHelp)
+            {
+                helpScroll = GUILayout.BeginScrollView(helpScroll, GUILayout.ExpandHeight(true));
+                DrawHelpContent();
+                GUILayout.EndScrollView();
+                if (GUILayout.Button("Geri", s.Button, GUILayout.Height(40f))) Defer(() => showMenuHelp = false);
+            }
+            else
+            {
+                if (session.IsRunning && !session.IsBankrupt &&
+                    GUILayout.Button($"Oyuna Dön  ({session.State.companyName})", s.Primary, GUILayout.Height(50f)))
+                    Defer(ResumeFromMenu);
+
+                if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, GUILayout.Height(50f)))
+                    Defer(BeginNewGame);
+
+                string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
+                if (EnabledButton(latestSaveSlot != null, continueText, s.Button, GUILayout.Height(46f)))
+                    Defer(() => LoadSlot(latestSaveSlot));
+
+                if (GUILayout.Button("Nasıl Oynanır?", s.Button, GUILayout.Height(46f))) Defer(() => showMenuHelp = true);
+                if (GUILayout.Button("Çıkış", s.Button, GUILayout.Height(46f))) Defer(QuitGame);
+            }
+
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("Harita: Natural Earth · Şehir verisi: GeoNames (CC BY 4.0)", s.WrapDim);
+            GUILayout.EndArea();
+        }
+
+        void ResumeFromMenu()
+        {
+            mode = Mode.Playing;
+            mapCamera.AutoDrift = false;
+            CityData hq = session.Headquarters;
+            if (hq != null) mapCamera.FocusOn(world.GetCityPosition(hq), 34f);
+            session.Clock.SetSpeed(1);
+        }
+
+        void BeginNewGame()
+        {
+            mode = Mode.NewGame;
+            modal = Modal.None;
+            panel = Panel.None;
+            startCity = null;
+            mapCamera.AutoDrift = false;
+            mapCamera.FocusOn(Vector3.zero, 70f);
+        }
+
+        static void QuitGame()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
+        // ------------------------------------------------------------------ yeni oyun
+
+        void DrawNewGame()
+        {
+            var rect = new Rect(Margin, Margin, 470f, H - 2f * Margin);
+            uiRects.Add(rect);
+            GUILayout.BeginArea(rect, s.Panel);
+
+            GUILayout.Label("Yeni Şirket Kur", s.H1);
+            Divider();
+            GUILayout.Label("Şirket adı", s.Dim);
+            companyName = GUILayout.TextField(companyName ?? string.Empty, 28, s.Field, GUILayout.Height(40f));
+            GUILayout.Space(10f);
+            GUILayout.Label("Haritadan merkez ofisinizin bulunacağı şehre tıklayın. O şehrin ülkesi ücretsiz açılır; diğer ülkeler sonradan lisansla açılır.", s.Wrap);
+            GUILayout.Space(6f);
+
+            GUILayout.Label("Hızlı seçim", s.H2);
+            for (int row = 0; row < 2; row++)
+            {
+                GUILayout.BeginHorizontal();
+                for (int col = 0; col < 3; col++)
+                {
+                    CityData city = session.World.GetCity(QuickStartCityIds[row * 3 + col]);
+                    if (city == null) continue;
+                    if (GUILayout.Button(city.DisplayName, city == startCity ? s.TabActive : s.Button, GUILayout.Height(34f)))
+                    {
+                        CityData selected = city;
+                        Defer(() => SelectStartCity(selected));
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Space(10f);
+            if (startCity != null)
+            {
+                GUILayout.BeginVertical(s.Card);
+                GUILayout.Label($"{startCity.DisplayName}, {startCity.Region.DisplayName}", s.H2);
+                GUILayout.Label(startCityInfo, s.Wrap);
+                ColorLabel(startDifficulty, startDifficultyColor, s.Bold);
+                GUILayout.EndVertical();
+            }
+            else
+            {
+                ColorLabel("Henüz şehir seçilmedi.", UIStyles.DimText, s.Label);
+            }
+
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginVertical(s.Card);
+            GUILayout.Label("Başlangıç sermayesi", s.Dim);
+            GUILayout.Label($"{Fmt.Money(session.ProgressionConfig.StartingCash)} nakit + 2. el {session.ProgressionConfig.StartingBus.DisplayName} minibüs", s.Wrap);
+            GUILayout.EndVertical();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Geri", s.Button, GUILayout.Width(110f), GUILayout.Height(46f))) Defer(EnterMainMenu);
+            if (EnabledButton(startCity != null, "ŞİRKETİ KUR", s.Primary, GUILayout.Height(46f))) Defer(StartCompany);
+            GUILayout.EndHorizontal();
+
+            GUILayout.EndArea();
+        }
+
+        void SelectStartCity(CityData city)
+        {
+            startCity = city;
+            mapCamera.FocusOn(world.GetCityPosition(city), 40f);
+
+            // Hat, açık ülke içindeki HERHANGİ iki şehir arasında açılabilir; asıl belirleyici ülke pazarıdır.
+            long market = 0;
+            int cities = 0, big = 0;
+            foreach (var other in session.World.Cities)
+            {
+                if (other.Region != city.Region) continue;
+                cities++;
+                market += other.Population;
+                if (other.Population >= CityData.LargeCityPopulation) big++;
+            }
+
+            startCityInfo = $"Nüfus {Fmt.Population(city.Population)}\n" +
+                            $"{city.Region.DisplayName}: {cities} şehir, {big} büyük şehir, toplam pazar {Fmt.Population(market)} kişi\n" +
+                            "Ülke içinde istediğiniz iki şehir arasında hat açabilirsiniz; merkez ofis haritada altın renkle görünür.";
+
+            if (market > 30_000_000) { startDifficulty = "Kolay başlangıç: büyük ülke pazarı"; startDifficultyColor = UIStyles.Green; }
+            else if (market > 5_000_000) { startDifficulty = "Orta zorluk: orta büyüklükte pazar"; startDifficultyColor = UIStyles.Yellow; }
+            else { startDifficulty = "Zor başlangıç: küçük ülke pazarı"; startDifficultyColor = UIStyles.Orange; }
+        }
+
+        void StartCompany()
+        {
+            if (startCity == null) return;
+            string name = string.IsNullOrWhiteSpace(companyName) ? "Anadolu Turizm" : companyName.Trim();
+            CityData hq = startCity;
+            GUIUtility.keyboardControl = 0;
+
+            session.StartNewGame(name, hq); // → OnSessionStarted
+            Toast($"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
+            OpenPlannerNow(hq);
+        }
+
+        // ------------------------------------------------------------------ kayıt / yükleme
+
+        void SaveTo(string slot)
+        {
+            if (!session.IsRunning) return;
+            if (session.SaveGame(slot)) Toast("Oyun kaydedildi.", UIStyles.Green);
+            else Toast("Kayıt başarısız! Ayrıntı için konsola bakın.", UIStyles.Red);
+            RefreshLatestSave();
+        }
+
+        void LoadSlot(string slot)
+        {
+            if (slot == null) return;
+            if (session.TryLoadGame(slot)) Toast("Kayıt yüklendi.", UIStyles.Green); // → OnSessionStarted
+            else Toast("Kayıt yüklenemedi.", UIStyles.Red);
+        }
+
+        // ------------------------------------------------------------------ modallar
+
+        void OpenPauseMenu()
+        {
+            if (mode != Mode.Playing || modal != Modal.None) return;
+            speedBeforePause = Mathf.Max(1, session.Clock.Speed);
+            session.Clock.SetSpeed(0);
+            RefreshLatestSave();
+            modal = Modal.Pause;
+        }
+
+        void ClosePauseMenu()
+        {
+            modal = Modal.None;
+            if (!session.IsBankrupt) session.Clock.SetSpeed(speedBeforePause);
+        }
+
+        void AskConfirm(string title, string text, Action onConfirm)
+        {
+            confirmTitle = title;
+            confirmText = text;
+            confirmAction = onConfirm;
+            modal = Modal.Confirm;
+        }
+
+        void DrawModal()
+        {
+            var full = new Rect(0f, 0f, W, H);
+            uiRects.Add(full);
+            if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0f, 0f, 0f, 0.55f));
+
+            var box = new Rect((W - 480f) * 0.5f, (H - 470f) * 0.5f, 480f, 470f);
+            GUILayout.BeginArea(box, s.Modal);
+            switch (modal)
+            {
+                case Modal.Pause: DrawPauseModal(); break;
+                case Modal.GameOver: DrawGameOverModal(); break;
+                case Modal.Victory: DrawVictoryModal(); break;
+                case Modal.Confirm: DrawConfirmModal(); break;
+            }
+            GUILayout.EndArea();
+        }
+
+        void DrawPauseModal()
+        {
+            GUILayout.Label("Oyun Duraklatıldı", s.H1);
+            Divider();
+            if (GUILayout.Button("Devam Et", s.Primary, GUILayout.Height(46f))) Defer(ClosePauseMenu);
+            if (GUILayout.Button("Kaydet", s.Button, GUILayout.Height(40f))) Defer(() => SaveTo(SaveSlot));
+            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, GUILayout.Height(40f)))
+                Defer(() => LoadSlot(latestSaveSlot));
+
+            GUILayout.Space(8f);
+            GUILayout.Label("Gün süresi (1x hızda)", s.Dim);
+            GUILayout.BeginHorizontal();
+            foreach (float seconds in new[] { 2f, 4f, 8f })
+            {
+                bool active = Mathf.Approximately(session.SecondsPerDay, seconds);
+                if (GUILayout.Button($"{seconds:0} sn", active ? s.TabActive : s.Tab, GUILayout.Height(32f)))
+                    session.SecondsPerDay = seconds;
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Ana Menü", s.Button, GUILayout.Height(40f))) Defer(EnterMainMenu);
+            if (GUILayout.Button("Oyundan Çık", s.Danger, GUILayout.Height(40f))) Defer(() => { session.SaveGame(AutosaveSlot); QuitGame(); });
+        }
+
+        void DrawGameOverModal()
+        {
+            ColorLabel("İFLAS ETTİNİZ", UIStyles.Red, s.H1);
+            Divider();
+            GUILayout.Label($"Kasanız {session.ProgressionConfig.BankruptcyGraceDays} gün boyunca eksi kaldı ve alacaklılar şirkete el koydu.", s.Wrap);
+            GUILayout.Space(8f);
+            KeyValue("Dayanılan süre", $"{session.State.currentDay} gün");
+            KeyValue("Taşınan yolcu", Fmt.Num(session.State.totalPassengers));
+            KeyValue("Ulaşılan seviye", session.Progression.Level.ToString());
+            GUILayout.Space(8f);
+            GUILayout.Label("İpucu: Zarar eden hatları kapatın, atıl otobüsleri satın ve fiyatı 'ideal bölge'de tutun.", s.WrapDim);
+            GUILayout.FlexibleSpace();
+            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, GUILayout.Height(42f)))
+                Defer(() => LoadSlot(latestSaveSlot));
+            if (GUILayout.Button("Yeni Oyun", s.Primary, GUILayout.Height(46f))) Defer(BeginNewGame);
+            if (GUILayout.Button("Ana Menü", s.Button, GUILayout.Height(40f))) Defer(EnterMainMenu);
+        }
+
+        void DrawVictoryModal()
+        {
+            ColorLabel("TEBRİKLER!", UIStyles.Gold, s.H1);
+            Divider();
+            GUILayout.Label($"{session.State.companyName} kasasında {Fmt.Money(1_000_000)}'ı aştı. Artık bir Otobüs İmparatorusunuz!", s.Wrap);
+            GUILayout.Space(8f);
+            KeyValue("Süre", $"{session.State.currentDay} gün");
+            KeyValue("Taşınan yolcu", Fmt.Num(session.State.totalPassengers));
+            KeyValue("Hat / Otobüs", $"{session.Routes.Routes.Count} / {session.Fleet.Buses.Count}");
+            KeyValue("İtibar", $"{session.Progression.Reputation:0}");
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Oynamaya Devam Et", s.Primary, GUILayout.Height(46f))) Defer(() => modal = Modal.None);
+            if (GUILayout.Button("Ana Menü", s.Button, GUILayout.Height(40f))) Defer(EnterMainMenu);
+        }
+
+        void DrawConfirmModal()
+        {
+            GUILayout.Label(confirmTitle, s.H1);
+            Divider();
+            GUILayout.Label(confirmText, s.Wrap);
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Vazgeç", s.Button, GUILayout.Height(44f))) Defer(() => modal = Modal.None);
+            if (GUILayout.Button("Onayla", s.Danger, GUILayout.Height(44f)))
+            {
+                Action action = confirmAction;
+                Defer(() =>
+                {
+                    modal = Modal.None;
+                    action?.Invoke();
+                });
+            }
+            GUILayout.EndHorizontal();
+        }
+
+        // ------------------------------------------------------------------ yardım
+
+        void DrawHelpContent()
+        {
+            HelpSection("Amaç",
+                "Otobüs şirketinizi büyütün: şehirleri hatlarla bağlayın, bilet fiyatını doğru ayarlayın, filonuzu " +
+                "minibüsten VIP otobüse yükseltin. Kasada $1.000.000'a ulaşınca oyunu kazanırsınız.");
+            HelpSection("Hat açmak",
+                "Haritada bir şehre tıklayın (kalkış), sonra varış şehrine tıklayın. Teklif kartı mesafe, tahmini talep, " +
+                "önerilen bilet fiyatı ve otobüs sayısını gösterir. Planlayıcı en kârlı hedefleri de önerir.");
+            HelpSection("Bilet fiyatı (oyunun kalbi)",
+                "Fiyat yükseldikçe yolcu azalır. Çok ucuzsa otobüsler dolar ama kâr kaçar; çok pahalıysa koltuklar boş kalır. " +
+                "Fiyat panelindeki yeşil bant 'ideal bölge'dir. Otobüs sayısı değişince ideal fiyat da değişir! " +
+                "Tahminler pazar araştırmanız kadar isabetlidir; 'Dün' satırındaki gerçek sonuçlara bakın.");
+            HelpSection("Filo ve ilerleme",
+                "Yolcu taşıdıkça seviye atlarsınız: yeni otobüsler, daha fazla hat ve yeni ülkeler açılır. " +
+                "Minibüs uzun hatlarda yolcu kaybeder; 300 km üstü hatlara midibüs veya şehirlerarası otobüs koyun. " +
+                "Lüks modeller ayrıca itibar ister: adil fiyat ve konforlu araç itibarı artırır.");
+            HelpSection("Kontroller",
+                "Sol tık: seç · Sürükle veya WASD/ok tuşları: kaydır · Tekerlek veya Q/E: yakınlaştır · Sağ tık: seçimi iptal\n" +
+                "Boşluk: duraklat · 1/2/3: hız · N: yeni hat · R: hatlar · F: filo · G: galeri · K: finans · B: bölgeler · " +
+                "J: görevler · F5: kaydet · Esc: geri / menü");
+            HelpSection("Dikkat",
+                "Kasa 30 gün üst üste eksi kalırsa iflas edersiniz. Garajda bekleyen otobüsler de sigorta öder.");
+        }
+
+        void HelpSection(string title, string body)
+        {
+            GUILayout.Label(title, s.H2);
+            GUILayout.Label(body, s.Wrap);
+            GUILayout.Space(8f);
+        }
+    }
+}

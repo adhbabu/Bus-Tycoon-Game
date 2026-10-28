@@ -1,0 +1,43 @@
+{
+    "name": "BusTycoon.Presentation",
+    "rootNamespace": "BusTycoon.Presentation",
+    "references": [
+        "BusTycoon.Runtime",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "BUSTYCOON_UGUI",
+        "BUSTYCOON_TMP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "1.0.0",
+            "define": "BUSTYCOON_UGUI"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "BUSTYCOON_TMP"
+        },
+        {
+            "name": "com.unity.textmeshpro",
+            "expression": "1.0.0",
+            "define": "BUSTYCOON_TMP"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0.0",
+            "define": "BUSTYCOON_INPUT_SYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}
