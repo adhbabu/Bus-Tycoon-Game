@@ -190,7 +190,7 @@ gönderme: [YAYIN-REHBERI.md §3.3](YAYIN-REHBERI.md#33-app-store-connect) — h
 | `app-store/iphone-6.9` | 2868×1320 | App Store Connect ▸ iPhone 6,9" |
 | `app-store/ipad-13` | 2752×2064 | App Store Connect ▸ iPad 13" |
 
-Görüntüler, oyunun içindeki vitrin turuyla (orta seviyede bir şirket: 8 hat, 15 otobüs) gerçek oyundan alınır.
+Görüntüler, oyunun içindeki vitrin turuyla (orta seviyede, iyi yönetilen bir şirket: 8 hat, ~30 otobüs) gerçek oyundan alınır.
 Turu tarayıcıda izlemek için: `…/oyna/?vitrin&profil=telefon`.
 
 ## 5. Yeni sürüm yayınlamak

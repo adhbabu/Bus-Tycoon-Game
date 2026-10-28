@@ -5,7 +5,9 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
+using BusTycoon.Data;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BusTycoon.EditorTools
 {
@@ -73,6 +75,7 @@ namespace BusTycoon.EditorTools
             else Debug.LogWarning($"[Mağaza] İkon bulunamadı: {StoreSettings.IconPath}");
 
             EnsureMainScene();
+            EnsureRuntimeMaterials();
             AssetDatabase.SaveAssets();
             Debug.Log($"[Mağaza] Ayarlar uygulandı: {StoreSettings.ProductName} {StoreSettings.Version} ({StoreSettings.BuildNumber}) · {StoreSettings.ApplicationId}");
         }
@@ -291,6 +294,34 @@ namespace BusTycoon.EditorTools
             }
             Debug.LogError($"[Mağaza] {target} derlemesi tamamlanamadı: {report.summary.result} ({report.summary.totalErrors} hata)");
             return false;
+        }
+
+        /// <summary>
+        /// Oyun malzemelerini kodla oluşturur (MaterialFactory). Unity hiçbir asset'in kullanmadığı shader'ları
+        /// derlemeye koymaz; Resources'taki bu şablonlar Standard ve Unlit/Texture'ı derlemeye dahil eder.
+        /// Olmazsa harita ve şehirler build'de pembe görünür. (URP'de pipeline'ın varsayılan malzemesi kullanılır.)
+        /// </summary>
+        static void EnsureRuntimeMaterials()
+        {
+            if (GraphicsSettings.currentRenderPipeline != null) return;
+            EnsureMaterial(DefaultContent.LitMaterialResourcePath, "Standard");
+            EnsureMaterial(DefaultContent.MapMaterialResourcePath, "Unlit/Texture");
+        }
+
+        static void EnsureMaterial(string resourcePath, string shaderName)
+        {
+            string assetPath = $"Assets/_Project/Resources/{resourcePath}.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(assetPath) != null) return;
+
+            Shader shader = Shader.Find(shaderName);
+            if (shader == null)
+            {
+                Debug.LogWarning($"[Mağaza] Shader bulunamadı: {shaderName}");
+                return;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(assetPath));
+            AssetDatabase.CreateAsset(new Material(shader), assetPath);
+            Debug.Log($"[Mağaza] Şablon malzeme oluşturuldu: {assetPath} ({shaderName})");
         }
 
         /// <summary>

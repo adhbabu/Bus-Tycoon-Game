@@ -179,9 +179,7 @@ namespace BusTycoon.Game
 
         static void CreatePrimitive(PrimitiveType type, Transform parent, Vector3 localPosition, Vector3 scale, Material material)
         {
-            var go = GameObject.CreatePrimitive(type);
-            var collider = go.GetComponent<Collider>();
-            if (collider != null) Destroy(collider); // seçim ekran uzayında yapılır; fizik gerekmez
+            var go = Primitives.Create(type, type.ToString());
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPosition;
             go.transform.localScale = scale;
@@ -382,10 +380,7 @@ namespace BusTycoon.Game
                 }
                 while (visual.Tokens.Count < wanted)
                 {
-                    var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    var collider = go.GetComponent<Collider>();
-                    if (collider != null) Destroy(collider);
-                    go.name = "Bus";
+                    var go = Primitives.Create(PrimitiveType.Cube, "Bus");
                     go.transform.SetParent(routeRoot, false);
                     go.transform.localScale = new Vector3(0.28f, 0.2f, 0.62f);
                     visual.Tokens.Add(new BusToken { Transform = go.transform, Phase = visual.Tokens.Count / (float)Mathf.Max(1, wanted) * 2f });
