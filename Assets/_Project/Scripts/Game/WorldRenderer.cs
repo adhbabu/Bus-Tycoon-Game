@@ -43,7 +43,7 @@ namespace BusTycoon.Game
         const float LineHeight = 0.12f;
         const int MaxTokensPerRoute = 6;
 
-        static readonly Color CityNormal = new Color(0.93f, 0.93f, 0.88f);
+        static readonly Color CityNormal = new Color(0.78f, 0.75f, 0.64f);   // yumuşak kum rengi: ışıkta beyaza patlamaz
         static readonly Color CityConnected = new Color(0.35f, 0.86f, 0.48f);
         static readonly Color CityLocked = new Color(0.42f, 0.44f, 0.44f);
         static readonly Color CityHeadquarters = new Color(1f, 0.78f, 0.25f);
@@ -160,13 +160,13 @@ namespace BusTycoon.Game
             {
                 if (city == null) continue;
                 Vector3 position = projection.GeoToWorld(city.Coordinate);
-                float size = city.MapTier switch { 0 => 1.15f, 1 => 0.9f, 2 => 0.7f, _ => 0.55f };
+                float size = city.MapTier switch { 0 => 0.85f, 1 => 0.62f, 2 => 0.46f, _ => 0.34f };
 
                 var root = new GameObject("City_" + city.Id).transform;
                 root.SetParent(cityRoot, false);
                 root.position = position;
 
-                var material = MaterialFactory.CreateLit(CityNormal, 0.3f);
+                var material = MaterialFactory.CreateLit(CityNormal, 0.1f);
                 CreatePrimitive(PrimitiveType.Cylinder, root, new Vector3(0f, 0.04f, 0f), new Vector3(size, 0.04f, size), material);
                 if (city.MapTier <= 1 || city.IsCapital)
                     CreatePrimitive(PrimitiveType.Cylinder, root, new Vector3(0f, 0.3f, 0f), new Vector3(size * 0.22f, 0.3f, size * 0.22f), material);

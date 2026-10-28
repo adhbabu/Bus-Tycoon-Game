@@ -820,6 +820,16 @@ namespace BusTycoon.Game
 
         // ------------------------------------------------------------------ harita etiketleri ve ipucu
 
+        readonly List<Rect> placedLabels = new List<Rect>();
+        readonly List<WorldRenderer.CityMarker> labelOrder = new List<WorldRenderer.CityMarker>();
+        readonly Dictionary<string, float> labelWidths = new Dictionary<string, float>();
+        UIStyles labelWidthStyles;
+        static readonly GUIContent LabelContent = new GUIContent(string.Empty);
+
+        /// <summary>
+        /// Şehir adları: önce önemli şehirler (seçili, merkez, hat bağlantılı), sonra büyükten küçüğe. Başka bir
+        /// adla çakışan ikincil ad çizilmez (ör. birbirine çok yakın Kocaeli ve Sakarya).
+        /// </summary>
         void DrawCityLabels()
         {
             Camera cam = mapCamera.Camera;
@@ -827,28 +837,67 @@ namespace BusTycoon.Game
             int tierLimit = distance < 22f ? 3 : distance < 38f ? 2 : distance < 62f ? 1 : 0;
             bool playing = mode == Mode.Playing;
 
-            foreach (var marker in world.Markers)
+            if (labelOrder.Count != world.Markers.Count)
             {
-                CityData city = marker.City;
-                bool important = city == hoveredCity || city == world.Origin || city == world.Destination ||
-                                 city == world.Headquarters || (playing && connectedCityIds.Contains(city.Id));
-                if (city.MapTier > tierLimit && !important) continue;
-
-                Vector3 sp = cam.WorldToScreenPoint(marker.Position + Vector3.up * 0.75f);
-                if (sp.z <= 0f) continue;
-                var p = new Vector2(sp.x, Screen.height - sp.y);
-                if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
-
-                bool bold = city.MapTier == 0 || important;
-                var rect = new Rect(p.x - 90f * u, p.y - 24f * u, 180f * u, 22f * u);
-                bool locked = playing && !session.Progression.IsRegionUnlocked(city.Region);
-
-                GUI.Label(new Rect(rect.x + u, rect.y + u, rect.width, rect.height), city.DisplayName, bold ? s.MapLabelBoldShadow : s.MapLabelShadow);
-                Color previous = GUI.contentColor;
-                if (locked) GUI.contentColor = new Color(0.75f, 0.75f, 0.75f, 0.8f);
-                GUI.Label(rect, city.DisplayName, bold ? s.MapLabelBold : s.MapLabel);
-                GUI.contentColor = previous;
+                labelOrder.Clear();
+                labelOrder.AddRange(world.Markers);
+                labelOrder.Sort((a, b) => a.City.MapTier.CompareTo(b.City.MapTier));
             }
+            if (labelWidthStyles != s)
+            {
+                labelWidthStyles = s;
+                labelWidths.Clear();
+            }
+            placedLabels.Clear();
+
+            for (int pass = 0; pass < 2; pass++)
+            {
+                foreach (var marker in labelOrder)
+                {
+                    CityData city = marker.City;
+                    bool important = city == hoveredCity || city == world.Origin || city == world.Destination ||
+                                     city == world.Headquarters || (playing && connectedCityIds.Contains(city.Id));
+                    if (important != (pass == 0)) continue;
+                    if (city.MapTier > tierLimit && !important) continue;
+
+                    Vector3 sp = cam.WorldToScreenPoint(marker.Position + Vector3.up * 0.75f);
+                    if (sp.z <= 0f) continue;
+                    var p = new Vector2(sp.x, Screen.height - sp.y);
+                    if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
+
+                    bool bold = city.MapTier == 0 || important;
+                    GUIStyle style = bold ? s.MapLabelBold : s.MapLabel;
+                    float width = LabelWidth(city, style, bold);
+                    var box = new Rect(p.x - width * 0.5f - 3f * u, p.y - 22f * u, width + 6f * u, 18f * u);
+                    if (!important && OverlapsPlacedLabel(box)) continue;
+                    placedLabels.Add(box);
+
+                    var rect = new Rect(p.x - 90f * u, p.y - 24f * u, 180f * u, 22f * u);
+                    bool locked = playing && !session.Progression.IsRegionUnlocked(city.Region);
+                    GUI.Label(new Rect(rect.x + u, rect.y + u, rect.width, rect.height), city.DisplayName, bold ? s.MapLabelBoldShadow : s.MapLabelShadow);
+                    Color previous = GUI.contentColor;
+                    if (locked) GUI.contentColor = new Color(0.75f, 0.75f, 0.75f, 0.8f);
+                    GUI.Label(rect, city.DisplayName, style);
+                    GUI.contentColor = previous;
+                }
+            }
+        }
+
+        float LabelWidth(CityData city, GUIStyle style, bool bold)
+        {
+            string key = bold ? "b:" + city.Id : city.Id;
+            if (labelWidths.TryGetValue(key, out float width)) return width;
+            LabelContent.text = city.DisplayName;
+            width = style.CalcSize(LabelContent).x;
+            labelWidths[key] = width;
+            return width;
+        }
+
+        bool OverlapsPlacedLabel(Rect box)
+        {
+            foreach (var placed in placedLabels)
+                if (placed.Overlaps(box)) return true;
+            return false;
         }
 
         void DrawTooltip()
