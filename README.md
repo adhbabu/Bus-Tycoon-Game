@@ -6,11 +6,14 @@ minibüsle başlayıp VIP ve çift katlı otobüslere kadar filonuzu büyütürs
 
 ## ▶ Oynamak için (3 adım)
 
-1. **Unity Hub**'ı ve **Unity 6** (veya 2022.3 LTS) sürümünü kurun.
-2. Unity Hub → **New project** → **Universal 3D** (veya **3D Built-in**) şablonuyla boş bir proje oluşturun.
-   Proje açılınca bu depodaki **`Assets/_Project`** klasörünü projenin **`Assets`** klasörüne kopyalayın
-   (sürükle-bırak da olur). Unity scriptleri birkaç saniyede derler.
-3. Açık olan sahnede (şablonun `SampleScene`'i veya boş bir sahne) **Play ▶** tuşuna basın.
+1. **Unity Hub**'ı kurun ve bu depoyu bilgisayarınıza indirin (GitHub ▸ **Code ▸ Download ZIP** ya da `git clone`).
+2. Unity Hub → **Add ▸ Add project from disk** → depo klasörünü seçin. Hub, projenin sürümünü
+   (**Unity 6.3 LTS — 6000.3.27f1**) kurmayı önerir; kabul edin (daha yeni bir Unity 6 sürümü de olur).
+   İlk açılışta Unity paketleri indirip scriptleri derler (birkaç dakika).
+3. Açılan sahnede **Play ▶** tuşuna basın.
+
+> Kendi projenize eklemek isterseniz yalnızca **`Assets/_Project`** klasörünü projenin `Assets` klasörüne
+> kopyalamanız da yeterlidir (Unity 6 veya 2022.3 LTS, Built-in veya URP).
 
 Başka hiçbir şey gerekmez: sahne, prefab, asset bağlama, TextMeshPro kaynakları veya Input System ayarı yok.
 Oyun Play'e basınca kendini kodla kurar (`GameBootstrap`): kamera, ışık, gerçek harita dokusu, şehirler,
@@ -31,9 +34,28 @@ hatlar, hareket eden otobüsler ve tüm arayüz.
 | **Büyü** | Galeri'den otobüs alın, hatlara atayın. Yolcu taşıdıkça seviye atlarsınız: yeni otobüs modelleri, daha fazla hat ve yeni ülkeler (Bölgeler) açılır. |
 | **Kazan** | Görevleri takip edin (sol alt). Kasada **1.000.000 $**'a ulaşınca oyunu kazanırsınız; sonra serbest devam. Kasa 30 gün eksi kalırsa iflas. |
 
-**Kontroller:** Sol tık seç · sürükle / WASD / ok tuşları kaydır · tekerlek / Q-E yakınlaştır · sağ tık iptal ·
+**Kontroller (dokunmatik):** dokun = seç · tek parmakla sürükle = kaydır · iki parmak = yakınlaştır ·
+ekrandaki +/- · panelde parmakla kaydır · Android geri tuşu = geri / menü.
+
+**Kontroller (klavye/fare):** Sol tık seç · sürükle / WASD / ok tuşları kaydır · tekerlek / Q-E yakınlaştır · sağ tık iptal ·
 Boşluk duraklat · 1/2/3 hız · N yeni hat · R hatlar · F filo · G galeri · K finans · B bölgeler · J görevler ·
 L günlük · H yardım · F5 kaydet · Esc geri / menü. Oyun her 7 günde ve çıkışta otomatik kaydeder.
+
+## 📱 Mobil (Android / iOS) ve mağaza yayını
+
+Oyun telefon ve tablette oynanacak şekilde uyarlandı: dokunmatik seçim ve sürükleme, iki parmakla yakınlaştırma,
+ekrandaki +/- düğmeleri, telefona özel düzen (alt menü çubuğu, büyük düğmeler), çentik/güvenli alan desteği,
+keskin yazılar (ekran yoğunluğuna göre gerçek piksel ölçekleme), Android geri tuşu, yatay ekran ve uygulama
+arka plana alınınca otomatik kayıt.
+
+Mağazaya çıkarmak için: **Bus Tycoon ▸ Mağaza** menüsü ayarları uygular ve Android `.aab` / iOS Xcode projesi
+derler. İkonlar, Play tanıtım görseli, TR/EN mağaza metinleri ve gizlilik politikası `store/` klasöründe;
+hesap açmaktan incelemeye kadar tüm adımlar **[store/YAYIN-REHBERI.md](store/YAYIN-REHBERI.md)** içinde.
+Mağaza hesapları (Google Play 25 $ bir kez, Apple 99 $/yıl), imza anahtarı ve yükleme sizin tarafınızdan yapılmalıdır.
+
+**Mac'iniz yoksa:** GitHub Actions iş akışları (`.github/workflows/`) oyunu GitHub'ın sunucularında derler —
+Android `.aab`/`.apk` Linux'ta, iOS ise kiralık bir Mac'te imzalanıp doğrudan **TestFlight**'a yüklenir.
+Kurulum (bir kerelik sırlar) ve kullanım: **[store/BULUT-DERLEME.md](store/BULUT-DERLEME.md)**.
 
 ## İçerik
 
@@ -82,9 +104,14 @@ Assets/_Project/
 │  │  ├─ GoalTracker      görev zinciri
 │  │  └─ UI/              GameUI (IMGUI arayüzü: menü, HUD, planlayıcı, fiyat, filo, galeri, finans ...)
 │  ├─ Presentation/       BusTycoon.Presentation — opsiyonel uGUI/TextMeshPro + prefab tabanlı arayüz iskeleti
-│  └─ Editor/             CSV şehir içe aktarıcı, "Create Default Content" (asset olarak düzenlemek için)
+│  └─ Editor/             CSV şehir içe aktarıcı, "Create Default Content", mağaza/bulut derleme (StoreBuild)
 └─ Tests/EditMode/        24 NUnit testi (talep modeli, ekonomi sistemleri, içerik)
+Packages/manifest.json     Unity paketleri (Input System, Test Framework, gerekli modüller)
+ProjectSettings/           Unity sürümü (6000.3.27f1); diğer ayarları Unity ilk açılışta üretir
+.github/workflows/         Bulutta Android ve iOS (TestFlight) derlemesi
 Tools/build_world_data.py  GeoNames + Natural Earth → cities.csv ve map.png üretir
+Tools/make_store_art.py    Uygulama ikonu ve mağaza tanıtım görseli
+store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 
 **İki arayüz yolu:** Oynanabilir sürüm `BusTycoon.Game` içindeki IMGUI arayüzünü kullanır (sıfır kurulum).

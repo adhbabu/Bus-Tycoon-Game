@@ -19,7 +19,7 @@ namespace BusTycoon.Game
         bool showMenuHelp;
         string latestSaveSlot;
         string latestSaveLabel;
-        Vector2 helpScroll;
+        Vector2 helpScroll, newGameScroll;
 
         // ------------------------------------------------------------------ ana menü
 
@@ -46,39 +46,54 @@ namespace BusTycoon.Game
             latestSaveLabel = latest.HasValue ? latest.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : null;
         }
 
+        Rect MainMenuRect => CenteredBox(560f, 600f);
+
+        Rect NewGameRect => new Rect(SafeLeft + Margin, SafeTop + Margin,
+            Mathf.Min(470f * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
+
+        /// <summary>Güvenli alanın ortasında, ekrana sığacak şekilde küçültülen kutu.</summary>
+        Rect CenteredBox(float widthUnits, float heightUnits)
+        {
+            float width = Mathf.Min(widthUnits * u, SafeRight - SafeLeft - 2f * Margin);
+            float height = Mathf.Min(heightUnits * u, H - SafeTop - SafeBottom - 2f * Margin);
+            return new Rect(SafeLeft + (SafeRight - SafeLeft - width) * 0.5f, SafeTop + (H - SafeTop - SafeBottom - height) * 0.5f, width, height);
+        }
+
+        static bool CanQuit => Application.platform != RuntimePlatform.IPhonePlayer; // iOS'ta uygulama kendini kapatmaz (Apple kuralı)
+
         void DrawMainMenu()
         {
-            var box = new Rect((W - 560f) * 0.5f, (H - 600f) * 0.5f, 560f, 600f);
+            var box = MainMenuRect;
             uiRects.Add(box);
             GUILayout.BeginArea(box, s.Modal);
 
-            GUILayout.Space(10f);
+            Sp(10f);
             GUILayout.Label("BUS TYCOON", s.Title);
             GUILayout.Label("Otobüs İşletmeciliği · Strateji ve Yönetim", s.Center);
-            GUILayout.Space(22f);
+            Sp(22f);
 
             if (showMenuHelp)
             {
-                helpScroll = GUILayout.BeginScrollView(helpScroll, GUILayout.ExpandHeight(true));
+                helpScroll = BeginScroll(helpScroll);
                 DrawHelpContent();
                 GUILayout.EndScrollView();
-                if (GUILayout.Button("Geri", s.Button, GUILayout.Height(40f))) Defer(() => showMenuHelp = false);
+                if (GUILayout.Button("Geri", s.Button, Ht(40f))) Defer(() => showMenuHelp = false);
             }
             else
             {
                 if (session.IsRunning && !session.IsBankrupt &&
-                    GUILayout.Button($"Oyuna Dön  ({session.State.companyName})", s.Primary, GUILayout.Height(50f)))
+                    GUILayout.Button($"Oyuna Dön  ({session.State.companyName})", s.Primary, Ht(50f)))
                     Defer(ResumeFromMenu);
 
-                if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, GUILayout.Height(50f)))
+                if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, Ht(50f)))
                     Defer(BeginNewGame);
 
                 string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
-                if (EnabledButton(latestSaveSlot != null, continueText, s.Button, GUILayout.Height(46f)))
+                if (EnabledButton(latestSaveSlot != null, continueText, s.Button, Ht(46f)))
                     Defer(() => LoadSlot(latestSaveSlot));
 
-                if (GUILayout.Button("Nasıl Oynanır?", s.Button, GUILayout.Height(46f))) Defer(() => showMenuHelp = true);
-                if (GUILayout.Button("Çıkış", s.Button, GUILayout.Height(46f))) Defer(QuitGame);
+                if (GUILayout.Button("Nasıl Oynanır?", s.Button, Ht(46f))) Defer(() => showMenuHelp = true);
+                if (CanQuit && GUILayout.Button("Çıkış", s.Button, Ht(46f))) Defer(QuitGame);
             }
 
             GUILayout.FlexibleSpace();
@@ -118,17 +133,18 @@ namespace BusTycoon.Game
 
         void DrawNewGame()
         {
-            var rect = new Rect(Margin, Margin, 470f, H - 2f * Margin);
+            var rect = NewGameRect;
             uiRects.Add(rect);
             GUILayout.BeginArea(rect, s.Panel);
+            newGameScroll = BeginScroll(newGameScroll);
 
             GUILayout.Label("Yeni Şirket Kur", s.H1);
             Divider();
             GUILayout.Label("Şirket adı", s.Dim);
-            companyName = GUILayout.TextField(companyName ?? string.Empty, 28, s.Field, GUILayout.Height(40f));
-            GUILayout.Space(10f);
+            companyName = GUILayout.TextField(companyName ?? string.Empty, 28, s.Field, Ht(40f));
+            Sp(10f);
             GUILayout.Label("Haritadan merkez ofisinizin bulunacağı şehre tıklayın. O şehrin ülkesi ücretsiz açılır; diğer ülkeler sonradan lisansla açılır.", s.Wrap);
-            GUILayout.Space(6f);
+            Sp(6f);
 
             GUILayout.Label("Hızlı seçim", s.H2);
             for (int row = 0; row < 2; row++)
@@ -138,7 +154,7 @@ namespace BusTycoon.Game
                 {
                     CityData city = session.World.GetCity(QuickStartCityIds[row * 3 + col]);
                     if (city == null) continue;
-                    if (GUILayout.Button(city.DisplayName, city == startCity ? s.TabActive : s.Button, GUILayout.Height(34f)))
+                    if (GUILayout.Button(city.DisplayName, city == startCity ? s.TabActive : s.Button, Ht(34f)))
                     {
                         CityData selected = city;
                         Defer(() => SelectStartCity(selected));
@@ -147,7 +163,7 @@ namespace BusTycoon.Game
                 GUILayout.EndHorizontal();
             }
 
-            GUILayout.Space(10f);
+            Sp(10f);
             if (startCity != null)
             {
                 GUILayout.BeginVertical(s.Card);
@@ -168,10 +184,11 @@ namespace BusTycoon.Game
             GUILayout.EndVertical();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Geri", s.Button, GUILayout.Width(110f), GUILayout.Height(46f))) Defer(EnterMainMenu);
-            if (EnabledButton(startCity != null, "ŞİRKETİ KUR", s.Primary, GUILayout.Height(46f))) Defer(StartCompany);
+            if (GUILayout.Button("Geri", s.Button, Wd(110f), Ht(46f))) Defer(EnterMainMenu);
+            if (EnabledButton(startCity != null, "ŞİRKETİ KUR", s.Primary, Ht(46f))) Defer(StartCompany);
             GUILayout.EndHorizontal();
 
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
@@ -260,7 +277,7 @@ namespace BusTycoon.Game
             uiRects.Add(full);
             if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0f, 0f, 0f, 0.55f));
 
-            var box = new Rect((W - 480f) * 0.5f, (H - 470f) * 0.5f, 480f, 470f);
+            var box = CenteredBox(480f, 470f);
             GUILayout.BeginArea(box, s.Modal);
             switch (modal)
             {
@@ -276,25 +293,27 @@ namespace BusTycoon.Game
         {
             GUILayout.Label("Oyun Duraklatıldı", s.H1);
             Divider();
-            if (GUILayout.Button("Devam Et", s.Primary, GUILayout.Height(46f))) Defer(ClosePauseMenu);
-            if (GUILayout.Button("Kaydet", s.Button, GUILayout.Height(40f))) Defer(() => SaveTo(SaveSlot));
-            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, GUILayout.Height(40f)))
+            if (GUILayout.Button("Devam Et", s.Primary, Ht(46f))) Defer(ClosePauseMenu);
+            if (GUILayout.Button("Kaydet", s.Button, Ht(40f))) Defer(() => SaveTo(SaveSlot));
+            if (compact && GUILayout.Button("Günlük (son olaylar)", s.Button, Ht(40f)))
+                Defer(() => { ClosePauseMenu(); OpenPanelNow(Panel.Log); });
+            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, Ht(40f)))
                 Defer(() => LoadSlot(latestSaveSlot));
 
-            GUILayout.Space(8f);
+            Sp(8f);
             GUILayout.Label("Gün süresi (1x hızda)", s.Dim);
             GUILayout.BeginHorizontal();
             foreach (float seconds in new[] { 2f, 4f, 8f })
             {
                 bool active = Mathf.Approximately(session.SecondsPerDay, seconds);
-                if (GUILayout.Button($"{seconds:0} sn", active ? s.TabActive : s.Tab, GUILayout.Height(32f)))
+                if (GUILayout.Button($"{seconds:0} sn", active ? s.TabActive : s.Tab, Ht(32f)))
                     session.SecondsPerDay = seconds;
             }
             GUILayout.EndHorizontal();
 
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Ana Menü", s.Button, GUILayout.Height(40f))) Defer(EnterMainMenu);
-            if (GUILayout.Button("Oyundan Çık", s.Danger, GUILayout.Height(40f))) Defer(() => { session.SaveGame(AutosaveSlot); QuitGame(); });
+            if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);
+            if (CanQuit && GUILayout.Button("Oyundan Çık", s.Danger, Ht(40f))) Defer(() => { session.SaveGame(AutosaveSlot); QuitGame(); });
         }
 
         void DrawGameOverModal()
@@ -302,17 +321,17 @@ namespace BusTycoon.Game
             ColorLabel("İFLAS ETTİNİZ", UIStyles.Red, s.H1);
             Divider();
             GUILayout.Label($"Kasanız {session.ProgressionConfig.BankruptcyGraceDays} gün boyunca eksi kaldı ve alacaklılar şirkete el koydu.", s.Wrap);
-            GUILayout.Space(8f);
+            Sp(8f);
             KeyValue("Dayanılan süre", $"{session.State.currentDay} gün");
             KeyValue("Taşınan yolcu", Fmt.Num(session.State.totalPassengers));
             KeyValue("Ulaşılan seviye", session.Progression.Level.ToString());
-            GUILayout.Space(8f);
+            Sp(8f);
             GUILayout.Label("İpucu: Zarar eden hatları kapatın, atıl otobüsleri satın ve fiyatı 'ideal bölge'de tutun.", s.WrapDim);
             GUILayout.FlexibleSpace();
-            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, GUILayout.Height(42f)))
+            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, Ht(42f)))
                 Defer(() => LoadSlot(latestSaveSlot));
-            if (GUILayout.Button("Yeni Oyun", s.Primary, GUILayout.Height(46f))) Defer(BeginNewGame);
-            if (GUILayout.Button("Ana Menü", s.Button, GUILayout.Height(40f))) Defer(EnterMainMenu);
+            if (GUILayout.Button("Yeni Oyun", s.Primary, Ht(46f))) Defer(BeginNewGame);
+            if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);
         }
 
         void DrawVictoryModal()
@@ -320,14 +339,14 @@ namespace BusTycoon.Game
             ColorLabel("TEBRİKLER!", UIStyles.Gold, s.H1);
             Divider();
             GUILayout.Label($"{session.State.companyName} kasasında {Fmt.Money(1_000_000)}'ı aştı. Artık bir Otobüs İmparatorusunuz!", s.Wrap);
-            GUILayout.Space(8f);
+            Sp(8f);
             KeyValue("Süre", $"{session.State.currentDay} gün");
             KeyValue("Taşınan yolcu", Fmt.Num(session.State.totalPassengers));
             KeyValue("Hat / Otobüs", $"{session.Routes.Routes.Count} / {session.Fleet.Buses.Count}");
             KeyValue("İtibar", $"{session.Progression.Reputation:0}");
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Oynamaya Devam Et", s.Primary, GUILayout.Height(46f))) Defer(() => modal = Modal.None);
-            if (GUILayout.Button("Ana Menü", s.Button, GUILayout.Height(40f))) Defer(EnterMainMenu);
+            if (GUILayout.Button("Oynamaya Devam Et", s.Primary, Ht(46f))) Defer(() => modal = Modal.None);
+            if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);
         }
 
         void DrawConfirmModal()
@@ -337,8 +356,8 @@ namespace BusTycoon.Game
             GUILayout.Label(confirmText, s.Wrap);
             GUILayout.FlexibleSpace();
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Vazgeç", s.Button, GUILayout.Height(44f))) Defer(() => modal = Modal.None);
-            if (GUILayout.Button("Onayla", s.Danger, GUILayout.Height(44f)))
+            if (GUILayout.Button("Vazgeç", s.Button, Ht(44f))) Defer(() => modal = Modal.None);
+            if (GUILayout.Button("Onayla", s.Danger, Ht(44f)))
             {
                 Action action = confirmAction;
                 Defer(() =>
@@ -380,7 +399,7 @@ namespace BusTycoon.Game
         {
             GUILayout.Label(title, s.H2);
             GUILayout.Label(body, s.Wrap);
-            GUILayout.Space(8f);
+            Sp(8f);
         }
     }
 }

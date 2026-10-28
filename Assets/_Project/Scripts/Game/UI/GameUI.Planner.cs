@@ -105,16 +105,16 @@ namespace BusTycoon.Game
         void DrawPlanner()
         {
             PanelHeader("Yeni Hat Planla", "Kalkış ve varış şehirlerini haritadan seçin.");
-            plannerScroll = GUILayout.BeginScrollView(plannerScroll, GUILayout.ExpandHeight(true));
+            plannerScroll = BeginScroll(plannerScroll);
 
             if (plannerOrigin == null)
             {
                 GUILayout.Label("1) Haritada KALKIŞ şehrine tıklayın.", s.Bold);
-                GUILayout.Space(6f);
+                Sp(6f);
                 CityData hq = session.Headquarters;
-                if (hq != null && GUILayout.Button($"Merkez ofisten başla: {hq.DisplayName}", s.Button, GUILayout.Height(38f)))
+                if (hq != null && GUILayout.Button($"Merkez ofisten başla: {hq.DisplayName}", s.Button, Ht(38f)))
                     Defer(() => { plannerOrigin = hq; suggestionsDirty = true; });
-                GUILayout.Space(8f);
+                Sp(8f);
                 GUILayout.Label("İpucu: Büyük ve yakın şehir çiftleri (ör. İstanbul–Bursa, İstanbul–Kocaeli) minibüsle bile kârlıdır.", s.WrapDim);
                 GUILayout.EndScrollView();
                 return;
@@ -124,14 +124,14 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             ColorLabel($"Kalkış: {plannerOrigin.DisplayName}", UIStyles.Blue, s.H2);
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Değiştir", s.Ghost, GUILayout.Width(90f)))
+            if (GUILayout.Button("Değiştir", s.Ghost, Wd(90f)))
                 Defer(() => { plannerOrigin = plannerDestination = null; plannerQuoteValid = false; });
             GUILayout.EndHorizontal();
 
             if (!session.Progression.IsRegionUnlocked(plannerOrigin.Region))
             {
                 ColorLabel($"{plannerOrigin.Region.DisplayName} için işletme lisansınız yok.", UIStyles.Orange, s.Wrap);
-                if (GUILayout.Button("Bölgeler panelini aç", s.Button, GUILayout.Height(36f))) Defer(() => OpenPanelNow(Panel.Regions));
+                if (GUILayout.Button("Bölgeler panelini aç", s.Button, Ht(36f))) Defer(() => OpenPanelNow(Panel.Regions));
                 GUILayout.EndScrollView();
                 return;
             }
@@ -152,14 +152,14 @@ namespace BusTycoon.Game
 
             GUILayout.Label("Planlanan araç", s.Dim);
             GUILayout.BeginHorizontal();
-            if (EnabledButton(plannerModelIndex > 0, "<", s.Button, GUILayout.Width(40f), GUILayout.Height(34f)))
+            if (EnabledButton(plannerModelIndex > 0, "<", s.Button, Wd(40f), Ht(34f)))
                 Defer(() => ChangePlannerModel(-1));
             GUILayout.BeginVertical();
             GUILayout.Label($"{model.DisplayName} · {SegmentName(model.Segment)}", s.Bold);
             GUILayout.Label($"{model.Seats} koltuk · rahat menzil {Fmt.Km(model.ComfortableRangeKm)}", s.Small);
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
-            if (EnabledButton(plannerModelIndex < plannerModels.Count - 1, ">", s.Button, GUILayout.Width(40f), GUILayout.Height(34f)))
+            if (EnabledButton(plannerModelIndex < plannerModels.Count - 1, ">", s.Button, Wd(40f), Ht(34f)))
                 Defer(() => ChangePlannerModel(+1));
             GUILayout.EndHorizontal();
         }
@@ -191,7 +191,7 @@ namespace BusTycoon.Game
             {
                 string profit = $"{Fmt.Signed(quote.Forecast.Profit)}/gün";
                 string text = $"{city.DisplayName}  ·  {Fmt.Km(quote.DistanceKm)}  ·  {profit}";
-                if (GUILayout.Button(text, s.Ghost, GUILayout.Height(34f)))
+                if (GUILayout.Button(text, s.Ghost, Ht(34f)))
                 {
                     CityData selected = city;
                     Defer(() =>
@@ -213,7 +213,7 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             ColorLabel($"Varış: {plannerDestination.DisplayName}", new Color(1f, 0.6f, 0.2f), s.H2);
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Değiştir", s.Ghost, GUILayout.Width(90f)))
+            if (GUILayout.Button("Değiştir", s.Ghost, Wd(90f)))
                 Defer(() => { plannerDestination = null; plannerQuoteValid = false; });
             GUILayout.EndHorizontal();
 
@@ -235,11 +235,11 @@ namespace BusTycoon.Game
                 ColorLabel($"Uyarı: {model.DisplayName} için hat uzun (rahat menzil {Fmt.Km(model.ComfortableRangeKm)}); yolcular konforsuz bulur, talep düşer.", UIStyles.Orange, s.Wrap);
 
             GUILayout.Label("Tahminler 30 günlük olgun hat içindir; yeni hatta talep ilk günlerde düşüktür.", s.WrapDim);
-            assignIdleOnOpen = GUILayout.Toggle(assignIdleOnOpen, " Garajdaki otobüsleri bu hatta ata", GUILayout.Height(26f));
+            assignIdleOnOpen = GUILayout.Toggle(assignIdleOnOpen, " Garajdaki otobüsleri bu hatta ata", s.Toggle, Ht(32f));
 
             if (!quote.IsValid) ColorLabel(quote.Error, UIStyles.Red, s.Wrap);
-            GUILayout.Space(6f);
-            if (EnabledButton(quote.IsValid, $"HATTI AÇ  ·  lisans {Fmt.Money(quote.LicenseCost)}", s.Primary, GUILayout.Height(48f)))
+            Sp(6f);
+            if (EnabledButton(quote.IsValid, $"HATTI AÇ  ·  lisans {Fmt.Money(quote.LicenseCost)}", s.Primary, Ht(48f)))
                 Defer(OpenRouteFromPlanner);
         }
 

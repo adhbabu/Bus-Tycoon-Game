@@ -83,11 +83,11 @@ namespace BusTycoon.Game
             ColorLabel(insight.Message, InsightColor(insight.Severity), s.Wrap);
             if (insight.Action == InsightAction.AssignBus || insight.Action == InsightAction.AddBus)
             {
-                if (GUILayout.Button("Otobüs ekle", s.Primary, GUILayout.Width(120f), GUILayout.Height(32f))) Defer(() => routeTab = RouteTab.Buses);
+                if (GUILayout.Button("Otobüs ekle", s.Primary, Wd(120f), Ht(32f))) Defer(() => routeTab = RouteTab.Buses);
             }
             else if (insight.Action == InsightAction.UpgradeBus)
             {
-                if (GUILayout.Button("Galeri", s.Button, GUILayout.Width(100f), GUILayout.Height(32f))) Defer(() => OpenDealershipNow(selectedRoute));
+                if (GUILayout.Button("Galeri", s.Button, Wd(100f), Ht(32f))) Defer(() => OpenDealershipNow(selectedRoute));
             }
             GUILayout.EndHorizontal();
 
@@ -96,9 +96,9 @@ namespace BusTycoon.Game
             RouteTabButton($"Otobüsler ({busCount})", RouteTab.Buses);
             RouteTabButton("Geçmiş", RouteTab.History);
             GUILayout.EndHorizontal();
-            GUILayout.Space(4f);
+            Sp(4f);
 
-            routeScroll = GUILayout.BeginScrollView(routeScroll, GUILayout.ExpandHeight(true));
+            routeScroll = BeginScroll(routeScroll);
             switch (routeTab)
             {
                 case RouteTab.Price: DrawPriceTab(); break;
@@ -110,7 +110,7 @@ namespace BusTycoon.Game
 
         void RouteTabButton(string text, RouteTab tab)
         {
-            if (GUILayout.Button(text, routeTab == tab ? s.TabActive : s.Tab, GUILayout.Height(32f))) Defer(() => routeTab = tab);
+            if (GUILayout.Button(text, routeTab == tab ? s.TabActive : s.Tab, Ht(32f))) Defer(() => routeTab = tab);
         }
 
         // ------------------------------------------------------------------ Fiyat sekmesi
@@ -121,7 +121,7 @@ namespace BusTycoon.Game
             if (priceChart == null) priceChart = new ChartTexture(640, 220);
             if (!Mathf.Approximately(chartRenderedPrice, pendingPrice)) RenderPriceChart();
 
-            Rect chartRect = GUILayoutUtility.GetRect(420f, 150f, GUILayout.ExpandWidth(true), GUILayout.Height(150f));
+            Rect chartRect = GUILayoutUtility.GetRect(10f, 150f * u, GUILayout.ExpandWidth(true), Ht(150f));
             if (Event.current.type == EventType.Repaint) GUI.DrawTexture(chartRect, priceChart.Texture);
 
             GUILayout.BeginHorizontal();
@@ -133,18 +133,18 @@ namespace BusTycoon.Game
             GUILayout.EndHorizontal();
 
             // Kaydırıcı ve ince ayar
-            float slider = GUILayout.HorizontalSlider(pendingPrice, analysis.MinPrice, analysis.MaxPrice, GUILayout.Height(18f));
+            float slider = Slider(pendingPrice, analysis.MinPrice, analysis.MaxPrice);
             if (!Mathf.Approximately(slider, pendingPrice)) SetPendingPrice(slider);
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("-", s.Button, GUILayout.Width(44f), GUILayout.Height(40f))) SetPendingPrice(pendingPrice - PriceStep(pendingPrice));
+            if (GUILayout.Button("-", s.Button, Wd(44f), Ht(40f))) SetPendingPrice(pendingPrice - PriceStep(pendingPrice));
             GUILayout.FlexibleSpace();
             GUILayout.BeginVertical();
             GUILayout.Label(Fmt.Price(pendingPrice), s.Big);
             ColorLabel($"piyasa referansı {Fmt.Price(analysis.ReferencePrice)}", UIStyles.DimText, s.Small);
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("+", s.Button, GUILayout.Width(44f), GUILayout.Height(40f))) SetPendingPrice(pendingPrice + PriceStep(pendingPrice));
+            if (GUILayout.Button("+", s.Button, Wd(44f), Ht(40f))) SetPendingPrice(pendingPrice + PriceStep(pendingPrice));
             GUILayout.EndHorizontal();
 
             // Bölge
@@ -179,17 +179,17 @@ namespace BusTycoon.Game
                 : $"Pazar araştırması: tahminler ±%{analysis.EstimateError * 100f:0} sapabilir (seviyeyle iyileşir)", s.WrapDim);
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Önerilen", s.Button, GUILayout.Height(40f))) SetPendingPrice(analysis.EstimatedBestPrice);
-            if (EnabledButton(changed, "Geri al", s.Button, GUILayout.Height(40f))) SetPendingPrice(selectedRoute.ticketPrice);
-            if (EnabledButton(changed, "UYGULA", s.Primary, GUILayout.Height(40f))) Defer(ApplyPendingPrice);
+            if (GUILayout.Button("Önerilen", s.Button, Ht(40f))) SetPendingPrice(analysis.EstimatedBestPrice);
+            if (EnabledButton(changed, "Geri al", s.Button, Ht(40f))) SetPendingPrice(selectedRoute.ticketPrice);
+            if (EnabledButton(changed, "UYGULA", s.Primary, Ht(40f))) Defer(ApplyPendingPrice);
             GUILayout.EndHorizontal();
 
             // Gelişmiş: sefer planı
-            GUILayout.Space(6f);
+            Sp(6f);
             if (GUILayout.Button(showAdvanced ? "Gelişmiş ayarları gizle" : "Gelişmiş: sefer planı", s.Ghost)) Defer(() => showAdvanced = !showAdvanced);
             if (showAdvanced)
             {
-                bool auto = GUILayout.Toggle(selectedRoute.autoSchedule, " Otomatik sefer planı (önerilen)");
+                bool auto = GUILayout.Toggle(selectedRoute.autoSchedule, " Otomatik sefer planı (önerilen)", s.Toggle, Ht(32f));
                 if (auto != selectedRoute.autoSchedule)
                 {
                     bool value = auto;
@@ -198,7 +198,7 @@ namespace BusTycoon.Game
                 if (!selectedRoute.autoSchedule)
                 {
                     GUILayout.Label($"Sefer yoğunluğu: {Fmt.Pct(selectedRoute.manualUtilization)} (otobüslerin maksimum kapasitesine göre)", s.Small);
-                    float utilization = GUILayout.HorizontalSlider(selectedRoute.manualUtilization, 0.1f, 1f);
+                    float utilization = Slider(selectedRoute.manualUtilization, 0.1f, 1f);
                     if (Mathf.Abs(utilization - selectedRoute.manualUtilization) > 0.005f)
                         session.Routes.SetSchedule(selectedRoute.routeId, false, Mathf.Round(utilization * 20f) / 20f);
                 }
@@ -299,7 +299,7 @@ namespace BusTycoon.Game
             {
                 GUILayout.BeginHorizontal(s.Card);
                 DrawBusSummary(bus);
-                if (GUILayout.Button("Garaja çek", s.Button, GUILayout.Width(110f), GUILayout.Height(34f)))
+                if (GUILayout.Button("Garaja çek", s.Button, Wd(110f), Ht(34f)))
                 {
                     string id = bus.busId;
                     Defer(() => session.Routes.TryAssignBus(id, null));
@@ -307,7 +307,7 @@ namespace BusTycoon.Game
                 GUILayout.EndHorizontal();
             }
 
-            GUILayout.Space(8f);
+            Sp(8f);
             session.Fleet.GetIdleBuses(busBuffer);
             GUILayout.Label($"Garajdaki otobüsler ({busBuffer.Count})", s.H2);
             if (busBuffer.Count == 0) GUILayout.Label("Garaj boş. Galeriden otobüs alabilirsiniz.", s.Dim);
@@ -316,7 +316,7 @@ namespace BusTycoon.Game
             {
                 GUILayout.BeginHorizontal(s.Card);
                 DrawBusSummary(bus);
-                if (GUILayout.Button("Bu hatta ata", s.Primary, GUILayout.Width(120f), GUILayout.Height(34f)))
+                if (GUILayout.Button("Bu hatta ata", s.Primary, Wd(120f), Ht(34f)))
                 {
                     string id = bus.busId;
                     Defer(() =>
@@ -328,8 +328,8 @@ namespace BusTycoon.Game
                 GUILayout.EndHorizontal();
             }
 
-            GUILayout.Space(8f);
-            if (GUILayout.Button("Galeriden otobüs al (bu hatta atanır)", s.Button, GUILayout.Height(40f)))
+            Sp(8f);
+            if (GUILayout.Button("Galeriden otobüs al (bu hatta atanır)", s.Button, Ht(40f)))
                 Defer(() => OpenDealershipNow(selectedRoute));
         }
 
@@ -339,7 +339,7 @@ namespace BusTycoon.Game
             GUILayout.Label(bus.nickname, s.Bold);
             string status = !bus.IsAvailableToday ? $"Arızalı ({bus.outOfServiceDays} gün)" : $"{Fmt.Num(bus.odometerKm)} km";
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Durum {Fmt.Pct(bus.condition)}", s.Small, GUILayout.Width(90f));
+            GUILayout.Label($"Durum {Fmt.Pct(bus.condition)}", s.Small, Wd(90f));
             LayoutBar(bus.condition, bus.condition > 0.6f ? UIStyles.Green : bus.condition > 0.35f ? UIStyles.Yellow : UIStyles.Red, 6f, 90f, 7f);
             ColorLabel(status, bus.IsAvailableToday ? UIStyles.DimText : UIStyles.Orange, s.Small);
             GUILayout.EndHorizontal();
@@ -360,15 +360,15 @@ namespace BusTycoon.Game
                 if (historyChartDirty && Event.current.type == EventType.Layout) RenderHistoryChart();
 
                 GUILayout.Label($"Günlük kâr (son {selectedRoute.history.Count} gün)", s.H2);
-                Rect rect = GUILayoutUtility.GetRect(420f, 120f, GUILayout.ExpandWidth(true), GUILayout.Height(120f));
+                Rect rect = GUILayoutUtility.GetRect(10f, 120f * u, GUILayout.ExpandWidth(true), Ht(120f));
                 if (Event.current.type == EventType.Repaint) GUI.DrawTexture(rect, historyChart.Texture);
 
-                GUILayout.Space(6f);
+                Sp(6f);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Gün", s.Dim, GUILayout.Width(60f));
-                GUILayout.Label("Bilet", s.Dim, GUILayout.Width(80f));
-                GUILayout.Label("Yolcu", s.Dim, GUILayout.Width(70f));
-                GUILayout.Label("Doluluk", s.Dim, GUILayout.Width(80f));
+                GUILayout.Label("Gün", s.Dim, Wd(60f));
+                GUILayout.Label("Bilet", s.Dim, Wd(80f));
+                GUILayout.Label("Yolcu", s.Dim, Wd(70f));
+                GUILayout.Label("Doluluk", s.Dim, Wd(80f));
                 GUILayout.Label("Kâr", s.Dim);
                 GUILayout.EndHorizontal();
 
@@ -377,10 +377,10 @@ namespace BusTycoon.Game
                 {
                     RouteDayReport r = history[i];
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label((r.day + 1).ToString(), s.Small, GUILayout.Width(60f));
-                    GUILayout.Label(Fmt.Price(r.ticketPrice), s.Small, GUILayout.Width(80f));
-                    GUILayout.Label(Fmt.Num(r.passengers), s.Small, GUILayout.Width(70f));
-                    GUILayout.Label(Fmt.Pct(r.loadFactor), s.Small, GUILayout.Width(80f));
+                    GUILayout.Label((r.day + 1).ToString(), s.Small, Wd(60f));
+                    GUILayout.Label(Fmt.Price(r.ticketPrice), s.Small, Wd(80f));
+                    GUILayout.Label(Fmt.Num(r.passengers), s.Small, Wd(70f));
+                    GUILayout.Label(Fmt.Pct(r.loadFactor), s.Small, Wd(80f));
                     ColorLabel(Fmt.Signed(r.Profit), r.Profit >= 0 ? UIStyles.Green : UIStyles.Red, s.Small);
                     GUILayout.EndHorizontal();
                 }
@@ -390,8 +390,8 @@ namespace BusTycoon.Game
             KeyValue("Açılış", $"{selectedRoute.openedDay + 1}. gün");
             KeyValue("Toplam yolcu", Fmt.Num(selectedRoute.lifetimePassengers));
             KeyValue("Toplam kâr", Fmt.Signed(selectedRoute.lifetimeProfit), selectedRoute.lifetimeProfit >= 0 ? UIStyles.Green : UIStyles.Red);
-            GUILayout.Space(10f);
-            if (GUILayout.Button("Hattı kapat", s.Danger, GUILayout.Height(38f)))
+            Sp(10f);
+            if (GUILayout.Button("Hattı kapat", s.Danger, Ht(38f)))
             {
                 RouteState route = selectedRoute;
                 Defer(() => AskConfirm("Hattı kapat",

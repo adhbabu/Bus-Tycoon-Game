@@ -25,6 +25,7 @@ namespace BusTycoon.Game
                 return;
             }
 
+            ConfigurePlatform();
             GameContent content = DefaultContent.Build(csv.text);
             var mapTexture = Resources.Load<Texture2D>(DefaultContent.MapTextureResourcePath);
 
@@ -51,6 +52,20 @@ namespace BusTycoon.Game
             var ui = new GameObject("GameUI").AddComponent<GameUI>();
             ui.transform.SetParent(root.transform, false);
             ui.Init(session, world, mapCamera);
+        }
+
+        /// <summary>Mobil: yatay ekran, 60 FPS, ekran kararmasın (simülasyon izlenirken).</summary>
+        static void ConfigurePlatform()
+        {
+            Application.targetFrameRate = 60;
+            if (!Application.isMobilePlatform) return;
+
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.orientation = ScreenOrientation.AutoRotation;
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;
         }
 
         static Camera SetupCamera(Color background)
@@ -90,7 +105,7 @@ namespace BusTycoon.Game
             sun.transform.rotation = Quaternion.Euler(62f, -35f, 0f);
             sun.intensity = 1.15f;
             sun.color = new Color(1f, 0.97f, 0.92f);
-            sun.shadows = LightShadows.Soft;
+            sun.shadows = Application.isMobilePlatform ? LightShadows.Hard : LightShadows.Soft;
             sun.shadowStrength = 0.6f;
 
             RenderSettings.ambientMode = AmbientMode.Flat;

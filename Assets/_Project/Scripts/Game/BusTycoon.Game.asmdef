@@ -2,7 +2,8 @@
     "name": "BusTycoon.Game",
     "rootNamespace": "BusTycoon.Game",
     "references": [
-        "BusTycoon.Runtime"
+        "BusTycoon.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -11,6 +12,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0.0",
+            "define": "BUSTYCOON_INPUT_SYSTEM"
+        }
+    ],
     "noEngineReferences": false
 }

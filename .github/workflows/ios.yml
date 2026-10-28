@@ -1,0 +1,174 @@
+# iOS derlemesi (App Store / TestFlight) — Mac gerekmez.
+#  1) Linux sunucusunda Unity, Xcode projesini üretir.
+#  2) GitHub'ın kiralık Mac sunucusunda proje imzalanır, .ipa üretilir ve App Store Connect'e (TestFlight) yüklenir.
+# Kullanım: GitHub ▸ Actions ▸ "iOS (App Store)" ▸ Run workflow.
+# Gerekli sırlar ve ilk kurulum: store/BULUT-DERLEME.md
+name: iOS (App Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Ne yapılsın?"
+        type: choice
+        options:
+          - "testflight - derle, imzala, TestFlight'a yükle"
+          - "xcode - yalnızca Xcode projesi (Apple hesabı gerekmez)"
+        default: "testflight - derle, imzala, TestFlight'a yükle"
+      build_number:
+        description: "Build numarası (boş = otomatik, her çalıştırmada artar)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unity:
+    name: Unity ▸ Xcode projesi
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      bundle_id: ${{ steps.app.outputs.id }}
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+      APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+      HAS_APPSTORE_P8: ${{ secrets.APPSTORE_P8 != '' }}
+      HAS_CERTIFICATE_KEY: ${{ secrets.IOS_CERTIFICATE_PRIVATE_KEY != '' }}
+      BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      # Pahalı Mac adımına geçmeden önce eksikleri bildir.
+      - name: Sırları kontrol et
+        shell: bash
+        run: |
+          missing=0
+          for name in UNITY_LICENSE UNITY_EMAIL UNITY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::'$name' sırrı eksik. Bkz. store/BULUT-DERLEME.md"; missing=1; fi
+          done
+          if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Build numarası yalnızca rakam olmalı (girilen: '$BUILD_NUMBER')."; missing=1
+          fi
+          if [[ "$TARGET" == testflight* ]]; then
+            [ -z "$APPSTORE_ISSUER_ID" ] && { echo "::error::'APPSTORE_ISSUER_ID' sırrı eksik."; missing=1; }
+            [ -z "$APPSTORE_KEY_ID" ] && { echo "::error::'APPSTORE_KEY_ID' sırrı eksik."; missing=1; }
+            [ "$HAS_APPSTORE_P8" != "true" ] && { echo "::error::'APPSTORE_P8' sırrı eksik (App Store Connect API anahtarı, .p8 dosyasının içeriği)."; missing=1; }
+            [ "$HAS_CERTIFICATE_KEY" != "true" ] && { echo "::error::'IOS_CERTIFICATE_PRIVATE_KEY' sırrı eksik (dağıtım sertifikası için RSA özel anahtar)."; missing=1; }
+          fi
+          exit $missing
+
+      - uses: actions/checkout@v4
+
+      - name: Bundle ID'yi oku
+        id: app
+        shell: bash
+        run: |
+          id=$(sed -n 's/.*ApplicationId = "\([^"]*\)".*/\1/p' Assets/_Project/Scripts/Editor/StoreBuild.cs)
+          if [ -z "$id" ]; then echo "::error::StoreSettings.ApplicationId okunamadı"; exit 1; fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Disk alanı aç
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          large-packages: false
+
+      - name: Unity Library önbelleği
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-iOS-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-iOS-
+
+      - name: Unity ile Xcode projesi üret
+        uses: game-ci/unity-builder@v4
+        with:
+          targetPlatform: iOS
+          buildName: iOS
+          versioning: None
+          buildMethod: BusTycoon.EditorTools.StoreBuild.BuildFromCommandLine
+          customParameters: -buildNumber ${{ env.BUILD_NUMBER }}
+
+      # Arşiv, Unity'nin betiklerindeki çalıştırma izinlerini korur (Mac'te imzalama bunlara ihtiyaç duyar).
+      - name: Xcode projesini paketle
+        shell: bash
+        run: |
+          sudo tar -czf xcode-project.tgz -C build iOS
+          sudo chown "$(id -u):$(id -g)" xcode-project.tgz
+          ls -lh xcode-project.tgz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-xcode-project-${{ env.BUILD_NUMBER }}
+          path: xcode-project.tgz
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
+
+  testflight:
+    name: Mac ▸ imzala ve TestFlight'a yükle
+    needs: unity
+    if: ${{ startsWith(inputs.target, 'testflight') }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      # codemagic-cli-tools bu ortam değişkenlerini kendiliğinden okur.
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APPSTORE_KEY_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APPSTORE_P8 }}
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.IOS_CERTIFICATE_PRIVATE_KEY }}
+      BUNDLE_ID: ${{ needs.unity.outputs.bundle_id }}
+      BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-xcode-project-${{ env.BUILD_NUMBER }}
+
+      - name: Xcode projesini aç
+        shell: bash
+        run: |
+          mkdir xcode
+          tar -xzf xcode-project.tgz -C xcode
+          find xcode -type f \( -name "*.sh" -o -iname "usymtool" \) -exec chmod +x {} +
+          project=$(find xcode -maxdepth 4 -type d -name "Unity-iPhone.xcodeproj" | head -n 1)
+          if [ -z "$project" ]; then echo "::error::Unity-iPhone.xcodeproj bulunamadı"; exit 1; fi
+          echo "XCODE_PROJECT=$project" >> "$GITHUB_ENV"
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Codemagic CLI araçlarını kur
+        run: pip install codemagic-cli-tools
+
+      # Dağıtım sertifikası IOS_CERTIFICATE_PRIVATE_KEY ile eşleşir: ilk çalıştırmada bir kez oluşturulur,
+      # sonraki çalıştırmalarda aynısı kullanılır. Provisioning profile da gerekirse oluşturulur.
+      - name: İmzalamayı hazırla
+        shell: bash
+        run: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles --project "$XCODE_PROJECT"
+
+      - name: .ipa üret
+        run: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme Unity-iPhone
+
+      - name: App Store Connect'e (TestFlight) yükle
+        run: app-store-connect publish --path "build/ios/ipa/*.ipa"
+
+      - name: Özet
+        shell: bash
+        run: |
+          echo "### iOS build $BUILD_NUMBER App Store Connect'e yüklendi" >> "$GITHUB_STEP_SUMMARY"
+          echo "Apple'ın işlemesi 5–30 dakika sürer; sonra App Store Connect ▸ TestFlight'ta görünür." >> "$GITHUB_STEP_SUMMARY"
