@@ -4,7 +4,12 @@ Otobüsü sürmediğiniz, **tamamen şirketi yönettiğiniz** 3D bir tycoon oyun
 81 il + 12 komşu ülke şehri arasında hat açar, bilet fiyatını talep esnekliğine göre ayarlar, eski bir
 minibüsle başlayıp VIP ve çift katlı otobüslere kadar filonuzu büyütürsünüz.
 
-## ▶ Oynamak için (3 adım)
+## ▶ Hemen oyna (tarayıcıda)
+
+**https://adhbabu.github.io/Bus-Tycoon-Game/oyna/** — bilgisayarda ve telefonun tarayıcısında, kurulum gerekmez.
+(Site, "Web sitesi ve web oyunu" iş akışıyla yayınlanır; bkz. [store/BULUT-DERLEME.md](store/BULUT-DERLEME.md).)
+
+## ▶ Unity'de açmak için (3 adım)
 
 1. **Unity Hub**'ı kurun ve bu depoyu bilgisayarınıza indirin (GitHub ▸ **Code ▸ Download ZIP** ya da `git clone`).
 2. Unity Hub → **Add ▸ Add project from disk** → depo klasörünü seçin. Hub, projenin sürümünü
@@ -108,7 +113,10 @@ Assets/_Project/
 └─ Tests/EditMode/        24 NUnit testi (talep modeli, ekonomi sistemleri, içerik)
 Packages/manifest.json     Unity paketleri (Input System, Test Framework, gerekli modüller)
 ProjectSettings/           Unity sürümü (6000.3.27f1); diğer ayarları Unity ilk açılışta üretir
-.github/workflows/         Bulutta Android ve iOS (TestFlight) derlemesi
+.github/workflows/         Bulutta Android, iOS (TestFlight), web sitesi + web oyunu, mağaza ekran görüntüleri
+Assets/WebGLTemplates/     Web sürümünün sayfa şablonu (tam ekran, yükleme çubuğu, telefonu yan çevir uyarısı)
+site/                      Web sitesinin giriş sayfası (Tools/build_site.py ile üretilir)
+Tools/store-screenshots.mjs Web sürümünden mağaza ekran görüntüleri (Playwright)
 Tools/build_world_data.py  GeoNames + Natural Earth → cities.csv ve map.png üretir
 Tools/make_store_art.py    Uygulama ikonu ve mağaza tanıtım görseli
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md

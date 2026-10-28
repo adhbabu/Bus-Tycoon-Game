@@ -1,0 +1,131 @@
+# Web sitesi ve tarayıcıda oynanan sürüm — GitHub Pages.
+#   https://<kullanıcı>.github.io/<depo>/          giriş sayfası
+#   https://<kullanıcı>.github.io/<depo>/oyna/     oyun (Unity WebGL)
+#   https://<kullanıcı>.github.io/<depo>/gizlilik/ gizlilik politikası (mağazalar için)
+#   https://<kullanıcı>.github.io/<depo>/destek/   destek sayfası (App Store için)
+# main'e her gönderimde kendiliğinden çalışır. Bir kerelik kurulum: Settings ▸ Pages ▸ Source: "GitHub Actions".
+# Unity sırları (UNITY_LICENSE vb.) yoksa site oyunsuz yayınlanır.
+name: Web sitesi ve web oyunu
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Assets/**"
+      - "Packages/**"
+      - "ProjectSettings/**"
+      - "site/**"
+      - "store/**"
+      - "Tools/build_site.py"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Unity sırları var mı?
+    runs-on: ubuntu-latest
+    outputs:
+      unity: ${{ steps.check.outputs.unity }}
+    steps:
+      - id: check
+        env:
+          HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' && secrets.UNITY_EMAIL != '' && secrets.UNITY_PASSWORD != '' }}
+        run: |
+          echo "unity=$HAS_LICENSE" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_LICENSE" != "true" ]; then
+            echo "::warning::Unity sırları eksik; site oyunsuz yayınlanacak. Bkz. store/BULUT-DERLEME.md §1"
+          fi
+
+  webgl:
+    name: Unity ▸ Web (WebGL)
+    needs: check
+    if: needs.check.outputs.unity == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Disk alanı aç
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          large-packages: false
+
+      - name: Unity Library önbelleği
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-WebGL-
+
+      - name: Unity ile web sürümünü derle
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          buildName: oyna
+          versioning: None
+          buildMethod: BusTycoon.EditorTools.StoreBuild.BuildFromCommandLine
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webgl
+          path: build/WebGL/oyna
+          retention-days: 3
+          if-no-files-found: error
+
+  deploy:
+    name: Pages'e yayınla
+    needs: [check, webgl]
+    # Unity derlemesi başarısız olursa yayınlama yapılmaz: sitede bir önceki çalışan sürüm kalır.
+    if: ${{ always() && needs.check.result == 'success' && (needs.webgl.result == 'success' || needs.webgl.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Web oyununu indir
+        if: needs.webgl.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: webgl
+          path: webgl
+
+      - name: Siteyi üret
+        run: |
+          if [ -d webgl ]; then python3 Tools/build_site.py _site --game webgl; else python3 Tools/build_site.py _site; fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Yayınla
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Özet
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          {
+            echo "### Site yayında: $PAGE_URL"
+            if [ -d webgl ]; then echo "- Oyun: ${PAGE_URL}oyna/"; else echo "- Oyun: Unity sırları eklenince yayınlanacak"; fi
+            echo "- Gizlilik politikası: ${PAGE_URL}gizlilik/"
+            echo "- Destek: ${PAGE_URL}destek/"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -59,7 +59,8 @@ namespace BusTycoon.Game
             return new Rect(SafeLeft + (SafeRight - SafeLeft - width) * 0.5f, SafeTop + (H - SafeTop - SafeBottom - height) * 0.5f, width, height);
         }
 
-        static bool CanQuit => Application.platform != RuntimePlatform.IPhonePlayer; // iOS'ta uygulama kendini kapatmaz (Apple kuralı)
+        // iOS'ta uygulama kendini kapatmaz (Apple kuralı); tarayıcıda oyun sekmeyi kapatamaz.
+        static bool CanQuit => Application.platform != RuntimePlatform.IPhonePlayer && Application.platform != RuntimePlatform.WebGLPlayer;
 
         void DrawMainMenu()
         {

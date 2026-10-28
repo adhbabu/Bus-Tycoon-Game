@@ -26,6 +26,7 @@ namespace BusTycoon.Game
             }
 
             ConfigurePlatform();
+            GameUI.ProfileOverride = GameUI.ParseProfile(LaunchOptions.Get("profil") ?? LaunchOptions.Get("profile"));
             GameContent content = DefaultContent.Build(csv.text);
             var mapTexture = Resources.Load<Texture2D>(DefaultContent.MapTextureResourcePath);
 
@@ -52,13 +53,17 @@ namespace BusTycoon.Game
             var ui = new GameObject("GameUI").AddComponent<GameUI>();
             ui.transform.SetParent(root.transform, false);
             ui.Init(session, world, mapCamera);
+
+            if (LaunchOptions.Has("vitrin") || LaunchOptions.Has("showcase"))
+                new GameObject(ShowcaseDirector.ObjectName).AddComponent<ShowcaseDirector>().Init(session, ui);
         }
 
-        /// <summary>Mobil: yatay ekran, 60 FPS, ekran kararmasın (simülasyon izlenirken).</summary>
+        /// <summary>Mobil: yatay ekran, 60 FPS, ekran kararmasın (simülasyon izlenirken). Tarayıcı kendi kare hızını kullanır.</summary>
         static void ConfigurePlatform()
         {
-            Application.targetFrameRate = 60;
-            if (!Application.isMobilePlatform) return;
+            bool web = Application.platform == RuntimePlatform.WebGLPlayer;
+            if (!web) Application.targetFrameRate = 60;
+            if (!Application.isMobilePlatform || web) return;
 
             Screen.autorotateToPortrait = false;
             Screen.autorotateToPortraitUpsideDown = false;

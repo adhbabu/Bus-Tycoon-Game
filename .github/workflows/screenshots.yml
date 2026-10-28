@@ -1,0 +1,49 @@
+# Mağaza ekran görüntüleri — yayındaki web sürümünden (GitHub Pages) Google Play ve App Store boyutlarında.
+# Kullanım: Actions ▸ "Mağaza ekran görüntüleri" ▸ Run workflow ▸ sonuç: Artifacts ▸ store-screenshots.
+# Önce "Web sitesi ve web oyunu" iş akışının oyunu yayınlamış olması gerekir.
+name: Mağaza ekran görüntüleri
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Web oyununun adresi (boş = bu deponun GitHub Pages adresi)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GAME_URL: ${{ inputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Playwright ve Chromium'u kur
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Ekran görüntülerini çek
+        run: |
+          if [ -z "$GAME_URL" ]; then
+            owner="${GITHUB_REPOSITORY%%/*}"
+            GAME_URL="https://${owner,,}.github.io/${GITHUB_REPOSITORY#*/}/oyna/"
+          fi
+          echo "Adres: $GAME_URL"
+          node Tools/store-screenshots.mjs --url "$GAME_URL" --out store-screenshots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: store-screenshots
+          path: store-screenshots
+          retention-days: 30

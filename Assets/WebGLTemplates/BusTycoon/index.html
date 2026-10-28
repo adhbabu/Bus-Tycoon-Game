@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1c26">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <style>
+    :root { --bg: #0f1c26; --panel: #172a38; --text: #e8eef3; --muted: #9db0bf; --accent: #f2b33d; }
+    html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; overscroll-behavior: none; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
+    #unity-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: var(--bg); touch-action: none; outline: none; }
+    .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+               gap: 18px; padding: 24px; box-sizing: border-box; background: var(--bg); text-align: center; }
+    .overlay h1 { margin: 0; font-size: clamp(22px, 5vw, 34px); }
+    .overlay p { margin: 0; color: var(--muted); max-width: 420px; line-height: 1.5; }
+    #bar { width: min(320px, 70vw); height: 10px; border-radius: 5px; background: var(--panel); overflow: hidden; }
+    #bar-fill { width: 0; height: 100%; background: var(--accent); transition: width .2s; }
+    #rotate { display: none; z-index: 10; }
+    #rotate .phone { width: 46px; height: 78px; border: 4px solid var(--text); border-radius: 10px; animation: turn 2s ease-in-out infinite; }
+    @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+    @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+    #error { display: none; z-index: 20; }
+    #error code { color: #ff9b8f; white-space: pre-wrap; max-width: 90vw; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+
+  <div id="loading" class="overlay">
+    <h1>{{{ PRODUCT_NAME }}}</h1>
+    <div id="bar"><div id="bar-fill"></div></div>
+    <p id="loading-text">Yükleniyor…</p>
+  </div>
+
+  <div id="rotate" class="overlay">
+    <div class="phone"></div>
+    <p>Oynamak için telefonunuzu <b>yan çevirin</b>.</p>
+  </div>
+
+  <div id="error" class="overlay">
+    <h1>Oyun başlatılamadı</h1>
+    <p>Sayfayı yenilemeyi deneyin. Sorun sürerse güncel bir Chrome, Edge, Firefox veya Safari kullanın.</p>
+    <code id="error-text"></code>
+  </div>
+
+  <script src="Build/{{{ LOADER_FILENAME }}}"></script>
+  <script>
+    (function () {
+      var canvas = document.getElementById("unity-canvas");
+      var params = new URLSearchParams(location.search);
+      var mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+                   (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+
+      // Yüksek yoğunluklu telefon ekranlarında çözünürlüğü sınırla: daha akıcı, pil dostu.
+      var dpr = parseFloat(params.get("dpr")) || Math.min(window.devicePixelRatio || 1, 2);
+
+      var config = {
+        dataUrl: "Build/{{{ DATA_FILENAME }}}",
+        frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+        workerUrl: "Build/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+        codeUrl: "Build/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+        memoryUrl: "Build/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: "Build/{{{ SYMBOLS_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+        devicePixelRatio: dpr,
+        autoSyncPersistentDataPath: true   // kayıtlar tarayıcıda (IndexedDB) kalıcı olsun
+      };
+
+      function showError(message) {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error-text").textContent = String(message);
+        document.getElementById("error").style.display = "flex";
+      }
+
+      createUnityInstance(canvas, config, function (progress) {
+        var percent = Math.round(progress * 100);
+        document.getElementById("bar-fill").style.width = percent + "%";
+        document.getElementById("loading-text").textContent = "Yükleniyor… %" + percent;
+      }).then(function (instance) {
+        window.unityInstance = instance;
+        document.getElementById("loading").style.display = "none";
+        canvas.focus();
+
+        // Android: ilk dokunuşta tam ekran ve yatay kilit (tarayıcı izin verirse). iPhone Safari desteklemez.
+        if (mobile && document.fullscreenEnabled) {
+          canvas.addEventListener("pointerup", function () {
+            if (document.fullscreenElement) return;
+            document.documentElement.requestFullscreen({ navigationUI: "hide" }).then(function () {
+              if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {});
+            }).catch(function () {});
+          }, { once: true });
+        }
+      }).catch(showError);
+    })();
+  </script>
+</body>
+</html>

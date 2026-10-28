@@ -70,3 +70,8 @@ Thumbs.db
 *_lic.ulf
 ios_dagitim_anahtari
 ios_dagitim_anahtari.pub
+
+# Web sitesi ve araç çıktıları
+_site/
+node_modules/
+/store-screenshots/

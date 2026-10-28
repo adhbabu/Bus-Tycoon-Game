@@ -52,14 +52,16 @@ mağazada aynı/benzer adlı uygulama olup olmadığına bakın; App Store bireb
 
 ### Mağaza ekran görüntüleri
 
-Gerçek oyundan alınmalıdır (iki mağaza da temsili/sahte görüntüyü reddedebilir). Editor'da:
+Gerçek oyundan alınmalıdır (iki mağaza da temsili/sahte görüntüyü reddedebilir). **En kolayı:** GitHub ▸ Actions ▸
+**Mağaza ekran görüntüleri** iş akışı, web sürümünden dört cihaz boyutunda 5'er görüntüyü otomatik üretir
+([BULUT-DERLEME.md §4](BULUT-DERLEME.md#4-web-sürümü-ve-mağaza-ekran-görüntüleri)). Elle almak için Editor'da:
 Game view ▸ **+** ▸ sabit çözünürlük ekleyin, oyunu ilgi çekici bir ana getirin ve **F12**'ye basın.
 Görüntüler proje klasöründe `Screenshots/` altına tam o çözünürlükte kaydedilir.
 
 | Mağaza | Gerekli | Önerilen çözünürlük (yatay) |
 |---|---|---|
 | Google Play telefon | en az 2 (öneri 4–8) | 1920×1080 |
-| Google Play tablet (önerilir) | 7" ve 10" için ayrı | 2560×1600 |
+| Google Play tablet (önerilir) | 7" ve 10" için ayrı | 2560×1440 |
 | App Store iPhone 6,9" | en az 1 (öneri 4–6) | 2868×1320 |
 | App Store iPad 13" | oyun iPad'de çalıştığı için gerekli | 2752×2064 |
 
@@ -148,13 +150,13 @@ Profiles ▸ Android ▸ "Build App Bundle" işaretini kaldırıp **Build And Ru
 | Üçüncü taraf içerik (Apple içerik hakları) | Evet, haklara sahibim: harita Natural Earth (kamu malı), şehir verisi GeoNames (CC BY 4.0, oyunda atıf var) |
 | İnternet izni | Gerekmez (oyun çevrimdışı) |
 
-## 5. Gizlilik politikası ve destek sayfasını yayınlamak
+## 5. Gizlilik politikası ve destek sayfası
 
 İki mağaza da herkese açık bir **gizlilik politikası URL'si**, App Store ayrıca bir **destek URL'si** ister.
-Köşeli parantezleri doldurduktan sonra en kolay yollar:
-* **GitHub Pages**: depoyu herkese açık yapıp Settings ▸ Pages ▸ "Deploy from branch" (main / root).
-  Adres: `https://<kullanıcı-adınız>.github.io/<depo-adı>/store/privacy-policy`
-* veya içeriği herkese açık bir **GitHub Gist**'e ya da ücretsiz bir **Google Sites** sayfasına yapıştırın.
+"Web sitesi ve web oyunu" iş akışı bunları `store/privacy-policy.md` ve `store/support.md`'den üretip GitHub
+Pages'te yayınlar (bir kerelik kurulum: [BULUT-DERLEME.md §0](BULUT-DERLEME.md#0-başlamadan-önce)):
+* Gizlilik politikası: `https://adhbabu.github.io/Bus-Tycoon-Game/gizlilik/`
+* Destek: `https://adhbabu.github.io/Bus-Tycoon-Game/destek/`
 
 ## 6. Güncelleme yayınlamak
 
