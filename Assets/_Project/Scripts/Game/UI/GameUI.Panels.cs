@@ -41,7 +41,7 @@ namespace BusTycoon.Game
         void DrawPanel()
         {
             if (panel == Panel.None) return;
-            var rect = new Rect(W - PanelWidth - Margin, TopBarHeight + Margin, PanelWidth, H - TopBarHeight - 2f * Margin);
+            var rect = PanelRect;
             uiRects.Add(rect);
             GUILayout.BeginArea(rect, s.Panel);
             switch (panel)
@@ -70,11 +70,11 @@ namespace BusTycoon.Game
             foreach (var route in routes.Routes) total += route.LastReport.Profit;
 
             PanelHeader("Hatlarım", $"{routes.Routes.Count} / {session.Progression.MaxRoutes} hat · dün toplam {Fmt.Signed(total)}");
-            if (GUILayout.Button("+ Yeni hat aç", s.Primary, GUILayout.Height(38f))) Defer(() => OpenPlannerNow(null));
+            if (GUILayout.Button("+ Yeni hat aç", s.Primary, Ht(38f))) Defer(() => OpenPlannerNow(null));
 
             if (routes.Routes.Count == 0)
             {
-                GUILayout.Space(10f);
+                Sp(10f);
                 GUILayout.Label("Henüz hattınız yok. Haritada bir şehre tıklayarak başlayın.", s.Wrap);
                 return;
             }
@@ -88,7 +88,7 @@ namespace BusTycoon.Game
                 return ix.Severity != iy.Severity ? iy.Severity.CompareTo(ix.Severity) : y.LastReport.Profit.CompareTo(x.LastReport.Profit);
             });
 
-            listScroll = GUILayout.BeginScrollView(listScroll, GUILayout.ExpandHeight(true));
+            listScroll = BeginScroll(listScroll);
             foreach (var route in sortedRoutes)
             {
                 int buses = fleet.CountBusesOnRoute(route.routeId);
@@ -113,9 +113,9 @@ namespace BusTycoon.Game
 
                 GUILayout.BeginHorizontal();
                 RouteState target = route;
-                if (GUILayout.Button("Fiyat", s.Button, GUILayout.Height(30f))) Defer(() => OpenRoutePanelNow(target, RouteTab.Price));
-                if (GUILayout.Button("Otobüsler", s.Button, GUILayout.Height(30f))) Defer(() => OpenRoutePanelNow(target, RouteTab.Buses));
-                if (GUILayout.Button("Geçmiş", s.Button, GUILayout.Height(30f))) Defer(() => OpenRoutePanelNow(target, RouteTab.History));
+                if (GUILayout.Button("Fiyat", s.Button, Ht(30f))) Defer(() => OpenRoutePanelNow(target, RouteTab.Price));
+                if (GUILayout.Button("Otobüsler", s.Button, Ht(30f))) Defer(() => OpenRoutePanelNow(target, RouteTab.Buses));
+                if (GUILayout.Button("Geçmiş", s.Button, Ht(30f))) Defer(() => OpenRoutePanelNow(target, RouteTab.History));
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
             }
@@ -138,12 +138,12 @@ namespace BusTycoon.Game
             PanelHeader("Filo / Garaj", $"{fleet.Buses.Count} otobüs · {idle} garajda · filo değeri {Fmt.Money(value)}");
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Tümü", !fleetIdleOnly ? s.TabActive : s.Tab, GUILayout.Height(32f))) Defer(() => fleetIdleOnly = false);
-            if (GUILayout.Button($"Garajdakiler ({idle})", fleetIdleOnly ? s.TabActive : s.Tab, GUILayout.Height(32f))) Defer(() => fleetIdleOnly = true);
-            if (GUILayout.Button("Galeri", s.Primary, GUILayout.Width(90f), GUILayout.Height(32f))) Defer(() => OpenDealershipNow(null));
+            if (GUILayout.Button("Tümü", !fleetIdleOnly ? s.TabActive : s.Tab, Ht(32f))) Defer(() => fleetIdleOnly = false);
+            if (GUILayout.Button($"Garajdakiler ({idle})", fleetIdleOnly ? s.TabActive : s.Tab, Ht(32f))) Defer(() => fleetIdleOnly = true);
+            if (GUILayout.Button("Galeri", s.Primary, Wd(90f), Ht(32f))) Defer(() => OpenDealershipNow(null));
             GUILayout.EndHorizontal();
 
-            fleetScroll = GUILayout.BeginScrollView(fleetScroll, GUILayout.ExpandHeight(true));
+            fleetScroll = BeginScroll(fleetScroll);
             if (fleet.Buses.Count == 0) GUILayout.Label("Filonuz boş. Galeriden otobüs alın.", s.Dim);
 
             foreach (var bus in new List<BusInstance>(fleet.Buses))
@@ -169,7 +169,7 @@ namespace BusTycoon.Game
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Durum {Fmt.Pct(bus.condition)}", s.Small, GUILayout.Width(90f));
+            GUILayout.Label($"Durum {Fmt.Pct(bus.condition)}", s.Small, Wd(90f));
             LayoutBar(bus.condition, bus.condition > 0.6f ? UIStyles.Green : bus.condition > 0.35f ? UIStyles.Yellow : UIStyles.Red, 6f, 110f, 7f);
             GUILayout.Label($"{Fmt.Num(bus.odometerKm)} km", s.Small);
             GUILayout.EndHorizontal();
@@ -181,11 +181,11 @@ namespace BusTycoon.Game
             // Eylemler
             GUILayout.BeginHorizontal();
             bool expanded = expandedBusId == busId;
-            if (GUILayout.Button(expanded ? "Kapat" : "Hatta ata", expanded ? s.TabActive : s.Button, GUILayout.Height(30f)))
+            if (GUILayout.Button(expanded ? "Kapat" : "Hatta ata", expanded ? s.TabActive : s.Button, Ht(30f)))
                 Defer(() => expandedBusId = expanded ? null : busId);
 
             float overhaul = fleet.GetOverhaulCost(bus);
-            if (EnabledButton(bus.condition < session.Economy.OverhaulTargetCondition - 0.01f, $"Revizyon {Fmt.Compact(overhaul)}", s.Button, GUILayout.Height(30f)))
+            if (EnabledButton(bus.condition < session.Economy.OverhaulTargetCondition - 0.01f, $"Revizyon {Fmt.Compact(overhaul)}", s.Button, Ht(30f)))
                 Defer(() =>
                 {
                     var result = session.Fleet.TryOverhaul(busId);
@@ -193,7 +193,7 @@ namespace BusTycoon.Game
                 });
 
             float resale = fleet.GetResaleValue(bus);
-            if (GUILayout.Button($"Sat {Fmt.Compact(resale)}", s.Danger, GUILayout.Height(30f)))
+            if (GUILayout.Button($"Sat {Fmt.Compact(resale)}", s.Danger, Ht(30f)))
             {
                 string nickname = bus.nickname;
                 Defer(() => AskConfirm("Otobüs satışı", $"{nickname} {Fmt.Money(resale)} karşılığında satılacak.", () =>
@@ -208,7 +208,7 @@ namespace BusTycoon.Game
             if (upgrade != null)
             {
                 float net = fleet.GetPurchasePrice(upgrade) - resale;
-                if (EnabledButton(session.Finance.CanAfford(net), $"Takasla yükselt → {upgrade.DisplayName} (net {Fmt.Compact(net)})", s.Primary, GUILayout.Height(30f)))
+                if (EnabledButton(session.Finance.CanAfford(net), $"Takasla yükselt → {upgrade.DisplayName} (net {Fmt.Compact(net)})", s.Primary, Ht(30f)))
                 {
                     BusModelData target = upgrade;
                     Defer(() => AskConfirm("Takasla yükselt",
@@ -230,7 +230,7 @@ namespace BusTycoon.Game
                     bool current = candidate.routeId == bus.assignedRouteId;
                     RouteState target = candidate;
                     string label = $"{RouteName(candidate)} · {session.Fleet.CountBusesOnRoute(candidate.routeId)} otobüs" + (current ? " (şu an)" : "");
-                    if (EnabledButton(!current, label, s.Ghost, GUILayout.Height(30f)))
+                    if (EnabledButton(!current, label, s.Ghost, Ht(30f)))
                         Defer(() =>
                         {
                             session.Routes.TryAssignBus(busId, target.routeId);
@@ -238,7 +238,7 @@ namespace BusTycoon.Game
                             Toast($"Otobüs {RouteName(target)} hattına atandı.", UIStyles.Green);
                         });
                 }
-                if (EnabledButton(bus.IsAssigned, "Garaja çek", s.Ghost, GUILayout.Height(30f)))
+                if (EnabledButton(bus.IsAssigned, "Garaja çek", s.Ghost, Ht(30f)))
                     Defer(() =>
                     {
                         session.Routes.TryAssignBus(busId, null);
@@ -278,7 +278,7 @@ namespace BusTycoon.Game
             {
                 GUILayout.BeginHorizontal(s.Card);
                 ColorLabel($"Alınan otobüs {RouteName(dealershipTargetRoute)} hattına atanacak.", UIStyles.Blue, s.Wrap);
-                if (GUILayout.Button("Hatta dön", s.Button, GUILayout.Width(100f)))
+                if (GUILayout.Button("Hatta dön", s.Button, Wd(100f)))
                 {
                     RouteState route = dealershipTargetRoute;
                     Defer(() => OpenRoutePanelNow(route, RouteTab.Buses));
@@ -287,15 +287,15 @@ namespace BusTycoon.Game
             }
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Sıfır", !dealershipUsed ? s.TabActive : s.Tab, GUILayout.Height(32f))) Defer(() => dealershipUsed = false);
-            if (GUILayout.Button("2. el (durum %60, ucuz ama yıpranmış)", dealershipUsed ? s.TabActive : s.Tab, GUILayout.Height(32f))) Defer(() => dealershipUsed = true);
+            if (GUILayout.Button("Sıfır", !dealershipUsed ? s.TabActive : s.Tab, Ht(32f))) Defer(() => dealershipUsed = false);
+            if (GUILayout.Button("2. el (durum %60, ucuz ama yıpranmış)", dealershipUsed ? s.TabActive : s.Tab, Ht(32f))) Defer(() => dealershipUsed = true);
             GUILayout.EndHorizontal();
 
             BusModelData next = session.Progression.GetNextLockedModel();
             if (next != null) ColorLabel($"Sıradaki: {next.DisplayName} — {session.Progression.GetLockReason(next)}", UIStyles.Gold, s.WrapDim);
 
             float condition = dealershipUsed ? session.ProgressionConfig.StartingBusCondition : 1f;
-            dealerScroll = GUILayout.BeginScrollView(dealerScroll, GUILayout.ExpandHeight(true));
+            dealerScroll = BeginScroll(dealerScroll);
             foreach (var model in session.Catalog.SortedByTier) DrawModelCard(model, condition);
             GUILayout.EndScrollView();
         }
@@ -316,7 +316,7 @@ namespace BusTycoon.Game
 
             GUILayout.Label($"{model.Seats} koltuk · {model.AverageSpeedKmh:0} km/s · rahat menzil {Fmt.Km(model.ComfortableRangeKm)}", s.Small);
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Konfor", s.Small, GUILayout.Width(56f));
+            GUILayout.Label("Konfor", s.Small, Wd(56f));
             LayoutBar(model.Comfort, UIStyles.Blue, 6f, 120f, 8f);
             GUILayout.Label($"Bilet ×{model.FareMultiplier:0.00} · yakıt {model.FuelLitersPer100Km:0} L/100 km", s.Small);
             GUILayout.EndHorizontal();
@@ -329,7 +329,7 @@ namespace BusTycoon.Game
                 GUILayout.Label(Fmt.Money(price), s.H2);
                 GUILayout.FlexibleSpace();
                 bool affordable = session.Finance.CanAfford(price);
-                if (EnabledButton(affordable, affordable ? "SATIN AL" : "Bakiye yetersiz", s.Primary, GUILayout.Width(160f), GUILayout.Height(36f)))
+                if (EnabledButton(affordable, affordable ? "SATIN AL" : "Bakiye yetersiz", s.Primary, Wd(160f), Ht(36f)))
                 {
                     BusModelData target = model;
                     RouteState route = dealershipTargetRoute;
@@ -376,7 +376,7 @@ namespace BusTycoon.Game
             foreach (var bus in session.Fleet.Buses) fleetValue += session.Fleet.GetResaleValue(bus);
 
             PanelHeader("Finans");
-            financeScroll = GUILayout.BeginScrollView(financeScroll, GUILayout.ExpandHeight(true));
+            financeScroll = BeginScroll(financeScroll);
 
             GUILayout.BeginVertical(s.Card);
             KeyValue("Kasa", Fmt.Money(finance.Cash), finance.Cash >= 0 ? UIStyles.Text : UIStyles.Red);
@@ -391,7 +391,7 @@ namespace BusTycoon.Game
             GUILayout.Label("Günlük net (son 60 gün)", s.H2);
             if (financeChart == null) financeChart = new ChartTexture(640, 180);
             if (financeChartDirty && Event.current.type == EventType.Layout) RenderFinanceChart();
-            Rect chartRect = GUILayoutUtility.GetRect(420f, 120f, GUILayout.ExpandWidth(true), GUILayout.Height(120f));
+            Rect chartRect = GUILayoutUtility.GetRect(10f, 120f * u, GUILayout.ExpandWidth(true), Ht(120f));
             if (Event.current.type == EventType.Repaint) GUI.DrawTexture(chartRect, financeChart.Texture);
 
             GUILayout.Label("Son 7 gün gelir-gider dağılımı", s.H2);
@@ -460,7 +460,7 @@ namespace BusTycoon.Game
         void DrawRegions()
         {
             PanelHeader("Bölgeler", "Yeni ülkelerde hat açmak için işletme lisansı alın.");
-            regionScroll = GUILayout.BeginScrollView(regionScroll, GUILayout.ExpandHeight(true));
+            regionScroll = BeginScroll(regionScroll);
 
             foreach (var region in session.World.Regions)
             {
@@ -482,7 +482,7 @@ namespace BusTycoon.Game
                     var check = session.Progression.CanUnlockRegion(region);
                     GUILayout.Label($"Seviye {region.RequiredCompanyLevel} · lisans {Fmt.Money(region.OperatingLicenseCost)}", s.Small);
                     GUILayout.FlexibleSpace();
-                    if (EnabledButton(check.Success, "Lisans al", s.Primary, GUILayout.Width(110f), GUILayout.Height(32f)))
+                    if (EnabledButton(check.Success, "Lisans al", s.Primary, Wd(110f), Ht(32f)))
                     {
                         RegionData target = region;
                         Defer(() =>
@@ -497,7 +497,7 @@ namespace BusTycoon.Game
                 {
                     GUILayout.FlexibleSpace();
                 }
-                if (GUILayout.Button("Haritada göster", s.Button, GUILayout.Width(140f), GUILayout.Height(32f)))
+                if (GUILayout.Button("Haritada göster", s.Button, Wd(140f), Ht(32f)))
                 {
                     RegionData target = region;
                     Defer(() => FocusRegion(target));
@@ -532,7 +532,7 @@ namespace BusTycoon.Game
         void DrawGoals()
         {
             PanelHeader("Görevler", $"{goals.CompletedCount} / {goals.Goals.Count} tamamlandı");
-            goalScroll = GUILayout.BeginScrollView(goalScroll, GUILayout.ExpandHeight(true));
+            goalScroll = BeginScroll(goalScroll);
             GoalTracker.Goal current = goals.Current;
             foreach (var goal in goals.Goals)
             {
@@ -554,13 +554,13 @@ namespace BusTycoon.Game
         void DrawLog()
         {
             PanelHeader("Günlük", "Son olaylar");
-            logScroll = GUILayout.BeginScrollView(logScroll, GUILayout.ExpandHeight(true));
+            logScroll = BeginScroll(logScroll);
             var log = notes.Log;
             if (log.Count == 0) GUILayout.Label("Henüz olay yok.", s.Dim);
             for (int i = log.Count - 1; i >= 0; i--)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"Gün {log[i].Day + 1}", s.Small, GUILayout.Width(64f));
+                GUILayout.Label($"Gün {log[i].Day + 1}", s.Small, Wd(64f));
                 ColorLabel(log[i].Text, log[i].Color, s.Wrap);
                 GUILayout.EndHorizontal();
             }
@@ -570,7 +570,7 @@ namespace BusTycoon.Game
         void DrawHelpPanel()
         {
             PanelHeader("Nasıl Oynanır?");
-            helpScroll = GUILayout.BeginScrollView(helpScroll, GUILayout.ExpandHeight(true));
+            helpScroll = BeginScroll(helpScroll);
             DrawHelpContent();
             GUILayout.EndScrollView();
         }

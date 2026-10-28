@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BusTycoon.Game
 {
     /// <summary>
     /// IMGUI görsel dili: koyu yarı saydam paneller, yuvarlak köşeli butonlar, renk paleti.
+    /// Tüm ölçüler <c>unit</c> ile çarpılarak GERÇEK piksel olarak üretilir (GUI.matrix ölçeklemesi yazıları
+    /// bulanıklaştırdığı için kullanılmaz). Ekran yoğunluğu değişince stiller yeniden kurulur.
     /// Dokular kodla üretilir; GUI.skin'e yalnızca OnGUI içinden erişilebildiği için ilk OnGUI'de kurulur.
     /// </summary>
     public sealed class UIStyles
@@ -17,13 +20,20 @@ namespace BusTycoon.Game
         public static readonly Color Blue = new Color(0.45f, 0.74f, 1f);
         public static readonly Color Gold = new Color(1f, 0.8f, 0.3f);
 
+        readonly float u;
+        readonly List<Texture2D> textures = new List<Texture2D>();
+
         public readonly GUIStyle Panel, TopBar, Card, Modal, Toast, Tooltip;
         public readonly GUIStyle Title, H1, H2, Label, Small, Dim, Bold, Big, Center, Wrap, WrapDim, Right;
-        public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, Field;
+        public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, Field, Toggle;
+        public readonly GUIStyle Slider, SliderThumb, VerticalScrollbar;
         public readonly GUIStyle MapLabel, MapLabelBold, MapLabelShadow, MapLabelBoldShadow;
 
-        public UIStyles()
+        public float Unit => u;
+
+        public UIStyles(float unit)
         {
+            u = unit;
             Font font = GUI.skin.font;
 
             Panel = Box(new Color(0.06f, 0.08f, 0.11f, 0.94f), 16, 14);
@@ -61,16 +71,27 @@ namespace BusTycoon.Game
             TabActive = MakeButton(new Color(0.24f, 0.45f, 0.7f), 14);
             TabActive.fontStyle = FontStyle.Bold;
             SpeedButton = MakeButton(new Color(1f, 1f, 1f, 0.08f), 14);
-            SpeedButton.fixedWidth = 42;
+            SpeedButton.fixedWidth = Px(42);
             SpeedButtonActive = MakeButton(new Color(0.24f, 0.45f, 0.7f), 14);
-            SpeedButtonActive.fixedWidth = 42;
+            SpeedButtonActive.fixedWidth = Px(42);
             SpeedButtonActive.fontStyle = FontStyle.Bold;
 
-            Field = new GUIStyle(GUI.skin.textField) { fontSize = 17, padding = new RectOffset(10, 10, 8, 8) };
+            Field = new GUIStyle(GUI.skin.textField) { fontSize = Px(17), padding = Offset(10, 10, 8, 8) };
             Field.normal.textColor = Field.focused.textColor = Field.hover.textColor = Text;
             Field.normal.background = Field.hover.background = Rounded(new Color(1f, 1f, 1f, 0.08f), 6);
             Field.focused.background = Rounded(new Color(1f, 1f, 1f, 0.14f), 6);
-            Field.border = new RectOffset(7, 7, 7, 7);
+            Field.border = Offset(7, 7, 7, 7);
+
+            Toggle = new GUIStyle(GUI.skin.toggle) { fontSize = Px(14) };
+            Toggle.normal.textColor = Toggle.hover.textColor = Toggle.onNormal.textColor = Toggle.onHover.textColor = Text;
+
+            // Dokunmatik ekranda tutulabilir kalın kaydırıcı: ince ray + büyük yuvarlak tutamaç.
+            Slider = new GUIStyle(GUI.skin.horizontalSlider) { fixedHeight = Px(26), border = Offset(6, 6, 0, 0), margin = Offset(4, 4, 6, 6) };
+            Slider.normal.background = Track(new Color(1f, 1f, 1f, 0.18f));
+            SliderThumb = new GUIStyle(GUI.skin.horizontalSliderThumb) { fixedWidth = Px(26), fixedHeight = Px(26), border = new RectOffset(0, 0, 0, 0) };
+            SliderThumb.normal.background = SliderThumb.hover.background = Disc(new Color(0.45f, 0.74f, 1f));
+            SliderThumb.active.background = Disc(new Color(0.75f, 0.88f, 1f));
+            VerticalScrollbar = GUI.skin.verticalScrollbar;
 
             MapLabel = MakeLabel(13, FontStyle.Normal, Text);
             MapLabel.alignment = TextAnchor.MiddleCenter;
@@ -86,34 +107,48 @@ namespace BusTycoon.Game
                     style.font = font;
         }
 
-        static GUIStyle MakeLabel(int size, FontStyle fontStyle, Color color)
+        /// <summary>Stiller yeniden kurulurken eski dokuları serbest bırakır.</summary>
+        public void Dispose()
         {
-            var style = new GUIStyle(GUI.skin.label) { fontSize = size, fontStyle = fontStyle, wordWrap = false, richText = false };
+            foreach (var texture in textures)
+                if (texture != null) Object.Destroy(texture);
+            textures.Clear();
+        }
+
+        int Px(float value) => Mathf.Max(1, Mathf.RoundToInt(value * u));
+
+        RectOffset Offset(int left, int right, int top, int bottom) =>
+            new RectOffset(Mathf.RoundToInt(left * u), Mathf.RoundToInt(right * u), Mathf.RoundToInt(top * u), Mathf.RoundToInt(bottom * u));
+
+        GUIStyle MakeLabel(int size, FontStyle fontStyle, Color color)
+        {
+            var style = new GUIStyle(GUI.skin.label) { fontSize = Px(size), fontStyle = fontStyle, wordWrap = false, richText = false };
             style.normal.textColor = color;
-            style.margin = new RectOffset(2, 2, 2, 2);
-            style.padding = new RectOffset(2, 2, 1, 1);
+            style.margin = Offset(2, 2, 2, 2);
+            style.padding = Offset(2, 2, 1, 1);
             return style;
         }
 
-        static GUIStyle Box(Color color, int padX, int padY, int radius = 9)
+        GUIStyle Box(Color color, int padX, int padY, int radius = 9)
         {
+            int r = radius > 0 ? Px(radius) : 0;
             var style = new GUIStyle();
-            style.normal.background = radius > 0 ? Rounded(color, radius) : Solid(color);
-            style.border = new RectOffset(radius + 1, radius + 1, radius + 1, radius + 1);
-            style.padding = new RectOffset(padX, padX, padY, padY);
-            style.margin = new RectOffset(0, 0, 3, 3);
+            style.normal.background = r > 0 ? Rounded(color, radius) : Solid(color);
+            style.border = new RectOffset(r + 1, r + 1, r + 1, r + 1);
+            style.padding = Offset(padX, padX, padY, padY);
+            style.margin = Offset(0, 0, 3, 3);
             return style;
         }
 
-        static GUIStyle MakeButton(Color color, int fontSize)
+        GUIStyle MakeButton(Color color, int fontSize)
         {
             var style = new GUIStyle(GUI.skin.button)
             {
-                fontSize = fontSize,
+                fontSize = Px(fontSize),
                 alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(12, 12, 7, 7),
-                margin = new RectOffset(3, 3, 3, 3),
-                border = new RectOffset(8, 8, 8, 8),
+                padding = Offset(12, 12, 7, 7),
+                margin = Offset(3, 3, 3, 3),
+                border = new RectOffset(Px(7) + 1, Px(7) + 1, Px(7) + 1, Px(7) + 1),
                 wordWrap = false
             };
             Color hover = Color.Lerp(color, Color.white, 0.15f);
@@ -130,24 +165,32 @@ namespace BusTycoon.Game
             return style;
         }
 
-        static Texture2D Solid(Color color)
+        Texture2D NewTexture(int width, int height)
         {
-            var texture = new Texture2D(1, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            textures.Add(texture);
+            return texture;
+        }
+
+        Texture2D Solid(Color color)
+        {
+            var texture = NewTexture(1, 1);
             texture.SetPixel(0, 0, color);
             texture.Apply();
             return texture;
         }
 
         /// <summary>Kenarları yumuşatılmış (anti-aliased) yuvarlak köşeli doku; 9-dilim (border) ile esner.</summary>
-        static Texture2D Rounded(Color color, int radius)
+        Texture2D Rounded(Color color, int radiusUnits)
         {
+            int radius = Px(radiusUnits);
             int size = radius * 2 + 4;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            };
+            var texture = NewTexture(size, size);
             var pixels = new Color[size * size];
             for (int y = 0; y < size; y++)
             {
@@ -160,6 +203,40 @@ namespace BusTycoon.Game
                     float alpha = Mathf.Clamp01(radius - distance + 0.5f);
                     pixels[y * size + x] = new Color(color.r, color.g, color.b, color.a * alpha);
                 }
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        /// <summary>Kaydırıcı rayı: dikeyde ortada ince bant (yükseklik boyunca saydam kenar).</summary>
+        Texture2D Track(Color color)
+        {
+            const int width = 12, height = 24;
+            var texture = NewTexture(width, height);
+            var pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float band = Mathf.Clamp01(1f - Mathf.Abs(y + 0.5f - height / 2f) / 3.5f + 0.5f);
+                for (int x = 0; x < width; x++)
+                    pixels[y * width + x] = new Color(color.r, color.g, color.b, color.a * band);
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        Texture2D Disc(Color color)
+        {
+            const int size = 48;
+            var texture = NewTexture(size, size);
+            var pixels = new Color[size * size];
+            float r = size / 2f - 1f;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Mathf.Sqrt((x + 0.5f - size / 2f) * (x + 0.5f - size / 2f) + (y + 0.5f - size / 2f) * (y + 0.5f - size / 2f));
+                pixels[y * size + x] = new Color(color.r, color.g, color.b, Mathf.Clamp01(r - d + 0.5f));
             }
             texture.SetPixels(pixels);
             texture.Apply();

@@ -254,7 +254,27 @@ itibar 50 → günlük 5.000 $ → yurt dışı → VIP → 1.000.000 $ zafer). 
 
 ---
 
-## 4.12 Unity sahne kurulumu (yalnızca uGUI/prefab yolu için)
+## 4.12 Mobil düzen (telefon / tablet)
+
+Oynanabilir arayüz (`GameUI`) çizimi gerçek piksellerle yapar; bir tasarım birimi `u` piksele denk gelir:
+masaüstünde ekran yüksekliği 1000 birim, **telefonda 620 birim** (daha büyük yazı ve düğme), tablette 820 birim.
+GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce bulanıklaşır.
+
+| Öğe | Masaüstü / tablet | Telefon (`compact`) |
+|---|---|---|
+| Ana menü | solda dikey araç çubuğu | **altta yatay menü çubuğu** (başparmak erişimi) |
+| Yan panel | 490 birim | ekranın en fazla %55'i (harita solda dokunulabilir kalır) |
+| Görev kutusu | sol alt | panel açıkken gizlenir |
+| Hover ipucu | var | yok (dokunmatikte hover olmaz) |
+| Kısayol ipuçları "[N]" | var | yok |
+| Kaydırma | tekerlek | panel içinde parmakla sürükleme (kaydırıcı üstünde değilse) |
+| Yakınlaştırma | tekerlek, Q/E, +/- | iki parmak (pinch) ve ekrandaki +/- |
+| Geri | Esc | Android geri tuşu |
+
+Ayrıca: `Screen.safeArea` ile çentik ve ev çubuğu boşlukları, dar ekranlarda (4:3 tablet) daralan üst çubuk sütunları,
+iOS'ta "Çıkış" düğmesi gizli (Apple kuralı), arka plana alınınca (`OnApplicationPause`) otomatik kayıt.
+
+## 4.13 Unity sahne kurulumu (yalnızca uGUI/prefab yolu için)
 
 > Oynanabilir sürüm için bu kuruluma **gerek yoktur**: `GameBootstrap` her şeyi Play'de kodla kurar.
 > Aşağıdaki hiyerarşi, `BusTycoon.Presentation` scriptleriyle cilalı bir uGUI arayüzü kurmak isteyenler içindir.
@@ -282,7 +302,7 @@ Scene
 * Panellerde arka plan `Image` raycast'i açık olmalı (panele tıklama haritaya sızmasın);
   panel dışı alan raycast'i kapalı kalmalı.
 
-## 4.13 Script eşlemesi
+## 4.14 Script eşlemesi
 
 | Ekran / bileşen | Script | Ana bağımlılık |
 |---|---|---|

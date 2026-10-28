@@ -54,3 +54,7 @@ sysinfo.txt
 # İşletim sistemi
 .DS_Store
 Thumbs.db
+
+# Mağaza ekran görüntüleri ve derleme çıktıları
+/[Ss]creenshots/
+/[Bb]uilds/

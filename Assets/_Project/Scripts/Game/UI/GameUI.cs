@@ -26,10 +26,6 @@ namespace BusTycoon.Game
         enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help }
         enum Modal { None, Pause, GameOver, Victory, Confirm }
 
-        const float TopBarHeight = 64f;
-        const float ToolbarWidth = 184f;
-        const float PanelWidth = 490f;
-        const float Margin = 12f;
         const string SaveSlot = "save1";
         const string AutosaveSlot = "autosave";
 
@@ -44,8 +40,13 @@ namespace BusTycoon.Game
         Panel panel = Panel.None;
         Modal modal = Modal.None;
 
-        float scale = 1f;
+        // Ölçek: "u" = bir tasarım biriminin gerçek piksel karşılığı. Masaüstünde ekran yüksekliği 1000 birim,
+        // telefonda 620 birim (daha büyük düğme ve yazı), tablette 820 birim. Tüm çizim gerçek piksellerle yapılır.
+        float u = 1f;
+        bool compact;   // telefon düzeni: alt menü çubuğu, dar üst çubuk
+        bool mobile;    // dokunmatik platform: hover yok, kısayol ipuçları yok, parmakla kaydırma
         float W = 1920f, H = 1080f;
+        float SafeLeft, SafeRight = 1920f, SafeTop, SafeBottom; // çentik/ev çubuğu güvenli alanı (GUI koordinatı)
         readonly List<Rect> uiRects = new List<Rect>();
         readonly List<Action> deferred = new List<Action>();
         readonly HashSet<KeyCode> heldKeys = new HashSet<KeyCode>();
@@ -59,6 +60,14 @@ namespace BusTycoon.Game
         string confirmTitle, confirmText;
         Action confirmAction;
         int speedBeforePause = 1;
+        int lastEscapeFrame = -1;
+
+        // Dokunmatik: panel içinde parmakla kaydırma ve iki parmakla yakınlaştırma
+        bool touchOnPanel, touchScrolling, multiTouch, suppressTap;
+        Vector2 touchStart;
+        float pendingScroll;
+        readonly List<Rect> sliderRects = new List<Rect>();
+        readonly List<Rect> sliderRectsNext = new List<Rect>();
 
         FinanceSystem boundFinance;
         ProgressionSystem boundProgression;
@@ -106,6 +115,12 @@ namespace BusTycoon.Game
         void OnApplicationQuit()
         {
             if (session != null && session.IsRunning && !session.IsBankrupt) session.SaveGame(AutosaveSlot);
+        }
+
+        /// <summary>Mobilde uygulama arka plana alınınca kapatılabilir; çıkış olayına güvenmeden kaydet.</summary>
+        void OnApplicationPause(bool paused)
+        {
+            if (paused && session != null && session.IsRunning && !session.IsBankrupt) session.SaveGame(AutosaveSlot);
         }
 
         void BindSystems()
@@ -275,6 +290,28 @@ namespace BusTycoon.Game
             if (session == null) return;
             float dt = Time.unscaledDeltaTime;
 
+            // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
+            if (TouchInput.BackPressed() && Time.frameCount != lastEscapeFrame)
+            {
+                lastEscapeFrame = Time.frameCount;
+                OnEscape();
+            }
+
+            // İki parmakla yakınlaştırma
+            int touches = TouchInput.Read(out Vector2 t0, out Vector2 t1, out Vector2 d0, out Vector2 d1);
+            if (touches >= 2)
+            {
+                multiTouch = suppressTap = true;
+                float now = (t0 - t1).magnitude;
+                float before = ((t0 - d0) - (t1 - d1)).magnitude;
+                if (before > 1f && mode != Mode.MainMenu && modal == Modal.None)
+                    mapCamera.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f, (t0 + t1) * 0.5f);
+            }
+            else if (touches == 0)
+            {
+                multiTouch = false;
+            }
+
             if (mode != Mode.MainMenu && modal == Modal.None && !textFieldFocused)
             {
                 Vector2 axis = Vector2.zero;
@@ -321,20 +358,17 @@ namespace BusTycoon.Game
         void OnGUI()
         {
             if (session == null) return;
-            if (s == null) s = new UIStyles();
-
-            scale = Mathf.Clamp(Screen.height / 1000f, 0.6f, 2.5f);
-            W = Screen.width / scale;
-            H = Screen.height / scale;
-            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
+            ComputeMetrics();
             GUI.skin.settings.cursorColor = UIStyles.Text;
 
             uiRects.Clear();
             Event e = Event.current;
             textFieldFocused = GUIUtility.keyboardControl != 0;
+            if (e.type == EventType.Repaint) sliderRectsNext.Clear();
 
             TrackHeldKeys(e);
             if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && !textFieldFocused) HandleShortcut(e);
+            HandleTouchScroll(e);
 
             if (mode != Mode.MainMenu && e.type == EventType.Repaint) DrawCityLabels();
 
@@ -350,8 +384,10 @@ namespace BusTycoon.Game
                     break;
                 case Mode.Playing:
                     DrawTopBar();
-                    DrawToolbar();
+                    if (compact) DrawBottomBar();
+                    else DrawToolbar();
                     DrawPanel();
+                    DrawZoomButtons();
                     DrawGoalWidget();
                     DrawToasts();
                     break;
@@ -361,9 +397,161 @@ namespace BusTycoon.Game
             if (modal != Modal.None) DrawModal();
 
             UpdateHover(e);
-            if (e.type == EventType.Repaint) DrawTooltip();
+            if (e.type == EventType.Repaint)
+            {
+                DrawTooltip();
+                sliderRects.Clear();
+                sliderRects.AddRange(sliderRectsNext);
+            }
             HandleMapInput(e);
             RunDeferred();
+        }
+
+        // ------------------------------------------------------------------ ölçek, yerleşim ve dokunmatik yardımcılar
+
+        void ComputeMetrics()
+        {
+            mobile = Application.isMobilePlatform;
+            float dpi = Screen.dpi > 1f ? Screen.dpi : 96f;
+            float heightInches = Screen.height / dpi;
+            float designHeight = !mobile ? 1000f : heightInches < 4.2f ? 620f : 820f;
+            float unit = Mathf.Clamp(Mathf.Round(Screen.height / designHeight * 20f) / 20f, 0.5f, 4f);
+
+            if (s == null || !Mathf.Approximately(unit, u))
+            {
+                u = unit;
+                s?.Dispose();
+                s = new UIStyles(u);
+            }
+
+            compact = Screen.height / u < 700f;
+            W = Screen.width;
+            H = Screen.height;
+            Rect safe = Screen.safeArea;
+            SafeLeft = safe.xMin;
+            SafeRight = safe.xMax;
+            SafeTop = H - safe.yMax;
+            SafeBottom = safe.yMin;
+        }
+
+        float Margin => 12f * u;
+        float TopBarHeight => 64f * u;
+        float BottomBarHeight => 62f * u;
+        float ToolbarWidth => 184f * u;
+        float PanelWidth => compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.55f) : 490f * u;
+        /// <summary>Harita/arayüz için kullanılabilir alanın alt sınırı (alt menü çubuğunun üstü).</summary>
+        float ContentBottom => H - SafeBottom - (compact && mode == Mode.Playing ? BottomBarHeight : 0f);
+
+        Rect PanelRect
+        {
+            get
+            {
+                float top = SafeTop + TopBarHeight + Margin;
+                float bottom = ContentBottom - Margin;
+                return new Rect(SafeRight - PanelWidth - Margin, top, PanelWidth, Mathf.Max(100f * u, bottom - top));
+            }
+        }
+
+        GUILayoutOption Ht(float units) => GUILayout.Height(units * u);
+        GUILayoutOption Wd(float units) => GUILayout.Width(units * u);
+        void Sp(float units) => GUILayout.Space(units * u);
+        /// <summary>Kullanılabilir genişlik dar mı (4:3 tablet, telefon)? Üst çubuk sütunları buna göre daralır.</summary>
+        bool Narrow => (SafeRight - SafeLeft) / u < 1300f;
+        float N(float wide, float narrow) => Narrow ? narrow : wide;
+        /// <summary>Klavye kısayolu ipucu (dokunmatik cihazda gösterilmez).</summary>
+        string Key(string label, string key) => mobile ? label : $"{label}  [{key}]";
+
+        /// <summary>Kaydırılabilir alan: yatay kaydırma çubuğu yok; dokunmatik sürükleme miktarı burada uygulanır.</summary>
+        Vector2 BeginScroll(Vector2 position)
+        {
+            if (pendingScroll != 0f)
+            {
+                position.y = Mathf.Max(0f, position.y + pendingScroll);
+                pendingScroll = 0f;
+            }
+            return GUILayout.BeginScrollView(position, GUIStyle.none, s.VerticalScrollbar, GUILayout.ExpandHeight(true));
+        }
+
+        /// <summary>Kalın, dokunmatik dostu kaydırıcı. Konumu kaydedilir ki üzerinde sürükleme panel kaydırması sayılmasın.</summary>
+        float Slider(float value, float min, float max)
+        {
+            float result = GUILayout.HorizontalSlider(value, min, max, s.Slider, s.SliderThumb, GUILayout.ExpandWidth(true));
+            if (Event.current.type == EventType.Repaint)
+            {
+                Rect local = GUILayoutUtility.GetLastRect();
+                Vector2 topLeft = GUIUtility.GUIToScreenPoint(new Vector2(local.x, local.y));
+                sliderRectsNext.Add(new Rect(topLeft.x, topLeft.y, local.width, local.height));
+            }
+            return result;
+        }
+
+        Rect CurrentScrollArea()
+        {
+            if (modal != Modal.None) return default;
+            switch (mode)
+            {
+                case Mode.Playing: return panel != Panel.None ? PanelRect : default;
+                case Mode.NewGame: return NewGameRect;
+                case Mode.MainMenu: return showMenuHelp ? MainMenuRect : default;
+                default: return default;
+            }
+        }
+
+        /// <summary>
+        /// IMGUI kaydırma alanları dokunmatik sürüklemeyi desteklemez; panel içinde dikey sürükleme burada
+        /// kaydırmaya çevrilir. Sürükleme başlayınca basılı düğme iptal edilir (yanlışlıkla tıklama olmaz).
+        /// </summary>
+        void HandleTouchScroll(Event e)
+        {
+            if (!mobile) return;
+            switch (e.type)
+            {
+                case EventType.MouseDown:
+                    Rect area = CurrentScrollArea();
+                    touchOnPanel = area.width > 0f && area.Contains(e.mousePosition) && !IsOverSlider(e.mousePosition);
+                    touchScrolling = false;
+                    touchStart = e.mousePosition;
+                    break;
+
+                case EventType.MouseDrag:
+                    if (!touchOnPanel) return;
+                    if (!touchScrolling && Mathf.Abs(e.mousePosition.y - touchStart.y) > 10f * u)
+                    {
+                        touchScrolling = true;
+                        GUIUtility.hotControl = 0;
+                    }
+                    if (touchScrolling)
+                    {
+                        pendingScroll -= e.delta.y;
+                        e.Use();
+                    }
+                    break;
+
+                case EventType.MouseUp:
+                    if (touchScrolling) e.Use();
+                    touchOnPanel = touchScrolling = false;
+                    break;
+            }
+        }
+
+        bool IsOverSlider(Vector2 point)
+        {
+            foreach (var rect in sliderRects)
+                if (rect.Contains(point)) return true;
+            return false;
+        }
+
+        void DrawZoomButtons()
+        {
+            float size = 52f * u;
+            float right = panel != Panel.None ? PanelRect.x : SafeRight;
+            var zoomIn = new Rect(right - size - Margin, ContentBottom - 2f * size - 2f * Margin - (compact ? 0f : 0f), size, size);
+            var zoomOut = new Rect(zoomIn.x, zoomIn.yMax + 6f * u, size, size);
+            uiRects.Add(zoomIn);
+            uiRects.Add(zoomOut);
+            var center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            if (GUI.Button(zoomIn, "+", s.Button)) mapCamera.Zoom(-4f, center);
+            if (GUI.Button(zoomOut, "-", s.Button)) mapCamera.Zoom(4f, center);
         }
 
         void RunDeferred()
@@ -391,10 +579,27 @@ namespace BusTycoon.Game
             KeyCode key = e.keyCode;
             if (key == KeyCode.Escape)
             {
-                Defer(OnEscape);
+                if (Time.frameCount != lastEscapeFrame)
+                {
+                    lastEscapeFrame = Time.frameCount;
+                    Defer(OnEscape);
+                }
                 e.Use();
                 return;
             }
+#if UNITY_EDITOR
+            if (key == KeyCode.F12)
+            {
+                // Mağaza ekran görüntüsü: Game view'ı hedef çözünürlüğe ayarlayın (ör. 2868x1320), F12'ye basın.
+                string folder = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Screenshots");
+                System.IO.Directory.CreateDirectory(folder);
+                string file = System.IO.Path.Combine(folder, $"bus_{Screen.width}x{Screen.height}_{System.DateTime.Now:yyyyMMdd_HHmmss}.png");
+                ScreenCapture.CaptureScreenshot(file);
+                Toast($"Ekran görüntüsü: Screenshots/{System.IO.Path.GetFileName(file)}", UIStyles.Blue);
+                e.Use();
+                return;
+            }
+#endif
             if (mode != Mode.Playing || modal != Modal.None) return;
 
             bool used = true;
@@ -451,15 +656,16 @@ namespace BusTycoon.Game
             return false;
         }
 
-        Vector2 GuiToScreen(Vector2 gui) => new Vector2(gui.x * scale, Screen.height - gui.y * scale);
+        Vector2 GuiToScreen(Vector2 gui) => new Vector2(gui.x, Screen.height - gui.y);
+        float PickRadius => (mobile ? 28f : 18f) * u;
 
         void UpdateHover(Event e)
         {
             if (e.type != EventType.Repaint) return;
             hoveredCity = null;
-            if (mode == Mode.MainMenu || modal != Modal.None || dragging) return;
+            if (mode == Mode.MainMenu || modal != Modal.None || dragging || mobile) return; // dokunmatikte hover yok
             if (IsOverUI(e.mousePosition)) return;
-            world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), 18f * scale, out hoveredCity);
+            world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), PickRadius, out hoveredCity);
         }
 
         void HandleMapInput(Event e)
@@ -473,6 +679,7 @@ namespace BusTycoon.Game
                     if (IsOverUI(mouse)) return;
                     pointerOnMap = true;
                     dragging = false;
+                    if (!multiTouch) suppressTap = false; // önceki pinch hareketinin kilidi yeni dokunuşu yutmasın
                     pointerButton = e.button;
                     pointerDownPos = lastPointerPos = mouse;
                     if (textFieldFocused) GUIUtility.keyboardControl = 0;
@@ -481,7 +688,8 @@ namespace BusTycoon.Game
 
                 case EventType.MouseDrag:
                     if (!pointerOnMap) return;
-                    if (!dragging && (mouse - pointerDownPos).sqrMagnitude > 36f) dragging = true;
+                    if (multiTouch) { e.Use(); return; } // iki parmak: yakınlaştırma Update'te
+                    if (!dragging && (mouse - pointerDownPos).sqrMagnitude > 36f * u * u) dragging = true;
                     if (dragging) mapCamera.DragPan(GuiToScreen(lastPointerPos), GuiToScreen(mouse));
                     lastPointerPos = mouse;
                     e.Use();
@@ -490,12 +698,13 @@ namespace BusTycoon.Game
                 case EventType.MouseUp:
                     if (!pointerOnMap) return;
                     pointerOnMap = false;
-                    if (!dragging)
+                    if (!dragging && !suppressTap)
                     {
                         if (pointerButton == 0) OnMapClick(mouse);
                         else if (pointerButton == 1) OnMapRightClick();
                     }
                     dragging = false;
+                    if (!multiTouch) suppressTap = false;
                     e.Use();
                     break;
 
@@ -510,14 +719,14 @@ namespace BusTycoon.Game
         void OnMapClick(Vector2 guiPoint)
         {
             Vector2 screen = GuiToScreen(guiPoint);
-            if (world.TryPickCity(mapCamera.Camera, screen, 18f * scale, out CityData city))
+            if (world.TryPickCity(mapCamera.Camera, screen, PickRadius, out CityData city))
             {
                 OnCityClicked(city);
                 return;
             }
 
             if (mode == Mode.Playing && panel != Panel.Planner &&
-                world.TryPickRoute(mapCamera.Camera, screen, 10f * scale, out RouteState route))
+                world.TryPickRoute(mapCamera.Camera, screen, PickRadius * 0.6f, out RouteState route))
             {
                 OpenRoutePanelNow(route, RouteTab.Price);
             }
@@ -593,14 +802,14 @@ namespace BusTycoon.Game
 
                 Vector3 sp = cam.WorldToScreenPoint(marker.Position + Vector3.up * 0.75f);
                 if (sp.z <= 0f) continue;
-                var p = new Vector2(sp.x / scale, (Screen.height - sp.y) / scale);
-                if (p.x < -100f || p.x > W + 100f || p.y < -40f || p.y > H + 40f) continue;
+                var p = new Vector2(sp.x, Screen.height - sp.y);
+                if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
 
                 bool bold = city.MapTier == 0 || important;
-                var rect = new Rect(p.x - 90f, p.y - 24f, 180f, 22f);
+                var rect = new Rect(p.x - 90f * u, p.y - 24f * u, 180f * u, 22f * u);
                 bool locked = playing && !session.Progression.IsRegionUnlocked(city.Region);
 
-                GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height), city.DisplayName, bold ? s.MapLabelBoldShadow : s.MapLabelShadow);
+                GUI.Label(new Rect(rect.x + u, rect.y + u, rect.width, rect.height), city.DisplayName, bold ? s.MapLabelBoldShadow : s.MapLabelShadow);
                 Color previous = GUI.contentColor;
                 if (locked) GUI.contentColor = new Color(0.75f, 0.75f, 0.75f, 0.8f);
                 GUI.Label(rect, city.DisplayName, bold ? s.MapLabelBold : s.MapLabel);
@@ -639,17 +848,18 @@ namespace BusTycoon.Game
             }
 
             Vector2 mouse = Event.current.mousePosition;
-            float height = 14f + lines.Count * 21f;
-            var rect = new Rect(mouse.x + 18f, mouse.y + 14f, 330f, height);
-            if (rect.xMax > W) rect.x = mouse.x - rect.width - 12f;
-            if (rect.yMax > H) rect.y = mouse.y - rect.height - 12f;
+            float line = 21f * u;
+            float height = 14f * u + lines.Count * line;
+            var rect = new Rect(mouse.x + 18f * u, mouse.y + 14f * u, 330f * u, height);
+            if (rect.xMax > W) rect.x = mouse.x - rect.width - 12f * u;
+            if (rect.yMax > H) rect.y = mouse.y - rect.height - 12f * u;
 
             GUI.Box(rect, GUIContent.none, s.Tooltip);
             for (int i = 0; i < lines.Count; i++)
             {
                 Color previous = GUI.contentColor;
                 GUI.contentColor = lines[i].color;
-                GUI.Label(new Rect(rect.x + 10f, rect.y + 7f + i * 21f, rect.width - 20f, 21f), lines[i].text, lines[i].style);
+                GUI.Label(new Rect(rect.x + 10f * u, rect.y + 7f * u + i * line, rect.width - 20f * u, line), lines[i].text, lines[i].style);
                 GUI.contentColor = previous;
             }
         }
@@ -674,20 +884,20 @@ namespace BusTycoon.Game
         void LayoutBar(float value01, Color color, float height = 8f, float width = -1f, float topPadding = 0f)
         {
             if (topPadding > 0f) GUILayout.BeginVertical();
-            if (topPadding > 0f) GUILayout.Space(topPadding);
+            if (topPadding > 0f) Sp(topPadding);
             Rect rect = width > 0f
-                ? GUILayoutUtility.GetRect(width, height, GUILayout.Width(width), GUILayout.Height(height))
-                : GUILayoutUtility.GetRect(10f, height, GUILayout.ExpandWidth(true), GUILayout.Height(height));
+                ? GUILayoutUtility.GetRect(width * u, height * u, Wd(width), Ht(height))
+                : GUILayoutUtility.GetRect(10f, height * u, GUILayout.ExpandWidth(true), Ht(height));
             if (Event.current.type == EventType.Repaint) DrawBar(rect, value01, color);
             if (topPadding > 0f) GUILayout.EndVertical();
         }
 
         void Divider()
         {
-            GUILayout.Space(4f);
-            Rect rect = GUILayoutUtility.GetRect(10f, 1f, GUILayout.ExpandWidth(true), GUILayout.Height(1f));
+            Sp(4f);
+            Rect rect = GUILayoutUtility.GetRect(10f, 1f, GUILayout.ExpandWidth(true), GUILayout.Height(Mathf.Max(1f, u)));
             if (Event.current.type == EventType.Repaint) DrawRect(rect, new Color(1f, 1f, 1f, 0.1f));
-            GUILayout.Space(4f);
+            Sp(4f);
         }
 
         static void ColorLabel(string text, Color color, GUIStyle style, params GUILayoutOption[] options)
@@ -713,7 +923,7 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             GUILayout.Label(title, s.H1);
             GUILayout.FlexibleSpace();
-            bool close = GUILayout.Button("×", s.Ghost, GUILayout.Width(34f), GUILayout.Height(30f));
+            bool close = GUILayout.Button("×", s.Ghost, Wd(34f), Ht(30f));
             GUILayout.EndHorizontal();
             if (!string.IsNullOrEmpty(subtitle)) GUILayout.Label(subtitle, s.Dim);
             Divider();

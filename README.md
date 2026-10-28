@@ -31,9 +31,24 @@ hatlar, hareket eden otobüsler ve tüm arayüz.
 | **Büyü** | Galeri'den otobüs alın, hatlara atayın. Yolcu taşıdıkça seviye atlarsınız: yeni otobüs modelleri, daha fazla hat ve yeni ülkeler (Bölgeler) açılır. |
 | **Kazan** | Görevleri takip edin (sol alt). Kasada **1.000.000 $**'a ulaşınca oyunu kazanırsınız; sonra serbest devam. Kasa 30 gün eksi kalırsa iflas. |
 
-**Kontroller:** Sol tık seç · sürükle / WASD / ok tuşları kaydır · tekerlek / Q-E yakınlaştır · sağ tık iptal ·
+**Kontroller (dokunmatik):** dokun = seç · tek parmakla sürükle = kaydır · iki parmak = yakınlaştır ·
+ekrandaki +/- · panelde parmakla kaydır · Android geri tuşu = geri / menü.
+
+**Kontroller (klavye/fare):** Sol tık seç · sürükle / WASD / ok tuşları kaydır · tekerlek / Q-E yakınlaştır · sağ tık iptal ·
 Boşluk duraklat · 1/2/3 hız · N yeni hat · R hatlar · F filo · G galeri · K finans · B bölgeler · J görevler ·
 L günlük · H yardım · F5 kaydet · Esc geri / menü. Oyun her 7 günde ve çıkışta otomatik kaydeder.
+
+## 📱 Mobil (Android / iOS) ve mağaza yayını
+
+Oyun telefon ve tablette oynanacak şekilde uyarlandı: dokunmatik seçim ve sürükleme, iki parmakla yakınlaştırma,
+ekrandaki +/- düğmeleri, telefona özel düzen (alt menü çubuğu, büyük düğmeler), çentik/güvenli alan desteği,
+keskin yazılar (ekran yoğunluğuna göre gerçek piksel ölçekleme), Android geri tuşu, yatay ekran ve uygulama
+arka plana alınınca otomatik kayıt.
+
+Mağazaya çıkarmak için: **Bus Tycoon ▸ Mağaza** menüsü ayarları uygular ve Android `.aab` / iOS Xcode projesi
+derler. İkonlar, Play tanıtım görseli, TR/EN mağaza metinleri ve gizlilik politikası `store/` klasöründe;
+hesap açmaktan incelemeye kadar tüm adımlar **[store/YAYIN-REHBERI.md](store/YAYIN-REHBERI.md)** içinde.
+Mağaza hesapları (Google Play 25 $ bir kez, Apple 99 $/yıl), imza anahtarı ve yükleme sizin tarafınızdan yapılmalıdır.
 
 ## İçerik
 
@@ -85,6 +100,8 @@ Assets/_Project/
 │  └─ Editor/             CSV şehir içe aktarıcı, "Create Default Content" (asset olarak düzenlemek için)
 └─ Tests/EditMode/        24 NUnit testi (talep modeli, ekonomi sistemleri, içerik)
 Tools/build_world_data.py  GeoNames + Natural Earth → cities.csv ve map.png üretir
+Tools/make_store_art.py    Uygulama ikonu ve mağaza tanıtım görseli
+store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md
 ```
 
 **İki arayüz yolu:** Oynanabilir sürüm `BusTycoon.Game` içindeki IMGUI arayüzünü kullanır (sıfır kurulum).
