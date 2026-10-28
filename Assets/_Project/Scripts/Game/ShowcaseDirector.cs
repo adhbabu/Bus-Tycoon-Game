@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BusTycoon.Core;
 using BusTycoon.Data;
+using BusTycoon.Economy;
 using BusTycoon.Fleet;
 using BusTycoon.Routes;
 using BusTycoon.Save;
@@ -10,8 +11,9 @@ using UnityEngine;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Mağaza ekran görüntüsü turu (…/oyna/?vitrin&amp;profil=telefon). Orta oyunda bir şirket kurar (8 hat,
-    /// 15 otobüs, 5 haftalık geçmiş) ve oyunu sırayla gösterilecek ekranlara getirir. Her ekran hazır olunca
+    /// Mağaza ekran görüntüsü turu (…/oyna/?vitrin&amp;profil=telefon). Orta oyunda iyi yönetilen bir şirket kurar
+    /// (8 hat, önerilen sayıda otobüs, en kârlı fiyatlar, 2 aylık geçmiş) ve oyunu sırayla gösterilecek
+    /// ekranlara getirir. Her ekran hazır olunca
     /// konsola <c>[Showcase] READY n/N ad</c> yazar.
     ///  ?vitrin        → elle izleme: her ekran birkaç saniye görünür, kendiliğinden ilerler.
     ///  ?vitrin=betik  → ekran görüntüsünü alan betik (Tools/store-screenshots.mjs) her görüntüden sonra
@@ -23,7 +25,7 @@ namespace BusTycoon.Game
 
         const float SettleSeconds = 2.5f;     // kamera geçişi, grafikler ve şehir etiketleri otursun
         const float AutoAdvanceSeconds = 6f;  // elle izlemede sonraki ekrana geçiş
-        const int SimulatedDays = 35;
+        const int SimulatedDays = 65;         // 60 günlük finans grafiğinde açılış alımları görünmesin
 
         GameSession session;
         GameUI ui;
@@ -54,6 +56,9 @@ namespace BusTycoon.Game
                 return;
             }
             if (index >= shots.Count) return;
+
+            // Tur boyunca oyun akmaya devam eder; kasa zafer eşiğine (1 M $) ulaşıp zafer ekranı açmasın.
+            if (session.State.cash > 900000) session.State.cash = 640000;
 
             if (!tidied)
             {
@@ -108,14 +113,14 @@ namespace BusTycoon.Game
             UnlockRegion(sofya);
             UnlockRegion(selanik);
 
-            RouteState flagship = OpenRoute(istanbul, ankara, "TOROS_46", 3);
-            OpenRoute(istanbul, izmir, "TOROS_42C", 2);
-            OpenRoute(ankara, antalya, "TOROS_46", 2);
-            RouteState bursaLine = OpenRoute(istanbul, bursa, "ANKA_31", 1);
-            OpenRoute(izmir, antalya, "ANKA_31", 2);
-            OpenRoute(ankara, trabzon, "ZIRVE_VIP", 2);
-            OpenRoute(istanbul, sofya, "TOROS_46", 1);
-            OpenRoute(istanbul, selanik, "ZIRVE_DD", 1);
+            RouteState flagship = OpenRoute(istanbul, ankara, "TOROS_46");
+            OpenRoute(istanbul, izmir, "TOROS_42C");
+            OpenRoute(ankara, antalya, "TOROS_46");
+            RouteState bursaLine = OpenRoute(istanbul, bursa, "ANKA_31");
+            OpenRoute(izmir, antalya, "ANKA_31");
+            OpenRoute(ankara, trabzon, "ZIRVE_VIP");
+            OpenRoute(istanbul, sofya, "TOROS_46");
+            OpenRoute(istanbul, selanik, "ZIRVE_DD");
             AssignIdleBuses(bursaLine);
 
             // Geçmiş grafikleri dolsun; kasa 1 M $ zafer eşiğinin altında kalsın (zafer ekranı çıkmasın).
@@ -123,8 +128,10 @@ namespace BusTycoon.Game
             for (int day = 0; day < SimulatedDays; day++)
             {
                 if (state.cash > 850000) state.cash = 600000;
+                if (day == SimulatedDays / 2) SetBestPrices();
                 session.Clock.AdvanceOneDay();
             }
+            SetBestPrices();
             state.cash = Math.Min(state.cash, 486350);
 
             shots.Clear();
@@ -150,7 +157,9 @@ namespace BusTycoon.Game
             if (!result) Debug.LogWarning($"[Showcase] Bölge açılamadı ({city.DisplayName}): {result.Message}");
         }
 
-        RouteState OpenRoute(CityData a, CityData b, string modelId, int busCount)
+        const int MaxBusesPerRoute = 4;
+
+        RouteState OpenRoute(CityData a, CityData b, string modelId)
         {
             BusModelData model = session.Catalog.GetById(modelId);
             RouteQuote quote = session.Routes.QuoteRoute(a, b, model);
@@ -161,12 +170,24 @@ namespace BusTycoon.Game
                 return null;
             }
 
+            int busCount = Mathf.Clamp(quote.IsValid ? quote.RecommendedBusCount : 1, 1, MaxBusesPerRoute);
             for (int i = 0; i < busCount && model != null; i++)
             {
                 if (!session.Fleet.TryPurchase(model, 1f, out BusInstance bus)) break;
                 session.Routes.TryAssignBus(bus.busId, route.routeId);
             }
             return route;
+        }
+
+        /// <summary>Her hatta fiyatı tahmini en kârlı değere çeker (iyi yönetilen şirket görünümü).</summary>
+        void SetBestPrices()
+        {
+            var analysis = new PricingAnalysis();
+            foreach (var route in session.Routes.Routes)
+            {
+                session.Routes.AnalyzePricing(route, 60, analysis);
+                if (analysis.EstimatedBestPrice > 0f) session.Routes.SetTicketPrice(route.routeId, analysis.EstimatedBestPrice);
+            }
         }
 
         void AssignIdleBuses(RouteState route)

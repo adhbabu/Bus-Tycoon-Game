@@ -32,6 +32,12 @@ namespace BusTycoon.Data
 
         public const string CitiesResourcePath = "BusTycoon/cities";
         public const string MapTextureResourcePath = "BusTycoon/map";
+        /// <summary>
+        /// Kodla oluşturulan malzemelerin şablonları (Built-in pipeline). Mağaza/bulut derlemesi bunları
+        /// Resources'a üretir; böylece Standard ve Unlit/Texture shader'ları derlemeden atılmaz (pembe nesne olmaz).
+        /// </summary>
+        public const string LitMaterialResourcePath = "BusTycoon/Materials/Lit";
+        public const string MapMaterialResourcePath = "BusTycoon/Materials/MapUnlit";
 
         public readonly struct ModelSpec
         {

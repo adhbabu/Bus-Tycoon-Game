@@ -82,8 +82,21 @@ namespace BusTycoon.Game
             Field.focused.background = Rounded(new Color(1f, 1f, 1f, 0.14f), 6);
             Field.border = Offset(7, 7, 7, 7);
 
-            Toggle = new GUIStyle(GUI.skin.toggle) { fontSize = Px(14) };
-            Toggle.normal.textColor = Toggle.hover.textColor = Toggle.onNormal.textColor = Toggle.onHover.textColor = Text;
+            // Onay kutusu ölçekle büyür: Unity'nin hazır kutusu sabit 14 px'tir, telefonda neredeyse görünmez.
+            // Doku = kutu + saydam şerit; 9-dilimde kutu (sol kenar) esnemez, yükseklik satır yüksekliğiyle aynıdır.
+            int box = Px(22), row = Px(32);
+            Toggle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = Px(14),
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(box + Px(10), 0, 0, 0),
+                border = new RectOffset(box, 0, 0, 0),
+                margin = Offset(4, 4, 2, 2)
+            };
+            Toggle.normal.background = Toggle.hover.background = Toggle.active.background = Checkbox(box, row, false);
+            Toggle.onNormal.background = Toggle.onHover.background = Toggle.onActive.background = Checkbox(box, row, true);
+            Toggle.normal.textColor = Toggle.hover.textColor = Toggle.active.textColor = Text;
+            Toggle.onNormal.textColor = Toggle.onHover.textColor = Toggle.onActive.textColor = Text;
 
             // Dokunmatik ekranda tutulabilir kalın kaydırıcı: ince ray + büyük yuvarlak tutamaç.
             Slider = new GUIStyle(GUI.skin.horizontalSlider) { fixedHeight = Px(26), border = Offset(6, 6, 0, 0), margin = Offset(4, 4, 6, 6) };
@@ -207,6 +220,54 @@ namespace BusTycoon.Game
             texture.SetPixels(pixels);
             texture.Apply();
             return texture;
+        }
+
+        /// <summary>Onay kutusu dokusu: dikeyde ortalanmış yuvarlak kare (seçiliyse mavi + beyaz tik), sağda saydam şerit.</summary>
+        Texture2D Checkbox(int box, int height, bool on)
+        {
+            int width = box + 2;
+            var texture = NewTexture(width, height);
+            var pixels = new Color[width * height];
+            float radius = box * 0.22f, stroke = Mathf.Max(1.5f, box * 0.09f), half = box / 2f;
+            float centerY = height / 2f;
+            Color fill = on ? Blue : new Color(1f, 1f, 1f, 0.08f);
+            Color edge = on ? Blue : new Color(Text.r, Text.g, Text.b, 0.7f);
+
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                float px = x + 0.5f - half, py = y + 0.5f - centerY;
+                // Yuvarlak kareye işaretli uzaklık (içeride negatif)
+                float qx = Mathf.Abs(px) - (half - radius), qy = Mathf.Abs(py) - (half - radius);
+                float outside = Mathf.Sqrt(Mathf.Max(qx, 0f) * Mathf.Max(qx, 0f) + Mathf.Max(qy, 0f) * Mathf.Max(qy, 0f));
+                float distance = outside + Mathf.Min(Mathf.Max(qx, qy), 0f) - radius;
+
+                float shape = Mathf.Clamp01(0.5f - distance);
+                float border = Mathf.Clamp01(0.5f - Mathf.Abs(distance + stroke / 2f) + stroke / 2f);
+                Color color = Color.Lerp(fill, edge, border);
+                color.a *= shape;
+
+                if (on)
+                {
+                    // Tik: dokuda y yukarı doğru artar.
+                    float u0 = (px + half) / box, v0 = (py + half) / box;
+                    float tick = Mathf.Min(SegmentDistance(u0, v0, 0.24f, 0.52f, 0.42f, 0.32f), SegmentDistance(u0, v0, 0.42f, 0.32f, 0.78f, 0.72f)) * box;
+                    float mark = Mathf.Clamp01(box * 0.07f - tick + 0.5f);
+                    color = Color.Lerp(color, Color.white, mark * shape);
+                }
+                pixels[y * width + x] = color;
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        static float SegmentDistance(float px, float py, float ax, float ay, float bx, float by)
+        {
+            float dx = bx - ax, dy = by - ay;
+            float t = Mathf.Clamp01(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy));
+            float ex = px - (ax + t * dx), ey = py - (ay + t * dy);
+            return Mathf.Sqrt(ex * ex + ey * ey);
         }
 
         /// <summary>Kaydırıcı rayı: dikeyde ortada ince bant (yükseklik boyunca saydam kenar).</summary>
