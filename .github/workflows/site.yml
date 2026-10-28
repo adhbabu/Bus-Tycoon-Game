@@ -89,7 +89,9 @@ jobs:
     # Unity derlemesi başarısız olursa yayınlama yapılmaz: sitede bir önceki çalışan sürüm kalır.
     if: ${{ always() && needs.check.result == 'success' && (needs.webgl.result == 'success' || needs.webgl.result == 'skipped') }}
     runs-on: ubuntu-latest
+    # İş düzeyindeki izinler genel izinlerin yerine geçer: depoyu okumak için contents da gerekli.
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
