@@ -62,6 +62,19 @@ namespace BusTycoon.Core
         public FleetSystem Fleet { get; private set; }
         public RouteSystem Routes { get; private set; }
         public bool IsRunning => State != null;
+        public bool IsBankrupt { get; private set; }
+
+        /// <summary>1× hızda bir oyun gününün gerçek saniye karşılığı (ayarlar menüsünden değiştirilebilir).</summary>
+        public float SecondsPerDay
+        {
+            get => secondsPerDay;
+            set
+            {
+                secondsPerDay = Mathf.Max(0.1f, value);
+                if (Clock != null) Clock.SecondsPerDay = secondsPerDay;
+            }
+        }
+        public CityData Headquarters => State != null ? World.GetCity(State.startCityId) : null;
 
         /// <summary>Yeni oyun veya kayıt yüklendiğinde (sistemler yeniden kurulduğunda) tetiklenir.</summary>
         public event Action SessionStarted;
@@ -98,6 +111,18 @@ namespace BusTycoon.Core
         void OnDestroy()
         {
             if (Instance == this) Instance = null;
+        }
+
+        /// <summary>
+        /// Sahnede asset bağlamadan, kodla kurulum için (bkz. <c>GameBootstrap</c>). GameObject pasifken,
+        /// yani Awake'ten ÖNCE çağrılmalıdır.
+        /// </summary>
+        public void Configure(WorldMapDatabase world, EconomyConfig economy, ProgressionConfig progression, BusCatalog catalog)
+        {
+            worldDatabase = world;
+            economyConfig = economy;
+            progressionConfig = progression;
+            busCatalog = catalog;
         }
 
         void Update() => Clock?.Tick(Time.unscaledDeltaTime);
@@ -137,9 +162,19 @@ namespace BusTycoon.Core
             return true;
         }
 
-        public void SaveGame(string slot)
+        public bool SaveGame(string slot)
         {
-            if (State != null) SaveSystem.Save(State, slot);
+            if (State == null) return false;
+            try
+            {
+                SaveSystem.Save(State, slot);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Save] Kayıt başarısız ({slot}): {e.Message}");
+                return false;
+            }
         }
 
         void Build(CompanyState state)
@@ -151,6 +186,7 @@ namespace BusTycoon.Core
             }
 
             State = state;
+            IsBankrupt = false;
             rng = randomSeed != 0 ? new System.Random(randomSeed) : new System.Random();
 
             Finance = new FinanceSystem(state);
@@ -198,10 +234,11 @@ namespace BusTycoon.Core
             lastReport = report;
             DayCompleted?.Invoke(report);
 
-            if (autosaveEveryDays > 0 && (day + 1) % autosaveEveryDays == 0) SaveGame(autosaveSlot);
+            if (autosaveEveryDays > 0 && (day + 1) % autosaveEveryDays == 0 && !IsBankrupt) SaveGame(autosaveSlot);
 
-            if (Finance.DaysInDebt >= progressionConfig.BankruptcyGraceDays)
+            if (Finance.DaysInDebt >= progressionConfig.BankruptcyGraceDays && !IsBankrupt)
             {
+                IsBankrupt = true;
                 Clock.SetSpeed(0);
                 Bankrupt?.Invoke();
             }

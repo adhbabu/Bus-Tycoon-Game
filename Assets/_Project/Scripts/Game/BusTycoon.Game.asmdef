@@ -1,0 +1,16 @@
+{
+    "name": "BusTycoon.Game",
+    "rootNamespace": "BusTycoon.Game",
+    "references": [
+        "BusTycoon.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

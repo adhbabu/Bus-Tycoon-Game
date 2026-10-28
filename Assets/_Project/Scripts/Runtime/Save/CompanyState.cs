@@ -35,6 +35,8 @@ namespace BusTycoon.Save
         public List<string> unlockedRegionIds = new List<string>();
         /// <summary>Oyuncuya "YENİ" olarak duyurulmuş modeller (kilit kontrolü için değil, bildirim için).</summary>
         public List<string> announcedModelIds = new List<string>();
+        /// <summary>Tamamlanan görev (hedef) kimlikleri.</summary>
+        public List<string> completedGoalIds = new List<string>();
 
         // Operasyon
         public int nextRouteSerial;

@@ -15,6 +15,13 @@ namespace BusTycoon.Save
 
         public static bool Exists(string slot) => File.Exists(GetPath(slot));
 
+        /// <summary>Kaydın son yazılma zamanı (UTC); kayıt yoksa null. "Devam et" en yeni kaydı seçer.</summary>
+        public static DateTime? GetLastWriteTimeUtc(string slot)
+        {
+            string path = GetPath(slot);
+            return File.Exists(path) ? File.GetLastWriteTimeUtc(path) : (DateTime?)null;
+        }
+
         public static void Save(CompanyState state, string slot)
         {
             state.saveVersion = CompanyState.CurrentSaveVersion;
@@ -49,11 +56,10 @@ namespace BusTycoon.Save
         /// <summary>Eski sürüm kayıtları güncel şemaya taşır. Yeni alan eklendikçe buraya adım ekleyin.</summary>
         static void Migrate(CompanyState state)
         {
-            if (state.saveVersion < 1)
-            {
-                // v0 → v1 örneği: yeni eklenen listeler null gelebilir.
-                state.announcedModelIds ??= new System.Collections.Generic.List<string>();
-            }
+            // Sonradan eklenen listeler eski kayıtlarda null gelebilir.
+            state.announcedModelIds ??= new System.Collections.Generic.List<string>();
+            state.completedGoalIds ??= new System.Collections.Generic.List<string>();
+            state.unlockedRegionIds ??= new System.Collections.Generic.List<string>();
             state.saveVersion = CompanyState.CurrentSaveVersion;
         }
     }

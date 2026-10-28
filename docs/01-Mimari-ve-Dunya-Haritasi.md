@@ -79,12 +79,11 @@ flowchart TB
 
 ```
 Assets/_Project/
-├─ Data/                      ← oluşturulan asset'ler (Create Default Content)
+├─ Resources/BusTycoon/      cities.csv (93 şehir) + map.png — oyun Play'de bunlardan kendini kurar
+├─ Data/                      ← (opsiyonel) "Create Default Content" ile üretilen düzenlenebilir asset'ler
 │  ├─ Config/                 EconomyConfig, ProgressionConfig
 │  ├─ Fleet/                  Bus_*.asset, BusCatalog
-│  └─ World/                  WorldMapDatabase, MercatorProjection, cities_sample.csv
-│     ├─ Regions/             Region_TR.asset ...
-│     └─ Cities/TR/           City_TR_ISTANBUL.asset ...
+│  └─ World/                  WorldMapDatabase, MercatorProjection, Regions/, Cities/TR/ ...
 ├─ Scripts/
 │  ├─ Runtime/
 │  │  ├─ Core/                GameSession, SimulationClock, OpResult
@@ -95,7 +94,8 @@ Assets/_Project/
 │  │  ├─ Fleet/               BusInstance, FleetSystem
 │  │  ├─ Progression/         ProgressionSystem
 │  │  └─ Save/                CompanyState, SaveSystem
-│  ├─ Presentation/
+│  ├─ Game/                   OYNANABİLİR KATMAN: GameBootstrap, WorldRenderer, MapCamera, GoalTracker, UI/GameUI (IMGUI)
+│  ├─ Presentation/           opsiyonel uGUI + prefab yolu
 │  │  ├─ Map/                 WorldMapView, CityNodeView, RouteLineView
 │  │  └─ UI/                  UIFlowController, HudView, TicketPricePanel, RoutePlannerController, ...
 │  └─ Editor/                 CityCsvImporter, DefaultContentCreator
@@ -160,6 +160,7 @@ Hesaplanan yardımcılar:
 | BG Bulgaristan | 1.10 | 1.05 | 1.30 | 6 | 25.000 $ |
 | GE Gürcistan | 0.80 | 0.90 | 0.70 | 7 | 30.000 $ |
 | GR Yunanistan | 1.40 | 1.30 | 1.80 | 9 | 60.000 $ |
+| RO Romanya | 1.10 | 1.10 | 1.40 | 11 | 70.000 $ |
 
 ## 1.6 `WorldMapDatabase` ve `WorldGraph`
 
@@ -199,7 +200,10 @@ flowchart LR
   İsteğe bağlı ek sütunlar: `tourism`, `landmass`.
 * Kimlik üretimi Türkçe karakterleri dönüştürür: `Şanlıurfa → TR_SANLIURFA`. Aynı ülkede aynı adlı şehirlere `_2` eklenir.
 * Var olan asset **güncellenir** (GUID korunur) → yeniden içe aktarmak sahne referanslarını kırmaz.
-* Örnek veri: `Assets/_Project/Data/World/cities_sample.csv` (34 Türk şehri + Sofya, Filibe, Selanik, Atina, Tiflis, Batum).
+* Oyunla gelen veri: `Assets/_Project/Resources/BusTycoon/cities.csv` — 81 il (GeoNames il merkezi koordinatı + il nüfusu)
+  ve 12 komşu ülke şehri. `Tools/build_world_data.py` bu dosyayı ve Natural Earth sınırlarından `map.png` harita
+  dokusunu üretir; sınırlar `DefaultContent.cs` içindeki `MinLongitude…MaxLatitude` ile aynı olmalıdır.
+* Çalışma anında `DefaultContent.Build(csv)` tüm ScriptableObject'leri bellekte oluşturur (asset gerekmez).
 
 ### Ölçek önerisi
 | Senaryo | Şehir sayısı | Filtre |

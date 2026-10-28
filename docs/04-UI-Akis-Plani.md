@@ -31,9 +31,11 @@ flowchart TD
     MAP -->|"+ Hat" / N| RP[Hat Planlayıcı<br/>RoutePlannerController]
     MAP -->|"Hatlarım" / R| RL[Hat Listesi<br/>RouteListPanel]
     MAP -->|"Galeri" / G| DL[Otobüs Galerisi<br/>DealershipPanel]
-    MAP -->|Hat çizgisine tıkla · planlanan| PR
-    MAP -->|"Filo" / F| FL[Filo / Garaj<br/><i>planlanan</i>]
-    MAP -->|"Finans"| FN[Finans Raporu<br/><i>planlanan</i>]
+    MAP -->|Hat çizgisine tıkla| PR
+    MAP -->|"Filo" / F| FL[Filo / Garaj]
+    MAP -->|"Finans" / K| FN[Finans Raporu]
+    MAP -->|"Bölgeler" / B| RG[Bölgeler / Lisans]
+    MAP -->|"Görevler" / J| GL[Görevler]
 
     RP -->|Hattı Aç| PR[Bilet Fiyatı Paneli<br/>TicketPricePanel]
     RL -->|Fiyat| PR
@@ -47,8 +49,9 @@ flowchart TD
 ```
 
 Kesik çizgi: ESC/Geri. `UIScreenId.None` = yalnızca harita + HUD.
-"Planlanan" işaretli ekranlar iskelette henüz script olarak yok; `UIScreenId` değerleri (`Fleet`, `Finance`) ayrılmıştır.
-Hat çizgisine tıklama için `RouteLineView`'a bir `MeshCollider`/`CapsuleCollider` ve `IPointerClickHandler` eklenmesi yeterlidir.
+**Oynanabilir sürümde** bu akışın tamamı `BusTycoon.Game/UI/GameUI` (IMGUI) içinde uygulanmıştır — filo, finans,
+bölgeler, görevler, günlük ve yardım ekranları dahil. Hat çizgisine tıklama ekran uzayında yapılır (`WorldRenderer.TryPickRoute`).
+`BusTycoon.Presentation` altındaki uGUI scriptleri aynı akışın prefab tabanlı alternatifidir.
 
 ---
 
@@ -189,7 +192,7 @@ Etkileşim kuralları (`TicketPricePanel`):
 
 * Kilitli kartlar gizlenmez: **"neyi, ne zaman, ne yaparak"** açacağını gösterir (motivasyon).
 * Satın alınan otobüs garaja düşer; hat kartındaki **[Otobüs ata]** veya teklif kartındaki onay kutusu ile atanır.
-* (Planlanan) Filo ekranında her otobüs için: durum çubuğu, km, atandığı hat, satış değeri, **[Takasla yükselt]**
+* Filo ekranında her otobüs için: durum çubuğu, km, atandığı hat, satış değeri, **[Takasla yükselt]**
   (eskiyi satar, yenisini alır, aynı hatta atar — tek tık) ve **[Revizyon]**.
 
 ## 4.8 Akış E — Günlük döngü: "Her şey yolunda mı?"
@@ -234,7 +237,9 @@ Bildirim yalnızca **oyuncunun bir karar vermesi gerekiyorsa** veya **ödül** a
 | 6 | Seviye 2 | Galeri rozeti: "Yeni minibüs açıldı" | Progression |
 | 7 | Seviye 5 yaklaşırken | "Toros 46 ile uzun hatlar kârlı hale gelir" | Segment rolü |
 
-Her adım atlanabilir; ipuçları `PlayerPrefs` ile bir kez gösterilir. (Onboarding bu iskelette tasarım olarak verilmiştir; tetikleyicilerin hepsi mevcut olaylarla — `RouteOpened`, `DayCompleted`, `LevelChanged`, `ModelUnlocked` — yakalanabilir.)
+Oynanabilir sürümde bu rehberlik `GoalTracker` görev zinciriyle verilir: sol altta her zaman "sıradaki görev" ve
+ipucu görünür (ilk hat → fiyat ayarı → 2. otobüs → günlük 500 $ → seviye 3 → 4 hat → şehirlerarası otobüs →
+itibar 50 → günlük 5.000 $ → yurt dışı → VIP → 1.000.000 $ zafer). Her görev para ödülü verir.
 
 ---
 
@@ -244,11 +249,15 @@ Her adım atlanabilir; ipuçları `PlayerPrefs` ile bir kez gösterilir. (Onboar
 * **Sayılar:** her yerde `UIFormat` (tr-TR): `$12.345`, kısaltma `$48,2 B` / `$1,3 Mn`, bilet `$22,50`, `%85`.
 * **Tipografi:** rakamlar için eş aralıklı (tabular) rakamlı font → kaydırıcı oynarken sayılar titremez.
 * **Hareket:** panel açılış 150 ms kaydırma; değişen sayılarda 300 ms sayaç animasyonu (kâr artışı yeşil yanıp söner).
-* **Kısayollar:** `ESC` geri (kodda var). Önerilen ekler: `Space` duraklat, `1/2/3` hız, `N` yeni hat, `R` hatlarım, `G` galeri.
+* **Kısayollar:** `Space` duraklat, `1/2/3` hız, `N` yeni hat, `R` hatlarım, `F` filo, `G` galeri, `K` finans,
+  `B` bölgeler, `J` görevler, `L` günlük, `H` yardım, `F5` kaydet, `Esc` geri / menü, `WASD` kaydır, `Q/E` yakınlaştır.
 
 ---
 
-## 4.12 Unity sahne kurulumu
+## 4.12 Unity sahne kurulumu (yalnızca uGUI/prefab yolu için)
+
+> Oynanabilir sürüm için bu kuruluma **gerek yoktur**: `GameBootstrap` her şeyi Play'de kodla kurar.
+> Aşağıdaki hiyerarşi, `BusTycoon.Presentation` scriptleriyle cilalı bir uGUI arayüzü kurmak isteyenler içindir.
 
 ```
 Scene

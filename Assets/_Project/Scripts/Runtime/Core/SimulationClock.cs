@@ -19,7 +19,7 @@ namespace BusTycoon.Core
         public event Action<int> MonthEnded;
         public event Action<int> SpeedChanged;
 
-        readonly float secondsPerDay;
+        float secondsPerDay;
         float accumulator;
         int speedBeforePause = 1;
 
@@ -34,6 +34,18 @@ namespace BusTycoon.Core
         public int Speed { get; private set; }
         public bool IsPaused => Speed == 0;
         public float DayProgress01 => accumulator / secondsPerDay;
+
+        /// <summary>1× hızda bir oyun gününün gerçek saniye karşılığı.</summary>
+        public float SecondsPerDay
+        {
+            get => secondsPerDay;
+            set
+            {
+                float ratio = DayProgress01;
+                secondsPerDay = Math.Max(0.05f, value);
+                accumulator = ratio * secondsPerDay;
+            }
+        }
 
         public void SetSpeed(int speed)
         {

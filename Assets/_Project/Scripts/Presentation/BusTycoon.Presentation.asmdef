@@ -13,8 +13,26 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "BUSTYCOON_UGUI",
+        "BUSTYCOON_TMP"
+    ],
     "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "1.0.0",
+            "define": "BUSTYCOON_UGUI"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "BUSTYCOON_TMP"
+        },
+        {
+            "name": "com.unity.textmeshpro",
+            "expression": "1.0.0",
+            "define": "BUSTYCOON_TMP"
+        },
         {
             "name": "com.unity.inputsystem",
             "expression": "1.0.0",
