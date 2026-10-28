@@ -1,6 +1,6 @@
 # Store Listing — English (secondary language)
 
-Character limits checked. Fill in the bracketed fields.
+Character limits checked. Contact e-mail, privacy policy and support URLs: see `listing-tr.md` ▸ Diğer alanlar (same for both languages).
 
 | Field | Limit | Text |
 |---|---|---|

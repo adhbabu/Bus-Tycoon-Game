@@ -26,6 +26,8 @@ namespace BusTycoon.EditorTools
         public const string ScenePath = "Assets/_Project/Scenes/Main.unity";
         public const string AndroidOutput = "Builds/Android/OtobusImparatoru.aab";
         public const string IosOutput = "Builds/iOS";
+        public const string WebGLOutput = "Builds/WebGL";
+        public const string WebGLTemplate = "BusTycoon";                      // Assets/WebGLTemplates/BusTycoon
     }
 
     /// <summary>
@@ -33,6 +35,7 @@ namespace BusTycoon.EditorTools
     ///  1) Ayarları uygula  → kimlik, sürüm, yatay ekran, IL2CPP + ARM64, AAB, ikon, sahne
     ///  2) Android (.aab)    → Google Play Console'a yüklenecek dosya
     ///  3) iOS (Xcode)       → Mac'te Xcode ile açılıp App Store Connect'e gönderilecek proje
+    ///  4) Web (WebGL)       → tarayıcıda oynanan sürüm (GitHub Pages'te yayınlanır)
     /// Mac'siz iOS ve otomatik Android derlemesi için <see cref="BuildFromCommandLine"/> (GitHub Actions).
     /// Ayrıntılı yayın adımları: store/YAYIN-REHBERI.md ve store/BULUT-DERLEME.md
     /// </summary>
@@ -96,6 +99,14 @@ namespace BusTycoon.EditorTools
             BuildFromMenu(BuildTarget.iOS, BuildTargetGroup.iOS, StoreSettings.IosOutput);
         }
 
+        [MenuItem("Bus Tycoon/Mağaza/4 - Web sürümü derle (WebGL)", priority = 103)]
+        public static void BuildWeb()
+        {
+            ApplySettings();
+            ApplyWebGLSettings();
+            BuildFromMenu(BuildTarget.WebGL, BuildTargetGroup.WebGL, StoreSettings.WebGLOutput);
+        }
+
         /// <summary>
         /// Bulut derlemesinin (GitHub Actions + GameCI) giriş noktası; Unity'yi pencere açmadan çalıştırır:
         /// <code>
@@ -141,9 +152,17 @@ namespace BusTycoon.EditorTools
                 return Build(BuildTarget.iOS, BuildTargetGroup.iOS, output);
             }
 
+            if (targetName.Equals("WebGL", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrEmpty(output)) output = StoreSettings.WebGLOutput;
+                ApplyWebGLSettings();
+                Debug.Log($"[Mağaza] Web sürümü (WebGL) derleniyor → {output}");
+                return Build(BuildTarget.WebGL, BuildTargetGroup.WebGL, output);
+            }
+
             if (!targetName.Equals("Android", StringComparison.OrdinalIgnoreCase))
             {
-                Debug.LogError($"[Mağaza] Bilinmeyen hedef: '{targetName}'. -customBuildTarget Android veya iOS olmalı.");
+                Debug.LogError($"[Mağaza] Bilinmeyen hedef: '{targetName}'. -customBuildTarget Android, iOS veya WebGL olmalı.");
                 return false;
             }
 
@@ -166,6 +185,18 @@ namespace BusTycoon.EditorTools
             Debug.Log($"[Mağaza] Android {(appBundle ? "App Bundle" : "APK")} derleniyor " +
                       $"(versionCode {PlayerSettings.Android.bundleVersionCode}, hedef API {PlayerSettings.Android.targetSdkVersion}) → {output}");
             return Build(BuildTarget.Android, BuildTargetGroup.Android, output);
+        }
+
+        /// <summary>
+        /// Tam pencere şablonu (yükleme çubuğu, telefonu yan çevir uyarısı, tarayıcıda kalıcı kayıt) ve GitHub Pages
+        /// uyumlu sıkıştırma: Pages, sıkıştırılmış dosyalara Content-Encoding başlığı eklemez; açma işini yükleyici yapar.
+        /// </summary>
+        static void ApplyWebGLSettings()
+        {
+            PlayerSettings.WebGL.template = "PROJECT:" + StoreSettings.WebGLTemplate;
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.dataCaching = true;
         }
 
         /// <summary>Komut satırından gelen anahtarı oturum için ayarlar; anahtar dosyası yoksa false.</summary>

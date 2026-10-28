@@ -1,6 +1,6 @@
 # Mağaza Metinleri — Türkçe (varsayılan dil)
 
-Karakter sınırları kontrol edildi. Köşeli parantezli alanları kendi bilginizle doldurun.
+Karakter sınırları kontrol edildi.
 
 | Alan | Sınır | Metin |
 |---|---|---|
@@ -62,8 +62,9 @@ Harita verisi: Natural Earth · Şehir verisi: GeoNames (CC BY 4.0)
 
 | Alan | Değer |
 |---|---|
-| İletişim e-postası (Play'de zorunlu, herkese açık) | [destek e-postanız] |
-| Gizlilik politikası URL'si (iki mağazada zorunlu) | [yayınladığınız store/privacy-policy.md adresi] |
-| Destek URL'si (App Store'da zorunlu) | [ör. GitHub sayfası veya basit bir web sayfası] |
-| Telif hakkı (App Store) | 2026 [adınız veya şirket adınız] |
+| İletişim e-postası (Play'de zorunlu, herkese açık) | adhntpl@gmail.com |
+| Gizlilik politikası URL'si (iki mağazada zorunlu) | https://adhbabu.github.io/Bus-Tycoon-Game/gizlilik/ |
+| Destek URL'si (App Store'da zorunlu) | https://adhbabu.github.io/Bus-Tycoon-Game/destek/ |
+| Pazarlama / web sitesi URL'si (isteğe bağlı) | https://adhbabu.github.io/Bus-Tycoon-Game/ |
+| Telif hakkı (App Store) | 2026 adhbabu |
 | Yaş derecelendirmesi (beklenen) | PEGI 3 · ESRB Everyone · App Store 4+ |

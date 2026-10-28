@@ -1,12 +1,14 @@
 # Bulutta Derleme — Mac'siz iOS ve Otomatik Android
 
-Bu depo, oyunu **GitHub'ın sunucularında** derleyen iki hazır iş akışı içerir. Bilgisayarınızda Unity'de
+Bu depo, oyunu **GitHub'ın sunucularında** derleyen hazır iş akışları içerir. Bilgisayarınızda Unity'de
 derleme yapmanız veya Mac sahibi olmanız gerekmez:
 
 | İş akışı | Ne yapar | Nerede çalışır |
 |---|---|---|
 | **Android (Google Play)** | `.aab` (Play'e yüklenecek paket) veya `.apk` (telefonda deneme) üretir; isterseniz Play'e taslak olarak yükler | Linux sunucusu |
 | **iOS (App Store)** | Unity'den Xcode projesi üretir, kiralık Mac'te imzalar, `.ipa` yapar ve **TestFlight**'a yükler | Linux + macOS sunucusu |
+| **Web sitesi ve web oyunu** | `main`'e her gönderimde oyunun tarayıcı sürümünü, gizlilik ve destek sayfalarını GitHub Pages'te yayınlar | Linux sunucusu |
+| **Mağaza ekran görüntüleri** | Web sürümünü mağaza boyutlarında açıp 4 cihaz × 5 ekran görüntüsü üretir | Linux sunucusu |
 
 Kurulum **bir kerelik**: aşağıdaki "sırları" (şifre/anahtar) GitHub'a girersiniz. Sonra her yeni sürüm için
 yalnızca **Actions ▸ iş akışı ▸ Run workflow** düğmesine basarsınız. Sürüm/build numarası her çalıştırmada
@@ -20,19 +22,27 @@ otomatik artar.
 ## 0. Başlamadan önce
 
 1. **İş akışları ana dalda olmalı.** "Run workflow" düğmesi yalnızca `.github/workflows/` dosyaları varsayılan
-   dalda (`main`) olduğunda görünür. Bu değişiklikleri içeren PR'ı birleştirin (merge).
-2. **Sır nasıl eklenir:** GitHub'da depo ▸ **Settings ▸ Secrets and variables ▸ Actions ▸ New repository secret**.
+   dalda (`main`) olduğunda görünür.
+2. **Depoyu herkese açın** (bir kez): Settings ▸ General ▸ en altta *Danger Zone* ▸ **Change visibility ▸ Public**.
+   Böylece GitHub sunucuları ve web sitesi ücretsiz olur. Depoda şifre/anahtar yoktur; sırlar ayrı saklanır.
+3. **Web sitesini açın** (bir kez): Settings ▸ **Pages** ▸ *Build and deployment* ▸ Source: **GitHub Actions**.
+   Ardından Actions ▸ **Web sitesi ve web oyunu** ▸ Run workflow. Adresler:
+   * Site: `https://adhbabu.github.io/Bus-Tycoon-Game/`
+   * Oyun: `https://adhbabu.github.io/Bus-Tycoon-Game/oyna/` (Unity sırları eklendikten sonra)
+   * Gizlilik politikası: `https://adhbabu.github.io/Bus-Tycoon-Game/gizlilik/`
+   * Destek: `https://adhbabu.github.io/Bus-Tycoon-Game/destek/`
+4. **Sır nasıl eklenir:** GitHub'da depo ▸ **Settings ▸ Secrets and variables ▸ Actions ▸ New repository secret**.
    *Name* kutusuna aşağıdaki adı **birebir** yazın, *Secret* kutusuna değeri yapıştırın. Sırlar şifrelenir;
    kayıttan sonra siz de dahil kimse göremez, günlüklerde `***` olarak gizlenir.
-3. **Maliyet:** Herkese açık (public) depolarda GitHub'ın standart sunucuları ücretsizdir. Özel (private) depolarda
+5. **Maliyet:** Herkese açık (public) depolarda GitHub'ın standart sunucuları ücretsizdir. Özel (private) depolarda
    aylık ücretsiz dakika kotası vardır ve **macOS dakikaları kotayı Linux'a göre çok daha hızlı tüketir** (yazıldığı
    tarihte 10 kat). Bir iOS yüklemesi Mac'te yaklaşık 15–30 dakika sürer. Kalan kotayı GitHub ▸ Settings ▸
    Billing'den görebilirsiniz.
-4. **İlk derleme uzun sürer** (Unity'nin içe aktarma önbelleği boştur: 30–60 dk). Sonrakiler daha hızlıdır.
+6. **İlk derleme uzun sürer** (Unity'nin içe aktarma önbelleği boştur: 30–60 dk). Sonrakiler daha hızlıdır.
 
 ---
 
-## 1. Unity lisansı (iki iş akışı için de gerekli)
+## 1. Unity lisansı (Android, iOS ve web oyunu için gerekli)
 
 Unity, ücretsiz **Personal** lisansla da bulutta çalışır. Lisans dosyasını bir kez almanız gerekir:
 
@@ -165,7 +175,25 @@ gönderme: [YAYIN-REHBERI.md §3.3](YAYIN-REHBERI.md#33-app-store-connect) — h
 
 ---
 
-## 4. Yeni sürüm yayınlamak
+## 4. Web sürümü ve mağaza ekran görüntüleri
+
+* **Oynamak / test etmek:** `https://adhbabu.github.io/Bus-Tycoon-Game/oyna/` — bilgisayarda ve telefonun
+  tarayıcısında çalışır, kayıtlar tarayıcıda saklanır. Bilgisayarda telefon düzenini görmek için adresin sonuna
+  `?profil=telefon` (veya `?profil=tablet`) ekleyin. Test kullanıcılarınıza da bu bağlantıyı gönderebilirsiniz.
+* **Mağaza ekran görüntüleri:** Actions ▸ **Mağaza ekran görüntüleri** ▸ Run workflow ▸ Artifacts ▸
+  `store-screenshots`. Klasörler mağaza ve cihaza göre ayrılmıştır:
+
+| Klasör | Boyut | Nereye yüklenir |
+|---|---|---|
+| `google-play/telefon` | 1920×1080 | Play Console ▸ Mağaza girişi ▸ Telefon ekran görüntüleri |
+| `google-play/tablet` | 2560×1440 | 7" ve 10" tablet ekran görüntüleri |
+| `app-store/iphone-6.9` | 2868×1320 | App Store Connect ▸ iPhone 6,9" |
+| `app-store/ipad-13` | 2752×2064 | App Store Connect ▸ iPad 13" |
+
+Görüntüler, oyunun içindeki vitrin turuyla (orta seviyede bir şirket: 8 hat, 15 otobüs) gerçek oyundan alınır.
+Turu tarayıcıda izlemek için: `…/oyna/?vitrin&profil=telefon`.
+
+## 5. Yeni sürüm yayınlamak
 
 1. Değişikliklerinizi `main`'e gönderin. Kullanıcıya görünen sürümü değiştirmek isterseniz GitHub'da
    `Assets/_Project/Scripts/Editor/StoreBuild.cs` ▸ kalem simgesi ▸ `Version = "1.0.1"` ▸ Commit.
@@ -176,7 +204,7 @@ gönderme: [YAYIN-REHBERI.md §3.3](YAYIN-REHBERI.md#33-app-store-connect) — h
 
 ---
 
-## 5. Sorun giderme
+## 6. Sorun giderme
 
 | Belirti (iş akışı günlüğünde) | Çözüm |
 |---|---|

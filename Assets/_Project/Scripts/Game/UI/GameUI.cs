@@ -22,6 +22,10 @@ namespace BusTycoon.Game
     /// </summary>
     public sealed partial class GameUI : MonoBehaviour
     {
+        /// <summary>Arayüz düzenini zorlamak için (web'de ?profil=telefon, mağaza ekran görüntüleri). Auto = cihaza göre.</summary>
+        internal enum DeviceProfile { Auto, Desktop, Phone, Tablet }
+        internal static DeviceProfile ProfileOverride = DeviceProfile.Auto;
+
         enum Mode { MainMenu, NewGame, Playing }
         enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help }
         enum Modal { None, Pause, GameOver, Victory, Confirm }
@@ -412,9 +416,28 @@ namespace BusTycoon.Game
         void ComputeMetrics()
         {
             mobile = Application.isMobilePlatform;
-            float dpi = Screen.dpi > 1f ? Screen.dpi : 96f;
-            float heightInches = Screen.height / dpi;
-            float designHeight = !mobile ? 1000f : heightInches < 4.2f ? 620f : 820f;
+            float designHeight;
+            if (!mobile)
+            {
+                designHeight = 1000f;
+            }
+            else if (Application.platform == RuntimePlatform.WebGLPlayer)
+            {
+                // Tarayıcıda DPI güvenilmez; yatay telefon ekranı tabletten belirgin şekilde daha geniştir.
+                designHeight = Screen.width >= Screen.height * 1.7f ? 620f : 820f;
+            }
+            else
+            {
+                float dpi = Screen.dpi > 1f ? Screen.dpi : 96f;
+                designHeight = Screen.height / dpi < 4.2f ? 620f : 820f;
+            }
+
+            switch (ProfileOverride)
+            {
+                case DeviceProfile.Desktop: mobile = false; designHeight = 1000f; break;
+                case DeviceProfile.Phone: mobile = true; designHeight = 620f; break;
+                case DeviceProfile.Tablet: mobile = true; designHeight = 820f; break;
+            }
             float unit = Mathf.Clamp(Mathf.Round(Screen.height / designHeight * 20f) / 20f, 0.5f, 4f);
 
             if (s == null || !Mathf.Approximately(unit, u))
@@ -432,6 +455,17 @@ namespace BusTycoon.Game
             SafeRight = safe.xMax;
             SafeTop = H - safe.yMax;
             SafeBottom = safe.yMin;
+        }
+
+        internal static DeviceProfile ParseProfile(string value)
+        {
+            switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "telefon": case "phone": return DeviceProfile.Phone;
+                case "tablet": return DeviceProfile.Tablet;
+                case "masaustu": case "masaüstü": case "desktop": return DeviceProfile.Desktop;
+                default: return DeviceProfile.Auto;
+            }
         }
 
         float Margin => 12f * u;
