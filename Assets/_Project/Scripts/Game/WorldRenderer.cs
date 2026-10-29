@@ -5,6 +5,7 @@ using BusTycoon.Data;
 using BusTycoon.Fleet;
 using BusTycoon.Progression;
 using BusTycoon.Routes;
+using BusTycoon.Stations;
 using BusTycoon.World;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -27,6 +28,10 @@ namespace BusTycoon.Game
             public Transform Root;
             /// <summary>İşaretin tepesi (ölçeklenmeden önce); şehir adı bunun üstüne yazılır.</summary>
             public float Height;
+            /// <summary>Merkez ofis bayrağı (yalnız merkezde görünür).</summary>
+            public GameObject Flag;
+            /// <summary>Üzerine gelince / seçilince hafifçe büyüme (1 = normal).</summary>
+            public float Bump = 1f;
         }
 
         sealed class RouteVisual
@@ -87,9 +92,8 @@ namespace BusTycoon.Game
         /// <summary>Çizgi kalınlıkları ve otobüs boyu bu kamera uzaklığına göre ayarlanmıştır.</summary>
         const float ReferenceZoom = 40f;
 
-        // Hatsız şehir sakin bir krem; hatlı (yeşil), merkez (altın), seçili (mavi/turuncu) şehirler öne çıksın.
-        static readonly Color CityNormal = new Color(0.64f, 0.55f, 0.49f);
-        static readonly Color CityRim = new Color(0.86f, 0.84f, 0.8f);
+        // Durak çatısının rengi: hatsız şehir kiremit; hatlı (yeşil), merkez (altın), seçili (mavi/turuncu) şehirler öne çıksın.
+        static readonly Color CityNormal = new Color(0.8f, 0.45f, 0.36f);
         static readonly Color CityConnected = new Color(0.35f, 0.86f, 0.48f);
         static readonly Color CityLocked = new Color(0.42f, 0.44f, 0.44f);
         static readonly Color CityHeadquarters = new Color(1f, 0.78f, 0.25f);
@@ -118,7 +122,6 @@ namespace BusTycoon.Game
         readonly Dictionary<string, Vector3[]> pathCache = new Dictionary<string, Vector3[]>();
         readonly List<GeoCoordinate> pathBuffer = new List<GeoCoordinate>();
         readonly List<BusInstance> busBuffer = new List<BusInstance>();
-        Material cityRimMaterial;
         LineRenderer previewLine;
         Transform cityRoot, routeRoot;
         float animationTime;
@@ -138,6 +141,7 @@ namespace BusTycoon.Game
         bool beamsOn;
         float roadScale = -1f;
         float zoomDistance = ReferenceZoom;
+        float markerScale = 1f;
         readonly List<Vector3> roadVertices = new List<Vector3>();
         readonly List<Color> roadVertexColors = new List<Color>();
         readonly List<int> roadIndices = new List<int>();
@@ -299,7 +303,7 @@ namespace BusTycoon.Game
             foreach (var marker in markers)
             {
                 float magnitude = Mathf.Log10(Mathf.Max(1000f, marker.City.Population)) - 4.8f;
-                float half = Mathf.Clamp(0.9f + 0.75f * magnitude, 0.8f, 3f) / 2f;
+                float half = Mathf.Clamp(0.9f + 0.75f * magnitude, 0.8f, 3f) * 0.75f; // durak modelinin çevresine taşsın
                 var color = new Color(1f, 1f, 1f, Mathf.Clamp(0.55f + 0.18f * magnitude, 0.45f, 1f));
                 AppendFlatQuad(vertices, colors, uvs, triangles, marker.Position + Vector3.up * 0.006f, half, half, color);
             }
@@ -355,7 +359,7 @@ namespace BusTycoon.Game
         }
 
         /// <summary>Sıcak, ortası parlak yuvarlak ışık dokusu.</summary>
-        static Texture2D GlowTexture()
+        internal static Texture2D GlowTexture()
         {
             const int size = 64;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
@@ -406,6 +410,7 @@ namespace BusTycoon.Game
             Camera main = Camera.main;
             if (main != null) main.backgroundColor = Color.Lerp(SeaColor, new Color(tint.r, tint.g, tint.b), tint.a);
             if (roadMaterial != null) roadMaterial.color = Color.Lerp(Color.white, new Color(0.82f, 0.82f, 0.95f), night * 0.7f);
+            StationMaterials.SetNight(night);
 
             float lights = Mathf.Clamp01((night - 0.15f) / 0.6f);
             cityLightMaterial.color = new Color(1f, 1f, 1f, lights * 0.9f);
@@ -590,47 +595,39 @@ namespace BusTycoon.Game
         }
 
         /// <summary>
-        /// Şehir işareti: beyaz taban halkası üstünde yarısı gömülü, parlak renkli bir kubbe ("şeker damlası").
-        /// Büyük şehirlerde kubbenin üstünde ayrıca bir lolipop iğne durur. Renk durumu gösterir (bkz. RefreshColors).
+        /// Şehir işareti: şehrin büyüklüğüne göre küçük durak, otogar, büyük otogar ya da metropol terminali
+        /// (<see cref="StationModels"/>). Çatı rengi durumu gösterir (bkz. RefreshColors); merkezde şirket bayrağı dalgalanır.
         /// </summary>
         void BuildCityMarkers()
         {
-            cityRimMaterial = MaterialFactory.CreateLit(CityRim, 0.2f);
+            Mesh flagMesh = StationModels.FlagMesh(out MeshLayer[] flagLayers);
             foreach (var city in session.World.Cities)
             {
                 if (city == null) continue;
                 Vector3 position = projection.GeoToWorld(city.Coordinate);
-                float size = city.MapTier switch { 0 => 0.6f, 1 => 0.48f, 2 => 0.38f, _ => 0.3f };
+                StationTier tier = StationCatalog.TierOf(city);
 
                 var root = new GameObject("City_" + city.Id).transform;
                 root.SetParent(cityRoot, false);
                 root.position = position;
 
-                var material = MaterialFactory.CreateLit(CityNormal, 0.45f);
-                CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.015f, 0f), new Vector3(size * 1.35f, 0.015f, size * 1.35f), cityRimMaterial);
-                CreatePart(PrimitiveType.Sphere, root, new Vector3(0f, 0.03f, 0f), new Vector3(size, size * 0.7f, size), material);
-                bool pin = city.MapTier <= 1 || city.IsCapital;
-                if (pin)
-                {
-                    CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.03f + size * 0.65f, 0f), new Vector3(0.06f, size * 0.4f, 0.06f), cityRimMaterial);
-                    CreatePart(PrimitiveType.Sphere, root, new Vector3(0f, 0.03f + size * 1.17f, 0f), Vector3.one * (size * 0.42f), material);
-                }
+                var material = MaterialFactory.CreateLit(CityNormal, 0.35f);
+                var station = new GameObject("Station");
+                station.transform.SetParent(root, false);
+                station.AddComponent<MeshFilter>().sharedMesh = StationModels.MeshFor(tier, out MeshLayer[] layers);
+                station.AddComponent<MeshRenderer>().sharedMaterials = StationMaterials.For(layers, material);
 
-                var marker = new CityMarker { City = city, Position = position, Material = material, Root = root, Height = size * (pin ? 1.4f : 0.4f) };
+                var flag = new GameObject("Flag");
+                flag.transform.SetParent(root, false);
+                flag.transform.localPosition = StationModels.FlagPosition(tier);
+                flag.AddComponent<MeshFilter>().sharedMesh = flagMesh;
+                flag.AddComponent<MeshRenderer>().sharedMaterials = StationMaterials.For(flagLayers, null);
+                flag.SetActive(false);
+
+                var marker = new CityMarker { City = city, Position = position, Material = material, Root = root, Height = StationModels.Height(tier), Flag = flag };
                 markers.Add(marker);
                 markerByCity[city] = marker;
             }
-        }
-
-        static Renderer CreatePart(PrimitiveType type, Transform parent, Vector3 localPosition, Vector3 scale, Material material)
-        {
-            var go = Primitives.Create(type, type.ToString());
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPosition;
-            go.transform.localScale = scale;
-            var renderer = go.GetComponent<Renderer>();
-            renderer.sharedMaterial = material;
-            return renderer;
         }
 
         /// <summary>Haritadaki otobüs: modeline göre tek parça 3B model (<see cref="BusModels"/>).</summary>
@@ -812,19 +809,29 @@ namespace BusTycoon.Game
             if (roadMesh != null && Mathf.Abs(ZoomScale - roadScale) > roadScale * 0.12f)
             {
                 RebuildRoadMesh(ZoomScale);
-                ScaleCityMarkers();
+                markerScale = Mathf.Clamp(zoomDistance / ReferenceZoom, 0.6f, 1.4f);
                 colorsDirty = true;
             }
+            ScaleCityMarkers();
             if (colorsDirty) RefreshColors();
             if (tokensDirty) RebuildTokens();
             AnimateTokens();
         }
 
-        /// <summary>Yakınlaştıkça şehir işaretleri küçülür ki yollar ve otobüsler görünsün.</summary>
+        /// <summary>
+        /// Yakınlaştıkça şehir işaretleri küçülür ki yollar ve otobüsler görünsün. Üzerine gelinen ya da planlayıcıda
+        /// seçilen durak hafifçe büyür (yumuşak geçiş).
+        /// </summary>
         void ScaleCityMarkers()
         {
-            float scale = Mathf.Clamp(zoomDistance / ReferenceZoom, 0.6f, 1.4f);
-            foreach (var marker in markers) marker.Root.localScale = Vector3.one * scale;
+            float step = Time.unscaledDeltaTime * 3f;
+            foreach (var marker in markers)
+            {
+                CityData city = marker.City;
+                float target = city == hovered || city == origin || city == destination ? 1.18f : 1f;
+                marker.Bump = Mathf.MoveTowards(marker.Bump, target, step);
+                marker.Root.localScale = Vector3.one * (markerScale * marker.Bump);
+            }
         }
 
         void RefreshColors()
@@ -847,6 +854,8 @@ namespace BusTycoon.Game
                 if (city == hovered) color = Color.Lerp(color, Color.white, 0.45f);
                 marker.Material.color = color;
                 if (marker.Material.HasProperty("_BaseColor")) marker.Material.SetColor("_BaseColor", color);
+                bool flag = city == headquarters;
+                if (marker.Flag.activeSelf != flag) marker.Flag.SetActive(flag);
             }
 
             float scale = ZoomScale;

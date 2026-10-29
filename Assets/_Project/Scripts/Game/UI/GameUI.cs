@@ -310,7 +310,10 @@ namespace BusTycoon.Game
                 float now = (t0 - t1).magnitude;
                 float before = ((t0 - d0) - (t1 - d1)).magnitude;
                 if (before > 1f && mode != Mode.MainMenu && modal == Modal.None)
-                    mapCamera.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f, (t0 + t1) * 0.5f);
+                {
+                    if (StationUi) Stations.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f);
+                    else mapCamera.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f, (t0 + t1) * 0.5f);
+                }
             }
             else if (touches == 0)
             {
@@ -320,9 +323,29 @@ namespace BusTycoon.Game
             // Tarayıcıda touchpad: iki parmakla kaydırma haritayı kaydırır, sıkıştırma yakınlaştırır.
             if (WheelInput.TakeWebGesture(out WheelInput.Kind gesture, out Vector2 gesturePixels) &&
                 mode != Mode.MainMenu && modal == Modal.None && !IsOverUI(lastMouseGui))
-                ApplyWheel(gesture, gesturePixels, lastMouseGui);
+            {
+                if (StationUi)
+                {
+                    if (gesture == WheelInput.Kind.Touchpad) Stations.Orbit(-gesturePixels);
+                    else if (gesture == WheelInput.Kind.Pinch) Stations.Zoom(Mathf.Clamp(gesturePixels.y, -60f, 60f) * 0.07f);
+                }
+                else if (!StationBusy) ApplyWheel(gesture, gesturePixels, lastMouseGui);
+            }
 
-            if (mode != Mode.MainMenu && modal == Modal.None && !textFieldFocused)
+            if (StationUi && modal == Modal.None && !textFieldFocused)
+            {
+                // Durak içinde: A/D döndür, W/S eğ, Q/E yakınlaştır
+                float turn = 0f, tilt = 0f, zoomIn = 0f;
+                if (Held(KeyCode.D) || Held(KeyCode.RightArrow)) turn -= 1f;
+                if (Held(KeyCode.A) || Held(KeyCode.LeftArrow)) turn += 1f;
+                if (Held(KeyCode.W) || Held(KeyCode.UpArrow)) tilt += 1f;
+                if (Held(KeyCode.S) || Held(KeyCode.DownArrow)) tilt -= 1f;
+                if (Held(KeyCode.E) || Held(KeyCode.Equals) || Held(KeyCode.KeypadPlus)) zoomIn -= 1f;
+                if (Held(KeyCode.Q) || Held(KeyCode.Minus) || Held(KeyCode.KeypadMinus)) zoomIn += 1f;
+                if (turn != 0f || tilt != 0f) Stations.Orbit(new Vector2(turn, tilt) * (dt * Screen.height * 0.5f));
+                if (zoomIn != 0f) Stations.Zoom(zoomIn * dt * 10f);
+            }
+            else if (mode != Mode.MainMenu && modal == Modal.None && !textFieldFocused && !StationBusy)
             {
                 Vector2 axis = Vector2.zero;
                 if (Held(KeyCode.W) || Held(KeyCode.UpArrow)) axis.y += 1f;
@@ -382,7 +405,7 @@ namespace BusTycoon.Game
             if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && !textFieldFocused) HandleShortcut(e);
             HandleTouchScroll(e);
 
-            if (mode != Mode.MainMenu && e.type == EventType.Repaint) DrawCityLabels();
+            if (mode != Mode.MainMenu && e.type == EventType.Repaint && !StationBusy) DrawCityLabels();
 
             bool previousEnabled = GUI.enabled;
             GUI.enabled = modal == Modal.None;
@@ -396,17 +419,25 @@ namespace BusTycoon.Game
                     break;
                 case Mode.Playing:
                     DrawTopBar();
-                    if (compact) DrawBottomBar();
-                    else DrawSideBar();
-                    DrawPanel();
-                    DrawZoomButtons();
-                    DrawMinimap();
-                    DrawGoalWidget();
+                    if (StationUi)
+                    {
+                        DrawStation();
+                    }
+                    else
+                    {
+                        if (compact) DrawBottomBar();
+                        else DrawSideBar();
+                        DrawPanel();
+                        DrawZoomButtons();
+                        DrawMinimap();
+                        DrawGoalWidget();
+                    }
                     DrawToasts();
                     break;
             }
             GUI.enabled = previousEnabled;
 
+            DrawStationFade();
             if (modal != Modal.None) DrawModal();
 
             UpdateHover(e);
@@ -416,7 +447,7 @@ namespace BusTycoon.Game
                 sliderRects.Clear();
                 sliderRects.AddRange(sliderRectsNext);
             }
-            HandleMapInput(e);
+            if (!HandleStationInput(e)) HandleMapInput(e);
             RunDeferred();
         }
 
@@ -482,7 +513,7 @@ namespace BusTycoon.Game
         float BottomBarHeight => 66f * u;
         float PanelWidth => compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.55f) : 490f * u;
         /// <summary>Harita/arayüz için kullanılabilir alanın alt sınırı (alt menü çubuğunun üstü).</summary>
-        float ContentBottom => H - SafeBottom - (compact && mode == Mode.Playing ? BottomBarHeight : 0f);
+        float ContentBottom => H - SafeBottom - (compact && mode == Mode.Playing && !StationUi ? BottomBarHeight : 0f);
 
         Rect PanelRect
         {
@@ -532,7 +563,7 @@ namespace BusTycoon.Game
             if (modal != Modal.None) return default;
             switch (mode)
             {
-                case Mode.Playing: return panel != Panel.None ? PanelRect : default;
+                case Mode.Playing: return StationUi || panel != Panel.None ? PanelRect : default;
                 case Mode.NewGame: return NewGameRect;
                 case Mode.MainMenu: return showMenuHelp ? MainMenuRect : default;
                 default: return default;
@@ -643,6 +674,9 @@ namespace BusTycoon.Game
             }
 #endif
             if (mode != Mode.Playing || modal != Modal.None) return;
+            bool panelKey = key == KeyCode.N || key == KeyCode.R || key == KeyCode.F || key == KeyCode.G || key == KeyCode.K ||
+                            key == KeyCode.B || key == KeyCode.J || key == KeyCode.L || key == KeyCode.H;
+            if (panelKey && StationBusy) Stations.ExitImmediate(); // panel haritada açılır
 
             bool used = true;
             switch (key)
@@ -686,7 +720,8 @@ namespace BusTycoon.Game
             if (mode == Mode.NewGame) EnterMainMenu();
             else if (mode == Mode.Playing)
             {
-                if (panel != Panel.None) ClosePanel();
+                if (StationBusy) ExitStationNow();
+                else if (panel != Panel.None) ClosePanel();
                 else OpenPauseMenu();
             }
         }
@@ -705,14 +740,14 @@ namespace BusTycoon.Game
         {
             if (e.type != EventType.Repaint) return;
             hoveredCity = null;
-            if (mode == Mode.MainMenu || modal != Modal.None || dragging || mobile) return; // dokunmatikte hover yok
+            if (mode == Mode.MainMenu || modal != Modal.None || dragging || mobile || StationBusy) return; // dokunmatikte hover yok
             if (IsOverUI(e.mousePosition)) return;
             world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), PickRadius, out hoveredCity);
         }
 
         void HandleMapInput(Event e)
         {
-            if (mode == Mode.MainMenu || modal != Modal.None) return;
+            if (mode == Mode.MainMenu || modal != Modal.None || StationBusy) return;
             Vector2 mouse = e.mousePosition;
 
             switch (e.type)
@@ -814,7 +849,7 @@ namespace BusTycoon.Game
             if (mode != Mode.Playing) return;
 
             if (panel == Panel.Planner) PlannerCityClicked(city);
-            else OpenPlannerNow(city);
+            else EnterStationNow(city); // durağa gir
         }
 
         // ------------------------------------------------------------------ panel yönetimi
@@ -961,7 +996,7 @@ namespace BusTycoon.Game
                 else if (panel == Panel.Planner && plannerOrigin != null && plannerOrigin != city)
                     lines.Add(($"Tıkla: varış olarak seç · {Fmt.Km(session.World.GetRoadDistanceKm(plannerOrigin, city))}", s.Small, UIStyles.Blue));
                 else
-                    lines.Add(("Tıkla: bu şehirden hat planla", s.Small, UIStyles.Blue));
+                    lines.Add(("Tıkla: durağa gir", s.Small, UIStyles.Blue));
             }
             else if (mode == Mode.NewGame)
             {

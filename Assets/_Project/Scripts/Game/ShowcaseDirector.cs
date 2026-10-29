@@ -6,6 +6,7 @@ using BusTycoon.Economy;
 using BusTycoon.Fleet;
 using BusTycoon.Routes;
 using BusTycoon.Save;
+using BusTycoon.Stations;
 using UnityEngine;
 
 namespace BusTycoon.Game
@@ -65,6 +66,8 @@ namespace BusTycoon.Game
             if (!tidied)
             {
                 if (Time.unscaledTime - shownAt < SettleSeconds) return;
+                StationView stations = StationView.Instance;
+                if (stations != null && stations.IsActive && stations.IntroProgress < 1f) return; // durağa giriş bitsin
                 ui.ShowcaseTidy();
                 tidied = true;
                 tidyFrame = Time.frameCount;
@@ -124,6 +127,7 @@ namespace BusTycoon.Game
             OpenRoute(istanbul, sofya, "TOROS_46");
             OpenRoute(istanbul, selanik, "ZIRVE_DD");
             AssignIdleBuses(bursaLine);
+            GrantAllUpgrades(istanbul);
 
             // Geçmiş grafikleri dolsun; kasa orta oyun düzeyinde kalsın.
             state.cash = 320000;
@@ -142,6 +146,49 @@ namespace BusTycoon.Game
             if (flagship != null) shots.Add(new KeyValuePair<string, Action>("fiyat", () => ui.ShowcaseRoute(flagship)));
             shots.Add(new KeyValuePair<string, Action>("galeri", () => ui.ShowcaseDealership(center, 52f)));
             shots.Add(new KeyValuePair<string, Action>("finans", () => ui.ShowcaseFinance(center, 52f)));
+            shots.Add(new KeyValuePair<string, Action>("durak", () => ui.ShowcaseStation(istanbul)));
+        }
+
+        /// <summary>Vitrin: durağın tüm geliştirmeleri yapılmış görünür (kurallar atlanır; yalnız ekran görüntüsü için).</summary>
+        void GrantAllUpgrades(CityData city)
+        {
+            if (city == null) return;
+            CompanyState state = session.State;
+            state.stations.RemoveAll(s => s.cityId == city.Id);
+            var station = new StationState { cityId = city.Id, firstUpgradeDay = state.currentDay };
+            StationTier tier = StationCatalog.TierOf(city);
+            foreach (var upgrade in StationCatalog.Upgrades)
+                if (StationCatalog.IsAvailable(upgrade, tier)) station.upgrades.Add(upgrade.Id);
+            state.stations.Add(station);
+        }
+
+        string visiting;
+
+        /// <summary>
+        /// Test/ekran görüntüsü betiği için: <c>SendMessage('ShowcaseDirector', 'VisitStation', 'TR_ARTVIN')</c> o şehrin
+        /// durağına (tüm geliştirmeleriyle) girer; giriş bitince konsola <c>[Showcase] STATION şehir</c> yazar.
+        /// </summary>
+        public void VisitStation(string cityId)
+        {
+            CityData city = session.World.GetCity(cityId);
+            if (city == null)
+            {
+                Debug.LogWarning($"[Showcase] Şehir yok: {cityId}");
+                return;
+            }
+            GrantAllUpgrades(city);
+            ui.ShowcaseStation(city);
+            visiting = cityId;
+        }
+
+        void LateUpdate()
+        {
+            if (visiting == null) return;
+            StationView stations = StationView.Instance;
+            if (stations == null || !stations.IsInside || stations.IntroProgress < 1f) return;
+            ui.ShowcaseTidy();
+            Debug.Log($"[Showcase] STATION {visiting}");
+            visiting = null;
         }
 
         CityData City(string name)

@@ -11,6 +11,7 @@ namespace BusTycoon.Game
     {
         internal void ShowcaseMap(CityData focus, float distance)
         {
+            if (Stations != null) Stations.ExitImmediate();
             ClosePanel();
             mapCamera.FocusOn(world.GetCityPosition(focus), distance);
         }
@@ -38,6 +39,14 @@ namespace BusTycoon.Game
         {
             ShowcaseMap(focus, distance);
             OpenPanelNow(Panel.Finance);
+        }
+
+        /// <summary>Durağın içi (geliştirmeleri yapılmış merkez durak).</summary>
+        internal void ShowcaseStation(CityData city)
+        {
+            if (Stations != null) Stations.ExitImmediate();
+            ClosePanel();
+            EnterStationNow(city);
         }
 
         /// <summary>Görüntü alınmadan hemen önce: bildirimler ve olası açılır pencereler kapanır.</summary>

@@ -27,6 +27,7 @@ namespace BusTycoon.Game
 
         void EnterMainMenu()
         {
+            if (Stations != null) Stations.ExitImmediate();
             mode = Mode.MainMenu;
             modal = Modal.None;
             panel = Panel.None;
@@ -424,8 +425,14 @@ namespace BusTycoon.Game
                 "Otobüs şirketinizi büyütün: şehirleri hatlarla bağlayın, bilet fiyatını doğru ayarlayın, filonuzu " +
                 $"minibüsten VIP otobüse yükseltin. Kasada {Fmt.Money(GoalTracker.VictoryCash)}'a ulaşınca oyunu kazanırsınız.");
             HelpSection("Hat açmak",
-                "Haritada bir şehre tıklayın (kalkış), sonra varış şehrine tıklayın. Teklif kartı mesafe, tahmini talep, " +
-                "önerilen bilet fiyatı ve otobüs sayısını gösterir. Planlayıcı en kârlı hedefleri de önerir.");
+                "Yeni Hat (N) ile planlayıcıyı açın, kalkış ve varış şehrine tıklayın ya da bir durağa girip 'Buradan hat aç'a " +
+                "basın. Teklif kartı mesafe, tahmini talep, önerilen bilet fiyatı ve otobüs sayısını gösterir. Planlayıcı en kârlı " +
+                "hedefleri de önerir.");
+            HelpSection("Duraklar",
+                "Haritada bir durağa tıklayınca içine girersiniz. Durak şehrin büyüklüğüne göre küçük durak, otogar, büyük otogar " +
+                "ya da metropol terminalidir; yolcu trafiğiniz arttıkça içi kalabalıklaşır. Hat işlettiğiniz duraklara kafe, simit " +
+                "büfesi, dijital pano gibi geliştirmeler yapın: her biri durakta görünür ve o duraktan geçen hatların talebini artırır. " +
+                "İçeride sürükleyerek döndürün, tekerlekle yakınlaştırın.");
             HelpSection("Bilet fiyatı (oyunun kalbi)",
                 "Fiyat yükseldikçe yolcu azalır. Çok ucuzsa otobüsler dolar ama kâr kaçar; çok pahalıysa koltuklar boş kalır. " +
                 "Fiyat panelindeki yeşil bant 'ideal bölge'dir. Otobüs sayısı değişince ideal fiyat da değişir! " +

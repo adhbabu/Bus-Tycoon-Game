@@ -49,7 +49,7 @@ namespace BusTycoon.Economy
     /// Hat ekonomisinin kalbi. Hem günlük simülasyon hem de UI'daki canlı fiyat önizlemesi
     /// AYNI fonksiyonu çağırır; böylece oyuncunun gördüğü tahmin ile gerçekleşen sonuç tutarlıdır.
     ///
-    /// Akış: filo karışımı → maksimum kapasite → talep (gravity × itibar × olgunluk × konfor × esneklik)
+    /// Akış: filo karışımı → maksimum kapasite → talep (gravity × itibar × olgunluk × konfor × durak × esneklik)
     ///       → sefer planı (kullanım oranı) → taşınan yolcu → gelir/gider → memnuniyet
     /// </summary>
     public static class RouteEconomics
@@ -70,6 +70,8 @@ namespace BusTycoon.Economy
             public float ElasticityBias;
             /// <summary>true: arızalı otobüsler de çalışıyor varsayılır (gelecek günler için tahmin).</summary>
             public bool IncludeUnavailableBuses;
+            /// <summary>Durak geliştirmelerinin talep çarpanı (StationSystem.RouteDemandFactor). 0 = etkisiz (1).</summary>
+            public float StationFactor;
         }
 
         /// <summary>Tek yön seferin saat cinsinden çevrim süresi: sürüş + indirme/bindirme.</summary>
@@ -157,7 +159,8 @@ namespace BusTycoon.Economy
             f.ReferenceDemand = DemandModel.PotentialDemand(input.CityA, input.CityB, km, cfg)
                                 * DemandModel.ReputationFactor(input.CompanyReputation, cfg)
                                 * DemandModel.RampUpFactor(input.DaysOpen, cfg)
-                                * DemandModel.ComfortRangeFactor(km, rangeMix, cfg);
+                                * DemandModel.ComfortRangeFactor(km, rangeMix, cfg)
+                                * (input.StationFactor > 0f ? input.StationFactor : 1f);
 
             float noise = input.DemandNoise > 0f ? input.DemandNoise : 1f;
             f.Demand = DemandModel.DemandAtPrice(f.ReferenceDemand, f.TicketPrice, f.ReferencePrice, f.ElasticityAtReference) * noise;

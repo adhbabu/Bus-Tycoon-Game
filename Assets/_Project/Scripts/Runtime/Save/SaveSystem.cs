@@ -60,6 +60,7 @@ namespace BusTycoon.Save
             state.announcedModelIds ??= new System.Collections.Generic.List<string>();
             state.completedGoalIds ??= new System.Collections.Generic.List<string>();
             state.unlockedRegionIds ??= new System.Collections.Generic.List<string>();
+            state.stations ??= new System.Collections.Generic.List<BusTycoon.Stations.StationState>();
             state.saveVersion = CompanyState.CurrentSaveVersion;
         }
     }
