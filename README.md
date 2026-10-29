@@ -37,7 +37,7 @@ hatlar, hareket eden otobüsler ve tüm arayüz.
 | **Hat aç** | Haritada bir şehre, sonra varış şehrine tıklayın. Planlayıcı en kârlı hedefleri de önerir. Teklif kartında mesafe, talep, önerilen bilet ve otobüs sayısı görünür → **HATTI AÇ**. |
 | **Fiyatı ayarla** | Hat panelinin **Fiyat** sekmesinde kaydırıcıyı oynatın: kâr eğrisi, yeşil "ideal bölge" ve canlı yolcu/doluluk/kâr tahmini. Çok ucuz → otobüs dolar ama kâr kaçar; çok pahalı → yolcu kaçar. **UYGULA**. |
 | **Büyü** | Galeri'den otobüs alın, hatlara atayın. Yolcu taşıdıkça seviye atlarsınız: yeni otobüs modelleri, daha fazla hat ve yeni ülkeler (Bölgeler) açılır. |
-| **Kazan** | Görevleri takip edin (sol alt). Kasada **1.000.000 $**'a ulaşınca oyunu kazanırsınız; sonra serbest devam. Kasa 30 gün eksi kalırsa iflas. |
+| **Kazan** | Görevleri takip edin (sol alt). Kasada **10.000.000 $**'a ulaşınca oyunu kazanırsınız; sonra serbest devam. Kasa 30 gün eksi kalırsa iflas. |
 
 **Kontroller (dokunmatik):** dokun = seç · tek parmakla sürükle = kaydır · iki parmak = yakınlaştır ·
 ekrandaki +/- · panelde parmakla kaydır · Android geri tuşu = geri / menü.
@@ -64,12 +64,13 @@ Kurulum (bir kerelik sırlar) ve kullanım: **[store/BULUT-DERLEME.md](store/BUL
 
 ## İçerik
 
-* **Harita:** Natural Earth ülke sınırlarından üretilmiş Mercator dokusu (Türkiye, Balkanlar, Kafkasya).
+* **Harita:** Natural Earth 1:10m verisinden 4096 px Mercator dokusu: gölgeli dağlar, göller, nehirler, il ve ülke sınırları (Türkiye, Balkanlar, Kafkasya).
+* **Karayolları:** Natural Earth otoyol, devlet yolu ve feribot ağı (+ Osmangazi ve 1915 Çanakkale köprüleri); hatlar ve otobüsler bu yolları izler.
 * **93 şehir:** 81 il merkezi (GeoNames koordinatları ve il nüfusları) + Bulgaristan, Yunanistan, Gürcistan, Romanya'dan 12 şehir.
 * **5 ülke / bölge:** Türkiye başlangıçta açık; diğerleri seviye + lisans ücretiyle açılır.
 * **8 otobüs modeli, 6 segment:** minibüs → midibüs → şehirlerarası → konfor → VIP 2+1 → çift katlı.
 * **Ekonomi:** çekim (gravity) talep modeli, yarı-logaritmik fiyat esnekliği, otomatik sefer planı, yakıt/şoför/bakım/otoyol/otogar/ikram/sigorta giderleri, arıza ve yıpranma, itibar döngüsü, pazar araştırması belirsizliği.
-* **12 görev** (öğretici zincir + ödüller), zafer ve iflas sonu, kayıt/yükleme.
+* **14 görev** (öğretici zincir + ödüller), zafer ve iflas sonu, kayıt/yükleme.
 
 ## Dokümanlar
 
@@ -91,7 +92,7 @@ Q_ref = K × √(Nüfus_A × Nüfus_B) × f(mesafe) × turizm × itibar × olgun
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/   cities.csv (93 şehir), map.png (harita dokusu)
+├─ Resources/BusTycoon/   cities.csv (93 şehir), map.jpg (harita dokusu), roads.txt (karayolu ağı)
 ├─ Scripts/
 │  ├─ Runtime/            BusTycoon.Runtime — oyun kuralları (Unity'den bağımsız test edilebilir)
 │  │  ├─ Core/            GameSession, SimulationClock, CsvUtility, OpResult
@@ -117,7 +118,8 @@ ProjectSettings/           Unity sürümü (6000.3.27f1); diğer ayarları Unity
 Assets/WebGLTemplates/     Web sürümünün sayfa şablonu (tam ekran, yükleme çubuğu, telefonu yan çevir uyarısı)
 site/                      Web sitesinin giriş sayfası (Tools/build_site.py ile üretilir)
 Tools/store-screenshots.mjs Web sürümünden mağaza ekran görüntüleri (Playwright)
-Tools/build_world_data.py  GeoNames + Natural Earth → cities.csv ve map.png üretir
+Tools/build_world_data.py  GeoNames → cities.csv üretir
+Tools/build_map.py         Natural Earth 1:10m → map.jpg (harita) ve roads.txt (yol ağı) üretir
 Tools/make_store_art.py    Uygulama ikonu ve mağaza tanıtım görseli
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```

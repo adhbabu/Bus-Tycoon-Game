@@ -1,5 +1,6 @@
 using BusTycoon.Core;
 using BusTycoon.Data;
+using BusTycoon.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -42,7 +43,7 @@ namespace BusTycoon.Game
 
             var world = new GameObject("World").AddComponent<WorldRenderer>();
             world.transform.SetParent(root.transform, false);
-            world.Init(session, content.Projection, mapTexture);
+            world.Init(session, content.Projection, mapTexture, LoadRoads());
 
             Camera camera = SetupCamera(world.SeaColor);
             SetupLighting();
@@ -56,6 +57,22 @@ namespace BusTycoon.Game
 
             if (LaunchOptions.Has("vitrin") || LaunchOptions.Has("showcase"))
                 new GameObject(ShowcaseDirector.ObjectName).AddComponent<ShowcaseDirector>().Init(session, ui);
+        }
+
+        /// <summary>Karayolu ağı; yoksa ya da okunamazsa hatlar yay olarak çizilir (oyun etkilenmez).</summary>
+        static RoadNetwork LoadRoads()
+        {
+            var asset = Resources.Load<TextAsset>(DefaultContent.RoadsResourcePath);
+            if (asset == null) return null;
+            try
+            {
+                return RoadNetwork.Parse(asset.text);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[Bus Tycoon] Yol ağı okunamadı, hatlar yay olarak çizilecek: {e.Message}");
+                return null;
+            }
         }
 
         /// <summary>Mobil: yatay ekran, 60 FPS, ekran kararmasın (simülasyon izlenirken). Tarayıcı kendi kare hızını kullanır.</summary>

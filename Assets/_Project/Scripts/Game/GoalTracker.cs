@@ -7,11 +7,14 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Oyuncuya yön veren görev zinciri: her görev bir öğretici adım + para ödülüdür. Son görev
-    /// (1.000.000 $ kasa) "kazanma" anıdır; oyun sonrasında serbest devam eder.
+    /// (<see cref="VictoryCash"/> kasa) "kazanma" anıdır; oyun sonrasında serbest devam eder.
     /// Tamamlanan görevler <c>CompanyState.completedGoalIds</c> içinde kaydedilir.
     /// </summary>
     public sealed class GoalTracker
     {
+        /// <summary>Oyunu kazanmak için kasada olması gereken para.</summary>
+        public const long VictoryCash = 10_000_000;
+
         public sealed class Goal
         {
             public readonly string Id;
@@ -64,8 +67,12 @@ namespace BusTycoon.Game
                 s => s.State.unlockedRegionIds.Count >= 2);
             Add("vip", "Lüks segment: VIP otobüs", "Seviye 12 ve itibar 55 gerekir.", 50000,
                 s => HasTier(s, 4));
-            Add("tycoon", "Otobüs İmparatoru: $1.000.000 kasa", "Büyük hedef! Ulaştığınızda oyunu kazanırsınız.", 0,
-                s => s.Finance.Cash >= 1_000_000, isVictory: true);
+            Add("millionaire", "İlk milyon: $1.000.000 kasa", "Yolun yarısı bile değil: asıl hedef 10 milyon!", 0,
+                s => s.Finance.Cash >= 1_000_000);
+            Add("profit_25000", "Günde $25.000 net kâr", "Büyük şehirleri VIP ve çift katlı otobüslerle bağlayın.", 100000,
+                s => LastNet(s) >= 25000);
+            Add("tycoon", "Otobüs İmparatoru: $10.000.000 kasa", "Büyük hedef! Ulaştığınızda oyunu kazanırsınız.", 0,
+                s => s.Finance.Cash >= VictoryCash, isVictory: true);
         }
 
         public IReadOnlyList<Goal> Goals => goals;

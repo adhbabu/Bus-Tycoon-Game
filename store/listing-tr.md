@@ -7,11 +7,11 @@ Karakter sınırları kontrol edildi.
 | **Uygulama adı** (Play + App Store) | 30 | Otobüs İmparatoru: Bus Tycoon |
 | **Alt başlık** (yalnız App Store) | 30 | Hat aç, bileti fiyatla, büyü |
 | **Kısa açıklama** (yalnız Play) | 80 | Gerçek Türkiye haritasında otobüs şirketini kur: hat aç, bileti fiyatla, büyü! |
-| **Tanıtım metni** (App Store, sürüm onayı gerekmeden değişir) | 170 | 81 il ve 5 ülkeyi otobüs hatlarıyla bağla. Bilet fiyatını talebe göre ayarla, eski bir minibüsten VIP filoya uzan ve kasanda 1 milyon doları gör! |
+| **Tanıtım metni** (App Store, sürüm onayı gerekmeden değişir) | 170 | 81 il ve 5 ülkeyi otobüs hatlarıyla bağla. Bilet fiyatını talebe göre ayarla, eski bir minibüsten VIP filoya uzan ve kasanda 10 milyon doları gör! |
 | **Anahtar kelimeler** (App Store, virgülle) | 100 | otobüs,tycoon,strateji,yönetim,simülasyon,şirket,ekonomi,ulaşım,türkiye,harita,işletme,filo |
 | **Kategori** | — | Play: Oyun ▸ Strateji · App Store: Oyunlar ▸ Strateji (ikincil: Simülasyon) |
 | **Fiyat** | — | Ücretsiz · reklam yok · uygulama içi satın alma yok |
-| **Bu sürümde yenilikler** | 4000 | İlk sürüm! 81 il, 5 ülke, 8 otobüs modeli ve 12 görevle otobüs imparatorluğunu kur. |
+| **Bu sürümde yenilikler** | 4000 | İlk sürüm! 81 il, 5 ülke, 8 otobüs modeli ve 14 görevle otobüs imparatorluğunu kur. |
 
 > App Store'da anahtar kelimelerde uygulama adında geçen kelimeleri tekrar etmek gerekmez; yer açmak için
 > "otobüs" ve "tycoon" çıkarılıp yerine "tır,seyahat" gibi kelimeler eklenebilir.
@@ -45,10 +45,10 @@ Otobüsü sen sürmüyorsun — şirketi sen yönetiyorsun!
 • Haritada iki şehre dokun, teklif kartına bak, hattı aç — üç dokunuş
 • Planlayıcı en kârlı hedefleri senin için önerir
 • Her hat için tek bakışta durum: "Kapasite yetersiz", "Doluluk düşük", "Zarar ediyor"
-• 12 adımlık görev zinciri oyunu adım adım öğretir
+• 14 adımlık görev zinciri oyunu adım adım öğretir
 
-**HEDEF: 1.000.000 $**
-Kasanda bir milyon dolara ulaş ve Otobüs İmparatoru ol! Ama dikkat: kasan 30 gün üst üste eksi kalırsa iflas edersin.
+**HEDEF: 10.000.000 $**
+Kasanda on milyon dolara ulaş ve Otobüs İmparatoru ol! Ama dikkat: kasan 30 gün üst üste eksi kalırsa iflas edersin.
 
 • İnternet gerekmez, tamamen çevrimdışı
 • Reklam yok, uygulama içi satın alma yok

@@ -57,7 +57,7 @@ namespace BusTycoon.Game
             }
             if (index >= shots.Count) return;
 
-            // Tur boyunca oyun akmaya devam eder; kasa zafer eşiğine (1 M $) ulaşıp zafer ekranı açmasın.
+            // Tur boyunca oyun akmaya devam eder; kasa orta oyun düzeyinde kalsın (ekran görüntüleri tutarlı olsun).
             if (session.State.cash > 900000) session.State.cash = 640000;
 
             if (!tidied)
@@ -123,7 +123,7 @@ namespace BusTycoon.Game
             OpenRoute(istanbul, selanik, "ZIRVE_DD");
             AssignIdleBuses(bursaLine);
 
-            // Geçmiş grafikleri dolsun; kasa 1 M $ zafer eşiğinin altında kalsın (zafer ekranı çıkmasın).
+            // Geçmiş grafikleri dolsun; kasa orta oyun düzeyinde kalsın.
             state.cash = 320000;
             for (int day = 0; day < SimulatedDays; day++)
             {

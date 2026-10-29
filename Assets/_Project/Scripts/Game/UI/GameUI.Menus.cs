@@ -339,7 +339,7 @@ namespace BusTycoon.Game
         {
             ColorLabel("TEBRİKLER!", UIStyles.Gold, s.H1);
             Divider();
-            GUILayout.Label($"{session.State.companyName} kasasında {Fmt.Money(1_000_000)}'ı aştı. Artık bir Otobüs İmparatorusunuz!", s.Wrap);
+            GUILayout.Label($"{session.State.companyName} kasasında {Fmt.Money(GoalTracker.VictoryCash)}'ı aştı. Artık bir Otobüs İmparatorusunuz!", s.Wrap);
             Sp(8f);
             KeyValue("Süre", $"{session.State.currentDay} gün");
             KeyValue("Taşınan yolcu", Fmt.Num(session.State.totalPassengers));
@@ -376,7 +376,7 @@ namespace BusTycoon.Game
         {
             HelpSection("Amaç",
                 "Otobüs şirketinizi büyütün: şehirleri hatlarla bağlayın, bilet fiyatını doğru ayarlayın, filonuzu " +
-                "minibüsten VIP otobüse yükseltin. Kasada $1.000.000'a ulaşınca oyunu kazanırsınız.");
+                $"minibüsten VIP otobüse yükseltin. Kasada {Fmt.Money(GoalTracker.VictoryCash)}'a ulaşınca oyunu kazanırsınız.");
             HelpSection("Hat açmak",
                 "Haritada bir şehre tıklayın (kalkış), sonra varış şehrine tıklayın. Teklif kartı mesafe, tahmini talep, " +
                 "önerilen bilet fiyatı ve otobüs sayısını gösterir. Planlayıcı en kârlı hedefleri de önerir.");

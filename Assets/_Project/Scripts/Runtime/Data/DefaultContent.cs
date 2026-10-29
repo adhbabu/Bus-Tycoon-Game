@@ -32,6 +32,8 @@ namespace BusTycoon.Data
 
         public const string CitiesResourcePath = "BusTycoon/cities";
         public const string MapTextureResourcePath = "BusTycoon/map";
+        /// <summary>Karayolu ağı (Tools/build_map.py üretir): hat çizgileri ve otobüsler yolları izler.</summary>
+        public const string RoadsResourcePath = "BusTycoon/roads";
         /// <summary>
         /// Kodla oluşturulan malzemelerin şablonları (Built-in pipeline). Mağaza/bulut derlemesi bunları
         /// Resources'a üretir; böylece Standard ve Unlit/Texture shader'ları derlemeden atılmaz (pembe nesne olmaz).
