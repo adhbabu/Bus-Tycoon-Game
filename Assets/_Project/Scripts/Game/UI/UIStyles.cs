@@ -42,7 +42,7 @@ namespace BusTycoon.Game
         public readonly GUIStyle Title, H1, H2, Label, Small, Dim, Bold, Big, Center, Wrap, WrapDim, Right;
         public readonly GUIStyle StatLabel, Money, MoneyGlow, MoneyNegative, MoneyNegativeGlow, Value, CardTitle, Detail, CountBadge;
         public readonly GUIStyle BadgeSuccess, BadgeWarning, BadgeDanger, BadgeInfo;
-        public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, NavItem, NavItemActive, IconOnly;
+        public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, RaceBadge, NavItem, NavItemActive, IconOnly;
         public readonly GUIStyle Field, Toggle, Slider, SliderThumb, VerticalScrollbar;
         public readonly GUIStyle MapLabel, MapLabelBold, MapLabelShadow, MapLabelBoldShadow;
 
@@ -127,6 +127,8 @@ namespace BusTycoon.Game
             SpeedButton.fixedWidth = Px(44);
             SpeedButtonActive = MakeButton(Orange, AccentHover, Color.black, 14, true);
             SpeedButtonActive.fixedWidth = Px(44);
+            // Yarışta hız düğmelerinin yerine: aynı görünüm, yazı kadar geniş ("Blitz · 2x")
+            RaceBadge = new GUIStyle(SpeedButtonActive) { fixedWidth = 0f };
 
             // Yalnız ikonlu düğme: yazı saydam (düğmeyi adlandırır, ikon kodla çizilir).
             IconOnly = MakeButton(new Color(1f, 1f, 1f, 0.08f), new Color(1f, 1f, 1f, 0.13f), Color.clear, 1, false);
