@@ -117,6 +117,9 @@ namespace BusTycoon.Game
 
                 GUILayout.BeginVertical(s.Card);
                 GUILayout.BeginHorizontal();
+                LayoutCityIcon(session.World.GetCity(route.cityAId), 22f, 1f);
+                LayoutCityIcon(session.World.GetCity(route.cityBId), 22f, 1f);
+                Sp(4f);
                 GUILayout.Label(RouteName(route), s.CardTitle);
                 Badge(InsightTag(insight.Severity), InsightBadge(insight.Severity));
                 GUILayout.FlexibleSpace();

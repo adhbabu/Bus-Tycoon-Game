@@ -66,6 +66,8 @@ Kurulum (bir kerelik sırlar) ve kullanım: **[store/BULUT-DERLEME.md](store/BUL
 
 * **Harita:** Natural Earth 1:10m verisinden 4096 px Mercator dokusu: gölgeli dağlar, göller, nehirler, il ve ülke sınırları (Türkiye, Balkanlar, Kafkasya). Harita "tak" diye bitmez: çevresi (İtalya'dan Hazar'a, Ukrayna'dan Mısır'a) uzaklaştıkça bulanıklaşarak denize karışır.
 * **Karayolları:** Natural Earth otoyol, devlet yolu ve feribot ağı (+ Osmangazi ve 1915 Çanakkale köprüleri); hatlar ve otobüsler bu yolları izler.
+* **Her şehrin kendi ikonu:** 93 şehrin her birine nesiyle ünlü olduğunu anlatan bir ikon (İstanbul'a köprü, Rize'ye çay, Van'a kedi, Kapadokya'ya balon…); haritada adının yanında, ipucunda kısa açıklamasıyla.
+* **Gece-gündüz döngüsü:** güneş doğar ve batar, gece harita kararır, şehirlerin ışıkları yanar, otobüsler farlarını açar (duraklatma menüsünden kapatılabilir).
 * **Otobüs modelleri:** her model için 3B model (kaputlu minibüs, midibüs, şehirlerarası, VIP, çift katlı) ve yandan çizim (galeri, filo, planlayıcı); köşedeki mini haritada otobüsler hatlarında hareket eder.
 * **93 şehir:** 81 il merkezi (GeoNames koordinatları ve il nüfusları) + Bulgaristan, Yunanistan, Gürcistan, Romanya'dan 12 şehir.
 * **5 ülke / bölge:** Türkiye başlangıçta açık; diğerleri seviye + lisans ücretiyle açılır.
@@ -125,6 +127,7 @@ Tools/make_store_art.py    Uygulama ikonu, mağaza tanıtım görseli ve ana men
 Tools/make_fonts.py        Inter yazı tipinden arayüzün üç kalınlığını üretir (Resources/BusTycoon/Fonts)
 Tools/make_icons.py        Twemoji ikonlarından arayüz ikon atlasını üretir (Resources/BusTycoon/UI/icons.png)
 Tools/make_bus_art.py      Otobüs modellerinin yandan çizimleri (Resources/BusTycoon/UI/buses.png)
+Tools/make_city_icons.py   Her şehrin ikonu ve "nesiyle ünlü" açıklaması (Resources/BusTycoon/UI/cities.png, city_icons.txt)
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 

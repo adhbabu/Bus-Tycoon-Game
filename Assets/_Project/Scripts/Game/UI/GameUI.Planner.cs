@@ -123,7 +123,7 @@ namespace BusTycoon.Game
             // Kalkış satırı
             GUILayout.BeginHorizontal();
             GUILayout.BeginHorizontal();
-            LayoutIcon(UIIcon.Pin, 20f, 4f);
+            LayoutCityIcon(plannerOrigin, 24f, 2f);
             ColorLabel($"Kalkış: {plannerOrigin.DisplayName}", UIStyles.Blue, s.H2);
             LayoutIcon(UIIcons.Flag(plannerOrigin.Region.Id), 20f, 4f);
             GUILayout.FlexibleSpace();
@@ -219,7 +219,7 @@ namespace BusTycoon.Game
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginHorizontal();
-            LayoutIcon(UIIcon.Finish, 20f, 4f);
+            LayoutCityIcon(plannerDestination, 24f, 2f);
             ColorLabel($"Varış: {plannerDestination.DisplayName}", UIStyles.Orange, s.H2);
             LayoutIcon(UIIcons.Flag(plannerDestination.Region.Id), 20f, 4f);
             GUILayout.FlexibleSpace();

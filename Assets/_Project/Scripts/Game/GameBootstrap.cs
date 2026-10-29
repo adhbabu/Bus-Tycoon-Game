@@ -47,7 +47,8 @@ namespace BusTycoon.Game
             world.Init(session, content.Projection, mapTexture, outerTexture, LoadRoads());
 
             Camera camera = SetupCamera(world.SeaColor);
-            SetupLighting();
+            Light sun = SetupLighting();
+            new GameObject("DayNightCycle").AddComponent<DayNightCycle>().Init(session, sun, world);
 
             var mapCamera = camera.gameObject.AddComponent<MapCamera>();
             mapCamera.Init(camera, world.MapBoundsXZ);
@@ -109,7 +110,7 @@ namespace BusTycoon.Game
             return camera;
         }
 
-        static void SetupLighting()
+        static Light SetupLighting()
         {
             Light sun = null;
             foreach (var light in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
@@ -134,6 +135,7 @@ namespace BusTycoon.Game
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.5f, 0.53f, 0.58f);
             RenderSettings.fog = false;
+            return sun;
         }
     }
 }

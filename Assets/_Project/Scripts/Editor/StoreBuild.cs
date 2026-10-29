@@ -355,7 +355,8 @@ namespace BusTycoon.EditorTools
         {
             var textures = new (string resource, bool mipmaps)[]
             {
-                (DefaultContent.MascotResourcePath, false), (DefaultContent.IconsResourcePath, true), (DefaultContent.BusArtResourcePath, true)
+                (DefaultContent.MascotResourcePath, false), (DefaultContent.IconsResourcePath, true), (DefaultContent.BusArtResourcePath, true),
+                (DefaultContent.CityIconsResourcePath, true)
             };
             foreach (var (resource, mipmaps) in textures)
             {

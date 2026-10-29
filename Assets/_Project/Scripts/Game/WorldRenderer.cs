@@ -43,6 +43,7 @@ namespace BusTycoon.Game
         {
             public Transform Transform;
             public MeshFilter Filter;
+            public Renderer Beam;
             public BusModelData Model;
             public float Phase;
         }
@@ -126,6 +127,15 @@ namespace BusTycoon.Game
 
         readonly List<(RoadNetwork.RoadClass Class, Vector3[] Points)> roadPieces = new List<(RoadNetwork.RoadClass, Vector3[])>();
         Mesh roadMesh;
+        Material roadMaterial;
+
+        // Gece: haritayı karartan örtü, şehir ışıkları, otobüs farları (DayNightCycle → SetDaylight)
+        static readonly Color NightTint = new Color(0.02f, 0.04f, 0.14f);
+        static readonly Color DuskTint = new Color(1f, 0.5f, 0.22f);
+        Renderer nightOverlay, cityLights;
+        Material nightMaterial, cityLightMaterial, beamMaterial;
+        Mesh beamMesh;
+        bool beamsOn;
         float roadScale = -1f;
         float zoomDistance = ReferenceZoom;
         readonly List<Vector3> roadVertices = new List<Vector3>();
@@ -174,6 +184,7 @@ namespace BusTycoon.Game
             BuildSurroundings(outerTexture);
             BuildRoadLayer();
             BuildCityMarkers();
+            BuildNightLayers();
 
 
             previewLine = CreateLine("Preview", 0.22f);
@@ -261,6 +272,153 @@ namespace BusTycoon.Game
             renderer.receiveShadows = false;
         }
 
+        /// <summary>
+        /// Gece katmanları (köşe renkli, ışıksız malzeme): haritayı ve çevresini karartan örtü (yollar, şehirler ve
+        /// otobüsler örtünün üstünde kalır), nüfusa göre büyüyen şehir ışıkları ve otobüs farlarının yere düşen ışığı.
+        /// </summary>
+        void BuildNightLayers()
+        {
+            Vector3 southWest = projection.GeoToWorld(new GeoCoordinate(DefaultContent.OuterMinLatitude, DefaultContent.OuterMinLongitude));
+            Vector3 northEast = projection.GeoToWorld(new GeoCoordinate(DefaultContent.OuterMaxLatitude, DefaultContent.OuterMaxLongitude));
+            var overlay = new Mesh { name = "NightOverlay" };
+            overlay.vertices = new[]
+            {
+                new Vector3(southWest.x, 0.004f, southWest.z), new Vector3(northEast.x, 0.004f, southWest.z),
+                new Vector3(southWest.x, 0.004f, northEast.z), new Vector3(northEast.x, 0.004f, northEast.z)
+            };
+            overlay.triangles = new[] { 0, 2, 3, 0, 3, 1 };
+            overlay.RecalculateBounds();
+            nightMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2945 }; // haritadan sonra, yollardan önce
+            nightOverlay = CreateLayer("NightOverlay", overlay, nightMaterial);
+
+            // Şehir ışıkları: nüfusla büyüyen yumuşak ışık havuzları
+            var vertices = new List<Vector3>();
+            var colors = new List<Color>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+            foreach (var marker in markers)
+            {
+                float magnitude = Mathf.Log10(Mathf.Max(1000f, marker.City.Population)) - 4.8f;
+                float half = Mathf.Clamp(0.9f + 0.75f * magnitude, 0.8f, 3f) / 2f;
+                var color = new Color(1f, 1f, 1f, Mathf.Clamp(0.55f + 0.18f * magnitude, 0.45f, 1f));
+                AppendFlatQuad(vertices, colors, uvs, triangles, marker.Position + Vector3.up * 0.006f, half, half, color);
+            }
+            var lights = new Mesh { name = "CityLights" };
+            lights.SetVertices(vertices);
+            lights.SetColors(colors);
+            lights.SetUVs(0, uvs);
+            lights.SetTriangles(triangles, 0);
+            lights.RecalculateBounds();
+            cityLightMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2955, mainTexture = GlowTexture() };
+            cityLights = CreateLayer("CityLights", lights, cityLightMaterial);
+
+            // Far ışığı: otobüsün önünden ileri doğru genişleyen yumuşak koni (otobüsün yerel uzayında, +z ileri)
+            beamMesh = new Mesh { name = "Headlights" };
+            beamMesh.vertices = new[] { new Vector3(-0.1f, 0f, 0f), new Vector3(0.1f, 0f, 0f), new Vector3(-0.3f, 0f, 0.85f), new Vector3(0.3f, 0f, 0.85f) };
+            beamMesh.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) };
+            beamMesh.triangles = new[] { 0, 2, 3, 0, 3, 1 };
+            beamMesh.RecalculateBounds();
+            beamMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2960, mainTexture = BeamTexture() };
+        }
+
+        Renderer CreateLayer(string layerName, Mesh mesh, Material material)
+        {
+            var go = new GameObject(layerName);
+            go.transform.SetParent(transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.enabled = false;
+            return renderer;
+        }
+
+        static void AppendFlatQuad(List<Vector3> vertices, List<Color> colors, List<Vector2> uvs, List<int> triangles, Vector3 center, float halfX, float halfZ, Color color)
+        {
+            int start = vertices.Count;
+            vertices.Add(center + new Vector3(-halfX, 0f, -halfZ));
+            vertices.Add(center + new Vector3(halfX, 0f, -halfZ));
+            vertices.Add(center + new Vector3(-halfX, 0f, halfZ));
+            vertices.Add(center + new Vector3(halfX, 0f, halfZ));
+            uvs.Add(new Vector2(0f, 0f));
+            uvs.Add(new Vector2(1f, 0f));
+            uvs.Add(new Vector2(0f, 1f));
+            uvs.Add(new Vector2(1f, 1f));
+            for (int i = 0; i < 4; i++) colors.Add(color);
+            triangles.Add(start);
+            triangles.Add(start + 2);
+            triangles.Add(start + 3);
+            triangles.Add(start);
+            triangles.Add(start + 3);
+            triangles.Add(start + 1);
+        }
+
+        /// <summary>Sıcak, ortası parlak yuvarlak ışık dokusu.</summary>
+        static Texture2D GlowTexture()
+        {
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            var pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = (x + 0.5f) / size * 2f - 1f, dy = (y + 0.5f) / size * 2f - 1f;
+                float r = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy));
+                float a = (1f - r) * (1f - r);
+                pixels[y * size + x] = new Color(1f, Mathf.Lerp(0.72f, 0.95f, a), Mathf.Lerp(0.35f, 0.75f, a), a);
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        /// <summary>Far ışığı dokusu: v boyunca (ileri) sönen, kenarlara doğru yumuşayan koni.</summary>
+        static Texture2D BeamTexture()
+        {
+            const int width = 32, height = 64;
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            var pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                float v = (y + 0.5f) / height, across = Mathf.Abs((x + 0.5f) / width * 2f - 1f);
+                float a = Mathf.Pow(1f - v, 1.6f) * (1f - across * across) * 0.9f;
+                pixels[y * width + x] = new Color(1f, 0.95f, 0.72f, a);
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        /// <summary>
+        /// Gün ışığı (DayNightCycle): <paramref name="night"/> 0 gündüz … 1 gece yarısı; <paramref name="dusk"/> gün
+        /// doğumu/batımında 1 (turuncu ton). Gece harita kararır, yollar biraz söner, şehir ışıkları ve farlar yanar.
+        /// </summary>
+        public void SetDaylight(float night, float dusk)
+        {
+            if (nightOverlay == null) return;
+            Color tint = Color.Lerp(DuskTint, NightTint, Mathf.Clamp01(night * 1.6f));
+            tint.a = Mathf.Max(night * 0.5f, dusk * 0.14f);
+            nightMaterial.color = tint;
+            nightOverlay.enabled = tint.a > 0.005f;
+            // Çevre dokusunun da ötesi (kameranın arka planı) örtüyle aynı oranda kararır: gece sınır görünmez.
+            Camera main = Camera.main;
+            if (main != null) main.backgroundColor = Color.Lerp(SeaColor, new Color(tint.r, tint.g, tint.b), tint.a);
+            if (roadMaterial != null) roadMaterial.color = Color.Lerp(Color.white, new Color(0.82f, 0.82f, 0.95f), night * 0.7f);
+
+            float lights = Mathf.Clamp01((night - 0.15f) / 0.6f);
+            cityLightMaterial.color = new Color(1f, 1f, 1f, lights * 0.9f);
+            cityLights.enabled = lights > 0.005f;
+            beamMaterial.color = new Color(1f, 1f, 1f, lights);
+            bool on = lights > 0.005f;
+            if (on == beamsOn) return;
+            beamsOn = on;
+            foreach (var visual in routeVisuals.Values)
+                foreach (var token in visual.Tokens)
+                    token.Beam.enabled = on;
+        }
+
         /// <summary>Tüm yollar tek bir şerit ağında (tek çizim çağrısı); kalınlık yakınlaştırmayla güncellenir.</summary>
         void BuildRoadLayer()
         {
@@ -282,7 +440,8 @@ namespace BusTycoon.Game
             go.AddComponent<MeshFilter>().sharedMesh = roadMesh;
             var renderer = go.AddComponent<MeshRenderer>();
             // Köşe renkli, ışıksız; hat çizgilerinden önce çizilir.
-            renderer.sharedMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2950 };
+            roadMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2950 };
+            renderer.sharedMaterial = roadMaterial;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             RebuildRoadMesh(ZoomScale);
@@ -482,7 +641,18 @@ namespace BusTycoon.Game
             var filter = go.AddComponent<MeshFilter>();
             filter.sharedMesh = BusModels.MeshFor(model);
             go.AddComponent<MeshRenderer>().sharedMaterial = BusModels.Material;
-            return new BusToken { Transform = go.transform, Filter = filter, Model = model };
+
+            // Farların yere düşen ışığı (gece görünür)
+            var beam = new GameObject("Headlights");
+            beam.transform.SetParent(go.transform, false);
+            beam.transform.localPosition = new Vector3(0f, 0.004f, BusModels.Length(model) / 2f - 0.02f);
+            beam.AddComponent<MeshFilter>().sharedMesh = beamMesh;
+            var beamRenderer = beam.AddComponent<MeshRenderer>();
+            beamRenderer.sharedMaterial = beamMaterial;
+            beamRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            beamRenderer.receiveShadows = false;
+            beamRenderer.enabled = beamsOn;
+            return new BusToken { Transform = go.transform, Filter = filter, Model = model, Beam = beamRenderer };
         }
 
         LineRenderer CreateLine(string lineName, float width)
@@ -739,6 +909,7 @@ namespace BusTycoon.Game
                     {
                         visual.Tokens[i].Model = model;
                         visual.Tokens[i].Filter.sharedMesh = BusModels.MeshFor(model);
+                        visual.Tokens[i].Beam.transform.localPosition = new Vector3(0f, 0.004f, BusModels.Length(model) / 2f - 0.02f);
                     }
                     visual.Tokens[i].Phase = i / (float)Mathf.Max(1, visual.Tokens.Count) * 2f;
                 }

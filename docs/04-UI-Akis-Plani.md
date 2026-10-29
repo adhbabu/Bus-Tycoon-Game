@@ -260,6 +260,13 @@ para ödülü verir.
 * **Mini harita (sol alt):** harita dokusu, hat çizgileri (renkleri haritadakiyle aynı), hatlarında giden otobüslerin
   model çizimleri (gittikleri yöne bakar), hatlı şehirler, merkez ve kameranın gördüğü alan (yamuk). Tıklayınca ya da
   sürükleyince kamera oraya gider; başlıktaki düğme küçültür. Görev kartı mini haritanın sağındadır.
+* **Şehir ikonları:** her şehrin kendine özgü ikonu (Twemoji; `Tools/make_city_icons.py`) haritada adının solunda,
+  ipucunda kısa "nesiyle ünlü" açıklamasıyla; planlayıcıda, hat kartlarında ve yeni oyun ekranında da görünür.
+* **Gece-gündüz:** `DayNightCycle` güneşi doğudan batıya yürütür (renk, şiddet, ortam ışığı); gece harita kararır
+  (yollar, hatlar, şehirler üstte kalır), şehir ışıkları ve otobüs farları yanar. Ekonomideki gün birkaç saniye
+  sürdüğü için görsel döngü 1x'te ~90 sn'dir (hızla karekök oranında hızlanır, duraklayınca durur). Üst panelde
+  tarihin yanında ☀️ 🌅 🌇 🌙 göstergesi; duraklatma menüsünde aç/kapa; vitrin gündüz çekilir; test için
+  `?saat=gece|gunduz|aksam|sabah|18`.
 * **Görseller:** galeride ve filo kartlarında otobüsün yandan çizimi; Bölgeler, ipucu ve yeni oyun ekranında ülke
   bayrakları; finans kalemlerinde, planlayıcıda, görevlerde ve günlükte ikonlar.
 * **Otobüs kartları (Filo):** başlık + durum rozeti, ikonlu ayrıntı satırları (📍 hat, 💺 model, 👥 doluluk,

@@ -53,6 +53,10 @@ namespace BusTycoon.Game
             }
         }
 
+        /// <summary>Modelin boyu (dünya birimi, ölçeklenmeden önce): farların yeri için.</summary>
+        public static float Length(BusModelData model) =>
+            ShapeFor(model != null ? model.Id : string.Empty, model != null ? Mathf.Clamp(model.Tier, 0, SegmentColors.Length - 1) : 2).Length;
+
         public static Mesh MeshFor(BusModelData model)
         {
             string key = model != null ? model.Id : string.Empty;

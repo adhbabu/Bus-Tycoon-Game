@@ -41,6 +41,8 @@ namespace BusTycoon.Game
             ui = gameUI;
             string mode = LaunchOptions.Get("vitrin") ?? LaunchOptions.Get("showcase");
             scripted = mode == "betik" || mode == "script";
+            // Mağaza görüntüleri gündüz çekilir (?saat=… ile gece/akşam da çekilebilir).
+            if (!LaunchOptions.Has("saat") && DayNightCycle.Instance != null) DayNightCycle.Instance.ForceTime(0.5f);
         }
 
         /// <summary>Ekran görüntüsünü alan betik çağırır.</summary>

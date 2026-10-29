@@ -1,0 +1,94 @@
+# şehir	hücre	açıklama — Tools/make_city_icons.py üretir (ikonlar: Twemoji, CC BY 4.0)
+İstanbul	0	Boğaz köprüleri, iki kıta
+Ankara	1	Başkent, Anıtkabir
+İzmir	2	Saat Kulesi ve Kordon
+Bursa	3	Yeşil Bursa, Uludağ
+Antalya	4	Turizmin başkenti
+Konya	5	Tahıl ambarı, Mevlana
+Adana	6	Adana kebap
+Şanlıurfa	7	Göbeklitepe
+Gaziantep	8	Mutfak şehri, baklava
+Kocaeli	9	Sanayinin kalbi
+Mersin	10	Narenciye ve liman
+Diyarbakır	11	Dev karpuzlar, surlar
+Hatay	12	UNESCO gastronomi şehri
+Manisa	13	Üzüm bağları
+Kayseri	14	Pastırma, Erciyes
+Samsun	15	Bandırma Vapuru, 19 Mayıs
+Balıkesir	16	Zeytin, Kaz Dağları
+Kahramanmaraş	17	Maraş dondurması
+Aydın	18	Antik kentler, incir
+Tekirdağ	19	Tekirdağ köftesi
+Van	20	Van kedisi
+Sakarya	21	Sapanca Gölü
+Denizli	22	Denizli horozu, Pamukkale
+Muğla	23	Bodrum ve Marmaris koyları
+Eskişehir	24	Öğrenci şehri, Odunpazarı
+Mardin	25	Taş evler
+Trabzon	26	Hamsi ve Sümela
+Malatya	27	Kayısı
+Ordu	28	Fındık
+Erzurum	29	Palandöken kayak merkezi
+Afyonkarahisar	30	Termal sular ve kaymak
+Sivas	31	Kangal köpeği
+Batman	32	Petrol
+Adıyaman	33	Nemrut'ta gün doğumu
+Tokat	34	Tokat kebabı
+Elazığ	35	Harput ve Hazar Gölü
+Zonguldak	36	Kömür madenleri
+Kütahya	37	Çini
+Çanakkale	38	Truva Atı
+Osmaniye	39	Yer fıstığı
+Şırnak	40	Cudi Dağı
+Çorum	41	Leblebi
+Ağrı	42	Ağrı Dağı
+Giresun	43	Kirazın anavatanı, fındık
+Isparta	44	Gül
+Aksaray	45	Sultanhanı Kervansarayı
+Yozgat	46	Çamlık Milli Parkı
+Düzce	47	Akçakoca kıyıları
+Edirne	48	Selimiye Camii
+Muş	49	Muş lalesi
+Kastamonu	50	Taşköprü sarımsağı
+Kırklareli	51	Ayçiçeği tarlaları
+Uşak	52	Halı ve battaniye
+Niğde	53	Patates
+Bitlis	54	Nemrut Krater Gölü
+Rize	55	Çay
+Amasya	56	Elma, kral mezarları
+Siirt	57	Büryan kebabı
+Bolu	58	Mengen aşçıları
+Nevşehir	59	Kapadokya balonları
+Yalova	60	Çiçekçilik
+Bingöl	61	Bal
+Hakkari	62	Cilo Dağları
+Kırıkkale	63	Sanayi
+Burdur	64	Salda Gölü, flamingolar
+Kars	65	Kaşar peyniri, Ani
+Karaman	66	Türk Dil Bayramı
+Karabük	67	Safranbolu evleri
+Kırşehir	68	Neşet Ertaş, bozlak
+Erzincan	69	Kemaliye, Karanlık Kanyon
+Bilecik	70	Osmanlı'nın kuruluşu
+Sinop	71	Doğal liman, en kuzey
+Iğdır	72	Iğdır kavunu
+Bartın	73	Amasra kıyıları
+Çankırı	74	Tuz mağarası
+Artvin	75	Ormanlar, Karagöl
+Kilis	76	Zeytinyağı
+Gümüşhane	77	Pestil ve köme
+Ardahan	78	Yaylalar
+Tunceli	79	Munzur gözeleri
+Bayburt	80	Dede Korkut
+Atina	81	Akropolis, Athena'nın baykuşu
+Bükreş	82	Parlamento Sarayı
+Sofya	83	Aleksandr Nevski Katedrali
+Tiflis	84	Kükürtlü hamamlar
+Selanik	85	Beyaz Kule
+Köstence	86	Karadeniz limanı
+Filibe	87	Antik tiyatro
+Kutaisi	88	Dinozor izleri
+Varna	89	Karadeniz plajları
+Burgaz	90	Plajlar ve tuz gölleri
+Batum	91	Palmiyeli bulvar
+Dedeağaç	92	Meriç Deltası kuğuları
