@@ -7,10 +7,10 @@ Character limits checked. Contact e-mail, privacy policy and support URLs: see `
 | **App name** (Play + App Store) | 30 | Bus Tycoon: Transport Empire |
 | **Subtitle** (App Store only) | 30 | Open routes, set fares, grow |
 | **Short description** (Play only) | 80 | Build a bus company on a real map of Türkiye: open routes, price tickets, grow! |
-| **Promotional text** (App Store) | 170 | Connect 81 provinces and 5 countries with bus routes. Tune ticket prices to demand, grow from a used minibus to a VIP fleet and reach $1,000,000! |
+| **Promotional text** (App Store) | 170 | Connect 81 provinces and 5 countries with bus routes. Tune ticket prices to demand, grow from a used minibus to a VIP fleet and reach $10,000,000! |
 | **Keywords** (App Store, comma separated) | 100 | bus,tycoon,strategy,management,simulation,transport,business,economy,turkey,map,fleet,company |
 | **Category** | — | Play: Game ▸ Strategy · App Store: Games ▸ Strategy (secondary: Simulation) |
-| **What's new** | 4000 | First release! Build your bus empire across 81 provinces and 5 countries with 8 bus models and 12 goals. |
+| **What's new** | 4000 | First release! Build your bus empire across 81 provinces and 5 countries with 8 bus models and 14 goals. |
 
 > Note: the in-game interface is Turkish only. If you add an English listing, say so in the description
 > ("Interface language: Turkish") to avoid poor reviews and App Review questions.
@@ -44,10 +44,10 @@ You don't drive the bus — you run the company!
 • Tap two cities, check the quote card, open the route — three taps
 • The planner suggests the most profitable destinations
 • One-glance route status: "Not enough capacity", "Low occupancy", "Losing money"
-• A 12-step goal chain teaches the game step by step
+• A 14-step goal chain teaches the game step by step
 
-**GOAL: $1,000,000**
-Reach one million dollars in cash and become the Bus Emperor! Careful: stay in the red for 30 days and you go bankrupt.
+**GOAL: $10,000,000**
+Reach ten million dollars in cash and become the Bus Emperor! Careful: stay in the red for 30 days and you go bankrupt.
 
 • Fully offline, no internet needed
 • No ads, no in-app purchases

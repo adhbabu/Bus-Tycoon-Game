@@ -76,6 +76,7 @@ namespace BusTycoon.EditorTools
 
             EnsureMainScene();
             EnsureRuntimeMaterials();
+            EnsureMapTextureImport();
             AssetDatabase.SaveAssets();
             Debug.Log($"[Mağaza] Ayarlar uygulandı: {StoreSettings.ProductName} {StoreSettings.Version} ({StoreSettings.BuildNumber}) · {StoreSettings.ApplicationId}");
         }
@@ -306,6 +307,36 @@ namespace BusTycoon.EditorTools
             if (GraphicsSettings.currentRenderPipeline != null) return;
             EnsureMaterial(DefaultContent.LitMaterialResourcePath, "Standard");
             EnsureMaterial(DefaultContent.MapMaterialResourcePath, "Unlit/Texture");
+        }
+
+        /// <summary>
+        /// Harita dokusu 4096 px'tir (Tools/build_map.py); Unity varsayılanı 2048'e küçültür. Tam boyut, mipmap,
+        /// yüksek kaliteli sıkıştırma ve keskin eğik bakış (anizotropik) ayarlanır.
+        /// </summary>
+        static void EnsureMapTextureImport()
+        {
+            string path = $"Assets/_Project/Resources/{DefaultContent.MapTextureResourcePath}.jpg";
+            if (!(AssetImporter.GetAtPath(path) is TextureImporter importer))
+            {
+                Debug.LogWarning($"[Mağaza] Harita dokusu bulunamadı: {path}");
+                return;
+            }
+
+            bool upToDate = importer.maxTextureSize == 4096 && importer.npotScale == TextureImporterNPOTScale.None &&
+                            importer.mipmapEnabled && importer.anisoLevel >= 4 && importer.wrapMode == TextureWrapMode.Clamp &&
+                            importer.textureCompression == TextureImporterCompression.CompressedHQ;
+            if (upToDate) return;
+
+            importer.textureType = TextureImporterType.Default;
+            importer.maxTextureSize = 4096;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.mipmapEnabled = true;
+            importer.anisoLevel = 4;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.SaveAndReimport();
+            Debug.Log($"[Mağaza] Harita dokusu içe aktarma ayarları güncellendi: {path}");
         }
 
         static void EnsureMaterial(string resourcePath, string shaderName)

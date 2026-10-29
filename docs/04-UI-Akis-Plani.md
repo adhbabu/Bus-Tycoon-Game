@@ -239,7 +239,8 @@ Bildirim yalnızca **oyuncunun bir karar vermesi gerekiyorsa** veya **ödül** a
 
 Oynanabilir sürümde bu rehberlik `GoalTracker` görev zinciriyle verilir: sol altta her zaman "sıradaki görev" ve
 ipucu görünür (ilk hat → fiyat ayarı → 2. otobüs → günlük 500 $ → seviye 3 → 4 hat → şehirlerarası otobüs →
-itibar 50 → günlük 5.000 $ → yurt dışı → VIP → 1.000.000 $ zafer). Her görev para ödülü verir.
+itibar 50 → günlük 5.000 $ → yurt dışı → VIP → ilk milyon → günlük 25.000 $ → 10.000.000 $ zafer). Her görev
+para ödülü verir.
 
 ---
 

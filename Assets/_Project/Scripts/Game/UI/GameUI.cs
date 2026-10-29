@@ -57,6 +57,7 @@ namespace BusTycoon.Game
         bool textFieldFocused;
 
         bool pointerOnMap, dragging;
+        Vector2 lastMouseGui;
         int pointerButton;
         Vector2 pointerDownPos, lastPointerPos;
         CityData hoveredCity;
@@ -316,6 +317,11 @@ namespace BusTycoon.Game
                 multiTouch = false;
             }
 
+            // Tarayıcıda touchpad: iki parmakla kaydırma haritayı kaydırır, sıkıştırma yakınlaştırır.
+            if (WheelInput.TakeWebGesture(out WheelInput.Kind gesture, out Vector2 gesturePixels) &&
+                mode != Mode.MainMenu && modal == Modal.None && !IsOverUI(lastMouseGui))
+                ApplyWheel(gesture, gesturePixels, lastMouseGui);
+
             if (mode != Mode.MainMenu && modal == Modal.None && !textFieldFocused)
             {
                 Vector2 axis = Vector2.zero;
@@ -343,6 +349,7 @@ namespace BusTycoon.Game
             bool playing = mode == Mode.Playing;
             bool planning = playing && panel == Panel.Planner;
 
+            world.ZoomDistance = mapCamera.Distance;
             world.Hovered = hoveredCity;
             world.Headquarters = playing ? session.Headquarters : null;
             world.Origin = mode == Mode.NewGame ? startCity : planning ? plannerOrigin : null;
@@ -370,6 +377,7 @@ namespace BusTycoon.Game
             textFieldFocused = GUIUtility.keyboardControl != 0;
             if (e.type == EventType.Repaint) sliderRectsNext.Clear();
 
+            if (e.isMouse || e.type == EventType.ScrollWheel) lastMouseGui = e.mousePosition;
             TrackHeldKeys(e);
             if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && !textFieldFocused) HandleShortcut(e);
             HandleTouchScroll(e);
@@ -744,10 +752,25 @@ namespace BusTycoon.Game
 
                 case EventType.ScrollWheel:
                     if (IsOverUI(mouse)) return;
-                    mapCamera.Zoom(Mathf.Clamp(e.delta.y, -6f, 6f) * 0.5f, GuiToScreen(mouse));
+                    if (WheelInput.WebKindThisFrame == WheelInput.Kind.None) // web touchpad hareketi Update'te işlendi
+                    {
+                        WheelInput.Kind kind = WheelInput.Classify(e, out Vector2 pixels);
+                        if (kind == WheelInput.Kind.Mouse) mapCamera.Zoom(Mathf.Clamp(e.delta.y, -6f, 6f) * 0.5f, GuiToScreen(mouse));
+                        else ApplyWheel(kind, pixels, mouse);
+                    }
                     e.Use();
                     break;
             }
+        }
+
+        /// <summary>Touchpad: kaydırma haritayı parmak yönünde taşır; sıkıştırma imlecin olduğu yere yakınlaştırır.</summary>
+        void ApplyWheel(WheelInput.Kind kind, Vector2 pixels, Vector2 guiPoint)
+        {
+            Vector2 at = GuiToScreen(guiPoint);
+            if (kind == WheelInput.Kind.Touchpad)
+                mapCamera.DragPan(at, at + new Vector2(-pixels.x, pixels.y)); // ekran y'si yukarı, tarayıcı y'si aşağı
+            else if (kind == WheelInput.Kind.Pinch)
+                mapCamera.Zoom(Mathf.Clamp(pixels.y, -60f, 60f) * 0.07f, at);
         }
 
         void OnMapClick(Vector2 guiPoint)
