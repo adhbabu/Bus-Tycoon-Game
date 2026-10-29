@@ -23,8 +23,15 @@ namespace BusTycoon.Game
         static bool initialized;
 #endif
 
-        /// <summary>Bu karede tarayıcıdan gelen touchpad/sıkıştırma hareketi (Update'te işlenir).</summary>
-        public static Kind WebKindThisFrame { get; private set; }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        /// <summary>Tekerlek türünü tarayıcı söyler; Unity'nin kendi tekerlek olayı yalnız fare tekerleği için kullanılır.</summary>
+        public static bool BrowserClassifies => true;
+#else
+        public static bool BrowserClassifies => false;
+#endif
+
+        /// <summary>Tarayıcının bildirdiği son tekerlek türü (kareler arasında korunur).</summary>
+        public static Kind LastWebKind { get; private set; }
 
         /// <summary>
         /// Her kare başında çağrılır. Web'de son tekerlek olaylarının türünü ve toplam kaymasını (ekran pikseli,
@@ -43,9 +50,8 @@ namespace BusTycoon.Game
             pixels = new Vector2(BusTycoon_TakeWheelDeltaX(), BusTycoon_TakeWheelDeltaY());
             kind = (Kind)Mathf.Clamp(BusTycoon_WheelKind(), 0, 3);
 #endif
-            bool gesture = pixels != Vector2.zero && (kind == Kind.Touchpad || kind == Kind.Pinch);
-            WebKindThisFrame = gesture ? kind : Kind.None;
-            return gesture;
+            LastWebKind = kind;
+            return pixels != Vector2.zero && (kind == Kind.Touchpad || kind == Kind.Pinch);
         }
 
         /// <summary>Web dışı platformlar için IMGUI tekerlek olayından tahmin; touchpad kayması ekran pikseline çevrilir.</summary>

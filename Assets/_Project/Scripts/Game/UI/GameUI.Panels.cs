@@ -208,7 +208,7 @@ namespace BusTycoon.Game
             if (upgrade != null)
             {
                 float net = fleet.GetPurchasePrice(upgrade) - resale;
-                if (EnabledButton(session.Finance.CanAfford(net), $"Takasla yükselt → {upgrade.DisplayName} (net {Fmt.Compact(net)})", s.Primary, Ht(30f)))
+                if (EnabledButton(session.Finance.CanAfford(net), $"Takasla yükselt: {upgrade.DisplayName} (net {Fmt.Compact(net)})", s.Primary, Ht(30f)))
                 {
                     BusModelData target = upgrade;
                     Defer(() => AskConfirm("Takasla yükselt",

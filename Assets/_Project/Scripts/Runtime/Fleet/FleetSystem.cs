@@ -180,7 +180,7 @@ namespace BusTycoon.Fleet
             finance.TrySpend(price, LedgerCategory.BusPurchase, newModel.Id);
             newBus = AddBus(newModel, 1f, price);
             if (!string.IsNullOrEmpty(routeId)) SetAssignment(newBus, routeId);
-            return OpResult.Ok($"{oldBus.nickname} → {newBus.nickname} (net {netCost:N0}).");
+            return OpResult.Ok($"{oldBus.nickname} yerine {newBus.nickname} (net {netCost:N0}).");
         }
 
         // ------------------------------------------------------------------ atama

@@ -752,12 +752,13 @@ namespace BusTycoon.Game
 
                 case EventType.ScrollWheel:
                     if (IsOverUI(mouse)) return;
-                    if (WheelInput.WebKindThisFrame == WheelInput.Kind.None) // web touchpad hareketi Update'te işlendi
-                    {
-                        WheelInput.Kind kind = WheelInput.Classify(e, out Vector2 pixels);
-                        if (kind == WheelInput.Kind.Mouse) mapCamera.Zoom(Mathf.Clamp(e.delta.y, -6f, 6f) * 0.5f, GuiToScreen(mouse));
-                        else ApplyWheel(kind, pixels, mouse);
-                    }
+                    // Web'de touchpad ve sıkıştırma Update'te tarayıcıdan okunur; burada yalnız fare tekerleği kalır.
+                    Vector2 pixels = Vector2.zero;
+                    WheelInput.Kind kind = WheelInput.BrowserClassifies
+                        ? (WheelInput.LastWebKind == WheelInput.Kind.Mouse || WheelInput.LastWebKind == WheelInput.Kind.None ? WheelInput.Kind.Mouse : WheelInput.Kind.None)
+                        : WheelInput.Classify(e, out pixels);
+                    if (kind == WheelInput.Kind.Mouse) mapCamera.Zoom(Mathf.Clamp(e.delta.y, -6f, 6f) * 0.5f, GuiToScreen(mouse));
+                    else if (kind != WheelInput.Kind.None) ApplyWheel(kind, pixels, mouse);
                     e.Use();
                     break;
             }
@@ -883,7 +884,7 @@ namespace BusTycoon.Game
                     if (important != (pass == 0)) continue;
                     if (city.MapTier > tierLimit && !important) continue;
 
-                    Vector3 sp = cam.WorldToScreenPoint(marker.Position + Vector3.up * 0.75f);
+                    Vector3 sp = cam.WorldToScreenPoint(marker.Position + Vector3.up * (marker.Height * marker.Root.localScale.y + 0.25f));
                     if (sp.z <= 0f) continue;
                     var p = new Vector2(sp.x, Screen.height - sp.y);
                     if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
@@ -980,10 +981,29 @@ namespace BusTycoon.Game
             GUI.color = previous;
         }
 
-        static void DrawBar(Rect rect, float value01, Color color)
+        /// <summary>Yuvarlak uçlu ilerleme çubuğu; dolu kısım en az çubuğun yüksekliği kadardır (küçük değer = nokta).</summary>
+        void DrawBar(Rect rect, float value01, Color color)
         {
-            DrawRect(rect, new Color(1f, 1f, 1f, 0.1f));
-            DrawRect(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(value01), rect.height), color);
+            Pill(rect, new Color(1f, 1f, 1f, 0.12f));
+            float value = Mathf.Clamp01(value01);
+            if (value > 0f) Pill(new Rect(rect.x, rect.y, Mathf.Max(rect.height, rect.width * value), rect.height), color);
+        }
+
+        void Pill(Rect rect, Color color)
+        {
+            Color previous = GUI.backgroundColor;
+            GUI.backgroundColor = color;
+            GUI.Box(rect, GUIContent.none, s.Bar);
+            GUI.backgroundColor = previous;
+        }
+
+        /// <summary>Renkli daire (bildirimlerin başındaki nokta).</summary>
+        void DrawDot(Vector2 center, float radius, Color color)
+        {
+            Color previous = GUI.backgroundColor;
+            GUI.backgroundColor = color;
+            GUI.Box(new Rect(center.x - radius, center.y - radius, radius * 2f, radius * 2f), GUIContent.none, s.Dot);
+            GUI.backgroundColor = previous;
         }
 
         /// <summary>Düzen içinde yatay ilerleme çubuğu.</summary>

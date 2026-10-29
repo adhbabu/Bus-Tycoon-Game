@@ -20,6 +20,8 @@ namespace BusTycoon.Game
         string latestSaveSlot;
         string latestSaveLabel;
         Vector2 helpScroll, newGameScroll;
+        Texture2D mascot;
+        bool mascotLoaded;
 
         // ------------------------------------------------------------------ ana menü
 
@@ -68,10 +70,10 @@ namespace BusTycoon.Game
             uiRects.Add(box);
             GUILayout.BeginArea(box, s.Modal);
 
-            Sp(10f);
-            GUILayout.Label("BUS TYCOON", s.Title);
-            GUILayout.Label("Otobüs İşletmeciliği · Strateji ve Yönetim", s.Center);
-            Sp(22f);
+            DrawMascot(compact ? 78f : 108f);
+            GUILayout.Label("Otobüs İmparatoru", s.Title);
+            GUILayout.Label("Bus Tycoon · otobüs şirketini kur, büyüt!", s.Center);
+            Sp(compact ? 12f : 20f);
 
             if (showMenuHelp)
             {
@@ -98,8 +100,29 @@ namespace BusTycoon.Game
             }
 
             GUILayout.FlexibleSpace();
-            GUILayout.Label("Harita: Natural Earth · Şehir verisi: GeoNames (CC BY 4.0)", s.WrapDim);
+            GUILayout.Label("Harita: Natural Earth · Şehir verisi: GeoNames (CC BY 4.0) · Yazı tipi: Nunito (SIL OFL)", s.WrapDim);
             GUILayout.EndArea();
+        }
+
+        /// <summary>Ana menüdeki güler yüzlü otobüs; yolda gidiyormuş gibi hafifçe zıplar.</summary>
+        void DrawMascot(float heightUnits)
+        {
+            if (!mascotLoaded)
+            {
+                mascotLoaded = true;
+                mascot = Resources.Load<Texture2D>(DefaultContent.MascotResourcePath);
+            }
+            if (mascot == null)
+            {
+                Sp(10f);
+                return;
+            }
+
+            Rect rect = GUILayoutUtility.GetRect(10f, heightUnits * u, GUILayout.ExpandWidth(true), Ht(heightUnits));
+            if (Event.current.type != EventType.Repaint) return;
+            float bounce = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 4f * u;
+            rect.y -= bounce;
+            GUI.DrawTexture(rect, mascot, ScaleMode.ScaleToFit);
         }
 
         void ResumeFromMenu()
@@ -276,7 +299,7 @@ namespace BusTycoon.Game
         {
             var full = new Rect(0f, 0f, W, H);
             uiRects.Add(full);
-            if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0f, 0f, 0f, 0.55f));
+            if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0.02f, 0.03f, 0.1f, 0.55f));
 
             var box = CenteredBox(480f, 470f);
             GUILayout.BeginArea(box, s.Modal);

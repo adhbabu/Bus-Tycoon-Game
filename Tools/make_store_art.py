@@ -5,8 +5,9 @@ Mağaza görsellerini üretir (özgün çizim; harici görsel kullanılmaz):
   store/app-store/AppIcon-1024.png           1024×1024  App Store Connect ikonu (saydamlık YOK)
   store/google-play/icon-512.png              512×512   Google Play ikonu
   store/google-play/feature-graphic.png      1024×500   Google Play tanıtım görseli
+  Assets/_Project/Resources/BusTycoon/UI/mascot.png  512×256  ana menüdeki güler yüzlü otobüs (saydam)
 
-Arka plan, oyunun kendi harita dokusundan (Assets/_Project/Resources/BusTycoon/map.png) alınır.
+Arka plan, oyunun kendi harita dokusundan (Assets/_Project/Resources/BusTycoon/map.jpg) alınır.
 Kullanım: python3 Tools/make_store_art.py      Gereksinim: Pillow, Inter yazı tipi (veya DejaVu Sans)
 """
 import os
@@ -14,7 +15,7 @@ import os
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MAP = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon", "map.png")
+MAP = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon", "map.jpg")
 SS = 4  # süper örnekleme (kenar yumuşatma)
 
 FONT_CANDIDATES = {
@@ -105,6 +106,39 @@ def draw_bus(draw, x, y, w):
         draw.ellipse([cx - r * 0.45, cy - r * 0.45, cx + r * 0.45, cy + r * 0.45], fill=(160, 168, 178))
 
 
+def draw_face(draw, x, y, w):
+    """draw_bus ile aynı ölçülerde: ön camda kocaman gözler, altında gülümseme ve pembe yanak."""
+    h = w * 0.40
+    ink = (34, 44, 58)
+    for ex in (x + w * 0.875, x + w * 0.935):
+        ey, r = y + h * 0.31, h * 0.085
+        draw.ellipse([ex - r, ey - r * 1.25, ex + r, ey + r * 1.25], fill=(255, 255, 255), outline=ink, width=max(1, int(r * 0.25)))
+        pr = r * 0.55
+        draw.ellipse([ex - pr + r * 0.2, ey - pr * 1.1, ex + pr + r * 0.2, ey + pr * 1.1], fill=ink)
+        gr = r * 0.22
+        draw.ellipse([ex + r * 0.05, ey - r * 0.55, ex + r * 0.05 + gr * 2, ey - r * 0.55 + gr * 2], fill=(255, 255, 255))
+    # gülümseme ve yanak
+    sx, sy, sw = x + w * 0.885, y + h * 0.66, w * 0.07
+    draw.arc([sx, sy - sw * 0.45, sx + sw, sy + sw * 0.45], start=20, end=160, fill=ink, width=max(2, int(h * 0.035)))
+    cr = h * 0.055
+    draw.ellipse([x + w * 0.855 - cr, y + h * 0.60 - cr * 0.7, x + w * 0.855 + cr, y + h * 0.60 + cr * 0.7], fill=(255, 130, 120))
+
+
+def make_menu_mascot():
+    width, height = 512 * SS, 256 * SS
+    image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    w = width * 0.86
+    x, y = (width - w) / 2, height * 0.08
+    draw_bus(draw, x, y, w)
+    draw_face(draw, x, y, w)
+    image = image.resize((512, 256), Image.LANCZOS)
+    path = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon", "UI", "mascot.png")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    image.save(path, optimize=True)
+    print("yazıldı:", os.path.relpath(path, REPO), image.size)
+
+
 def save_rgb(image, *path_parts, size=None):
     path = os.path.join(REPO, *path_parts)
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -166,3 +200,4 @@ def make_feature_graphic():
 if __name__ == "__main__":
     make_icon()
     make_feature_graphic()
+    make_menu_mascot()

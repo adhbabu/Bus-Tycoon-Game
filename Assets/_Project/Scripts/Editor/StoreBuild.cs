@@ -77,6 +77,7 @@ namespace BusTycoon.EditorTools
             EnsureMainScene();
             EnsureRuntimeMaterials();
             EnsureMapTextureImport();
+            EnsureUiTextureImport();
             AssetDatabase.SaveAssets();
             Debug.Log($"[Mağaza] Ayarlar uygulandı: {StoreSettings.ProductName} {StoreSettings.Version} ({StoreSettings.BuildNumber}) · {StoreSettings.ApplicationId}");
         }
@@ -337,6 +338,24 @@ namespace BusTycoon.EditorTools
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
             importer.SaveAndReimport();
             Debug.Log($"[Mağaza] Harita dokusu içe aktarma ayarları güncellendi: {path}");
+        }
+
+        /// <summary>Ana menü çizimi: saydam kenarları koyu hale bırakmasın, arayüzde keskin dursun.</summary>
+        static void EnsureUiTextureImport()
+        {
+            string path = $"Assets/_Project/Resources/{DefaultContent.MascotResourcePath}.png";
+            if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) return;
+            if (importer.alphaIsTransparency && !importer.mipmapEnabled && importer.wrapMode == TextureWrapMode.Clamp &&
+                importer.textureCompression == TextureImporterCompression.Uncompressed) return;
+
+            importer.textureType = TextureImporterType.Default;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            Debug.Log($"[Mağaza] Arayüz dokusu içe aktarma ayarları güncellendi: {path}");
         }
 
         static void EnsureMaterial(string resourcePath, string shaderName)

@@ -40,6 +40,10 @@ namespace BusTycoon.Data
         /// </summary>
         public const string LitMaterialResourcePath = "BusTycoon/Materials/Lit";
         public const string MapMaterialResourcePath = "BusTycoon/Materials/MapUnlit";
+        /// <summary>Arayüz yazı tipleri (Nunito, SIL OFL; Tools/make_fonts.py) ve ana menüdeki otobüs çizimi.</summary>
+        public const string RegularFontResourcePath = "BusTycoon/Fonts/Nunito-SemiBold";
+        public const string HeavyFontResourcePath = "BusTycoon/Fonts/Nunito-ExtraBold";
+        public const string MascotResourcePath = "BusTycoon/UI/mascot";
 
         public readonly struct ModelSpec
         {
