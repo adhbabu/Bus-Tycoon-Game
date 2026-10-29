@@ -34,7 +34,8 @@ namespace BusTycoon.Game
             showMenuHelp = false;
             startCity = null;
             mapCamera.AutoDrift = true;
-            if (session.IsRunning && session.Clock != null) session.Clock.SetSpeed(0);
+            // Yarışta saat durmaz (kurucunun saati herkesi bekletir); oyuncu menüden "Oyuna Dön" ile döner.
+            if (session.IsRunning && session.Clock != null && !RaceLocked) session.Clock.SetSpeed(0);
             RefreshLatestSave();
         }
 
@@ -55,7 +56,7 @@ namespace BusTycoon.Game
             get
             {
                 if (showMenuHelp) return CenteredBox(560f, 600f);
-                int buttons = 3 + (session.IsRunning && !session.IsBankrupt ? 1 : 0) + (CanQuit ? 1 : 0);
+                int buttons = 4 + (session.IsRunning && !session.IsBankrupt ? 1 : 0) + (CanQuit ? 1 : 0);
                 return CenteredBox(560f, (compact ? 300f : 335f) + 56f * buttons);
             }
         }
@@ -101,6 +102,9 @@ namespace BusTycoon.Game
                 if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, Ht(50f)))
                     Defer(BeginNewGame);
 
+                if (GUILayout.Button("Çok Oyunculu  (Blitz · Normal)", s.Button, Ht(46f)))
+                    Defer(OpenMultiplayer);
+
                 string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
                 if (EnabledButton(latestSaveSlot != null, continueText, s.Button, Ht(46f)))
                     Defer(() => LoadSlot(latestSaveSlot));
@@ -141,11 +145,12 @@ namespace BusTycoon.Game
             mapCamera.AutoDrift = false;
             CityData hq = session.Headquarters;
             if (hq != null) mapCamera.FocusOn(world.GetCityPosition(hq), 34f);
-            session.Clock.SetSpeed(1);
+            session.Clock.SetSpeed(RaceLocked ? Room.Speed : 1);
         }
 
         void BeginNewGame()
         {
+            if (Multiplayer != null && Multiplayer.InMatch) Multiplayer.Leave(); // tek başına yeni oyun: odadan çık
             mode = Mode.NewGame;
             modal = Modal.None;
             panel = Panel.None;
@@ -282,6 +287,7 @@ namespace BusTycoon.Game
         void LoadSlot(string slot)
         {
             if (slot == null) return;
+            if (Multiplayer != null && Multiplayer.InMatch) Multiplayer.Leave();
             if (session.TryLoadGame(slot)) Toast("Kayıt yüklendi.", UIStyles.Green); // → OnSessionStarted
             else Toast("Kayıt yüklenemedi.", UIStyles.Red);
         }
@@ -292,7 +298,7 @@ namespace BusTycoon.Game
         {
             if (mode != Mode.Playing || modal != Modal.None) return;
             speedBeforePause = Mathf.Max(1, session.Clock.Speed);
-            session.Clock.SetSpeed(0);
+            if (!RaceLocked) session.Clock.SetSpeed(0); // yarışta oyun durmaz
             RefreshLatestSave();
             modal = Modal.Pause;
         }
@@ -300,7 +306,7 @@ namespace BusTycoon.Game
         void ClosePauseMenu()
         {
             modal = Modal.None;
-            if (!session.IsBankrupt) session.Clock.SetSpeed(speedBeforePause);
+            if (!session.IsBankrupt && !RaceLocked) session.Clock.SetSpeed(speedBeforePause);
         }
 
         void AskConfirm(string title, string text, Action onConfirm)
@@ -325,31 +331,41 @@ namespace BusTycoon.Game
                 case Modal.GameOver: DrawGameOverModal(); break;
                 case Modal.Victory: DrawVictoryModal(); break;
                 case Modal.Confirm: DrawConfirmModal(); break;
+                case Modal.MatchEnd: DrawMatchEndModal(); break;
             }
             GUILayout.EndArea();
         }
 
         void DrawPauseModal()
         {
-            GUILayout.Label("Oyun Duraklatıldı", s.H1);
+            bool race = RaceLocked;
+            GUILayout.Label(race ? "Menü (yarış sürüyor)" : "Oyun Duraklatıldı", s.H1);
             Divider();
             if (GUILayout.Button("Devam Et", s.Primary, Ht(46f))) Defer(ClosePauseMenu);
             if (GUILayout.Button("Kaydet", s.Button, Ht(40f))) Defer(() => SaveTo(SaveSlot));
             if (compact && GUILayout.Button("Günlük (son olaylar)", s.Button, Ht(40f)))
                 Defer(() => { ClosePauseMenu(); OpenPanelNow(Panel.Log); });
-            if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, Ht(40f)))
-                Defer(() => LoadSlot(latestSaveSlot));
-
-            Sp(8f);
-            GUILayout.Label("Gün süresi (1x hızda)", s.Dim);
-            GUILayout.BeginHorizontal();
-            foreach (float seconds in new[] { 2f, 4f, 8f })
+            if (race)
             {
-                bool active = Mathf.Approximately(session.SecondsPerDay, seconds);
-                if (GUILayout.Button($"{seconds:0} sn", active ? s.TabActive : s.Tab, Ht(32f)))
-                    session.SecondsPerDay = seconds;
+                if (GUILayout.Button("Yarıştan Çık (tek başına devam)", s.Danger, Ht(40f)))
+                    Defer(() => AskConfirm("Yarıştan çık", "Odadan ayrılırsınız; şirketiniz tek başına oyunda kalır.", () => Multiplayer?.Leave()));
             }
-            GUILayout.EndHorizontal();
+            else
+            {
+                if (EnabledButton(latestSaveSlot != null, "Son Kaydı Yükle", s.Button, Ht(40f)))
+                    Defer(() => LoadSlot(latestSaveSlot));
+
+                Sp(8f);
+                GUILayout.Label("Gün süresi (1x hızda)", s.Dim);
+                GUILayout.BeginHorizontal();
+                foreach (float seconds in new[] { 2f, 4f, 8f })
+                {
+                    bool active = Mathf.Approximately(session.SecondsPerDay, seconds);
+                    if (GUILayout.Button($"{seconds:0} sn", active ? s.TabActive : s.Tab, Ht(32f)))
+                        session.SecondsPerDay = seconds;
+                }
+                GUILayout.EndHorizontal();
+            }
 
             DayNightCycle cycle = DayNightCycle.Instance;
             if (cycle != null)
@@ -448,6 +464,9 @@ namespace BusTycoon.Game
                 "Sol tık: seç · Sürükle veya WASD/ok tuşları: kaydır · Tekerlek veya Q/E: yakınlaştır · Sağ tık: seçimi iptal\n" +
                 "Boşluk: duraklat · 1/2/3: hız · N: yeni hat · R: hatlar · F: filo · G: galeri · K: finans · B: bölgeler · " +
                 "J: görevler · F5: kaydet · Esc: geri / menü");
+            HelpSection("Çok oyunculu",
+                "Ana menüde Çok Oyunculu → Oda kur: arkadaşların 5 karakterlik oda kodunla katılır. Herkes kendi şirketini kurar, " +
+                "günler aynı anda ilerler. Blitz'de $1.000.000, Normal'de $10.000.000 kasaya ilk ulaşan kazanır.");
             HelpSection("Dikkat",
                 "Kasa 30 gün üst üste eksi kalırsa iflas edersiniz. Garajda bekleyen otobüsler de sigorta öder.");
         }

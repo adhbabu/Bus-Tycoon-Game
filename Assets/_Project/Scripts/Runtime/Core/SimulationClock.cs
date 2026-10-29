@@ -32,6 +32,11 @@ namespace BusTycoon.Core
 
         public int CurrentDay { get; private set; }
         public int Speed { get; private set; }
+        /// <summary>
+        /// Çok oyunculu yarışta katılımcının saati: gün bu sınıra ulaşınca (kurucunun günü) bekler; geride kalırsa
+        /// yetişmek için her karede bir gün fazladan işler. null = sınırsız (tek oyunculu, kurucu).
+        /// </summary>
+        public int? DayLimit { get; set; }
         public bool IsPaused => Speed == 0;
         public float DayProgress01 => accumulator / secondsPerDay;
 
@@ -68,15 +73,19 @@ namespace BusTycoon.Core
             // Uzun bir takılmadan (alt-tab, yükleme) sonra tek karede onlarca gün simüle etmeyelim.
             const int maxDaysPerTick = 4;
             int processed = 0;
-            while (accumulator >= secondsPerDay && processed < maxDaysPerTick)
+            while (accumulator >= secondsPerDay && processed < maxDaysPerTick && CanAdvance)
             {
                 accumulator -= secondsPerDay;
                 processed++;
                 AdvanceOneDay();
             }
+            // Yarışta kurucunun gerisinde kalan katılımcı yetişsin
+            if (DayLimit.HasValue && DayLimit.Value - CurrentDay >= 2) AdvanceOneDay();
 
-            if (accumulator >= secondsPerDay) accumulator = 0f;
+            if (accumulator >= secondsPerDay) accumulator = CanAdvance ? 0f : secondsPerDay; // sınırda gün dolu bekler
         }
+
+        bool CanAdvance => !DayLimit.HasValue || CurrentDay < DayLimit.Value;
 
         /// <summary>Saati beklemeden bir gün ilerletir (debug / "günü bitir" butonu).</summary>
         public void AdvanceOneDay()

@@ -58,6 +58,11 @@ namespace BusTycoon.Game
             stations.transform.SetParent(root.transform, false);
             stations.Init(session, mapCamera, sun);
 
+            // Çok oyunculu oda (yarış başlayınca şirketi kurar, saati odaya bağlar)
+            var multiplayer = new GameObject("Multiplayer").AddComponent<MultiplayerDirector>();
+            multiplayer.transform.SetParent(root.transform, false);
+            multiplayer.Init(session);
+
             var ui = new GameObject("GameUI").AddComponent<GameUI>();
             ui.transform.SetParent(root.transform, false);
             ui.Init(session, world, mapCamera);
