@@ -125,7 +125,7 @@ namespace BusTycoon.Game
         {
             var bar = new Rect(0f, H - SafeBottom - BottomBarHeight, W, SafeBottom + BottomBarHeight);
             uiRects.Add(bar);
-            GUI.Box(bar, GUIContent.none, s.TopBar);
+            GUI.Box(bar, GUIContent.none, s.BottomBar);
 
             GUILayout.BeginArea(new Rect(SafeLeft + 6f * u, bar.y + 5f * u, SafeRight - SafeLeft - 12f * u, BottomBarHeight - 10f * u));
             GUILayout.BeginHorizontal();
@@ -190,8 +190,8 @@ namespace BusTycoon.Game
                 Color previous = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
                 GUI.Box(rect, GUIContent.none, s.Toast);
-                DrawRect(new Rect(rect.x, rect.y + 4f * u, 4f * u, rect.height - 8f * u), new Color(toast.Color.r, toast.Color.g, toast.Color.b, alpha));
-                GUI.Label(new Rect(rect.x + 16f * u, rect.y + 7f * u, rect.width - 24f * u, 24f * u), toast.Text, s.Label);
+                DrawDot(new Vector2(rect.x + 20f * u, rect.center.y), 6f * u, new Color(toast.Color.r, toast.Color.g, toast.Color.b)); // saydamlık GUI.color'dan
+                GUI.Label(new Rect(rect.x + 34f * u, rect.y + 6f * u, rect.width - 46f * u, 24f * u), toast.Text, s.Label);
                 GUI.color = previous;
                 y += 42f * u;
             }

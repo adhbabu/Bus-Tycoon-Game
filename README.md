@@ -120,7 +120,8 @@ site/                      Web sitesinin giriş sayfası (Tools/build_site.py il
 Tools/store-screenshots.mjs Web sürümünden mağaza ekran görüntüleri (Playwright)
 Tools/build_world_data.py  GeoNames → cities.csv üretir
 Tools/build_map.py         Natural Earth 1:10m → map.jpg (harita) ve roads.txt (yol ağı) üretir
-Tools/make_store_art.py    Uygulama ikonu ve mağaza tanıtım görseli
+Tools/make_store_art.py    Uygulama ikonu, mağaza tanıtım görseli ve ana menüdeki otobüs çizimi
+Tools/make_fonts.py        Nunito yazı tipinden arayüzün iki kalınlığını üretir (Resources/BusTycoon/Fonts)
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 
@@ -137,3 +138,4 @@ asset'leri üretir. **Testler:** Window ▸ General ▸ Test Runner ▸ EditMode
 
 * Harita: [Natural Earth](https://www.naturalearthdata.com/) (kamu malı)
 * Şehirler: [GeoNames](https://www.geonames.org/) (CC BY 4.0). Komşu ülke şehirlerinin nüfusları yaklaşık bölge/metro değerleridir.
+* Yazı tipi: [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License 1.1; lisans metni `Assets/_Project/Resources/BusTycoon/Fonts/OFL.txt`)

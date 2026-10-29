@@ -248,7 +248,11 @@ para ödülü verir.
 
 * **Renkler:** kâr/olumlu `#4CD973`, uyarı `#FFB333`, zarar/kritik `#F24D4D`, nötr gri `#999`, seçim mavisi `#66BFFF`.
 * **Sayılar:** her yerde `UIFormat` (tr-TR): `$12.345`, kısaltma `$48,2 B` / `$1,3 Mn`, bilet `$22,50`, `%85`.
-* **Tipografi:** rakamlar için eş aralıklı (tabular) rakamlı font → kaydırıcı oynarken sayılar titremez.
+* **Tipografi:** yuvarlak hatlı **Nunito** (SemiBold gövde, ExtraBold başlık/buton; `Tools/make_fonts.py`). Rakamları
+  eş genişlikte (tabular) → kaydırıcı oynarken sayılar titremez.
+* **Kutular (oynanabilir sürüm, `UIStyles`):** lacivert degrade paneller, ince açık kenar çizgisi ve yumuşak gölge
+  (`GUIStyle.overflow`); alt "dudağı" olan şeker butonlar (basınca içeri göçer); hap biçimli bildirimler ve
+  yuvarlak uçlu ilerleme çubukları. Haritada şehirler beyaz tabanlı parlak kubbeler, büyük şehirlerde lolipop iğne.
 * **Hareket:** panel açılış 150 ms kaydırma; değişen sayılarda 300 ms sayaç animasyonu (kâr artışı yeşil yanıp söner).
 * **Kısayollar:** `Space` duraklat, `1/2/3` hız, `N` yeni hat, `R` hatlarım, `F` filo, `G` galeri, `K` finans,
   `B` bölgeler, `J` görevler, `L` günlük, `H` yardım, `F5` kaydet, `Esc` geri / menü, `WASD` kaydır, `Q/E` yakınlaştır.

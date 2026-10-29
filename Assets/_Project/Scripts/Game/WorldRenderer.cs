@@ -25,6 +25,8 @@ namespace BusTycoon.Game
             public Vector3 Position;
             public Material Material;
             public Transform Root;
+            /// <summary>İşaretin tepesi (ölçeklenmeden önce); şehir adı bunun üstüne yazılır.</summary>
+            public float Height;
         }
 
         sealed class RouteVisual
@@ -52,7 +54,8 @@ namespace BusTycoon.Game
         /// <summary>Çizgi kalınlıkları ve otobüs boyu bu kamera uzaklığına göre ayarlanmıştır.</summary>
         const float ReferenceZoom = 40f;
 
-        static readonly Color CityNormal = new Color(0.78f, 0.75f, 0.64f);   // yumuşak kum rengi: ışıkta beyaza patlamaz
+        static readonly Color CityNormal = new Color(0.8f, 0.69f, 0.6f);     // şeftali-bej: ışıkta beyaza patlamaz
+        static readonly Color CityRim = new Color(0.97f, 0.96f, 0.92f);
         static readonly Color CityConnected = new Color(0.35f, 0.86f, 0.48f);
         static readonly Color CityLocked = new Color(0.42f, 0.44f, 0.44f);
         static readonly Color CityHeadquarters = new Color(1f, 0.78f, 0.25f);
@@ -88,14 +91,14 @@ namespace BusTycoon.Game
         readonly List<GeoCoordinate> pathBuffer = new List<GeoCoordinate>();
         readonly List<BusInstance> busBuffer = new List<BusInstance>();
         Material[] tierMaterials;
-        Material windowMaterial, roofMaterial, wheelMaterial;
+        Material windowMaterial, roofMaterial, wheelMaterial, headlightMaterial, cityRimMaterial;
         LineRenderer previewLine;
         Transform cityRoot, routeRoot;
         float animationTime;
         bool colorsDirty = true;
         bool tokensDirty = true;
 
-        Vector3[][] roadPoints;
+        readonly List<(RoadNetwork.RoadClass Class, Vector3[] Points)> roadPieces = new List<(RoadNetwork.RoadClass, Vector3[])>();
         Mesh roadMesh;
         float roadScale = -1f;
         float zoomDistance = ReferenceZoom;
@@ -144,6 +147,7 @@ namespace BusTycoon.Game
             windowMaterial = MaterialFactory.CreateLit(new Color(0.16f, 0.22f, 0.32f), 0.7f);
             roofMaterial = MaterialFactory.CreateLit(new Color(0.97f, 0.97f, 0.95f), 0.3f);
             wheelMaterial = MaterialFactory.CreateLit(new Color(0.12f, 0.12f, 0.14f), 0.1f);
+            headlightMaterial = MaterialFactory.CreateLit(new Color(1f, 0.93f, 0.55f), 0.6f);
 
             previewLine = CreateLine("Preview", 0.22f);
             previewLine.gameObject.SetActive(false);
@@ -199,13 +203,14 @@ namespace BusTycoon.Game
         {
             if (roads == null) return;
 
-            roadPoints = new Vector3[roads.Edges.Count][];
-            for (int e = 0; e < roadPoints.Length; e++)
+            // Ağ, güzergâhlar kopmasın diye harita sınırının biraz dışına taşar; çizim harita kenarında kesilir.
+            roadPieces.Clear();
+            var points = new List<Vector3>();
+            foreach (RoadNetwork.Edge edge in roads.Edges)
             {
-                GeoCoordinate[] geo = roads.Edges[e].Points;
-                var points = new Vector3[geo.Length];
-                for (int k = 0; k < geo.Length; k++) points[k] = projection.GeoToWorld(geo[k]) + Vector3.up * RoadHeight;
-                roadPoints[e] = points;
+                points.Clear();
+                foreach (GeoCoordinate geo in edge.Points) points.Add(projection.GeoToWorld(geo) + Vector3.up * RoadHeight);
+                ClipToMap(edge.Class, points);
             }
 
             var go = new GameObject("Roads");
@@ -243,8 +248,68 @@ namespace BusTycoon.Game
 
         void AppendRoadClass(RoadNetwork.RoadClass roadClass, float width, Color color)
         {
-            for (int e = 0; e < roadPoints.Length; e++)
-                if (roads.Edges[e].Class == roadClass) AppendRibbon(roadPoints[e], width, color);
+            foreach (var piece in roadPieces)
+                if (piece.Class == roadClass) AppendRibbon(piece.Points, width, color);
+        }
+
+        /// <summary>Çoklu çizginin harita dikdörtgeni içindeki parçalarını (kenarda kesilmiş olarak) ekler.</summary>
+        void ClipToMap(RoadNetwork.RoadClass roadClass, List<Vector3> points)
+        {
+            Rect bounds = MapBoundsXZ;
+            var piece = new List<Vector3>();
+            for (int i = 1; i < points.Count; i++)
+            {
+                Vector3 a = points[i - 1], b = points[i];
+                if (!ClipSegment(bounds, ref a, ref b))
+                {
+                    Flush(roadClass, piece);
+                    continue;
+                }
+                if (piece.Count == 0 || (piece[piece.Count - 1] - a).sqrMagnitude > 1e-8f)
+                {
+                    Flush(roadClass, piece);
+                    piece.Add(a);
+                }
+                piece.Add(b);
+            }
+            Flush(roadClass, piece);
+        }
+
+        void Flush(RoadNetwork.RoadClass roadClass, List<Vector3> piece)
+        {
+            if (piece.Count >= 2) roadPieces.Add((roadClass, piece.ToArray()));
+            piece.Clear();
+        }
+
+        /// <summary>Liang–Barsky: doğru parçasını XZ dikdörtgenine kırpar; tamamen dışarıdaysa false.</summary>
+        static bool ClipSegment(Rect bounds, ref Vector3 a, ref Vector3 b)
+        {
+            float t0 = 0f, t1 = 1f;
+            float dx = b.x - a.x, dz = b.z - a.z;
+            if (!ClipEdge(-dx, a.x - bounds.xMin, ref t0, ref t1) || !ClipEdge(dx, bounds.xMax - a.x, ref t0, ref t1) ||
+                !ClipEdge(-dz, a.z - bounds.yMin, ref t0, ref t1) || !ClipEdge(dz, bounds.yMax - a.z, ref t0, ref t1))
+                return false;
+            Vector3 start = a, delta = b - a;
+            a = start + delta * t0;
+            b = start + delta * t1;
+            return true;
+        }
+
+        static bool ClipEdge(float p, float q, ref float t0, ref float t1)
+        {
+            if (Mathf.Abs(p) < 1e-9f) return q >= 0f;
+            float t = q / p;
+            if (p < 0f)
+            {
+                if (t > t1) return false;
+                if (t > t0) t0 = t;
+            }
+            else
+            {
+                if (t < t0) return false;
+                if (t < t1) t1 = t;
+            }
+            return true;
         }
 
         /// <summary>Yere yatık şerit: her noktada iki köşe; dönüşlerde kalınlık korunur (sınırlı miter).</summary>
@@ -288,24 +353,34 @@ namespace BusTycoon.Game
             }
         }
 
+        /// <summary>
+        /// Şehir işareti: beyaz taban halkası üstünde yarısı gömülü, parlak renkli bir kubbe ("şeker damlası").
+        /// Büyük şehirlerde kubbenin üstünde ayrıca bir lolipop iğne durur. Renk durumu gösterir (bkz. RefreshColors).
+        /// </summary>
         void BuildCityMarkers()
         {
+            cityRimMaterial = MaterialFactory.CreateLit(CityRim, 0.2f);
             foreach (var city in session.World.Cities)
             {
                 if (city == null) continue;
                 Vector3 position = projection.GeoToWorld(city.Coordinate);
-                float size = city.MapTier switch { 0 => 0.85f, 1 => 0.62f, 2 => 0.46f, _ => 0.34f };
+                float size = city.MapTier switch { 0 => 0.6f, 1 => 0.48f, 2 => 0.38f, _ => 0.3f };
 
                 var root = new GameObject("City_" + city.Id).transform;
                 root.SetParent(cityRoot, false);
                 root.position = position;
 
-                var material = MaterialFactory.CreateLit(CityNormal, 0.1f);
-                CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.04f, 0f), new Vector3(size, 0.04f, size), material);
-                if (city.MapTier <= 1 || city.IsCapital)
-                    CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.3f, 0f), new Vector3(size * 0.22f, 0.3f, size * 0.22f), material);
+                var material = MaterialFactory.CreateLit(CityNormal, 0.55f);
+                CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.015f, 0f), new Vector3(size * 1.35f, 0.015f, size * 1.35f), cityRimMaterial);
+                CreatePart(PrimitiveType.Sphere, root, new Vector3(0f, 0.03f, 0f), new Vector3(size, size * 0.7f, size), material);
+                bool pin = city.MapTier <= 1 || city.IsCapital;
+                if (pin)
+                {
+                    CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.03f + size * 0.65f, 0f), new Vector3(0.06f, size * 0.4f, 0.06f), cityRimMaterial);
+                    CreatePart(PrimitiveType.Sphere, root, new Vector3(0f, 0.03f + size * 1.17f, 0f), Vector3.one * (size * 0.42f), material);
+                }
 
-                var marker = new CityMarker { City = city, Position = position, Material = material, Root = root };
+                var marker = new CityMarker { City = city, Position = position, Material = material, Root = root, Height = size * (pin ? 1.4f : 0.4f) };
                 markers.Add(marker);
                 markerByCity[city] = marker;
             }
@@ -322,7 +397,7 @@ namespace BusTycoon.Game
             return renderer;
         }
 
-        /// <summary>Küçük, sevimli otobüs: renkli gövde, koyu cam bandı, beyaz tavan ve iki tekerlek aksı.</summary>
+        /// <summary>Küçük, sevimli otobüs: renkli gövde, koyu cam bandı, beyaz tavan, iki tekerlek aksı ve farlar.</summary>
         BusToken CreateBus()
         {
             var root = new GameObject("Bus").transform;
@@ -335,6 +410,8 @@ namespace BusTycoon.Game
                 var wheel = CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.055f, z), new Vector3(0.1f, 0.14f, 0.1f), wheelMaterial);
                 wheel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             }
+            foreach (float x in new[] { -0.075f, 0.075f }) // farlar: otobüsün önü (+z) gidiş yönüne bakar
+                CreatePart(PrimitiveType.Cube, root, new Vector3(x, 0.085f, 0.301f), new Vector3(0.06f, 0.04f, 0.012f), headlightMaterial);
             return new BusToken { Transform = root, Body = body };
         }
 
