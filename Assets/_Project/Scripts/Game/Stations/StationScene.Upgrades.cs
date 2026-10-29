@@ -287,9 +287,11 @@ namespace BusTycoon.Game
             Vector3 local = screen - p;
             StationSigns.Text(part, "KALKIŞLAR", local + new Vector3(0f, height / 2f - rowHeight * 0.7f, -0.02f), 0f, rowHeight * 0.8f, width * 0.9f, new Color(1f, 0.82f, 0.25f));
             int rows = 4;
+            boardRowHeight = rowHeight * 0.7f;
+            boardRowWidth = width * 0.92f;
             for (int i = 0; i < rows; i++)
             {
-                TextMesh row = StationSigns.Text(part, " ", local + new Vector3(0f, height / 2f - rowHeight * (1.85f + i), -0.02f), 0f, rowHeight * 0.7f, width * 0.92f, White);
+                TextMesh row = StationSigns.Text(part, " ", local + new Vector3(0f, height / 2f - rowHeight * (1.85f + i), -0.02f), 0f, boardRowHeight, boardRowWidth, White);
                 if (row != null) boardRows.Add(row);
             }
             boardTimer = 0f;
@@ -420,9 +422,10 @@ namespace BusTycoon.Game
                     k.Box(door, new Vector3(length / columns - 0.06f, 0.42f, 0.02f), (c + r) % 3 == 0 ? Orange : new Color(0.84f, 0.86f, 0.9f));
                     k.Box(door + new Vector3(0.15f, 0f, 0.015f), new Vector3(0.03f, 0.1f, 0.02f), Dark);
                 }
+            k.Box(new Vector3(0f, 2.32f, 0.12f), new Vector3(Mathf.Min(length * 0.6f, 2.4f), 0.48f, 0.06f), Orange); // tabela levhası (arkadan yazı görünmesin)
             k.Pop();
             Transform part = End(k, p, "Lockers");
-            StationSigns.Text(part, "EMANET", Quaternion.Euler(0f, yaw, 0f) * new Vector3(0f, 2.3f, 0.2f), yaw + 180f, 0.32f, length, Orange);
+            StationSigns.Text(part, "EMANET", Quaternion.Euler(0f, yaw, 0f) * new Vector3(0f, 2.32f, 0.17f), yaw + 180f, 0.3f, Mathf.Min(length * 0.55f, 2.2f), White);
             spots.Add(new StationSpot(p + Quaternion.Euler(0f, yaw, 0f) * new Vector3(0.6f, 0f, 1.0f), Quaternion.Euler(0f, yaw, 0f) * Vector3.back));
         }
 
@@ -579,9 +582,10 @@ namespace BusTycoon.Game
             k.Box(Hall(u0 + 2.2f, (v0 + v1) / 2f, F + 0.4f), new Vector3(0.8f, 0.06f, 1.6f), gold);
             k.Box(Hall(u0 + 2.2f, (v0 + v1) / 2f, F + 0.2f), new Vector3(0.6f, 0.4f, 1.3f), Dark);
             k.Frustum(Hall(u1 - 0.7f, v1 - 0.7f), 0.28f, 0.36f, 0.6f, gold, 8);
+            k.Box(Hall(u1 + 0.02f, (v0 + v1) / 2f, F + 2.95f), new Vector3(0.05f, 0.62f, (v1 - v0) * 0.78f), Dark); // tabela levhası
             k.Sphere(Hall(u1 - 0.7f, v1 - 0.7f, F + 1.15f), 0.5f, Leaf, 8, 5);
             Transform part = End(k, p, "Vip");
-            StationSigns.Text(part, "VIP SALON", Hall(u1 + 0.07f, (v0 + v1) / 2f, F + 2.95f) - p, -90f, 0.42f, (v1 - v0) * 0.7f, gold);
+            StationSigns.Text(part, "VIP SALON", Hall(u1 + 0.08f, (v0 + v1) / 2f, F + 2.95f) - p, -90f, 0.42f, (v1 - v0) * 0.7f, gold);
             for (int s = 0; s < 3; s++)
                 seats.Add(new StationSpot(Hall(u0 + 0.75f, (v0 + v1) / 2f - sofaLength / 3f + s * sofaLength / 3f), Vector3.right));
             spots.Add(new StationSpot(Hall(u0 + 3.2f, (v0 + v1) / 2f + 1f), Vector3.left));

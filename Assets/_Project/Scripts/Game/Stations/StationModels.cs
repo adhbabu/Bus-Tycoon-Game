@@ -33,8 +33,11 @@ namespace BusTycoon.Game
         static Mesh flagMesh;
         static MeshLayer[] flagLayers;
 
+        /// <summary>Küçük duraklar biraz büyütülür ki uzaktan da seçilsin.</summary>
+        static float Scale(StationTier tier) => tier == StationTier.Stop ? 1.3f : tier == StationTier.Terminal ? 1.12f : 1f;
+
         /// <summary>İşaretin tepe yüksekliği (ölçeklenmeden önce): şehir adı bunun üstüne yazılır.</summary>
-        public static float Height(StationTier tier) => tier switch
+        public static float Height(StationTier tier) => Scale(tier) * tier switch
         {
             StationTier.Stop => 0.17f,
             StationTier.Terminal => 0.19f,
@@ -43,7 +46,7 @@ namespace BusTycoon.Game
         };
 
         /// <summary>Merkez bayrağının yeri (çatının üstü).</summary>
-        public static Vector3 FlagPosition(StationTier tier) => tier switch
+        public static Vector3 FlagPosition(StationTier tier) => Scale(tier) * tier switch
         {
             StationTier.Stop => new Vector3(0.1f, 0.14f, 0.06f),
             StationTier.Terminal => new Vector3(0.0f, 0.15f, 0.14f),
@@ -57,6 +60,7 @@ namespace BusTycoon.Game
             if (meshes[index] == null)
             {
                 var kit = new MeshKit();
+                kit.Push(Vector3.zero, 0f, Scale(tier));
                 switch (tier)
                 {
                     case StationTier.Stop: BuildStop(kit); break;
