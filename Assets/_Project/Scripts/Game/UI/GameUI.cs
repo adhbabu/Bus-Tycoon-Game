@@ -892,12 +892,24 @@ namespace BusTycoon.Game
                     bool bold = city.MapTier == 0 || important;
                     GUIStyle style = bold ? s.MapLabelBold : s.MapLabel;
                     float width = LabelWidth(city, style, bold);
-                    var box = new Rect(p.x - width * 0.5f - 3f * u, p.y - 22f * u, width + 6f * u, 18f * u);
+                    // Şehrin kendine özgü ikonu adın solunda; ikisi birlikte işaretin üstünde ortalanır.
+                    bool hasIcon = UICityIcons.Has(city);
+                    float icon = hasIcon ? (bold ? 22f : 18f) * u : 0f, gap = hasIcon ? 4f * u : 0f;
+                    float left = p.x - (icon + gap + width) * 0.5f;
+                    var box = new Rect(left - 3f * u, p.y - 24f * u, icon + gap + width + 6f * u, 22f * u);
                     if (!important && OverlapsPlacedLabel(box)) continue;
                     placedLabels.Add(box);
 
-                    var rect = new Rect(p.x - 90f * u, p.y - 24f * u, 180f * u, 22f * u);
+                    float textCenter = left + icon + gap + width * 0.5f;
+                    var rect = new Rect(textCenter - 90f * u, p.y - 24f * u, 180f * u, 22f * u);
                     bool locked = playing && !session.Progression.IsRegionUnlocked(city.Region);
+                    if (hasIcon)
+                    {
+                        Color tint = GUI.color;
+                        if (locked) GUI.color = new Color(1f, 1f, 1f, 0.55f);
+                        UICityIcons.Draw(new Rect(left, p.y - 24f * u + (22f * u - icon) * 0.5f, icon, icon), city);
+                        GUI.color = tint;
+                    }
                     GUI.Label(new Rect(rect.x + u, rect.y + u, rect.width, rect.height), city.DisplayName, bold ? s.MapLabelBoldShadow : s.MapLabelShadow);
                     Color previous = GUI.contentColor;
                     if (locked) GUI.contentColor = new Color(0.75f, 0.75f, 0.75f, 0.8f);
@@ -934,6 +946,8 @@ namespace BusTycoon.Game
                 (city.DisplayName, s.Bold, UIStyles.Text),
                 ($"{city.Region.DisplayName} · nüfus {Fmt.Population(city.Population)}", s.Small, UIStyles.DimText)
             };
+            string famousFor = UICityIcons.Description(city);
+            if (!string.IsNullOrEmpty(famousFor)) lines.Insert(1, (famousFor, s.Small, UIStyles.Gold));
 
             if (mode == Mode.Playing)
             {
@@ -957,17 +971,20 @@ namespace BusTycoon.Game
             Vector2 mouse = Event.current.mousePosition;
             float line = 21f * u;
             float height = 14f * u + lines.Count * line;
-            var rect = new Rect(mouse.x + 18f * u, mouse.y + 14f * u, 330f * u, height);
+            bool hasIcon = UICityIcons.Has(city);
+            float textLeft = hasIcon ? 52f * u : 10f * u;
+            var rect = new Rect(mouse.x + 18f * u, mouse.y + 14f * u, (hasIcon ? 372f : 330f) * u, Mathf.Max(height, hasIcon ? 56f * u : 0f));
             if (rect.xMax > W) rect.x = mouse.x - rect.width - 12f * u;
             if (rect.yMax > H) rect.y = mouse.y - rect.height - 12f * u;
 
             GUI.Box(rect, GUIContent.none, s.Tooltip);
+            if (hasIcon) UICityIcons.Draw(new Rect(rect.x + 10f * u, rect.y + 10f * u, 34f * u, 34f * u), city);
             UIIcons.Draw(new Rect(rect.xMax - 32f * u, rect.y + 8f * u, 22f * u, 22f * u), UIIcons.Flag(city.Region.Id));
             for (int i = 0; i < lines.Count; i++)
             {
                 Color previous = GUI.contentColor;
                 GUI.contentColor = lines[i].color;
-                GUI.Label(new Rect(rect.x + 10f * u, rect.y + 7f * u + i * line, rect.width - 20f * u, line), lines[i].text, lines[i].style);
+                GUI.Label(new Rect(rect.x + textLeft, rect.y + 7f * u + i * line, rect.width - textLeft - 40f * u, line), lines[i].text, lines[i].style);
                 GUI.contentColor = previous;
             }
         }
@@ -996,6 +1013,14 @@ namespace BusTycoon.Game
             GUI.backgroundColor = color;
             GUI.Box(rect, GUIContent.none, s.Bar);
             GUI.backgroundColor = previous;
+        }
+
+        /// <summary>Düzen içinde şehrin kendine özgü ikonu (yoksa yer ayırmaz).</summary>
+        void LayoutCityIcon(CityData city, float size, float topPadding = 0f)
+        {
+            if (!UICityIcons.Has(city)) return;
+            Rect rect = GUILayoutUtility.GetRect(size * u, (size + topPadding) * u, Wd(size), Ht(size + topPadding));
+            UICityIcons.Draw(new Rect(rect.x, rect.y + topPadding * u, size * u, size * u), city);
         }
 
         /// <summary>Renkli daire (bildirimlerin başındaki nokta).</summary>

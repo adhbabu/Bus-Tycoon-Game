@@ -68,7 +68,21 @@ namespace BusTycoon.Game
             // Tarih ve hız
             GUILayout.BeginVertical();
             GUILayout.Label("TARİH", s.StatLabel);
+            GUILayout.BeginHorizontal();
+            DayNightCycle cycle = DayNightCycle.Instance;
+            if (cycle != null && cycle.Enabled)
+            {
+                LayoutIcon(cycle.CurrentPhase switch
+                {
+                    DayNightCycle.Phase.Sunrise => UIIcon.Sunrise,
+                    DayNightCycle.Phase.Sunset => UIIcon.Sunset,
+                    DayNightCycle.Phase.Night => UIIcon.Moon,
+                    _ => UIIcon.Sun
+                }, 18f, 3f);
+                Sp(2f);
+            }
             GUILayout.Label(SimulationClock.FormatDate(state.currentDay), s.Bold);
+            GUILayout.EndHorizontal();
             GUILayout.EndVertical();
             GUILayout.BeginVertical();
             Sp(9f);

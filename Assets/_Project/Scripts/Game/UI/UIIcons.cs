@@ -12,7 +12,8 @@ namespace BusTycoon.Game
         ChartUp, ChartDown, Clock, Building,
         Check, Cross, Info, Trophy, Warning, Party, Unlock, Sparkles,
         FlagTR, FlagBG, FlagGE, FlagGR, FlagRO, Lock, Finish, Coffee,
-        Shield, Tools, Gift, Pilot, Ruler, Hourglass, Bank
+        Shield, Tools, Gift, Pilot, Ruler, Hourglass, Bank,
+        Sun, Moon, Sunrise, Sunset
     }
 
     /// <summary>

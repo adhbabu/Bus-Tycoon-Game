@@ -201,9 +201,10 @@ namespace BusTycoon.Game
             {
                 GUILayout.BeginVertical(s.Card);
                 GUILayout.BeginHorizontal();
-                LayoutIcon(UIIcons.Flag(startCity.Region.Id), 22f, 3f);
+                LayoutCityIcon(startCity, 28f, 0f);
                 Sp(6f);
                 GUILayout.Label($"{startCity.DisplayName}, {startCity.Region.DisplayName}", s.H2);
+                LayoutIcon(UIIcons.Flag(startCity.Region.Id), 22f, 3f);
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
                 GUILayout.Label(startCityInfo, s.Wrap);
@@ -348,6 +349,14 @@ namespace BusTycoon.Game
                     session.SecondsPerDay = seconds;
             }
             GUILayout.EndHorizontal();
+
+            DayNightCycle cycle = DayNightCycle.Instance;
+            if (cycle != null)
+            {
+                Sp(4f);
+                bool on = GUILayout.Toggle(cycle.Enabled, "Gece-gündüz döngüsü (gece şehir ışıkları ve farlar)", s.Toggle);
+                if (on != cycle.Enabled) cycle.SetEnabled(on);
+            }
 
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);

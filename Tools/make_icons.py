@@ -36,6 +36,8 @@ ICONS = [
     ("FlagRO", "1f1f7-1f1f4"), ("Lock", "1f512"), ("Finish", "1f3c1"), ("Coffee", "2615"),
     ("Shield", "1f6e1"), ("Tools", "1f6e0"), ("Gift", "1f381"), ("Pilot", "1f9d1-200d-2708-fe0f"),
     ("Ruler", "1f4cf"), ("Hourglass", "23f3"), ("Bank", "1f3e6"),
+    # gece-gündüz göstergesi
+    ("Sun", "2600"), ("Moon", "1f319"), ("Sunrise", "1f305"), ("Sunset", "1f307"),
 ]
 
 

@@ -42,7 +42,14 @@ namespace BusTycoon.Game
             UIIcons.Draw(new Rect(rect.x + MinimapPad + 2f * u, rect.y + (MinimapHeader - iconSize) / 2f + 1f * u, iconSize, iconSize), UIIcon.Routes);
             GUI.Label(new Rect(rect.x + MinimapPad + iconSize + 8f * u, rect.y + 7f * u, 160f * u, 18f * u), "HARİTA", s.StatLabel);
             var toggle = new Rect(rect.xMax - MinimapPad - 30f * u, rect.y + 4f * u, 30f * u, 22f * u);
-            if (GUI.Button(toggle, minimapCollapsed ? "+" : "–", s.Tab)) Defer(() => minimapCollapsed = !minimapCollapsed);
+            if (GUI.Button(toggle, minimapCollapsed ? "Büyüt" : "Küçült", s.IconOnly)) Defer(() => minimapCollapsed = !minimapCollapsed);
+            if (Event.current.type == EventType.Repaint)
+            {
+                // Eksi / artı işareti (yazı tipinden bağımsız, her boyutta net)
+                Color mark = new Color(1f, 1f, 1f, 0.8f);
+                DrawRect(new Rect(toggle.center.x - 5f * u, toggle.center.y - u, 10f * u, 2f * u), mark);
+                if (minimapCollapsed) DrawRect(new Rect(toggle.center.x - u, toggle.center.y - 5f * u, 2f * u, 10f * u), mark);
+            }
             if (minimapCollapsed) return;
 
             var map = new Rect(rect.x + MinimapPad, rect.y + MinimapHeader, MinimapMapWidth, MinimapMapHeight);
@@ -140,7 +147,36 @@ namespace BusTycoon.Game
                 if (!mapCamera.TryGetGroundPoint(screen[i], out viewCorners[i])) return;
             Color color = new Color(1f, 1f, 1f, 0.85f);
             for (int i = 0; i < 4; i++)
-                DrawLine(WorldToMinimap(viewCorners[i], local), WorldToMinimap(viewCorners[(i + 1) % 4], local), 1.5f * u, color);
+            {
+                // Döndürülmüş çizim IMGUI kırpmasından kaçabildiği için kenarlar mini haritaya elle kırpılır.
+                Vector2 a = WorldToMinimap(viewCorners[i], local), b = WorldToMinimap(viewCorners[(i + 1) % 4], local);
+                if (ClipToRect(local, ref a, ref b)) DrawLine(a, b, 1.5f * u, color);
+            }
+        }
+
+        /// <summary>Liang–Barsky: doğru parçasını dikdörtgene kırpar; tamamen dışarıdaysa false.</summary>
+        static bool ClipToRect(Rect r, ref Vector2 a, ref Vector2 b)
+        {
+            float t0 = 0f, t1 = 1f;
+            Vector2 d = b - a;
+            float[] p = { -d.x, d.x, -d.y, d.y };
+            float[] q = { a.x - r.xMin, r.xMax - a.x, a.y - r.yMin, r.yMax - a.y };
+            for (int i = 0; i < 4; i++)
+            {
+                if (Mathf.Abs(p[i]) < 1e-6f)
+                {
+                    if (q[i] < 0f) return false;
+                    continue;
+                }
+                float t = q[i] / p[i];
+                if (p[i] < 0f) t0 = Mathf.Max(t0, t);
+                else t1 = Mathf.Min(t1, t);
+                if (t0 > t1) return false;
+            }
+            Vector2 start = a;
+            a = start + d * t0;
+            b = start + d * t1;
+            return true;
         }
 
         /// <summary>İnce döndürülmüş dikdörtgen olarak çizgi (IMGUI'de çizgi primitifi yok).</summary>
