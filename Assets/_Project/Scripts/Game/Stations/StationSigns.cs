@@ -16,6 +16,7 @@ namespace BusTycoon.Game
 
         static Font font;
         static Material textMaterial, iconMaterial;
+        static readonly System.Collections.Generic.Dictionary<string, Mesh> iconMeshes = new System.Collections.Generic.Dictionary<string, Mesh>();
         static bool listening;
 
         static Font Font
@@ -109,19 +110,24 @@ namespace BusTycoon.Game
             if (iconMaterial == null)
                 iconMaterial = new Material(MaterialFactory.LineMaterial) { name = "CityIconSign", mainTexture = texture, renderQueue = 3008 };
 
-            float h = size / 2f;
-            var mesh = new Mesh { name = "CityIcon" };
-            mesh.vertices = new[] { new Vector3(-h, -h, 0f), new Vector3(-h, h, 0f), new Vector3(h, h, 0f), new Vector3(h, -h, 0f) };
-            mesh.uv = new[] { new Vector2(uv.xMin, uv.yMin), new Vector2(uv.xMin, uv.yMax), new Vector2(uv.xMax, uv.yMax), new Vector2(uv.xMax, uv.yMin) };
-            mesh.colors = new[] { Color.white, Color.white, Color.white, Color.white };
-            mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
+            // Birim levha (şehir başına bir kez kurulur, durağa her girişte paylaşılır); boyut ölçekle verilir.
+            if (!iconMeshes.TryGetValue(city.Id, out Mesh mesh) || mesh == null)
+            {
+                mesh = new Mesh { name = "CityIcon_" + city.Id };
+                mesh.vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0f), new Vector3(0.5f, -0.5f, 0f) };
+                mesh.uv = new[] { new Vector2(uv.xMin, uv.yMin), new Vector2(uv.xMin, uv.yMax), new Vector2(uv.xMax, uv.yMax), new Vector2(uv.xMax, uv.yMin) };
+                mesh.colors = new[] { Color.white, Color.white, Color.white, Color.white };
+                mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+                mesh.RecalculateNormals();
+                mesh.RecalculateBounds();
+                iconMeshes[city.Id] = mesh;
+            }
 
             var go = new GameObject("CityIcon");
             go.transform.SetParent(parent, false);
             go.transform.localPosition = position;
             go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localScale = new Vector3(size, size, 1f);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = iconMaterial;
