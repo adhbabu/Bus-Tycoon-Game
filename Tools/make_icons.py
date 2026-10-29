@@ -38,6 +38,11 @@ ICONS = [
     ("Ruler", "1f4cf"), ("Hourglass", "23f3"), ("Bank", "1f3e6"),
     # gece-gündüz göstergesi
     ("Sun", "2600"), ("Moon", "1f319"), ("Sunrise", "1f305"), ("Sunset", "1f307"),
+    # durak geliştirmeleri (StationCatalog) ve durak ekranı
+    ("Plant", "1fab4"), ("Bulb", "1f4a1"), ("Bagel", "1f96f"), ("Screen", "1f4fa"),
+    ("Wifi", "1f4f6"), ("Luggage", "1f9f3"), ("Taxi", "1f695"), ("Umbrella", "26f1"),
+    ("Teddy", "1f9f8"), ("Shopping", "1f6cd"), ("Sofa", "1f6cb"), ("Fountain", "26f2"),
+    ("MantelClock", "1f570"), ("Door", "1f6aa"), ("Smile", "1f60a"),
 ]
 
 

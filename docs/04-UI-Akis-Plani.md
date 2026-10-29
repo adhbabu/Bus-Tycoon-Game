@@ -267,6 +267,15 @@ para ödülü verir.
   sürdüğü için görsel döngü 1x'te ~90 sn'dir (hızla karekök oranında hızlanır, duraklayınca durur). Üst panelde
   tarihin yanında ☀️ 🌅 🌇 🌙 göstergesi; duraklatma menüsünde aç/kapa; vitrin gündüz çekilir; test için
   `?saat=gece|gunduz|aksam|sabah|18`.
+* **Duraklar:** haritada şehirler büyüklüğe göre dört tip durak modelidir (`StationModels`; çatı rengi durumu
+  gösterir, merkezde turuncu şirket bayrağı, üzerine gelince hafifçe büyür, gece pencereler yanar). Planlayıcı kapalıyken
+  bir durağa tıklamak **durağa girer** (`StationView`): kamera durağa dalar, ekran kararır, durağın içi kendi kamerası ve
+  ışığıyla açılır; kamera sokaktan süzülüp salonu tepeden gösterir. Kesit görünüm: kameraya bakan duvarlar gizlenir.
+  Solda durak kartı (şehir ikonu, bayrak, büyüklük, ★ popülerlik ve bileşenleri, hat/yolcu/talep bonusu, **Buradan hat
+  aç**), sağda geliştirme mağazası (ikon, açıklama, konfor/talep etkisi, fiyat; yapılan ve daha büyük durak isteyenler
+  rozetli). Satın alınan geliştirme yerinde zıplayarak belirir, kamera ona döner, konfeti saçılır. Sürükle = döndür,
+  tekerlek/sıkıştırma = yakınlaştır, Esc / "Haritaya dön" = çık. Yolcular, trafik, saat kulesi ve kalkış panosu oyun
+  zamanıyla (gece-gündüz dahil) canlıdır. Test için vitrin: `SendMessage('ShowcaseDirector','VisitStation','TR_ARTVIN')`.
 * **Görseller:** galeride ve filo kartlarında otobüsün yandan çizimi; Bölgeler, ipucu ve yeni oyun ekranında ülke
   bayrakları; finans kalemlerinde, planlayıcıda, görevlerde ve günlükte ikonlar.
 * **Otobüs kartları (Filo):** başlık + durum rozeti, ikonlu ayrıntı satırları (📍 hat, 💺 model, 👥 doluluk,

@@ -49,14 +49,22 @@ namespace BusTycoon.Game
 
         public static void Draw(Rect rect, CityData city)
         {
+            if (Event.current.type != EventType.Repaint || !TryGetUv(city, out Texture2D texture, out Rect uv)) return;
+            GUI.DrawTextureWithTexCoords(rect, texture, uv);
+        }
+
+        /// <summary>Şehrin ikonunun atlas dokusu ve UV dikdörtgeni (3B tabelalar da kullanır).</summary>
+        public static bool TryGetUv(CityData city, out Texture2D texture, out Rect uv)
+        {
             Load();
-            if (atlas == null || city == null || Event.current.type != EventType.Repaint) return;
-            if (!index.TryGetValue(city.DisplayName, out var entry)) return;
+            texture = atlas;
+            uv = default;
+            if (atlas == null || city == null || !index.TryGetValue(city.DisplayName, out var entry)) return false;
             float pad = (Cell - Icon) / 2f;
             float x = (entry.cell % Columns) * Cell + pad;
             float yFromTop = (entry.cell / Columns) * Cell + pad;
-            var uv = new Rect(x / atlas.width, 1f - (yFromTop + Icon) / atlas.height, Icon / atlas.width, Icon / atlas.height);
-            GUI.DrawTextureWithTexCoords(rect, atlas, uv);
+            uv = new Rect(x / atlas.width, 1f - (yFromTop + Icon) / atlas.height, Icon / atlas.width, Icon / atlas.height);
+            return true;
         }
     }
 }

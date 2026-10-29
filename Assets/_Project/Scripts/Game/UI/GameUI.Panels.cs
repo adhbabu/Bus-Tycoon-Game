@@ -27,6 +27,7 @@ namespace BusTycoon.Game
             [LedgerCategory.RouteLicense] = "Hat lisansı",
             [LedgerCategory.RegionLicense] = "Bölge lisansı",
             [LedgerCategory.Other] = "Görev ödülü / diğer",
+            [LedgerCategory.StationUpgrade] = "Durak geliştirme",
         };
 
         static readonly Dictionary<LedgerCategory, UIIcon> CategoryIcons = new Dictionary<LedgerCategory, UIIcon>
@@ -45,6 +46,7 @@ namespace BusTycoon.Game
             [LedgerCategory.RouteLicense] = UIIcon.Log,
             [LedgerCategory.RegionLicense] = UIIcon.Regions,
             [LedgerCategory.Other] = UIIcon.Gift,
+            [LedgerCategory.StationUpgrade] = UIIcon.Sparkles,
         };
 
         static UIIcon CategoryIcon(LedgerCategory category) => CategoryIcons.TryGetValue(category, out UIIcon icon) ? icon : UIIcon.Finance;
@@ -95,7 +97,7 @@ namespace BusTycoon.Game
             if (routes.Routes.Count == 0)
             {
                 Sp(10f);
-                GUILayout.Label("Henüz hattınız yok. Haritada bir şehre tıklayarak başlayın.", s.Wrap);
+                GUILayout.Label("Henüz hattınız yok. 'Yeni hat aç' ile ya da bir durağa girip 'Buradan hat aç' ile başlayın.", s.Wrap);
                 return;
             }
 

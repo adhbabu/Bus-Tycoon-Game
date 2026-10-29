@@ -71,13 +71,19 @@ Eğri Inspector'da `AnimationCurve` olarak çizilerek değiştirilebilir.
 Sonra **oyuncuya özgü** çarpanlar uygulanır ve *referans talep* `Q_ref` elde edilir:
 
 ```
-Q_ref = Q_pot × İtibar(r) × Olgunluk(gün) × Konfor(d)
+Q_ref = Q_pot × İtibar(r) × Olgunluk(gün) × Konfor(d) × Durak(A, B)
 
 İtibar(r)    = lerp(0.6, 1.6, r/100)                 → r = 30 iken 0.90
 Olgunluk(g)  = 0.3 + 0.7 × (1 − e^(−g/10))            → açılış günü 0.30, 10. gün 0.74, 30. gün 0.97
 Konfor(d)    = 1                       (d ≤ menzil)
              = e^(−1.5 × (d − menzil)/menzil)  (d > menzil)  → minibüsle 437 km: 0.50
+Durak(A, B)  = 1 + ½ × (bonus_A + bonus_B),  bonus = 0,015 × durağın konfor puanı
+                                                      → İstanbul'da 8 puanlık geliştirme: hatlarında ×1,06
 ```
+
+Durak geliştirmeleri (`StationSystem`, 16 geliştirme, 1–3 konfor puanı) yalnız hat işletilen duraklara yapılır; fiyatları
+durağın büyüklüğüyle artar (küçük durak ×1 … metropol terminali ×5). Durağın **popülerliği** (0–100, ★) yalnız görseldir
+(içerideki kalabalık): %35 şehrin ünü (nüfus, turizm), %50 duraktan geçen günlük yolcu, %15 konfor.
 
 > **Tasarım notu:** Konfor çarpanı, alt segmentin uzun hatlarda işe yaramamasını sağlar ve oyuncuyu
 > doğal olarak üst segmente iter (minibüs menzili 300 km, standart otobüs 1.200 km, VIP 2.500 km).

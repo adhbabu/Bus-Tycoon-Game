@@ -53,6 +53,11 @@ namespace BusTycoon.Game
             var mapCamera = camera.gameObject.AddComponent<MapCamera>();
             mapCamera.Init(camera, world.MapBoundsXZ);
 
+            // Durağa girme: içerisi haritadan uzakta kendi kamerası ve ışığıyla kurulur
+            var stations = new GameObject("StationView").AddComponent<StationView>();
+            stations.transform.SetParent(root.transform, false);
+            stations.Init(session, mapCamera, sun);
+
             var ui = new GameObject("GameUI").AddComponent<GameUI>();
             ui.transform.SetParent(root.transform, false);
             ui.Init(session, world, mapCamera);

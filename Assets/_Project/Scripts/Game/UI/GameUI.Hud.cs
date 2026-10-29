@@ -12,7 +12,7 @@ namespace BusTycoon.Game
         static readonly GUIContent ToastContent = new GUIContent("");
 
         /// <summary>Masaüstünde sol menü vardır; telefonda menü alttadır.</summary>
-        bool HasSideBar => mode == Mode.Playing && !compact;
+        bool HasSideBar => mode == Mode.Playing && !compact && !StationUi;
         float SideBarWidth => 96f * u;
         /// <summary>Harita/arayüz için kullanılabilir alanın sol sınırı (sol menünün sağı).</summary>
         float ContentLeft => SafeLeft + (HasSideBar ? SideBarWidth : 0f);

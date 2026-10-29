@@ -63,6 +63,8 @@ namespace BusTycoon.Data
         /// <summary>Her şehrin kendine özgü ikonu ve "nesiyle ünlü" açıklaması (Tools/make_city_icons.py).</summary>
         public const string CityIconsResourcePath = "BusTycoon/UI/cities";
         public const string CityIconIndexResourcePath = "BusTycoon/UI/city_icons";
+        /// <summary>Durak tabelaları için derinlik testli yazı shader'ı (Resources'ta: derlemeye girer).</summary>
+        public const string SignTextShaderResourcePath = "BusTycoon/Shaders/SignText";
 
         public readonly struct ModelSpec
         {

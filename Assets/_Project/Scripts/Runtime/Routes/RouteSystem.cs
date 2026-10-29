@@ -6,6 +6,7 @@ using BusTycoon.Economy;
 using BusTycoon.Fleet;
 using BusTycoon.Progression;
 using BusTycoon.Save;
+using BusTycoon.Stations;
 using BusTycoon.World;
 using UnityEngine;
 
@@ -37,6 +38,7 @@ namespace BusTycoon.Routes
         readonly FleetSystem fleet;
         readonly FinanceSystem finance;
         readonly ProgressionSystem progression;
+        readonly StationSystem stations;
 
         readonly List<BusInstance> busBuffer = new List<BusInstance>();
         readonly List<BusInstance> virtualBuses = new List<BusInstance>();
@@ -46,7 +48,7 @@ namespace BusTycoon.Routes
         public event Action<RouteState> RouteChanged;
 
         public RouteSystem(CompanyState state, WorldGraph world, EconomyConfig economy,
-            FleetSystem fleet, FinanceSystem finance, ProgressionSystem progression)
+            FleetSystem fleet, FinanceSystem finance, ProgressionSystem progression, StationSystem stations = null)
         {
             this.state = state;
             this.world = world;
@@ -54,6 +56,7 @@ namespace BusTycoon.Routes
             this.fleet = fleet;
             this.finance = finance;
             this.progression = progression;
+            this.stations = stations;
         }
 
         public IReadOnlyList<RouteState> Routes => state.routes;
@@ -325,7 +328,8 @@ namespace BusTycoon.Routes
             ManualUtilization = manualUtilization,
             DemandNoise = 1f,
             ElasticityBias = elasticityBias,
-            IncludeUnavailableBuses = true
+            IncludeUnavailableBuses = true,
+            StationFactor = stations != null ? stations.RouteDemandFactor(a, b) : 1f
         };
 
         float FindBestPrice(RouteEconomics.Inputs template, IReadOnlyList<BusInstance> buses)

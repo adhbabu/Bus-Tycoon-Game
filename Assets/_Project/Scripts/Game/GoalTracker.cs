@@ -45,7 +45,7 @@ namespace BusTycoon.Game
         {
             this.session = session;
 
-            Add("first_route", "İlk hattını aç", "Haritada bir şehre, sonra varış şehrine tıklayın ve 'Hattı Aç'a basın.", 3000,
+            Add("first_route", "İlk hattını aç", "Yeni Hat (N) ile kalkış ve varış şehrine tıklayın ya da bir durağa girip 'Buradan hat aç'a basın.", 3000,
                 s => s.Routes.Routes.Count >= 1);
             Add("first_price", "Bilet fiyatını ayarla", "Hat panelinde kaydırıcıyla fiyatı değiştirip 'Uygula'ya basın.", 1000,
                 _ => priceAdjusted);
@@ -53,6 +53,8 @@ namespace BusTycoon.Game
                 s => s.Fleet.Buses.Count >= 2);
             Add("profit_500", "Günde $500 net kâr", "Doluluğu yüksek, fiyatı ideal bölgede hatlar kurun.", 5000,
                 s => LastNet(s) >= 500);
+            Add("station", "Durağını güzelleştir", "Haritada hattınızın geçtiği bir durağa tıklayıp içine girin ve bir geliştirme yapın.", 5000,
+                s => s.State.stations.Count > 0);
             Add("level_3", "Şirket seviyesi 3", "Yolcu taşıdıkça XP kazanırsınız.", 8000,
                 s => s.Progression.Level >= 3);
             Add("routes_4", "4 hat işlet", "Seviye atladıkça hat limitiniz artar.", 10000,

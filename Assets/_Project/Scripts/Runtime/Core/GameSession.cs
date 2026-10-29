@@ -6,6 +6,7 @@ using BusTycoon.Fleet;
 using BusTycoon.Progression;
 using BusTycoon.Routes;
 using BusTycoon.Save;
+using BusTycoon.Stations;
 using BusTycoon.World;
 using UnityEngine;
 
@@ -61,6 +62,7 @@ namespace BusTycoon.Core
         public ProgressionSystem Progression { get; private set; }
         public FleetSystem Fleet { get; private set; }
         public RouteSystem Routes { get; private set; }
+        public StationSystem Stations { get; private set; }
         public bool IsRunning => State != null;
         public bool IsBankrupt { get; private set; }
 
@@ -192,7 +194,8 @@ namespace BusTycoon.Core
             Finance = new FinanceSystem(state);
             Progression = new ProgressionSystem(state, progressionConfig, busCatalog, economyConfig, Finance);
             Fleet = new FleetSystem(state, busCatalog, economyConfig, Finance, Progression);
-            Routes = new RouteSystem(state, World, economyConfig, Fleet, Finance, Progression);
+            Stations = new StationSystem(state, Finance, Progression);
+            Routes = new RouteSystem(state, World, economyConfig, Fleet, Finance, Progression, Stations);
 
             Clock = new SimulationClock(state.currentDay, secondsPerDay);
             Clock.DayEnded += HandleDayEnded;

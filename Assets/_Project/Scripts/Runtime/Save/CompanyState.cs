@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BusTycoon.Economy;
 using BusTycoon.Fleet;
 using BusTycoon.Routes;
+using BusTycoon.Stations;
 
 namespace BusTycoon.Save
 {
@@ -43,5 +44,8 @@ namespace BusTycoon.Save
         public int nextBusSerial;
         public List<RouteState> routes = new List<RouteState>();
         public List<BusInstance> buses = new List<BusInstance>();
+
+        // Duraklar (yalnızca geliştirilenler; geliştirmesiz durak kayıtta yer tutmaz)
+        public List<StationState> stations = new List<StationState>();
     }
 }

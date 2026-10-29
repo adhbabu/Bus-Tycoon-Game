@@ -18,7 +18,9 @@ namespace BusTycoon.Economy
         BusPurchase,
         RouteLicense,
         RegionLicense,
-        Other
+        Other,
+        /// <summary>Kayıtlardaki kategori dizileri sıraya bağlı: yeni kategoriler hep sona eklenir.</summary>
+        StationUpgrade
     }
 
     [Serializable]
