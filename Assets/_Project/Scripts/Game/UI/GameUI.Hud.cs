@@ -93,7 +93,7 @@ namespace BusTycoon.Game
                 // Yarışta hız odaya bağlı: değiştirilemez, duraklatılamaz
                 LayoutIcon(UIIcon.Finish, 18f, 6f);
                 Sp(4f);
-                GUILayout.Label($"{MatchRules.Name(Room.Mode)} · {Room.Speed}x", s.SpeedButtonActive, Ht(32f));
+                GUILayout.Label(Narrow ? $"{Room.Speed}x" : $"{MatchRules.Name(Room.Mode)} · {Room.Speed}x", s.RaceBadge, Ht(32f));
             }
             else
             {
