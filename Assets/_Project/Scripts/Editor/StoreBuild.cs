@@ -340,22 +340,29 @@ namespace BusTycoon.EditorTools
             Debug.Log($"[Mağaza] Harita dokusu içe aktarma ayarları güncellendi: {path}");
         }
 
-        /// <summary>Ana menü çizimi: saydam kenarları koyu hale bırakmasın, arayüzde keskin dursun.</summary>
+        /// <summary>
+        /// Arayüz dokuları (ana menü çizimi, ikon atlası): saydam kenarlar koyu hale bırakmasın, ölçeklenmesin
+        /// (atlas 2'nin kuvveti değil; ikon koordinatları piksel hesabıdır) ve arayüzde keskin dursun.
+        /// </summary>
         static void EnsureUiTextureImport()
         {
-            string path = $"Assets/_Project/Resources/{DefaultContent.MascotResourcePath}.png";
-            if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) return;
-            if (importer.alphaIsTransparency && !importer.mipmapEnabled && importer.wrapMode == TextureWrapMode.Clamp &&
-                importer.textureCompression == TextureImporterCompression.Uncompressed) return;
+            foreach (string resource in new[] { DefaultContent.MascotResourcePath, DefaultContent.IconsResourcePath })
+            {
+                string path = $"Assets/_Project/Resources/{resource}.png";
+                if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
+                if (importer.alphaIsTransparency && !importer.mipmapEnabled && importer.wrapMode == TextureWrapMode.Clamp &&
+                    importer.npotScale == TextureImporterNPOTScale.None && importer.textureCompression == TextureImporterCompression.Uncompressed) continue;
 
-            importer.textureType = TextureImporterType.Default;
-            importer.alphaIsTransparency = true;
-            importer.mipmapEnabled = false;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.filterMode = FilterMode.Bilinear;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.SaveAndReimport();
-            Debug.Log($"[Mağaza] Arayüz dokusu içe aktarma ayarları güncellendi: {path}");
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.filterMode = FilterMode.Bilinear;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+                Debug.Log($"[Mağaza] Arayüz dokusu içe aktarma ayarları güncellendi: {path}");
+            }
         }
 
         static void EnsureMaterial(string resourcePath, string shaderName)

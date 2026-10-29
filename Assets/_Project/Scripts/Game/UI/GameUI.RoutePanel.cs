@@ -80,6 +80,8 @@ namespace BusTycoon.Game
 
             RouteInsight insight = RouteAdvisor.GetTopInsight(selectedRoute, busCount);
             GUILayout.BeginHorizontal(s.Card);
+            Badge(InsightTag(insight.Severity), InsightBadge(insight.Severity));
+            Sp(4f);
             ColorLabel(insight.Message, InsightColor(insight.Severity), s.Wrap);
             if (insight.Action == InsightAction.AssignBus || insight.Action == InsightAction.AddBus)
             {

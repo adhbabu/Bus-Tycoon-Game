@@ -109,7 +109,7 @@ namespace BusTycoon.Game
             }
 
             GUILayout.FlexibleSpace();
-            GUILayout.Label("Harita: Natural Earth · Şehir verisi: GeoNames (CC BY 4.0) · Yazı tipi: Nunito (SIL OFL)", s.WrapDim);
+            GUILayout.Label("Harita: Natural Earth · Şehirler: GeoNames (CC BY 4.0) · Simgeler: Twemoji (CC BY 4.0) · Yazı tipi: Inter (SIL OFL)", s.WrapDim);
             GUILayout.EndArea();
         }
 
