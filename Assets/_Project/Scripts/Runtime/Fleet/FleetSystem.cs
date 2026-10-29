@@ -25,8 +25,6 @@ namespace BusTycoon.Fleet
         public event Action<BusInstance> BusRemoved;
         public event Action<BusInstance> BusChanged;
         public event Action<BusInstance> BusBrokeDown;
-        /// <summary>Otomatik bakım bu gün kaç otobüsü revizyona soktu ve toplam ne harcadı.</summary>
-        public event Action<int, double> AutoMaintained;
 
         public FleetSystem(CompanyState state, BusCatalog catalog, EconomyConfig economy,
             FinanceSystem finance, ProgressionSystem progression)
@@ -194,6 +192,7 @@ namespace BusTycoon.Fleet
         internal void SetAssignment(BusInstance bus, string routeId)
         {
             if (bus.assignedRouteId == routeId) return;
+            if (string.IsNullOrEmpty(routeId) && bus.IsAssigned) bus.lastRouteId = bus.assignedRouteId;
             bus.assignedRouteId = routeId;
             BusChanged?.Invoke(bus);
         }
@@ -222,7 +221,7 @@ namespace BusTycoon.Fleet
         {
             if (bus?.Model == null || km <= 0) return;
             bus.odometerKm += km;
-            bus.condition = Mathf.Max(0.05f, bus.condition - (float)(km / bus.Model.LifetimeKm));
+            bus.condition = Mathf.Max(0.05f, bus.condition - (float)(km * economy.WearRate / bus.Model.LifetimeKm));
         }
 
         /// <summary>Garajdaki (atanmamış) otobüslerin sigortası. Hattakilerin sigortası hat maliyetine dahildir.</summary>
@@ -233,40 +232,25 @@ namespace BusTycoon.Fleet
                     finance.Charge(bus.Model.InsurancePerDay, LedgerCategory.Insurance, bus.busId);
         }
 
-        // ------------------------------------------------------------------ otomatik bakım
+        // ------------------------------------------------------------------ bakım ve tamir
 
-        public bool AutoMaintenance => state.autoMaintenance;
+        /// <summary>Arızalı otobüsü beklemeden servise döndürme bedeli (arızadaki tamir bedeline ek).</summary>
+        public float GetExpressRepairCost(BusInstance bus) => bus?.Model == null ? 0f : bus.Model.Price * economy.ExpressRepairCostFactor;
 
-        public void SetAutoMaintenance(bool enabled) => state.autoMaintenance = enabled;
-
-        /// <summary>
-        /// Otomatik bakım açıksa durumu eşiğin altına düşen otobüsleri (en yıpranmış önce) revizyona sokar.
-        /// Kasada son günün giderinin <see cref="EconomyConfig.AutoOverhaulReserveDays"/> katı kadar para bırakır;
-        /// parası yetmeyen otobüs sonraki güne kalır. Revizyona giren otobüs sayısını döndürür.
-        /// </summary>
-        public int RunAutoMaintenance()
+        /// <summary>Acil tamir: arızalı otobüs bugün yeniden sefere çıkabilir.</summary>
+        public OpResult TryExpressRepair(string busId)
         {
-            if (!state.autoMaintenance) return 0;
-            var worn = new List<BusInstance>();
-            foreach (var bus in state.buses)
-                if (bus.Model != null && bus.condition < economy.AutoOverhaulBelowCondition) worn.Add(bus);
-            if (worn.Count == 0) return 0;
-            worn.Sort((a, b) => a.condition.CompareTo(b.condition));
+            BusInstance bus = GetBus(busId);
+            if (bus == null) return OpResult.Fail("Otobüs bulunamadı.");
+            if (bus.IsAvailableToday) return OpResult.Fail("Otobüs arızalı değil.");
 
-            var history = state.financeHistory;
-            double reserve = history != null && history.Count > 0 ? history[history.Count - 1].expenses * economy.AutoOverhaulReserveDays : 0d;
-            int count = 0;
-            double spent = 0d;
-            foreach (var bus in worn)
-            {
-                float cost = GetOverhaulCost(bus);
-                if (finance.Cash - cost < reserve) continue;
-                if (!TryOverhaul(bus.busId)) continue;
-                count++;
-                spent += cost;
-            }
-            if (count > 0) AutoMaintained?.Invoke(count, spent);
-            return count;
+            float cost = GetExpressRepairCost(bus);
+            if (!finance.TrySpend(cost, LedgerCategory.Repairs, bus.busId))
+                return OpResult.Fail($"Acil tamir için {cost:N0} gerekli.");
+
+            bus.outOfServiceDays = 0;
+            BusChanged?.Invoke(bus);
+            return OpResult.Ok($"{bus.nickname} tamir edildi, sefere hazır.");
         }
 
         public OpResult TryOverhaul(string busId)

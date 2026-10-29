@@ -73,6 +73,8 @@ namespace BusTycoon.Data
         [SerializeField, Min(0f)] float routeLicensePerKm = 5f;
 
         [Header("Filo: değer kaybı, arıza, bakım")]
+        [Tooltip("Yıpranma hızı: 1 km'de durum kaybı = bu değer / model ömrü (km). Oyunda günler kısa olduğu için gerçek ömrün altında tutulur.")]
+        [SerializeField, Range(0.05f, 1f)] float wearRate = 0.3f;
         [SerializeField, Range(0f, 0.5f)] float annualDepreciation = 0.12f;
         [Tooltip("Durumu 0 olan aracın fiyatı, sıfır fiyatının bu oranıdır (2. el fiyatlaması).")]
         [SerializeField, Range(0f, 1f)] float usedPriceFloor = 0.35f;
@@ -86,9 +88,11 @@ namespace BusTycoon.Data
         [Tooltip("Revizyon bedeli = otobüs fiyatı × bu oran × giderilen yıpranma.")]
         [SerializeField, Range(0f, 1f)] float overhaulCostFactor = 0.3f;
         [SerializeField, Range(0.5f, 1f)] float overhaulTargetCondition = 0.9f;
-        [Tooltip("Otomatik bakım açıkken durumu bu değerin altına düşen otobüs gün başında revizyona girer.")]
+        [Tooltip("Acil tamir bedeli (arızalı otobüs beklemeden servise döner) = otobüs fiyatı × bu oran.")]
+        [SerializeField, Range(0f, 0.2f)] float expressRepairCostFactor = 0.01f;
+        [Tooltip("Bakım asistanı açıkken durumu bu değerin altına düşen otobüs gün başında revizyona girer.")]
         [SerializeField, Range(0.2f, 0.85f)] float autoOverhaulBelowCondition = 0.6f;
-        [Tooltip("Otomatik bakım kasada en az bu kadar günlük gider bırakır (iflas riskine girmesin).")]
+        [Tooltip("Bakım asistanı kasada en az bu kadar günlük gider bırakır (iflas riskine girmesin).")]
         [SerializeField, Min(0f)] float autoOverhaulReserveDays = 2f;
 
         [Header("Memnuniyet → itibar")]
@@ -135,6 +139,7 @@ namespace BusTycoon.Data
         public float RouteLicenseBase => routeLicenseBase;
         public float RouteLicensePerKm => routeLicensePerKm;
 
+        public float WearRate => wearRate;
         public float AnnualDepreciation => annualDepreciation;
         public float UsedPriceFloor => usedPriceFloor;
         public float ResaleRatio => resaleRatio;
@@ -143,6 +148,7 @@ namespace BusTycoon.Data
         public float RepairCostFactor => repairCostFactor;
         public float OverhaulCostFactor => overhaulCostFactor;
         public float OverhaulTargetCondition => overhaulTargetCondition;
+        public float ExpressRepairCostFactor => expressRepairCostFactor;
         public float AutoOverhaulBelowCondition => autoOverhaulBelowCondition;
         public float AutoOverhaulReserveDays => autoOverhaulReserveDays;
 

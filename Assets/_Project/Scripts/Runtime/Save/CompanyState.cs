@@ -44,7 +44,7 @@ namespace BusTycoon.Save
         public int nextBusSerial;
         public List<RouteState> routes = new List<RouteState>();
         public List<BusInstance> buses = new List<BusInstance>();
-        /// <summary>Yıpranan otobüsler gün başında kendiliğinden revizyona girsin mi (Filo panelindeki düğme).</summary>
+        /// <summary>Bakım asistanı açık mı: yıpranan otobüsler revizyona, arızalılar acil tamire (Filo panelindeki düğme).</summary>
         public bool autoMaintenance;
 
         // Duraklar (yalnızca geliştirilenler; geliştirmesiz durak kayıtta yer tutmaz)

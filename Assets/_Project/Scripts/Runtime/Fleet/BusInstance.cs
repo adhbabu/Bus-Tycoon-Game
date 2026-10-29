@@ -22,6 +22,8 @@ namespace BusTycoon.Fleet
         public string assignedRouteId;
         /// <summary>Arıza nedeniyle seferden çekildiği kalan gün.</summary>
         public int outOfServiceDays;
+        /// <summary>Garaja çekilmeden önceki hattı: bakım asistanı otobüsü buraya geri gönderir.</summary>
+        public string lastRouteId;
 
         /// <summary>Yükleme sonrası <c>FleetSystem.ResolveModels</c> ile doldurulur; kaydedilmez.</summary>
         [NonSerialized] public BusModelData Model;

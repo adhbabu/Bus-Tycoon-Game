@@ -182,17 +182,21 @@ namespace BusTycoon.Game
             GUILayout.EndScrollView();
         }
 
-        /// <summary>Otomatik bakım düğmesi: açıkken yıpranan otobüsler gün başında kendiliğinden revizyona girer.</summary>
+        /// <summary>
+        /// Bakım asistanı kartı: aç/kapa (açıkken yıpranan otobüsler gün başında revizyona, arızalananlar acil tamirle
+        /// hattına döner) ve "Hepsini onar ve hatlara gönder" (bütün otobüsler + garajdakiler hatlarına).
+        /// </summary>
         void DrawAutoMaintenance()
         {
-            bool on = session.Fleet.AutoMaintenance;
+            MaintenanceAssistant assistant = session.Maintenance;
+            bool on = assistant.Enabled;
             GUILayout.BeginVertical(s.Card);
             GUILayout.BeginHorizontal();
             LayoutIcon(UIIcon.Wrench, 24f, 4f);
             Sp(8f);
             GUILayout.BeginVertical();
-            GUILayout.Label("Otomatik bakım", s.CardTitle);
-            GUILayout.Label($"Durum {Fmt.Pct(session.Economy.AutoOverhaulBelowCondition)} altına inince otobüs gün başında kendiliğinden revizyona girer.", s.WrapDim);
+            GUILayout.Label("Bakım asistanı", s.CardTitle);
+            GUILayout.Label($"Durum {Fmt.Pct(session.Economy.AutoOverhaulBelowCondition)} altına inen otobüsü revizyona sokar, arızalananı hemen tamir edip hattına geri gönderir.", s.WrapDim);
             GUILayout.EndVertical();
             Sp(8f);
             GUILayout.BeginVertical(GUILayout.ExpandWidth(false));
@@ -201,19 +205,28 @@ namespace BusTycoon.Game
                 Defer(() => SetAutoMaintenance(!on));
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
+            Sp(6f);
+            int pending = assistant.PendingWork(out double cost);
+            string label = pending > 0 ? $"Hepsini onar ve hatlara gönder ({Fmt.Compact((float)cost)})" : "Bütün otobüsler hatta ve bakımlı";
+            if (EnabledButton(pending > 0, label, s.Tab, Ht(36f)))
+                Defer(() =>
+                {
+                    MaintenanceReport report = session.Maintenance.RunNow();
+                    if (report.IsEmpty && report.Postponed == 0) Toast("Yapılacak bakım yok.", UIStyles.Blue);
+                });
             GUILayout.EndVertical();
         }
 
         void SetAutoMaintenance(bool enabled)
         {
-            session.Fleet.SetAutoMaintenance(enabled);
+            session.Maintenance.SetEnabled(enabled);
             if (!enabled)
             {
-                Toast("Otomatik bakım kapatıldı.", UIStyles.Blue);
+                Toast("Bakım asistanı kapatıldı.", UIStyles.Blue);
                 return;
             }
-            Toast("Otomatik bakım açıldı: yıpranan otobüsler kendiliğinden revizyona girecek.", UIStyles.Green);
-            session.Fleet.RunAutoMaintenance(); // yıpranmış olanlar hemen bakıma girsin
+            Toast("Bakım asistanı açıldı: yıpranan ve arızalanan otobüsler kendiliğinden onarılacak.", UIStyles.Green);
+            session.Maintenance.RunDaily(); // bekleyenler hemen bakıma girsin
         }
 
         /// <summary>
@@ -258,7 +271,17 @@ namespace BusTycoon.Game
             float overhaul = fleet.GetOverhaulCost(bus);
             bool canOverhaul = bus.condition < session.Economy.OverhaulTargetCondition - 0.01f;
             GUILayout.BeginHorizontal();
-            if (route != null)
+            if (!bus.IsAvailableToday)
+            {
+                float repair = fleet.GetExpressRepairCost(bus);
+                if (EnabledButton(session.Finance.CanAfford(repair), $"Acil tamir ({Fmt.Compact(repair)})", s.Primary, Ht(44f)))
+                    Defer(() =>
+                    {
+                        var result = session.Fleet.TryExpressRepair(busId);
+                        Toast(result.Message, result ? UIStyles.Green : UIStyles.Red);
+                    });
+            }
+            else if (route != null)
             {
                 if (GUILayout.Button("Garaja çek", s.Button, Ht(44f)))
                     Defer(() =>

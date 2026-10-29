@@ -77,6 +77,7 @@ namespace BusTycoon.Game
         FinanceSystem boundFinance;
         ProgressionSystem boundProgression;
         FleetSystem boundFleet;
+        MaintenanceAssistant boundMaintenance;
         RouteSystem boundRoutes;
         int warningCount;
         readonly HashSet<string> criticalRoutes = new HashSet<string>();
@@ -140,7 +141,8 @@ namespace BusTycoon.Game
             boundProgression.ModelUnlocked += OnModelUnlocked;
             boundProgression.RegionUnlocked += OnRegionUnlocked;
             boundFleet.BusBrokeDown += OnBusBrokeDown;
-            boundFleet.AutoMaintained += OnAutoMaintained;
+            boundMaintenance = session.Maintenance;
+            boundMaintenance.Completed += OnMaintenance;
             boundFleet.BusAdded += OnFleetChanged;
             boundFleet.BusRemoved += OnFleetChanged;
             boundFleet.BusChanged += OnFleetChanged;
@@ -157,10 +159,10 @@ namespace BusTycoon.Game
                 boundProgression.ModelUnlocked -= OnModelUnlocked;
                 boundProgression.RegionUnlocked -= OnRegionUnlocked;
             }
+            if (boundMaintenance != null) boundMaintenance.Completed -= OnMaintenance;
             if (boundFleet != null)
             {
                 boundFleet.BusBrokeDown -= OnBusBrokeDown;
-                boundFleet.AutoMaintained -= OnAutoMaintained;
                 boundFleet.BusAdded -= OnFleetChanged;
                 boundFleet.BusRemoved -= OnFleetChanged;
                 boundFleet.BusChanged -= OnFleetChanged;
@@ -241,8 +243,17 @@ namespace BusTycoon.Game
         void OnBusBrokeDown(BusInstance bus) =>
             Toast($"{bus.nickname} arızalandı ({bus.outOfServiceDays} gün servis dışı)", UIStyles.Orange);
 
-        void OnAutoMaintained(int count, double spent) =>
-            Toast($"Otomatik bakım: {count} otobüs revizyondan geçti ({Fmt.Money(spent)})", UIStyles.Blue);
+        /// <summary>Bakım asistanının özeti: "2 revizyon · 1 acil tamir · 3 otobüs hatta ($12 B)".</summary>
+        void OnMaintenance(MaintenanceReport report)
+        {
+            var parts = new List<string>();
+            if (report.Overhauled > 0) parts.Add($"{report.Overhauled} revizyon");
+            if (report.Repaired > 0) parts.Add($"{report.Repaired} acil tamir");
+            if (report.Reassigned > 0) parts.Add($"{report.Reassigned} otobüs hatta");
+            string text = parts.Count > 0 ? $"Bakım asistanı: {string.Join(" · ", parts)} ({Fmt.Money(report.Spent)})" : "Bakım asistanı";
+            if (report.Postponed > 0) text += $" · {report.Postponed} iş para bekliyor";
+            Toast(text, report.Postponed > 0 && parts.Count == 0 ? UIStyles.Orange : UIStyles.Blue);
+        }
 
         void OnFleetChanged(BusInstance _) => MarkDataDirty();
 

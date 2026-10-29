@@ -152,11 +152,11 @@ Yeni açılan modeller `CompanyState.announcedModelIds` ile **bir kez** duyurulu
 | **Satış** | `liste × 0,88^yaş(yıl) × (0,35 + 0,65 × durum) × 0,85 (galerici marjı)` |
 | **Takasla yükselt** | Eski otobüs satılır + yenisi alınır + **aynı hatta otomatik atanır**; bakiye net fark üzerinden kontrol edilir. Progression'ın tek tık eylemi |
 | **Atama** | `RouteSystem.TryAssignBus(busId, routeId)` (null = garaja çek) |
-| **Yıpranma** | Her gün `durum −= km / ömür_km` (minibüs 400 B km, standart 1 M km) |
+| **Yıpranma** | Her gün `durum −= km × 0,3 / ömür_km` (minibüs 400 B km, standart 1 M km; `EconomyConfig.wearRate` = 0,3: oyun günü kısa olduğu için otobüs gerçek ömründen yavaş yıpranır — yoğun çalışan minibüs ~1 yılda bir revizyon ister) |
 | **Bakım maliyeti** | `bakım/km × (1 + (1 − durum) × 1,5)` → durum 0,4'te bakım %90 pahalı |
 | **Arıza** | Günlük olasılık `0,08 × (1 − durum)²`; 1–3 gün servis dışı + `fiyat × %1` tamir |
 | **Revizyon** | Durumu 0,9'a çıkarır, bedel `fiyat × 0,3 × (0,9 − durum)` |
-| **Otomatik bakım** | Filo panelindeki düğme (`CompanyState.autoMaintenance`). Açıkken gün başında durumu 0,6'nın altındaki otobüsler, en yıpranmış önce, revizyona girer (`FleetSystem.RunAutoMaintenance`); kasada dünkü giderin 2 katı kadar yedek bırakılır, parası yetmeyen sonraki güne kalır |
+| **Bakım asistanı** | `MaintenanceAssistant` (Filo panelinde AÇIK/KAPALI; yeni oyunda açık). Gün başında durumu 0,6'nın altındaki otobüsler (en yıpranmış önce) revizyona, arızalılar **acil tamire** (`fiyat × %1`, otobüs o gün sefere çıkar) girer. **Hepsini onar ve hatlara gönder**: 0,9'un altındaki her otobüs revizyona, garajdakiler son hatlarına (`BusInstance.lastRouteId`; yoksa en çok yolcunun bilet bulamadığı hatta). Kasada dünkü giderin 2 katı yedek bırakılır, parası yetmeyen iş ertesi güne kalır |
 | **Sigorta** | Garajdaki otobüs de sigorta öder → atıl filo para kaybettirir |
 
 Başlangıçta oyuncuya **hediye 2. el Kartal M16** (durum 0,6) ve 40.000 $ verilir
