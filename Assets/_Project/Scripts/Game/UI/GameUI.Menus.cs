@@ -48,7 +48,16 @@ namespace BusTycoon.Game
             latestSaveLabel = latest.HasValue ? latest.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : null;
         }
 
-        Rect MainMenuRect => CenteredBox(560f, 600f);
+        /// <summary>Ana menü kutusu içeriğe göre boylanır; yardım açıkken uzun metin için tam boy.</summary>
+        Rect MainMenuRect
+        {
+            get
+            {
+                if (showMenuHelp) return CenteredBox(560f, 600f);
+                int buttons = 3 + (session.IsRunning && !session.IsBankrupt ? 1 : 0) + (CanQuit ? 1 : 0);
+                return CenteredBox(560f, (compact ? 300f : 335f) + 56f * buttons);
+            }
+        }
 
         Rect NewGameRect => new Rect(SafeLeft + Margin, SafeTop + Margin,
             Mathf.Min(470f * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
