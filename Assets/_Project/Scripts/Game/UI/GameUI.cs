@@ -140,6 +140,7 @@ namespace BusTycoon.Game
             boundProgression.ModelUnlocked += OnModelUnlocked;
             boundProgression.RegionUnlocked += OnRegionUnlocked;
             boundFleet.BusBrokeDown += OnBusBrokeDown;
+            boundFleet.AutoMaintained += OnAutoMaintained;
             boundFleet.BusAdded += OnFleetChanged;
             boundFleet.BusRemoved += OnFleetChanged;
             boundFleet.BusChanged += OnFleetChanged;
@@ -159,6 +160,7 @@ namespace BusTycoon.Game
             if (boundFleet != null)
             {
                 boundFleet.BusBrokeDown -= OnBusBrokeDown;
+                boundFleet.AutoMaintained -= OnAutoMaintained;
                 boundFleet.BusAdded -= OnFleetChanged;
                 boundFleet.BusRemoved -= OnFleetChanged;
                 boundFleet.BusChanged -= OnFleetChanged;
@@ -238,6 +240,9 @@ namespace BusTycoon.Game
 
         void OnBusBrokeDown(BusInstance bus) =>
             Toast($"{bus.nickname} arızalandı ({bus.outOfServiceDays} gün servis dışı)", UIStyles.Orange);
+
+        void OnAutoMaintained(int count, double spent) =>
+            Toast($"Otomatik bakım: {count} otobüs revizyondan geçti ({Fmt.Money(spent)})", UIStyles.Blue);
 
         void OnFleetChanged(BusInstance _) => MarkDataDirty();
 
@@ -455,7 +460,7 @@ namespace BusTycoon.Game
 
         void ComputeMetrics()
         {
-            mobile = Application.isMobilePlatform;
+            mobile = Application.isMobilePlatform || TouchInput.IsTouchPrimaryBrowser; // masaüstü kimlikli iPad dahil
             float designHeight;
             if (!mobile)
             {
@@ -576,12 +581,12 @@ namespace BusTycoon.Game
         /// </summary>
         void HandleTouchScroll(Event e)
         {
-            if (!mobile) return;
             switch (e.type)
             {
                 case EventType.MouseDown:
                     Rect area = CurrentScrollArea();
-                    touchOnPanel = area.width > 0f && area.Contains(e.mousePosition) && !IsOverSlider(e.mousePosition);
+                    touchOnPanel = (mobile || TouchInput.LastPressWasTouch) && area.width > 0f && area.Contains(e.mousePosition) &&
+                                   !IsOverSlider(e.mousePosition);
                     touchScrolling = false;
                     touchStart = e.mousePosition;
                     break;

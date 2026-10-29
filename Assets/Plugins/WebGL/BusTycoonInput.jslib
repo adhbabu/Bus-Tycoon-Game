@@ -1,4 +1,5 @@
-// Tarayıcı tekerlek olaylarını sınıflandırır (WheelInput.cs okur):
+// Tarayıcı girdisi: tekerlek olaylarının türü (WheelInput.cs) ve dokunmatik algılama (TouchInput.cs).
+// Tekerlek olayları şöyle sınıflandırılır:
 //   1 fare tekerleği → yakınlaştırma · 2 touchpad iki parmak kaydırma → harita kaydırma · 3 sıkıştırma → yakınlaştırma
 // Unity'nin kendi olay işleyişi bozulmaz; değerler kare başında okunup sıfırlanır.
 mergeInto(LibraryManager.library, {
@@ -34,6 +35,29 @@ mergeInto(LibraryManager.library, {
       state.gestureScale = e.scale;
       e.preventDefault();
     });
+  },
+
+  // Birincil girdi dokunmatik mi? iPadOS Safari kendini masaüstü Mac olarak tanıttığından Unity onu mobil
+  // saymaz; dokunma noktası olan "Macintosh" iPad'dir.
+  BusTycoon_IsTouchPrimary: function () {
+    var coarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+    var ipad = (navigator.maxTouchPoints || 0) > 0 && /Macintosh/.test(navigator.userAgent);
+    return coarse || ipad ? 1 : 0;
+  },
+
+  // Son basış parmakla mı yapıldı (dokunmatik ekranlı bilgisayarda da paneller parmakla kaysın).
+  BusTycoon_InitPointer: function () {
+    if (Module.busTycoonPointer) return;
+    var state = Module.busTycoonPointer = { touch: 0 };
+    var canvas = Module.canvas;
+    if (!canvas) return;
+    canvas.addEventListener("pointerdown", function (e) { state.touch = e.pointerType === "mouse" ? 0 : 1; }, { capture: true, passive: true });
+    canvas.addEventListener("touchstart", function () { state.touch = 1; }, { capture: true, passive: true }); // işaretçi olayı olmayan eski tarayıcılar
+  },
+
+  BusTycoon_LastPointerTouch: function () {
+    var state = Module.busTycoonPointer;
+    return state ? state.touch : 0;
   },
 
   BusTycoon_WheelKind: function () {
