@@ -170,6 +170,7 @@ namespace BusTycoon.Game
             GUILayout.EndHorizontal();
 
             fleetScroll = BeginScroll(fleetScroll);
+            DrawAutoMaintenance();
             if (fleet.Buses.Count == 0) GUILayout.Label("Filonuz boş. Galeriden otobüs alın.", s.Dim);
 
             foreach (var bus in new List<BusInstance>(fleet.Buses))
@@ -179,6 +180,40 @@ namespace BusTycoon.Game
                 DrawFleetCard(bus);
             }
             GUILayout.EndScrollView();
+        }
+
+        /// <summary>Otomatik bakım düğmesi: açıkken yıpranan otobüsler gün başında kendiliğinden revizyona girer.</summary>
+        void DrawAutoMaintenance()
+        {
+            bool on = session.Fleet.AutoMaintenance;
+            GUILayout.BeginVertical(s.Card);
+            GUILayout.BeginHorizontal();
+            LayoutIcon(UIIcon.Wrench, 24f, 4f);
+            Sp(8f);
+            GUILayout.BeginVertical();
+            GUILayout.Label("Otomatik bakım", s.CardTitle);
+            GUILayout.Label($"Durum {Fmt.Pct(session.Economy.AutoOverhaulBelowCondition)} altına inince otobüs gün başında kendiliğinden revizyona girer.", s.WrapDim);
+            GUILayout.EndVertical();
+            Sp(8f);
+            GUILayout.BeginVertical(GUILayout.ExpandWidth(false));
+            Sp(4f);
+            if (GUILayout.Button(on ? "AÇIK" : "KAPALI", on ? s.Primary : s.Button, Wd(92f), Ht(40f)))
+                Defer(() => SetAutoMaintenance(!on));
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+        }
+
+        void SetAutoMaintenance(bool enabled)
+        {
+            session.Fleet.SetAutoMaintenance(enabled);
+            if (!enabled)
+            {
+                Toast("Otomatik bakım kapatıldı.", UIStyles.Blue);
+                return;
+            }
+            Toast("Otomatik bakım açıldı: yıpranan otobüsler kendiliğinden revizyona girecek.", UIStyles.Green);
+            session.Fleet.RunAutoMaintenance(); // yıpranmış olanlar hemen bakıma girsin
         }
 
         /// <summary>

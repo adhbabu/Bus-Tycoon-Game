@@ -206,7 +206,7 @@ namespace BusTycoon.Core
 
         /// <summary>
         /// Günlük simülasyon sırası:
-        ///  1) Filo: arıza zarları  2) Hatlar: talep → yolcu → gelir/gider  3) Garajdaki otobüslerin sigortası
+        ///  1) Filo: otomatik bakım ve arıza zarları  2) Hatlar: talep → yolcu → gelir/gider  3) Garajdaki otobüslerin sigortası
         ///  4) İlerleme: XP + itibar  5) Finans: gün kapanışı  6) Olay yayını, otomatik kayıt, iflas kontrolü
         /// </summary>
         void HandleDayEnded(int day)
@@ -214,6 +214,7 @@ namespace BusTycoon.Core
             State.currentDay = day;
             var report = new DayReport { Day = day };
 
+            Fleet.RunAutoMaintenance();
             Fleet.BeginDay(rng);
             Routes.SimulateDay(rng, report.Routes);
             Fleet.ChargeIdleInsurance();

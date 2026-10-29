@@ -156,6 +156,7 @@ Yeni açılan modeller `CompanyState.announcedModelIds` ile **bir kez** duyurulu
 | **Bakım maliyeti** | `bakım/km × (1 + (1 − durum) × 1,5)` → durum 0,4'te bakım %90 pahalı |
 | **Arıza** | Günlük olasılık `0,08 × (1 − durum)²`; 1–3 gün servis dışı + `fiyat × %1` tamir |
 | **Revizyon** | Durumu 0,9'a çıkarır, bedel `fiyat × 0,3 × (0,9 − durum)` |
+| **Otomatik bakım** | Filo panelindeki düğme (`CompanyState.autoMaintenance`). Açıkken gün başında durumu 0,6'nın altındaki otobüsler, en yıpranmış önce, revizyona girer (`FleetSystem.RunAutoMaintenance`); kasada dünkü giderin 2 katı kadar yedek bırakılır, parası yetmeyen sonraki güne kalır |
 | **Sigorta** | Garajdaki otobüs de sigorta öder → atıl filo para kaybettirir |
 
 Başlangıçta oyuncuya **hediye 2. el Kartal M16** (durum 0,6) ve 40.000 $ verilir

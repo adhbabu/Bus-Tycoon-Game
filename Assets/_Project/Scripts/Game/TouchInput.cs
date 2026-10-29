@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_WEBGL && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
 
 namespace BusTycoon.Game
 {
@@ -9,6 +12,51 @@ namespace BusTycoon.Game
     /// </summary>
     public static class TouchInput
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")] static extern int BusTycoon_IsTouchPrimary();
+        [DllImport("__Internal")] static extern void BusTycoon_InitPointer();
+        [DllImport("__Internal")] static extern int BusTycoon_LastPointerTouch();
+        static int touchPrimary = -1;
+        static bool pointerInitialized;
+#endif
+
+        /// <summary>
+        /// Tarayıcıda birincil girdi dokunmatik mi (telefon, tablet)? iPadOS Safari kendini masaüstü Mac olarak
+        /// tanıttığı için <see cref="Application.isMobilePlatform"/> iPad'de false döner; bu ona bakar.
+        /// </summary>
+        public static bool IsTouchPrimaryBrowser
+        {
+            get
+            {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                if (touchPrimary < 0) touchPrimary = BusTycoon_IsTouchPrimary();
+                return touchPrimary == 1;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <summary>Son basış parmakla mı yapıldı (dokunmatik ekranlı bilgisayarda paneller parmakla kaysın)?</summary>
+        public static bool LastPressWasTouch
+        {
+            get
+            {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                if (!pointerInitialized)
+                {
+                    BusTycoon_InitPointer();
+                    pointerInitialized = true;
+                }
+                return BusTycoon_LastPointerTouch() == 1;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+                return Input.touchCount > 0;
+#else
+                return false;
+#endif
+            }
+        }
+
         /// <summary>Basılı parmak sayısı; en az iki parmak varsa ilk ikisinin konumu ve bu karedeki hareketi.</summary>
         public static int Read(out Vector2 position0, out Vector2 position1, out Vector2 delta0, out Vector2 delta1)
         {

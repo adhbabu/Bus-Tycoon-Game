@@ -149,5 +149,52 @@ namespace BusTycoon.Tests
             Assert.That(progression.Experience, Is.GreaterThan(0));
             Assert.That(bus.odometerKm, Is.GreaterThan(0));
         }
+
+        [Test]
+        public void AutoMaintenance_Off_LeavesWornBusesAlone()
+        {
+            fleet.TryPurchase(content.Minibus, 1f, out BusInstance bus);
+            bus.condition = 0.3f;
+            Assert.That(fleet.RunAutoMaintenance(), Is.EqualTo(0));
+            Assert.That(bus.condition, Is.EqualTo(0.3f));
+        }
+
+        [Test]
+        public void AutoMaintenance_OverhaulsOnlyWornBuses_AndPaysForIt()
+        {
+            fleet.TryPurchase(content.Minibus, 1f, out BusInstance worn);
+            fleet.TryPurchase(content.Minibus, 1f, out BusInstance fresh);
+            worn.condition = 0.3f;
+            fresh.condition = content.Economy.AutoOverhaulBelowCondition + 0.05f;
+            fleet.SetAutoMaintenance(true);
+            float cost = fleet.GetOverhaulCost(worn);
+            double cashBefore = finance.Cash;
+            int notified = 0;
+            fleet.AutoMaintained += (count, spent) => notified = count;
+
+            Assert.That(fleet.RunAutoMaintenance(), Is.EqualTo(1));
+            Assert.That(worn.condition, Is.EqualTo(content.Economy.OverhaulTargetCondition));
+            Assert.That(fresh.condition, Is.EqualTo(content.Economy.AutoOverhaulBelowCondition + 0.05f));
+            Assert.That(finance.Cash, Is.EqualTo(cashBefore - cost).Within(0.01));
+            Assert.That(notified, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AutoMaintenance_KeepsCashReserve_AndWorstBusGoesFirst()
+        {
+            fleet.TryPurchase(content.Minibus, 1f, out BusInstance a);
+            fleet.TryPurchase(content.Minibus, 1f, out BusInstance b);
+            a.condition = 0.4f;
+            b.condition = 0.2f;
+            fleet.SetAutoMaintenance(true);
+            // Dün 1000 gider: 2 günlük (2000) yedek kalmalı; para yalnız en yıpranmış otobüse yetsin.
+            state.financeHistory.Add(new DailyFinanceSummary { day = 0, expenses = 1000 });
+            state.cash = 2000 + fleet.GetOverhaulCost(b) + 1;
+
+            Assert.That(fleet.RunAutoMaintenance(), Is.EqualTo(1));
+            Assert.That(b.condition, Is.EqualTo(content.Economy.OverhaulTargetCondition), "En yıpranmış otobüs önce bakıma girer.");
+            Assert.That(a.condition, Is.EqualTo(0.4f), "Yedek parayı bozacak revizyon sonraki güne kalır.");
+            Assert.That(finance.Cash, Is.GreaterThanOrEqualTo(2000));
+        }
     }
 }

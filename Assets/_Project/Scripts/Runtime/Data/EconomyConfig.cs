@@ -86,6 +86,10 @@ namespace BusTycoon.Data
         [Tooltip("Revizyon bedeli = otobüs fiyatı × bu oran × giderilen yıpranma.")]
         [SerializeField, Range(0f, 1f)] float overhaulCostFactor = 0.3f;
         [SerializeField, Range(0.5f, 1f)] float overhaulTargetCondition = 0.9f;
+        [Tooltip("Otomatik bakım açıkken durumu bu değerin altına düşen otobüs gün başında revizyona girer.")]
+        [SerializeField, Range(0.2f, 0.85f)] float autoOverhaulBelowCondition = 0.6f;
+        [Tooltip("Otomatik bakım kasada en az bu kadar günlük gider bırakır (iflas riskine girmesin).")]
+        [SerializeField, Min(0f)] float autoOverhaulReserveDays = 2f;
 
         [Header("Memnuniyet → itibar")]
         [SerializeField, Range(0f, 1f)] float satisfactionBase = 0.35f;
@@ -139,6 +143,8 @@ namespace BusTycoon.Data
         public float RepairCostFactor => repairCostFactor;
         public float OverhaulCostFactor => overhaulCostFactor;
         public float OverhaulTargetCondition => overhaulTargetCondition;
+        public float AutoOverhaulBelowCondition => autoOverhaulBelowCondition;
+        public float AutoOverhaulReserveDays => autoOverhaulReserveDays;
 
         public float SatisfactionBase => satisfactionBase;
         public float SatisfactionComfortWeight => satisfactionComfortWeight;

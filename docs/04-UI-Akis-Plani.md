@@ -299,9 +299,13 @@ GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce 
 | Görev kutusu | sol alt | panel açıkken gizlenir |
 | Hover ipucu | var | yok (dokunmatikte hover olmaz) |
 | Kısayol ipuçları "[N]" | var | yok |
-| Kaydırma | tekerlek | panel içinde parmakla sürükleme (kaydırıcı üstünde değilse) |
+| Kaydırma | tekerlek (dokunmatik ekranda parmakla da) | panel içinde parmakla sürükleme (kaydırıcı üstünde değilse) |
 | Yakınlaştırma | tekerlek, Q/E, +/- | iki parmak (pinch) ve ekrandaki +/- |
 | Geri | Esc | Android geri tuşu |
+
+Web'de iPadOS Safari kendini masaüstü Mac olarak tanıttığı için Unity iPad'i mobil saymaz; tarayıcıdan
+`(pointer: coarse)` ve dokunma noktası olan "Macintosh" kimliği okunur (`TouchInput.IsTouchPrimaryBrowser`) ve iPad
+tablet düzeniyle açılır. Basış parmakla yapıldıysa (`TouchInput.LastPressWasTouch`) panel her cihazda parmakla kayar.
 
 Ayrıca: `Screen.safeArea` ile çentik ve ev çubuğu boşlukları, dar ekranlarda (4:3 tablet) daralan üst çubuk sütunları,
 iOS'ta "Çıkış" düğmesi gizli (Apple kuralı), arka plana alınınca (`OnApplicationPause`) otomatik kayıt.

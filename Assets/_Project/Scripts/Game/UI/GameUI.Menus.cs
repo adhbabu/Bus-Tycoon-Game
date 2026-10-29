@@ -440,7 +440,9 @@ namespace BusTycoon.Game
             HelpSection("Filo ve ilerleme",
                 "Yolcu taşıdıkça seviye atlarsınız: yeni otobüsler, daha fazla hat ve yeni ülkeler açılır. " +
                 "Minibüs uzun hatlarda yolcu kaybeder; 300 km üstü hatlara midibüs veya şehirlerarası otobüs koyun. " +
-                "Lüks modeller ayrıca itibar ister: adil fiyat ve konforlu araç itibarı artırır.");
+                "Lüks modeller ayrıca itibar ister: adil fiyat ve konforlu araç itibarı artırır. " +
+                "Otobüsler yıprandıkça bakımı pahalılaşır ve arıza yapar; Filo panelindeki 'Otomatik bakım' açıkken " +
+                "yıpranan otobüsler gün başında kendiliğinden revizyona girer.");
             HelpSection("Kontroller",
                 "Sol tık: seç · Sürükle veya WASD/ok tuşları: kaydır · Tekerlek veya Q/E: yakınlaştır · Sağ tık: seçimi iptal\n" +
                 "Boşluk: duraklat · 1/2/3: hız · N: yeni hat · R: hatlar · F: filo · G: galeri · K: finans · B: bölgeler · " +

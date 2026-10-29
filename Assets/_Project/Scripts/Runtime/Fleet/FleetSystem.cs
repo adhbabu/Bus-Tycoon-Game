@@ -25,6 +25,8 @@ namespace BusTycoon.Fleet
         public event Action<BusInstance> BusRemoved;
         public event Action<BusInstance> BusChanged;
         public event Action<BusInstance> BusBrokeDown;
+        /// <summary>Otomatik bakım bu gün kaç otobüsü revizyona soktu ve toplam ne harcadı.</summary>
+        public event Action<int, double> AutoMaintained;
 
         public FleetSystem(CompanyState state, BusCatalog catalog, EconomyConfig economy,
             FinanceSystem finance, ProgressionSystem progression)
@@ -229,6 +231,42 @@ namespace BusTycoon.Fleet
             foreach (var bus in state.buses)
                 if (!bus.IsAssigned && bus.Model != null)
                     finance.Charge(bus.Model.InsurancePerDay, LedgerCategory.Insurance, bus.busId);
+        }
+
+        // ------------------------------------------------------------------ otomatik bakım
+
+        public bool AutoMaintenance => state.autoMaintenance;
+
+        public void SetAutoMaintenance(bool enabled) => state.autoMaintenance = enabled;
+
+        /// <summary>
+        /// Otomatik bakım açıksa durumu eşiğin altına düşen otobüsleri (en yıpranmış önce) revizyona sokar.
+        /// Kasada son günün giderinin <see cref="EconomyConfig.AutoOverhaulReserveDays"/> katı kadar para bırakır;
+        /// parası yetmeyen otobüs sonraki güne kalır. Revizyona giren otobüs sayısını döndürür.
+        /// </summary>
+        public int RunAutoMaintenance()
+        {
+            if (!state.autoMaintenance) return 0;
+            var worn = new List<BusInstance>();
+            foreach (var bus in state.buses)
+                if (bus.Model != null && bus.condition < economy.AutoOverhaulBelowCondition) worn.Add(bus);
+            if (worn.Count == 0) return 0;
+            worn.Sort((a, b) => a.condition.CompareTo(b.condition));
+
+            var history = state.financeHistory;
+            double reserve = history != null && history.Count > 0 ? history[history.Count - 1].expenses * economy.AutoOverhaulReserveDays : 0d;
+            int count = 0;
+            double spent = 0d;
+            foreach (var bus in worn)
+            {
+                float cost = GetOverhaulCost(bus);
+                if (finance.Cash - cost < reserve) continue;
+                if (!TryOverhaul(bus.busId)) continue;
+                count++;
+                spent += cost;
+            }
+            if (count > 0) AutoMaintained?.Invoke(count, spent);
+            return count;
         }
 
         public OpResult TryOverhaul(string busId)
