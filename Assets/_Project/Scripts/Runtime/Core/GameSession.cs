@@ -63,6 +63,8 @@ namespace BusTycoon.Core
         public FleetSystem Fleet { get; private set; }
         public RouteSystem Routes { get; private set; }
         public StationSystem Stations { get; private set; }
+        /// <summary>Bakım asistanı: yıpranan otobüsleri revizyona, arızalıları acil tamire, garajdakileri hatlara gönderir.</summary>
+        public MaintenanceAssistant Maintenance { get; private set; }
         public bool IsRunning => State != null;
         public bool IsBankrupt { get; private set; }
 
@@ -138,7 +140,8 @@ namespace BusTycoon.Core
                 companyName = companyName,
                 startCityId = startCity.Id,
                 cash = progressionConfig.StartingCash,
-                reputation = progressionConfig.StartingReputation
+                reputation = progressionConfig.StartingReputation,
+                autoMaintenance = true // yeni oyunda bakım asistanı açık başlar
             };
 
             Build(state);
@@ -196,6 +199,7 @@ namespace BusTycoon.Core
             Fleet = new FleetSystem(state, busCatalog, economyConfig, Finance, Progression);
             Stations = new StationSystem(state, Finance, Progression);
             Routes = new RouteSystem(state, World, economyConfig, Fleet, Finance, Progression, Stations);
+            Maintenance = new MaintenanceAssistant(state, Fleet, Routes, Finance, economyConfig);
 
             Clock = new SimulationClock(state.currentDay, secondsPerDay);
             Clock.DayEnded += HandleDayEnded;
@@ -206,7 +210,7 @@ namespace BusTycoon.Core
 
         /// <summary>
         /// Günlük simülasyon sırası:
-        ///  1) Filo: otomatik bakım ve arıza zarları  2) Hatlar: talep → yolcu → gelir/gider  3) Garajdaki otobüslerin sigortası
+        ///  1) Filo: bakım asistanı ve arıza zarları  2) Hatlar: talep → yolcu → gelir/gider  3) Garajdaki otobüslerin sigortası
         ///  4) İlerleme: XP + itibar  5) Finans: gün kapanışı  6) Olay yayını, otomatik kayıt, iflas kontrolü
         /// </summary>
         void HandleDayEnded(int day)
@@ -214,7 +218,7 @@ namespace BusTycoon.Core
             State.currentDay = day;
             var report = new DayReport { Day = day };
 
-            Fleet.RunAutoMaintenance();
+            Maintenance.RunDaily();
             Fleet.BeginDay(rng);
             Routes.SimulateDay(rng, report.Routes);
             Fleet.ChargeIdleInsurance();
