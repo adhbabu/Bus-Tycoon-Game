@@ -23,7 +23,9 @@ namespace BusTycoon.Game
         static readonly Vector3 StageOrigin = new Vector3(0f, 0f, 6000f);
         static readonly Color DaySky = new Color(0.63f, 0.8f, 0.95f), NightSky = new Color(0.05f, 0.08f, 0.17f);
         static readonly Color DayLight = new Color(1f, 0.96f, 0.9f), NightLight = new Color(0.55f, 0.65f, 1f);
-        static readonly Color DayAmbient = new Color(0.55f, 0.57f, 0.62f), NightAmbient = new Color(0.17f, 0.2f, 0.32f);
+        // Proje gamma renk uzayında: yere düşen ışık + ortam ≈ 1 olsun ki renkler (beyaz zemin) patlamasın.
+        static readonly Color DayAmbient = new Color(0.47f, 0.49f, 0.54f), NightAmbient = new Color(0.2f, 0.23f, 0.34f);
+        const float DayIntensity = 0.68f, NightIntensity = 0.28f;
 
         public static StationView Instance { get; private set; }
 
@@ -84,7 +86,7 @@ namespace BusTycoon.Game
             stationCamera.clearFlags = CameraClearFlags.SolidColor;
             stationCamera.backgroundColor = DaySky;
             stationCamera.fieldOfView = 40f;
-            stationCamera.nearClipPlane = 0.3f;
+            stationCamera.nearClipPlane = 0.5f;
             stationCamera.farClipPlane = 600f;
             stationCamera.enabled = false;
 
@@ -166,15 +168,15 @@ namespace BusTycoon.Game
             QualitySettings.shadowDistance = 150f;
             if (QualitySettings.shadows == ShadowQuality.Disable) QualitySettings.shadows = ShadowQuality.HardOnly;
 
-            // Giriş: sokaktan, kapının önünden alçak bakış → salonun tepeden görünümü
+            // Giriş: caddenin üstünden girişe bakış → salonun tepeden görünümü (kamera hep yolun ve arabaların üstünde)
             focusGoal = Scene.Focus;
             yawGoal = 28f;
             pitchGoal = 38f;
             distanceGoal = Scene.DefaultDistance;
-            focus = Scene.Focus + new Vector3(-2f, 0.5f, -8f);
+            focus = Scene.Focus + new Vector3(-2f, 0.5f, -5f);
             yaw = -6f;
-            pitch = 10f;
-            distance = Scene.DefaultDistance * 0.32f;
+            pitch = 20f;
+            distance = Scene.DefaultDistance * 0.55f;
             pops.Clear();
             ClearConfetti();
             ApplyCamera();
@@ -412,7 +414,7 @@ namespace BusTycoon.Game
             float night = cycle != null ? cycle.Night01 : 0f;
             float dusk = Mathf.Clamp01(1f - Mathf.Abs(night - 0.45f) / 0.3f) * 0.5f;
             stationLight.color = Color.Lerp(Color.Lerp(DayLight, NightLight, night), new Color(1f, 0.62f, 0.4f), dusk);
-            stationLight.intensity = Mathf.Lerp(1.1f, 0.3f, night);
+            stationLight.intensity = Mathf.Lerp(DayIntensity, NightIntensity, night);
             RenderSettings.ambientLight = Color.Lerp(DayAmbient, NightAmbient, night);
             stationCamera.backgroundColor = Color.Lerp(Color.Lerp(DaySky, NightSky, night), new Color(0.98f, 0.62f, 0.45f), dusk);
         }

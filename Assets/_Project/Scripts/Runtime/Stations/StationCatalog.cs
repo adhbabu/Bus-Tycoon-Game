@@ -43,7 +43,7 @@ namespace BusTycoon.Stations
         {
             new StationUpgrade(Seats, "Konforlu koltuklar", "Sert banklar yerine minderli, kolçaklı bekleme koltukları.", StationTier.Stop, 6000f, 2),
             new StationUpgrade(Plants, "Bitkiler ve çiçekler", "Saksı bitkileri, çiçeklikler ve gölge veren ağaçlar.", StationTier.Stop, 3000f, 1),
-            new StationUpgrade(Lights, "Sıcak aydınlatma", "Sarkıt lambalar ve sokak lambaları: gece durak ışıl ışıl.", StationTier.Stop, 4500f, 1),
+            new StationUpgrade(Lights, "Sıcak aydınlatma", "Ayaklı küre lambalar ve süslü sokak lambaları: gece durak ışıl ışıl.", StationTier.Stop, 4500f, 1),
             new StationUpgrade(Kiosk, "Simit ve çay büfesi", "Taze simit, sıcak çay: yolcuların vazgeçilmezi.", StationTier.Stop, 7500f, 2),
             new StationUpgrade(Board, "Dijital kalkış panosu", "Hatlarınızın kalkış saatleri ve peronları canlı panoda.", StationTier.Stop, 9000f, 1),
             new StationUpgrade(Wifi, "Wi-Fi ve şarj noktası", "Ücretsiz internet ve telefon şarj istasyonu.", StationTier.Stop, 5000f, 1),

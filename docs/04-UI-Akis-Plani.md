@@ -270,7 +270,11 @@ para ödülü verir.
 * **Duraklar:** haritada şehirler büyüklüğe göre dört tip durak modelidir (`StationModels`; çatı rengi durumu
   gösterir, merkezde turuncu şirket bayrağı, üzerine gelince hafifçe büyür, gece pencereler yanar). Planlayıcı kapalıyken
   bir durağa tıklamak **durağa girer** (`StationView`): kamera durağa dalar, ekran kararır, durağın içi kendi kamerası ve
-  ışığıyla açılır; kamera sokaktan süzülüp salonu tepeden gösterir. Kesit görünüm: kameraya bakan duvarlar gizlenir.
+  ışığıyla açılır; kamera caddenin üstünden süzülüp salonu tepeden gösterir. Kesit görünüm: kameraya bakan duvarlar
+  alçak duvara dönüşür. Otogar sahnesi (`StationScene`): iki tonlu karolu salon, şehir amblemli madalyon, lambri ve
+  ışık bandı, kuzeyde ad tabelası ve reklam panosu, perona bakan cam cephe (saat, "PERONLAR"), girişte saçak ve "ÇIKIŞ";
+  dışarıda kare taşlı meydan, otopark, taksi cebi, yaya geçidi ve ışıkları, peron önüne giriş-çıkış yolu. Yüzeyler
+  üst üste aynı yükseklikte bindirilmez (titreşme olmaz); ışık proje gamma uzayında olduğu için yere düşen ışık ≈ 1.
   Solda durak kartı (şehir ikonu, bayrak, büyüklük, ★ popülerlik ve bileşenleri, hat/yolcu/talep bonusu, **Buradan hat
   aç**), sağda geliştirme mağazası (ikon, açıklama, konfor/talep etkisi, fiyat; yapılan ve daha büyük durak isteyenler
   rozetli). Satın alınan geliştirme yerinde zıplayarak belirir, kamera ona döner, konfeti saçılır. Sürükle = döndür,
