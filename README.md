@@ -121,7 +121,8 @@ Tools/store-screenshots.mjs Web sürümünden mağaza ekran görüntüleri (Play
 Tools/build_world_data.py  GeoNames → cities.csv üretir
 Tools/build_map.py         Natural Earth 1:10m → map.jpg (harita) ve roads.txt (yol ağı) üretir
 Tools/make_store_art.py    Uygulama ikonu, mağaza tanıtım görseli ve ana menüdeki otobüs çizimi
-Tools/make_fonts.py        Nunito yazı tipinden arayüzün iki kalınlığını üretir (Resources/BusTycoon/Fonts)
+Tools/make_fonts.py        Inter yazı tipinden arayüzün üç kalınlığını üretir (Resources/BusTycoon/Fonts)
+Tools/make_icons.py        Twemoji ikonlarından arayüz ikon atlasını üretir (Resources/BusTycoon/UI/icons.png)
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 
@@ -138,4 +139,5 @@ asset'leri üretir. **Testler:** Window ▸ General ▸ Test Runner ▸ EditMode
 
 * Harita: [Natural Earth](https://www.naturalearthdata.com/) (kamu malı)
 * Şehirler: [GeoNames](https://www.geonames.org/) (CC BY 4.0). Komşu ülke şehirlerinin nüfusları yaklaşık bölge/metro değerleridir.
-* Yazı tipi: [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License 1.1; lisans metni `Assets/_Project/Resources/BusTycoon/Fonts/OFL.txt`)
+* Yazı tipi: [Inter](https://github.com/rsms/inter) (SIL Open Font License 1.1; lisans metni `Assets/_Project/Resources/BusTycoon/Fonts/OFL.txt`)
+* Arayüz simgeleri: [Twemoji](https://github.com/jdecked/twemoji) (grafikler CC BY 4.0)

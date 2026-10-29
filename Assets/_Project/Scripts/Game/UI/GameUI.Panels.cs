@@ -97,7 +97,8 @@ namespace BusTycoon.Game
 
                 GUILayout.BeginVertical(s.Card);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(RouteName(route), s.Bold);
+                GUILayout.Label(RouteName(route), s.CardTitle);
+                Badge(InsightTag(insight.Severity), InsightBadge(insight.Severity));
                 GUILayout.FlexibleSpace();
                 ColorLabel(route.HasHistory ? $"{Fmt.Signed(last.Profit)}/gün" : "—", last.Profit >= 0 ? UIStyles.Green : UIStyles.Red, s.Bold);
                 GUILayout.EndHorizontal();
@@ -155,6 +156,10 @@ namespace BusTycoon.Game
             GUILayout.EndScrollView();
         }
 
+        /// <summary>
+        /// Otobüs kartı: başlık + durum rozeti (Yolda / Garajda / Arızalı), ikonlu ayrıntı satırları ve iki ana
+        /// düğme (hatta atama birincil); altında revizyon, satış ve takasla yükseltme.
+        /// </summary>
         void DrawFleetCard(BusInstance bus)
         {
             var fleet = session.Fleet;
@@ -163,37 +168,55 @@ namespace BusTycoon.Game
 
             GUILayout.BeginVertical(s.Card);
             GUILayout.BeginHorizontal();
-            GUILayout.Label(bus.nickname, s.Bold);
+            GUILayout.Label(bus.nickname, s.CardTitle);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(SegmentName(bus.Model.Segment), s.Small);
+            if (!bus.IsAvailableToday) Badge("Arızalı", s.BadgeDanger);
+            else if (route != null) Badge("Yolda", s.BadgeSuccess);
+            else Badge("Garajda", s.BadgeWarning);
             GUILayout.EndHorizontal();
+            Sp(4f);
 
+            DetailRow(UIIcon.Pin, route != null ? $"Hat: {RouteName(route)}" : "Hat: atanmadı (garajda sigorta ödüyor)");
+            DetailRow(UIIcon.Seat, $"{bus.Model.DisplayName} · {SegmentName(bus.Model.Segment)} · {bus.Model.Seats} koltuk");
+            if (route != null && route.HasHistory) DetailRow(UIIcon.People, $"Doluluk: {Fmt.Pct(route.LastReport.loadFactor)} · hat dün {Fmt.Num(route.LastReport.passengers)} yolcu");
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Durum {Fmt.Pct(bus.condition)}", s.Small, Wd(90f));
-            LayoutBar(bus.condition, bus.condition > 0.6f ? UIStyles.Green : bus.condition > 0.35f ? UIStyles.Yellow : UIStyles.Red, 6f, 110f, 7f);
-            GUILayout.Label($"{Fmt.Num(bus.odometerKm)} km", s.Small);
+            DetailRow(UIIcon.Wrench, $"Durum: {Fmt.Pct(bus.condition)}", Wd(150f));
+            LayoutBar(bus.condition, bus.condition > 0.6f ? UIStyles.Green : bus.condition > 0.35f ? UIStyles.Yellow : UIStyles.Red, 6f, 90f, 11f);
+            GUILayout.FlexibleSpace();
+            DetailRow(UIIcon.Road, $"{Fmt.Num(bus.odometerKm)} km");
             GUILayout.EndHorizontal();
+            if (!bus.IsAvailableToday) DetailRow(UIIcon.Warning, $"{bus.outOfServiceDays} gün servis dışı", color: UIStyles.Orange);
+            Sp(8f);
 
-            if (!bus.IsAvailableToday) ColorLabel($"Arızalı: {bus.outOfServiceDays} gün servis dışı", UIStyles.Orange, s.Small);
-            else if (route != null) ColorLabel($"Hat: {RouteName(route)}", UIStyles.Green, s.Small);
-            else ColorLabel("Garajda bekliyor (sigorta ödüyor)", UIStyles.Yellow, s.Small);
-
-            // Eylemler
-            GUILayout.BeginHorizontal();
+            // Ana düğmeler: hattaysa "Garaja çek" + "Hatta ata"; garajdaysa "Revizyon" + "Hatta ata" (turuncu)
             bool expanded = expandedBusId == busId;
-            if (GUILayout.Button(expanded ? "Kapat" : "Hatta ata", expanded ? s.TabActive : s.Button, Ht(30f)))
-                Defer(() => expandedBusId = expanded ? null : busId);
-
             float overhaul = fleet.GetOverhaulCost(bus);
-            if (EnabledButton(bus.condition < session.Economy.OverhaulTargetCondition - 0.01f, $"Revizyon {Fmt.Compact(overhaul)}", s.Button, Ht(30f)))
-                Defer(() =>
-                {
-                    var result = session.Fleet.TryOverhaul(busId);
-                    Toast(result.Message, result ? UIStyles.Green : UIStyles.Red);
-                });
+            bool canOverhaul = bus.condition < session.Economy.OverhaulTargetCondition - 0.01f;
+            GUILayout.BeginHorizontal();
+            if (route != null)
+            {
+                if (GUILayout.Button("Garaja çek", s.Button, Ht(44f)))
+                    Defer(() =>
+                    {
+                        session.Routes.TryAssignBus(busId, null);
+                        expandedBusId = null;
+                        Toast("Otobüs garaja çekildi.", UIStyles.Blue);
+                    });
+            }
+            else if (EnabledButton(canOverhaul, $"Revizyon ({Fmt.Compact(overhaul)})", s.Button, Ht(44f)))
+            {
+                Defer(() => Overhaul(busId));
+            }
+            if (GUILayout.Button(expanded ? "Kapat" : "Hatta ata", expanded ? s.Button : (route == null ? s.Primary : s.TabActive), Ht(44f)))
+                Defer(() => expandedBusId = expanded ? null : busId);
+            GUILayout.EndHorizontal();
 
+            // İkincil eylemler
             float resale = fleet.GetResaleValue(bus);
-            if (GUILayout.Button($"Sat {Fmt.Compact(resale)}", s.Danger, Ht(30f)))
+            GUILayout.BeginHorizontal();
+            if (route != null && EnabledButton(canOverhaul, $"Revizyon {Fmt.Compact(overhaul)}", s.Tab, Ht(34f)))
+                Defer(() => Overhaul(busId));
+            if (GUILayout.Button($"Sat {Fmt.Compact(resale)}", s.Danger, Ht(34f)))
             {
                 string nickname = bus.nickname;
                 Defer(() => AskConfirm("Otobüs satışı", $"{nickname} {Fmt.Money(resale)} karşılığında satılacak.", () =>
@@ -208,7 +231,7 @@ namespace BusTycoon.Game
             if (upgrade != null)
             {
                 float net = fleet.GetPurchasePrice(upgrade) - resale;
-                if (EnabledButton(session.Finance.CanAfford(net), $"Takasla yükselt: {upgrade.DisplayName} (net {Fmt.Compact(net)})", s.Primary, Ht(30f)))
+                if (EnabledButton(session.Finance.CanAfford(net), $"Takasla yükselt: {upgrade.DisplayName} (net {Fmt.Compact(net)})", s.Tab, Ht(34f)))
                 {
                     BusModelData target = upgrade;
                     Defer(() => AskConfirm("Takasla yükselt",
@@ -224,13 +247,14 @@ namespace BusTycoon.Game
 
             if (expanded)
             {
+                Sp(4f);
                 GUILayout.Label("Hangi hatta çalışsın?", s.Dim);
                 foreach (var candidate in session.Routes.Routes)
                 {
                     bool current = candidate.routeId == bus.assignedRouteId;
                     RouteState target = candidate;
                     string label = $"{RouteName(candidate)} · {session.Fleet.CountBusesOnRoute(candidate.routeId)} otobüs" + (current ? " (şu an)" : "");
-                    if (EnabledButton(!current, label, s.Ghost, Ht(30f)))
+                    if (EnabledButton(!current, label, s.Ghost, Ht(34f)))
                         Defer(() =>
                         {
                             session.Routes.TryAssignBus(busId, target.routeId);
@@ -238,14 +262,37 @@ namespace BusTycoon.Game
                             Toast($"Otobüs {RouteName(target)} hattına atandı.", UIStyles.Green);
                         });
                 }
-                if (EnabledButton(bus.IsAssigned, "Garaja çek", s.Ghost, Ht(30f)))
-                    Defer(() =>
-                    {
-                        session.Routes.TryAssignBus(busId, null);
-                        expandedBusId = null;
-                    });
+                if (session.Routes.Routes.Count == 0) GUILayout.Label("Önce bir hat açın (Yeni Hat).", s.WrapDim);
             }
             GUILayout.EndVertical();
+        }
+
+        void Overhaul(string busId)
+        {
+            var result = session.Fleet.TryOverhaul(busId);
+            Toast(result.Message, result ? UIStyles.Green : UIStyles.Red);
+        }
+
+        /// <summary>Durum rozeti: renkli yazı, aynı rengin saydam zemini.</summary>
+        void Badge(string text, GUIStyle style)
+        {
+            GUILayout.BeginVertical();
+            Sp(2f);
+            GUILayout.Label(text, style, GUILayout.ExpandWidth(false));
+            GUILayout.EndVertical();
+        }
+
+        /// <summary>Ayrıntı satırı: küçük ikon + soluk yazı (mockup'taki 📍 👥 ⛽ satırları).</summary>
+        void DetailRow(UIIcon icon, string text, params GUILayoutOption[] options) => DetailRow(icon, text, null, options);
+
+        void DetailRow(UIIcon icon, string text, Color? color, params GUILayoutOption[] options)
+        {
+            GUILayout.BeginHorizontal(options);
+            LayoutIcon(icon, 16f, 4f);
+            Sp(4f);
+            if (color.HasValue) ColorLabel(text, color.Value, s.Detail);
+            else GUILayout.Label(text, s.Detail);
+            GUILayout.EndHorizontal();
         }
 
         /// <summary>Açık modeller arasında mevcut kademeden yüksek, en üst kademedeki en ucuz model.</summary>

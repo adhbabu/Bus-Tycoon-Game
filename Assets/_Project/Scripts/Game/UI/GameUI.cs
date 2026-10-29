@@ -397,7 +397,7 @@ namespace BusTycoon.Game
                 case Mode.Playing:
                     DrawTopBar();
                     if (compact) DrawBottomBar();
-                    else DrawToolbar();
+                    else DrawSideBar();
                     DrawPanel();
                     DrawZoomButtons();
                     DrawGoalWidget();
@@ -477,9 +477,8 @@ namespace BusTycoon.Game
         }
 
         float Margin => 12f * u;
-        float TopBarHeight => 64f * u;
-        float BottomBarHeight => 62f * u;
-        float ToolbarWidth => 184f * u;
+        float TopBarHeight => 70f * u;
+        float BottomBarHeight => 66f * u;
         float PanelWidth => compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.55f) : 490f * u;
         /// <summary>Harita/arayüz için kullanılabilir alanın alt sınırı (alt menü çubuğunun üstü).</summary>
         float ContentBottom => H - SafeBottom - (compact && mode == Mode.Playing ? BottomBarHeight : 0f);
@@ -1049,7 +1048,7 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             GUILayout.Label(title, s.H1);
             GUILayout.FlexibleSpace();
-            bool close = GUILayout.Button("×", s.Ghost, Wd(34f), Ht(30f));
+            bool close = GUILayout.Button("×", s.Button, Wd(38f), Ht(36f));
             GUILayout.EndHorizontal();
             if (!string.IsNullOrEmpty(subtitle)) GUILayout.Label(subtitle, s.Dim);
             Divider();
@@ -1073,6 +1072,20 @@ namespace BusTycoon.Game
             CityData b = session.World.GetCity(route.cityBId);
             return $"{(a != null ? a.DisplayName : route.cityAId)} – {(b != null ? b.DisplayName : route.cityBId)}";
         }
+
+        GUIStyle InsightBadge(InsightSeverity severity) => severity switch
+        {
+            InsightSeverity.Critical => s.BadgeDanger,
+            InsightSeverity.Warning => s.BadgeWarning,
+            _ => s.BadgeSuccess
+        };
+
+        static string InsightTag(InsightSeverity severity) => severity switch
+        {
+            InsightSeverity.Critical => "Kritik",
+            InsightSeverity.Warning => "Dikkat",
+            _ => "İyi"
+        };
 
         static Color InsightColor(InsightSeverity severity) => severity switch
         {
