@@ -120,17 +120,23 @@ namespace BusTycoon.Game
             }
             else
             {
+                // Köşeler ve kapı yanları (dükkân ve oyun alanının köşelerine girmeden)
+                bool terminal = Info.Tier == StationTier.Terminal;
                 pots.Add(Hall(0.9f, 0.9f));
                 pots.Add(Hall(W / 2f - doorW / 2f - 0.9f, 0.9f));
-                pots.Add(Hall(W * 0.31f, D - 0.9f));
-                pots.Add(Hall(W * 0.67f, D - 0.9f));
-                pots.Add(Hall(W * (Info.Tier == StationTier.Terminal ? 0.97f : 0.72f) - 0.6f, 0.9f));
-                pots.Add(Hall(W - 0.9f, D * 0.5f - 2.8f));
+                pots.Add(Hall(W / 2f + doorW / 2f + 0.9f, 0.9f));
+                pots.Add(terminal ? Hall(W - 0.9f, 0.9f) : Hall(W * 0.76f - 0.9f, 0.9f));
+                if (terminal)
+                {
+                    pots.Add(Hall(W - 0.9f, D / 2f - platformDoorW / 2f - 0.8f));
+                    pots.Add(Hall(W - 0.9f, D / 2f + platformDoorW / 2f + 0.8f));
+                    pots.Add(Hall(W - 0.9f, D - 0.9f));
+                }
+                pots.Add(new Vector3(x1 + 0.55f, WalkY, zw1 - 0.6f));
                 for (float x = x0 + 6f; x < x1 - 2f; x += 7f)
-                    if (Mathf.Abs(x - (x0 + x1) / 2f) > doorW) planters.Add((new Vector3(x, 0.06f, z0 - 1.4f), 0f));
-                planters.Add((new Vector3(wx0 + 0.6f, 0.2f, zw1 - 1.5f), 90f));
-                trees.Add(new Vector3(x0 - 4f, 0.06f, z0 + 2f));
-                trees.Add(new Vector3(x0 - 4f, 0.06f, z1 - 1f));
+                    if (Mathf.Abs(x - door) > doorW) planters.Add((new Vector3(x, P, z0 - 1.4f), 0f));
+                trees.Add(new Vector3(x0 - 1.7f, P, z0 + 2.5f));
+                trees.Add(new Vector3(x0 - 1.7f, P, z1 - 1.5f));
             }
             int index = 0;
             foreach (Vector3 p in pots)
@@ -174,13 +180,14 @@ namespace BusTycoon.Game
             foreach (Vector3 p in trees)
             {
                 MeshKit k = Begin(p);
-                Tree(k, p, 1.5f);
+                Tree(k, p, isStop ? 1.5f : 1.2f);
                 k.Cylinder(p, 0.9f, 0.25f, Wood, 8);
+                k.Cylinder(p + Vector3.up * 0.25f, 0.75f, 0.03f, GrassDark, 8);
                 End(k, p, "Tree");
             }
         }
 
-        /// <summary>Sarkıt lambalar (salon), süslü sokak lambaları (meydan ve peron): gece ışık havuzları.</summary>
+        /// <summary>Salonda koltuk sıralarının arkasında ayaklı küre lambalar; meydanda ve peronda süslü sokak lambaları.</summary>
         void BuildLights()
         {
             var posts = new List<Vector3>();
@@ -191,24 +198,22 @@ namespace BusTycoon.Game
             }
             else
             {
-                for (float u = 3f; u < W - 1f; u += 5f)
+                int rows = Info.Tier == StationTier.Terminal ? 2 : Info.Tier == StationTier.Large ? 3 : 4;
+                for (int r = 0; r < rows; r++)
                 {
-                    if (u < W * 0.3f || u > W * 0.7f) continue;
-                    for (int r = 0; r < 2; r++)
-                    {
-                        Vector3 p = Hall(u, D * 0.36f + r * 2.6f, H - 0.25f);
-                        MeshKit k = Begin(p);
-                        k.Box(p + new Vector3(0f, -0.9f, 0f), new Vector3(0.03f, 1.8f, 0.03f), Dark);
-                        k.Frustum(p + new Vector3(0f, -2.3f, 0f), 0.55f, 0.15f, 0.5f, Orange, 10, true, false);
-                        k.Layer = MeshLayer.Glow;
-                        k.Sphere(p + new Vector3(0f, -2.32f, 0f), 0.2f, WarmLight, 8, 4);
-                        k.Layer = MeshLayer.Lit;
-                        End(k, p, "Pendant");
-                        lamps.Add((new Vector3(p.x, F, p.z), 2.6f));
-                    }
+                    Vector3 p = Hall(W / 2f, D * 0.36f + r * 1.9f + 0.55f);
+                    MeshKit k = Begin(p);
+                    k.Cylinder(p, 0.24f, 0.06f, Frame, 10);
+                    k.Cylinder(p + Vector3.up * 0.06f, 0.045f, 2.5f, Frame, 6);
+                    k.Cylinder(p + Vector3.up * 2.52f, 0.12f, 0.08f, Orange, 8);
+                    k.Layer = MeshLayer.Glow;
+                    k.Sphere(p + Vector3.up * 2.86f, 0.3f, WarmLight, 10, 6);
+                    k.Layer = MeshLayer.Lit;
+                    End(k, p, "FloorLamp");
+                    lamps.Add((p, 2.6f));
                 }
-                for (float x = x0 + 5f; x < x1 - 1f; x += 8f) posts.Add(new Vector3(x, 0.06f, roadN + 4.6f));
-                foreach (float z in bayZ) posts.Add(new Vector3(wx0 + 0.35f, 0.2f, z - 1.0f));
+                foreach (float x in new[] { door - doorW / 2f - 3.2f, door + doorW / 2f + 3.2f }) posts.Add(new Vector3(x, P, roadN + 4.6f));
+                foreach (float z in bayZ) posts.Add(new Vector3(x1 + 0.45f, WalkY, z - 1.3f));
             }
             foreach (Vector3 p in posts)
             {
@@ -222,7 +227,7 @@ namespace BusTycoon.Game
         /// <summary>Simit ve çay büfesi: kırmızı-beyaz tenteli kulübe, vitrinde simitler, semaver ve ince belli bardaklar.</summary>
         void BuildKiosk()
         {
-            Vector3 p = isStop ? new Vector3(-8f, 0.18f, 2.8f) : Hall(W * 0.14f, D * 0.22f);
+            Vector3 p = isStop ? new Vector3(-8f, 0.18f, 2.8f) : Hall(W * 0.14f, KioskV);
             float yaw = isStop ? 180f : 90f; // tezgâh yönü: durakta caddeye, salonda doğuya (girişe)
             Vector3 forward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
             MeshKit k = Begin(p);
@@ -263,9 +268,10 @@ namespace BusTycoon.Game
             }
             else
             {
+                // Gişelerin üstünde, önündeki gişe tabelası panoyu kapatmasın diye yeterince yüksekte
                 width = W * 0.34f;
-                height = Mathf.Min(1.6f, H * 0.24f);
-                p = Hall(W / 2f, D - 0.3f, F + H * 0.6f);
+                height = Mathf.Min(1.6f, H * 0.2f);
+                p = Hall(W / 2f, D - 0.3f, Mathf.Max(F + 3.15f + height / 2f, F + H * 0.48f));
                 parent = northWall;
             }
             MeshKit k = Begin(p);
@@ -332,10 +338,10 @@ namespace BusTycoon.Game
             float boothWidth = (to - from) / booths;
             k.Box(Hall((from + to) / 2f, D - 1.0f, F + 0.55f), new Vector3(to - from, 1.1f, 0.9f), Orange);
             k.Box(Hall((from + to) / 2f, D - 1.0f, F + 1.13f), new Vector3(to - from + 0.1f, 0.06f, 1.0f), White);
-            k.Box(Hall((from + to) / 2f, D - 1.0f, F + 1.53f), new Vector3(to - from, 0.8f, 0.04f), White, MeshLayer.Glass);
+            k.Box(Hall((from + to) / 2f, D - 1.0f, F + 1.49f), new Vector3(to - from, 0.72f, 0.04f), White, MeshLayer.Glass);
             for (int i = 0; i <= booths; i++)
-                k.Box(Hall(from + i * boothWidth, D - 1.0f, F + 1.25f), new Vector3(0.08f, 2.2f, 1.0f), Frame);
-            k.Box(Hall((from + to) / 2f, D - 1.45f, F + 2.12f), new Vector3(to - from + 0.2f, 0.34f, 0.08f), Orange); // alın levhası
+                k.Box(Hall(from + i * boothWidth, D - 1.0f, F + 1.0f), new Vector3(0.08f, 2.0f, 1.0f), Frame);
+            k.Box(Hall((from + to) / 2f, D - 1.45f, F + 1.95f), new Vector3(to - from + 0.2f, 0.3f, 0.08f), Orange); // alın levhası (panoyu kapatmayacak kadar alçak)
             // Kuyruk bariyerleri
             for (int i = 0; i < 4; i++)
             {
@@ -346,7 +352,7 @@ namespace BusTycoon.Game
             }
             Transform part = End(k, p, "TicketDesk");
             string company = string.IsNullOrEmpty(Info.CompanyName) ? "BİLET" : "BİLET · " + Upper(Info.CompanyName);
-            StationSigns.Text(part, company, Hall((from + to) / 2f, D - 1.5f, F + 2.12f) - p, 0f, 0.26f, to - from - 0.3f, White);
+            StationSigns.Text(part, company, Hall((from + to) / 2f, D - 1.5f, F + 1.95f) - p, 0f, 0.24f, to - from - 0.3f, White);
             for (int i = 0; i < booths; i++)
             {
                 staffSpots.Add((new StationSpot(Hall(from + (i + 0.5f) * boothWidth, D - 0.45f), Vector3.back), StationCrowd.Role.Attendant));
@@ -404,13 +410,13 @@ namespace BusTycoon.Game
             spots.Add(new StationSpot(Hall(0.5f + cafeWidth * 0.62f, D - 1.8f), Vector3.forward));
         }
 
-        /// <summary>Emanet dolapları (metro: güney duvarı, diğerleri: batı duvarı).</summary>
+        /// <summary>Emanet dolapları: batı duvarında, büfe (metroda VIP salonu) ile kafe arasında; kapakları salona bakar.</summary>
         void BuildLockers()
         {
-            bool south = Info.Tier == StationTier.Metro;
-            float length = south ? W * 0.14f : D * 0.22f;
-            Vector3 p = south ? Hall(W * 0.33f, 0.5f) : Hall(0.5f, D * 0.41f);
-            float yaw = south ? 0f : 90f; // dolap kapakları salona baksın
+            float lo = Info.Tier == StationTier.Metro ? D * 0.54f + 0.35f : KioskV + 1.6f, hi = D - 6f;
+            float length = Mathf.Min(3.6f, hi - lo);
+            Vector3 p = Hall(0.62f, (lo + hi) / 2f);
+            const float yaw = 90f;
             MeshKit k = Begin(p);
             k.Push(p, yaw);
             k.Box(new Vector3(0f, 1.0f, 0f), new Vector3(length, 2.0f, 0.6f), Metal);
@@ -429,53 +435,57 @@ namespace BusTycoon.Game
             spots.Add(new StationSpot(p + Quaternion.Euler(0f, yaw, 0f) * new Vector3(0.6f, 0f, 1.0f), Quaternion.Euler(0f, yaw, 0f) * Vector3.back));
         }
 
-        /// <summary>Taksi durağı: cadde kenarında sarı taksiler, tabela ve sarı cep çizgisi.</summary>
+        /// <summary>Taksi durağı: girişin yanındaki cepte sarı taksiler, sarı cep çizgisi, yere yazı ve tabela.</summary>
         void BuildTaxi()
         {
-            Vector3 p = new Vector3(x0 + 10f, 0.03f, roadN - 1.1f);
+            float z = roadN + 1.25f;
+            Vector3 p = new Vector3((taxiX0 + taxiX1) / 2f, RoadY, z);
             MeshKit k = Begin(p);
-            k.Box(new Vector3(x0 + 10f, 0.026f, roadN - 2.25f), new Vector3(17f, 0.012f, 0.15f), LaneYellow);
-            for (int i = 0; i < 6; i++) k.Box(new Vector3(x0 + 2.5f + i * 3f, 0.026f, roadN - 1.1f), new Vector3(0.15f, 0.012f, 2.2f), LaneYellow);
-            Vector3 pole = new Vector3(x0 + 2f, 0.06f, roadN + 0.7f);
+            for (float x = taxiX0 + 0.2f; x < taxiX1 - 0.9f; x += 1.6f) Mark(k, x, x + 0.9f, roadN + 0.08f, roadN + 0.22f, LaneYellow);
+            Vector3 pole = new Vector3(taxiX0 + 0.5f, P, roadN + 3.05f);
             k.Box(pole + new Vector3(0f, 1.6f, 0f), new Vector3(0.12f, 3.2f, 0.12f), Frame);
             k.Box(pole + new Vector3(0f, 3.0f, 0f), new Vector3(1.6f, 0.6f, 0.1f), new Color(1f, 0.8f, 0.1f));
             Transform part = End(k, p, "TaxiRank");
             StationSigns.Text(part, "TAKSİ", pole + new Vector3(0f, 3.0f, -0.06f) - p, 0f, 0.4f, 1.4f, Dark);
             StationSigns.Text(part, "TAKSİ", pole + new Vector3(0f, 3.0f, 0.06f) - p, 180f, 0.4f, 1.4f, Dark);
+            StationSigns.Text(part, "TAKSİ", new Vector3(taxiX1 - 1.6f, MarkY + 0.005f, z) - p, Quaternion.Euler(90f, 0f, 0f), 0.7f, 2.4f, LaneYellow);
             Mesh taxi = StationVehicles.Taxi(out MeshLayer[] layers);
-            for (int i = 0; i < 3; i++)
+            int count = Mathf.Clamp(Mathf.FloorToInt((taxiX1 - taxiX0 - 3.4f) / 5.2f), 1, 3);
+            for (int i = 0; i < count; i++)
             {
-                Vector3 position = new Vector3(x0 + 4f + i * 5.5f, 0.03f, roadN - 1.1f);
+                Vector3 position = new Vector3(taxiX0 + 2.8f + i * 5.2f, RoadY, z);
                 Transform holder = new GameObject("Taxi").transform;
                 holder.SetParent(currentRoot, false);
                 holder.localPosition = position;
                 Place(taxi, layers, "Mesh", holder, Vector3.zero, -90f);
                 currentParts.Add(holder);
             }
-            spots.Add(new StationSpot(new Vector3(x0 + 6.5f, 0.06f, roadN + 0.9f), Vector3.back));
+            spots.Add(new StationSpot(new Vector3(taxiX0 + 2f, P, roadN + 3.2f), Vector3.back));
+            spots.Add(new StationSpot(new Vector3(taxiX0 + 3.1f, P, roadN + 3.3f), Vector3.back));
         }
 
-        /// <summary>Peron çatısı: yürüme yolu ve otobüslerin burnu üstünde konsollu çatı, tavan lambaları.</summary>
+        /// <summary>Peron çatısı: salon duvarına yaslı dikmeler, yürüme yolu ve otobüslerin burnu üstünde konsollu çatı.</summary>
         void BuildCanopy()
         {
-            float height = 5.4f, left = x1 + 0.2f, right = wx1 + 3f;
-            float length = zw1 - zw0;
-            Vector3 p = new Vector3((left + right) / 2f, 0.2f, (zw0 + zw1) / 2f);
+            float height = 5.4f, left = x1 + 0.15f, right = wx1 + 3f;
+            float length = zw1 - zw0, top = WalkY + height;
+            Vector3 p = new Vector3((left + right) / 2f, WalkY, (zw0 + zw1) / 2f);
             MeshKit k = Begin(p);
-            for (float z = zw0 + 1.5f; z < zw1; z += BayPitch * 2f)
+            for (int j = 0; j <= bayZ.Count; j += 2)
             {
-                k.Box(new Vector3(wx0 + 0.5f, 0.2f + height / 2f, z), new Vector3(0.3f, height, 0.3f), White);
-                k.Box(new Vector3((wx0 + 0.5f + right) / 2f, 0.2f + height - 0.3f, z), new Vector3(right - wx0, 0.3f, 0.2f), Frame);
+                float z = bayZ[0] - BayPitch / 2f + j * BayPitch;
+                k.Box(new Vector3(x1 + 0.45f, WalkY + height / 2f, z), new Vector3(0.3f, height, 0.3f), White);
+                k.Box(new Vector3((x1 + 0.45f + right) / 2f, top - 0.3f, z), new Vector3(right - x1 - 0.45f, 0.3f, 0.2f), Frame);
             }
-            k.Box(new Vector3((left + right) / 2f, 0.2f + height, p.z), new Vector3(right - left, 0.3f, length), White);
-            k.Box(new Vector3(right, 0.2f + height, p.z), new Vector3(0.2f, 0.55f, length), Orange);
+            k.Box(new Vector3((left + right) / 2f, top, p.z), new Vector3(right - left, 0.3f, length), White);
+            k.Box(new Vector3(right, top, p.z), new Vector3(0.2f, 0.55f, length), Orange);
             for (float z = zw0 + 2f; z < zw1 - 1f; z += 3f)
-                k.Box(new Vector3((left + right) / 2f, 0.2f + height + 0.17f, z), new Vector3(right - left - 0.8f, 0.04f, 1.2f), White, MeshLayer.Glass);
+                k.Box(new Vector3((left + right) / 2f, top + 0.17f, z), new Vector3(right - left - 0.8f, 0.04f, 1.2f), White, MeshLayer.Glass);
             k.Layer = MeshLayer.Glow;
-            k.Box(new Vector3((wx0 + right) / 2f, 0.2f + height - 0.18f, p.z), new Vector3(0.25f, 0.05f, length - 1f), WarmLight);
+            k.Box(new Vector3((x1 + right) / 2f, top - 0.18f, p.z), new Vector3(0.25f, 0.05f, length - 1f), WarmLight);
             k.Layer = MeshLayer.Lit;
             End(k, p, "Canopy");
-            foreach (float z in bayZ) lamps.Add((new Vector3((wx0 + wx1) / 2f, 0.2f, z), 2.6f));
+            foreach (float z in bayZ) lamps.Add((new Vector3((wx0 + wx1) / 2f, WalkY, z), 2.6f));
         }
 
         /// <summary>Çocuk oyun alanı: renkli yumuşak zemin, kaydırak, top havuzu, bloklar ve çocuklar.</summary>
@@ -514,7 +524,7 @@ namespace BusTycoon.Game
             for (int b = 0; b < 5; b++)
                 k.Box(Hall(u0 + 1.0f + b * 0.45f, v0 + 1.2f + (b % 2) * 0.3f, F + 0.08f + 0.2f + (b == 2 ? 0.4f : 0f)), Vector3.one * 0.4f, mat[(b + 1) % mat.Length]);
             Transform part = End(k, p, "Kids");
-            Vector3 signPos = Hall((u0 + u1) / 2f, D - 0.28f, F + 2.6f);
+            Vector3 signPos = Hall((u0 + u1) / 2f, D - WallT / 2f - 0.07f, F + 2.6f);
             StationSigns.Text(northWall, "OYUN ALANI", signPos, 0f, 0.4f, u1 - u0 - 0.6f, new Color(0.35f, 0.65f, 0.95f));
             spots.Add(new StationSpot(Hall(u0 + 2.2f, v0 + 2.2f), Vector3.right, 0.62f));
             spots.Add(new StationSpot(Hall(u1 - 2.6f, v0 + 1.4f), Vector3.left, 0.6f));
@@ -594,14 +604,16 @@ namespace BusTycoon.Game
         /// <summary>Giriş meydanında fıskiyeli süs havuzu (su fışkırması canlanır).</summary>
         void BuildFountain()
         {
-            Vector3 p = new Vector3((x0 + x1) / 2f - W * 0.25f, 0.06f, (roadN + z0) / 2f + 0.5f);
+            Vector3 p = new Vector3(door + W * 0.25f, P, (roadN + z0) / 2f + 0.5f); // meydanın doğu yarısı (batıda tabela ve ağaç var)
             Color stone = new Color(0.86f, 0.84f, 0.8f), water = new Color(0.45f, 0.75f, 0.95f);
             MeshKit k = Begin(p);
-            k.Cylinder(p, 3.2f, 0.6f, stone, 16);
-            k.Cylinder(p + new Vector3(0f, 0.45f, 0f), 2.95f, 0.08f, water, 16);
+            // Taş taban, suyun üstünde görünen taş kenar halkası, ortada iki katlı çanak
+            k.Cylinder(p, 3.2f, 0.3f, stone, 20);
+            k.Cylinder(p + new Vector3(0f, 0.3f, 0f), 2.98f, 0.2f, water, 20);
+            k.Ring(p + new Vector3(0f, 0.45f, 0f), 3.07f, 0.3f, stone, 20);
             k.Cylinder(p, 0.5f, 1.3f, stone, 10);
             k.Frustum(p + new Vector3(0f, 1.3f, 0f), 0.3f, 1.1f, 0.35f, stone, 12, true, false);
-            k.Cylinder(p + new Vector3(0f, 1.6f, 0f), 1.0f, 0.04f, water, 12);
+            k.Cylinder(p + new Vector3(0f, 1.6f, 0f), 1.0f, 0.06f, water, 12);
             Transform part = End(k, p, "Fountain");
             // Su fışkırmaları (ayrı nesneler: yükseklikleri titreşir)
             var jets = new List<Vector3> { p + new Vector3(0f, 1.62f, 0f) };
@@ -628,7 +640,7 @@ namespace BusTycoon.Game
         /// <summary>Saat kulesi: dört yüzde, oyun saatini gösteren akrep ve yelkovanlı saat; turuncu sivri çatı.</summary>
         void BuildClock()
         {
-            Vector3 p = new Vector3(x0 + 3f, 0.06f, z1 + 3.6f); // salonun arkasında: kameradan bakınca salonu kapatmaz
+            Vector3 p = new Vector3(x0 + 3f, P, z1 + 3.6f); // salonun arkasında: kameradan bakınca salonu kapatmaz
             const float faceY = 15.5f;
             MeshKit k = Begin(p);
             k.Box(p + new Vector3(0f, 0.6f, 0f), new Vector3(3.6f, 1.2f, 3.6f), themeDark);

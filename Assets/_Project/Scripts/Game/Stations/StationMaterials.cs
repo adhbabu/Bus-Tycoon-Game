@@ -4,18 +4,19 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Durak modellerinin katman malzemeleri (<see cref="MeshLayer"/>). Pencereler ve ışıklı parçalar ışıksızdır
-    /// (Sprites/Default, her derlemede var): gündüz camda gökyüzü, gece sıcak ışık görünür (<see cref="SetNight"/>).
+    /// (Sprites/Default, her derlemede var): gündüz camda gökyüzü, gece sıcak ışık görünür; cam gece kararır (<see cref="SetNight"/>).
     /// </summary>
     public static class StationMaterials
     {
         static readonly Color WindowDay = new Color(0.6f, 0.73f, 0.86f);
         static readonly Color WindowNight = new Color(1f, 0.84f, 0.5f);
+        static readonly Color GlassDay = new Color(0.78f, 0.9f, 1f, 0.32f), GlassNight = new Color(0.32f, 0.38f, 0.55f, 0.32f);
         static Material window, glow, glass;
         static float night = -1f;
 
         public static Material Window => window != null ? window : window = Create("StationWindow", WindowDay, 2990);
         public static Material Glow => glow != null ? glow : glow = Create("StationGlow", new Color(0.82f, 0.82f, 0.82f), 2991);
-        public static Material Glass => glass != null ? glass : glass = Create("StationGlass", new Color(0.78f, 0.9f, 1f, 0.32f), 3005);
+        public static Material Glass => glass != null ? glass : glass = Create("StationGlass", GlassDay, 3005);
 
         static Material Create(string name, Color color, int queue) =>
             new Material(MaterialFactory.LineMaterial) { name = name, color = color, renderQueue = queue };
@@ -48,6 +49,7 @@ namespace BusTycoon.Game
             float lit = Mathf.Clamp01((value - 0.1f) / 0.5f);
             Window.color = Color.Lerp(WindowDay, WindowNight, lit);
             Glow.color = Color.Lerp(new Color(0.82f, 0.82f, 0.82f), Color.white, lit);
+            Glass.color = Color.Lerp(GlassDay, GlassNight, value); // ışıksız cam gece parlamasın
         }
     }
 }

@@ -57,7 +57,11 @@ namespace BusTycoon.Game
         /// Ortalanmış yazı: <paramref name="position"/> yerel konum, <paramref name="yaw"/> yönü (0 = yazı −z'den okunur),
         /// <paramref name="height"/> satır yüksekliği; <paramref name="maxWidth"/>'e sığmazsa küçültülür.
         /// </summary>
-        public static TextMesh Text(Transform parent, string text, Vector3 position, float yaw, float height, float maxWidth, Color color)
+        public static TextMesh Text(Transform parent, string text, Vector3 position, float yaw, float height, float maxWidth, Color color) =>
+            Text(parent, text, position, Quaternion.Euler(0f, yaw, 0f), height, maxWidth, color);
+
+        /// <summary>Herhangi bir yöne dönük yazı (ör. yere boyanmış: <c>Quaternion.Euler(90, 0, 0)</c> üstten okunur).</summary>
+        public static TextMesh Text(Transform parent, string text, Vector3 position, Quaternion rotation, float height, float maxWidth, Color color)
         {
             Material material = TextMaterial;
             if (material == null) return null;
@@ -65,7 +69,7 @@ namespace BusTycoon.Game
             var go = new GameObject("Text");
             go.transform.SetParent(parent, false);
             go.transform.localPosition = position;
-            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localRotation = rotation;
             var mesh = go.AddComponent<TextMesh>();
             var renderer = go.GetComponent<MeshRenderer>();
             if (renderer == null) renderer = go.AddComponent<MeshRenderer>();
@@ -93,6 +97,9 @@ namespace BusTycoon.Game
             mesh.characterSize = size;
         }
 
+        /// <summary>Yazının <paramref name="height"/> satır yüksekliğindeki genişliği (metre).</summary>
+        public static float Width(string text, float height) => MeasurePixels(text) * height / FontSize;
+
         static float MeasurePixels(string text)
         {
             if (Font == null || string.IsNullOrEmpty(text)) return 0f;
@@ -104,7 +111,10 @@ namespace BusTycoon.Game
         }
 
         /// <summary>Şehrin ikonunu taşıyan kare levha (ön yüzü −z, yerel <paramref name="yaw"/> ile döner).</summary>
-        public static Renderer CityIcon(Transform parent, CityData city, Vector3 position, float yaw, float size)
+        public static Renderer CityIcon(Transform parent, CityData city, Vector3 position, float yaw, float size) =>
+            CityIcon(parent, city, position, Quaternion.Euler(0f, yaw, 0f), size);
+
+        public static Renderer CityIcon(Transform parent, CityData city, Vector3 position, Quaternion rotation, float size)
         {
             if (!UICityIcons.TryGetUv(city, out Texture2D texture, out Rect uv)) return null;
             if (iconMaterial == null)
@@ -126,7 +136,7 @@ namespace BusTycoon.Game
             var go = new GameObject("CityIcon");
             go.transform.SetParent(parent, false);
             go.transform.localPosition = position;
-            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localRotation = rotation;
             go.transform.localScale = new Vector3(size, size, 1f);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
