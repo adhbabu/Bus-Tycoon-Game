@@ -276,7 +276,7 @@ namespace BusTycoon.Game
         /// <summary>Durum rozeti: renkli yazı, aynı rengin saydam zemini.</summary>
         void Badge(string text, GUIStyle style)
         {
-            GUILayout.BeginVertical();
+            GUILayout.BeginVertical(GUILayout.ExpandWidth(false)); // genişlemesin: yanındaki yazı rozete yaslansın
             Sp(2f);
             GUILayout.Label(text, style, GUILayout.ExpandWidth(false));
             GUILayout.EndVertical();
