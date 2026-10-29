@@ -70,7 +70,7 @@ namespace BusTycoon.Game
             {
                 float width = (compact ? 300f : 360f) * u;
                 float top = SafeTop + TopBarHeight + Margin + 52f * u;
-                float height = Mathf.Min((compact ? 400f : 470f) * u, ContentBottom - Margin - top);
+                float height = Mathf.Min((compact ? 330f : 420f) * u, ContentBottom - Margin - top);
                 return new Rect(SafeLeft + Margin, top, width, height);
             }
         }
@@ -84,6 +84,7 @@ namespace BusTycoon.Game
             // Haritaya dönüş
             var back = new Rect(SafeLeft + Margin, SafeTop + TopBarHeight + Margin, (compact ? 170f : 200f) * u, 42f * u);
             uiRects.Add(back);
+            GUI.Box(back, GUIContent.none, s.Panel); // açık renkli sahnede de okunsun
             if (GUI.Button(back, "     Haritaya dön", s.Button)) Defer(ExitStationNow);
             UIIcons.Draw(new Rect(back.x + 12f * u, back.center.y - 11f * u, 22f * u, 22f * u), UIIcon.Routes);
 
@@ -119,7 +120,7 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             LayoutIcon(UIIcons.Flag(city.Region.Id), 16f, 3f);
             Sp(4f);
-            GUILayout.Label($"{StationCatalog.TierName(tier)} · {Fmt.Population(city.Population)} nüfus", s.Dim);
+            GUILayout.Label($"{StationCatalog.TierName(tier)} · {city.Region.DisplayName}", s.Dim);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -146,6 +147,7 @@ namespace BusTycoon.Game
 
             int built = stations.UpgradeCount(city);
             float bonus = stations.DemandBonus(city);
+            KeyValue("Nüfus", Fmt.Population(city.Population), null, UIIcon.Building);
             KeyValue("Hatlarınız", $"{stations.RouteCount(city)}", null, UIIcon.Routes);
             KeyValue("Günlük yolcu", $"{stations.DailyPassengers(city):N0}", null, UIIcon.People);
             KeyValue("Geliştirmeler", $"{built} / {StationCatalog.AvailableCount(tier)}", null, UIIcon.Sparkles);

@@ -85,6 +85,7 @@ namespace BusTycoon.Game
         readonly StationGraph graph = new StationGraph();
         readonly List<(Vector3 Position, float Radius)> lamps = new List<(Vector3, float)>();
         readonly List<TextMesh> boardRows = new List<TextMesh>();
+        float boardRowHeight, boardRowWidth;
         readonly List<(Transform Transform, float Speed)> traffic = new List<(Transform, float)>();
         readonly List<(Transform Hour, Transform Minute)> clockHands = new List<(Transform, Transform)>();
         readonly List<Transform> waterJets = new List<Transform>();
@@ -873,8 +874,8 @@ namespace BusTycoon.Game
             {
                 string destination = Info.Destinations.Count > 0 ? Info.Destinations[i % Info.Destinations.Count] : "—";
                 int minutes = ((start + i * 2) * 15) % (24 * 60);
-                string text = $"{Upper(destination),-12} {minutes / 60:00}:{minutes % 60:00}  P{1 + i % Mathf.Max(1, StationCatalog.Bays(Info.Tier))}";
-                if (boardRows[i].text != text) boardRows[i].text = text;
+                string text = $"{Upper(destination)}   {minutes / 60:00}:{minutes % 60:00}   P{1 + i % Mathf.Max(1, StationCatalog.Bays(Info.Tier))}";
+                if (boardRows[i].text != text) StationSigns.SetText(boardRows[i], text, boardRowHeight, boardRowWidth); // panoya sığsın
             }
         }
 

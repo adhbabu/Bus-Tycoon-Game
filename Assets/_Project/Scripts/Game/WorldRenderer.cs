@@ -809,7 +809,7 @@ namespace BusTycoon.Game
             if (roadMesh != null && Mathf.Abs(ZoomScale - roadScale) > roadScale * 0.12f)
             {
                 RebuildRoadMesh(ZoomScale);
-                markerScale = Mathf.Clamp(zoomDistance / ReferenceZoom, 0.6f, 1.4f);
+                markerScale = Mathf.Clamp(zoomDistance / 32f, 0.7f, 2.1f); // uzaktan da duraklar seçilsin
                 colorsDirty = true;
             }
             ScaleCityMarkers();
