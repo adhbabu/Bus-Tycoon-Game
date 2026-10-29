@@ -54,8 +54,9 @@ namespace BusTycoon.Game
         /// <summary>Çizgi kalınlıkları ve otobüs boyu bu kamera uzaklığına göre ayarlanmıştır.</summary>
         const float ReferenceZoom = 40f;
 
-        static readonly Color CityNormal = new Color(0.8f, 0.69f, 0.6f);     // şeftali-bej: ışıkta beyaza patlamaz
-        static readonly Color CityRim = new Color(0.97f, 0.96f, 0.92f);
+        // Hatsız şehir sakin bir krem; hatlı (yeşil), merkez (altın), seçili (mavi/turuncu) şehirler öne çıksın.
+        static readonly Color CityNormal = new Color(0.64f, 0.55f, 0.49f);
+        static readonly Color CityRim = new Color(0.86f, 0.84f, 0.8f);
         static readonly Color CityConnected = new Color(0.35f, 0.86f, 0.48f);
         static readonly Color CityLocked = new Color(0.42f, 0.44f, 0.44f);
         static readonly Color CityHeadquarters = new Color(1f, 0.78f, 0.25f);
@@ -370,7 +371,7 @@ namespace BusTycoon.Game
                 root.SetParent(cityRoot, false);
                 root.position = position;
 
-                var material = MaterialFactory.CreateLit(CityNormal, 0.55f);
+                var material = MaterialFactory.CreateLit(CityNormal, 0.45f);
                 CreatePart(PrimitiveType.Cylinder, root, new Vector3(0f, 0.015f, 0f), new Vector3(size * 1.35f, 0.015f, size * 1.35f), cityRimMaterial);
                 CreatePart(PrimitiveType.Sphere, root, new Vector3(0f, 0.03f, 0f), new Vector3(size, size * 0.7f, size), material);
                 bool pin = city.MapTier <= 1 || city.IsCapital;
