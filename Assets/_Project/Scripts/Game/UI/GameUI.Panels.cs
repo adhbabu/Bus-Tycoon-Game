@@ -29,6 +29,26 @@ namespace BusTycoon.Game
             [LedgerCategory.Other] = "Görev ödülü / diğer",
         };
 
+        static readonly Dictionary<LedgerCategory, UIIcon> CategoryIcons = new Dictionary<LedgerCategory, UIIcon>
+        {
+            [LedgerCategory.TicketRevenue] = UIIcon.Ticket,
+            [LedgerCategory.BusSale] = UIIcon.Fleet,
+            [LedgerCategory.Fuel] = UIIcon.Fuel,
+            [LedgerCategory.DriverWages] = UIIcon.Pilot,
+            [LedgerCategory.Maintenance] = UIIcon.Wrench,
+            [LedgerCategory.Tolls] = UIIcon.Road,
+            [LedgerCategory.TerminalFees] = UIIcon.NewRoute,
+            [LedgerCategory.PassengerService] = UIIcon.Coffee,
+            [LedgerCategory.Insurance] = UIIcon.Shield,
+            [LedgerCategory.Repairs] = UIIcon.Tools,
+            [LedgerCategory.BusPurchase] = UIIcon.Dealership,
+            [LedgerCategory.RouteLicense] = UIIcon.Log,
+            [LedgerCategory.RegionLicense] = UIIcon.Regions,
+            [LedgerCategory.Other] = UIIcon.Gift,
+        };
+
+        static UIIcon CategoryIcon(LedgerCategory category) => CategoryIcons.TryGetValue(category, out UIIcon icon) ? icon : UIIcon.Finance;
+
         Vector2 listScroll, fleetScroll, dealerScroll, financeScroll, regionScroll, goalScroll, logScroll;
         readonly List<RouteState> sortedRoutes = new List<RouteState>();
         bool fleetIdleOnly;
@@ -168,7 +188,12 @@ namespace BusTycoon.Game
 
             GUILayout.BeginVertical(s.Card);
             GUILayout.BeginHorizontal();
+            UIBusArt.Layout(bus.Model, 30f * u);
+            Sp(6f);
+            GUILayout.BeginVertical();
+            Sp(2f);
             GUILayout.Label(bus.nickname, s.CardTitle);
+            GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
             if (!bus.IsAvailableToday) Badge("Arızalı", s.BadgeDanger);
             else if (route != null) Badge("Yolda", s.BadgeSuccess);
@@ -356,16 +381,26 @@ namespace BusTycoon.Game
 
             GUILayout.BeginVertical(s.Card);
             GUILayout.BeginHorizontal();
+            // Otobüsün çizimi (kilitliyse soluk) ve yanında künyesi
+            GUILayout.BeginVertical(GUILayout.ExpandWidth(false));
+            Sp(4f);
+            UIBusArt.Layout(model, 64f * u, unlocked ? 1f : 0.4f);
+            GUILayout.EndVertical();
+            Sp(8f);
+            GUILayout.BeginVertical();
             ColorLabel(model.DisplayName, unlocked ? UIStyles.Text : UIStyles.DimText, s.H2);
-            GUILayout.FlexibleSpace();
-            GUILayout.Label($"{SegmentName(model.Segment)} · kademe {model.Tier + 1}", s.Small);
+            GUILayout.Label($"{model.Manufacturer} · {SegmentName(model.Segment)} · kademe {model.Tier + 1}", s.Detail);
+            DetailRow(UIIcon.Seat, $"{model.Seats} koltuk · {model.AverageSpeedKmh:0} km/s");
+            DetailRow(UIIcon.Road, $"Rahat menzil {Fmt.Km(model.ComfortableRangeKm)}");
+            GUILayout.EndVertical();
             GUILayout.EndHorizontal();
 
-            GUILayout.Label($"{model.Seats} koltuk · {model.AverageSpeedKmh:0} km/s · rahat menzil {Fmt.Km(model.ComfortableRangeKm)}", s.Small);
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Konfor", s.Small, Wd(56f));
-            LayoutBar(model.Comfort, UIStyles.Blue, 6f, 120f, 8f);
-            GUILayout.Label($"Bilet ×{model.FareMultiplier:0.00} · yakıt {model.FuelLitersPer100Km:0} L/100 km", s.Small);
+            DetailRow(UIIcon.Star, "Konfor", Wd(84f));
+            LayoutBar(model.Comfort, UIStyles.Gold, 6f, 110f, 11f);
+            Sp(10f);
+            DetailRow(UIIcon.Ticket, $"Bilet ×{model.FareMultiplier:0.00}");
+            DetailRow(UIIcon.Fuel, $"{model.FuelLitersPer100Km:0} L/100 km");
             GUILayout.EndHorizontal();
             GUILayout.Label(model.Description, s.WrapDim);
             if (owned > 0) ColorLabel($"Filonuzda {owned} adet", UIStyles.Green, s.Small);
@@ -426,13 +461,13 @@ namespace BusTycoon.Game
             financeScroll = BeginScroll(financeScroll);
 
             GUILayout.BeginVertical(s.Card);
-            KeyValue("Kasa", Fmt.Money(finance.Cash), finance.Cash >= 0 ? UIStyles.Text : UIStyles.Red);
-            KeyValue("Filo değeri (satış)", Fmt.Money(fleetValue));
-            KeyValue("Şirket değeri", Fmt.Money(finance.Cash + fleetValue), UIStyles.Gold);
+            KeyValue("Kasa", Fmt.Money(finance.Cash), finance.Cash >= 0 ? UIStyles.Green : UIStyles.Red, UIIcon.Finance);
+            KeyValue("Filo değeri (satış)", Fmt.Money(fleetValue), icon: UIIcon.Fleet);
+            KeyValue("Şirket değeri", Fmt.Money(finance.Cash + fleetValue), UIStyles.Gold, UIIcon.Bank);
             double week = finance.GetNetProfit(7), month = finance.GetNetProfit(30);
-            KeyValue("Son 7 gün net", Fmt.Signed(week), week >= 0 ? UIStyles.Green : UIStyles.Red);
-            KeyValue("Son 30 gün net", Fmt.Signed(month), month >= 0 ? UIStyles.Green : UIStyles.Red);
-            KeyValue("Taşınan toplam yolcu", Fmt.Num(session.State.totalPassengers));
+            KeyValue("Son 7 gün net", Fmt.Signed(week), week >= 0 ? UIStyles.Green : UIStyles.Red, week >= 0 ? UIIcon.ChartUp : UIIcon.ChartDown);
+            KeyValue("Son 30 gün net", Fmt.Signed(month), month >= 0 ? UIStyles.Green : UIStyles.Red, month >= 0 ? UIIcon.ChartUp : UIIcon.ChartDown);
+            KeyValue("Taşınan toplam yolcu", Fmt.Num(session.State.totalPassengers), icon: UIIcon.People);
             GUILayout.EndVertical();
 
             GUILayout.Label("Günlük net (son 60 gün)", s.H2);
@@ -456,7 +491,7 @@ namespace BusTycoon.Game
                 double amount = totals[(int)category];
                 if (Math.Abs(amount) < 0.5) continue;
                 any = true;
-                KeyValue(CategoryNames[category], Fmt.Signed(amount), amount >= 0 ? UIStyles.Green : UIStyles.Red);
+                KeyValue(CategoryNames[category], Fmt.Signed(amount), amount >= 0 ? UIStyles.Green : UIStyles.Red, CategoryIcon(category));
             }
             if (!any) GUILayout.Label("Henüz hareket yok.", s.Dim);
             GUILayout.EndVertical();
@@ -467,7 +502,7 @@ namespace BusTycoon.Game
             for (int i = transactions.Count - 1; i >= Mathf.Max(0, transactions.Count - 12); i--)
             {
                 var t = transactions[i];
-                KeyValue($"Gün {t.day + 1} · {CategoryNames[t.category]}", Fmt.Signed(t.amount), t.amount >= 0 ? UIStyles.Green : UIStyles.Red);
+                KeyValue($"Gün {t.day + 1} · {CategoryNames[t.category]}", Fmt.Signed(t.amount), t.amount >= 0 ? UIStyles.Green : UIStyles.Red, CategoryIcon(t.category));
             }
             GUILayout.EndScrollView();
         }
@@ -517,11 +552,19 @@ namespace BusTycoon.Game
 
                 GUILayout.BeginVertical(s.Card);
                 GUILayout.BeginHorizontal();
+                LayoutIcon(UIIcons.Flag(region.Id), 30f, 0f);
+                Sp(8f);
                 GUILayout.Label(region.DisplayName, s.H2);
                 GUILayout.FlexibleSpace();
-                ColorLabel(unlocked ? "AÇIK" : "KİLİTLİ", unlocked ? UIStyles.Green : UIStyles.Orange, s.Bold);
+                if (unlocked) Badge("Açık", s.BadgeSuccess);
+                else Badge("Kilitli", s.BadgeWarning);
                 GUILayout.EndHorizontal();
-                GUILayout.Label($"{cities} şehir · bilet ×{region.FareMultiplier:0.00} · yakıt ×{region.FuelPriceMultiplier:0.00} · maaş ×{region.WageMultiplier:0.00}", s.Small);
+                GUILayout.BeginHorizontal();
+                DetailRow(UIIcon.Building, $"{cities} şehir");
+                DetailRow(UIIcon.Ticket, $"bilet ×{region.FareMultiplier:0.00}");
+                DetailRow(UIIcon.Fuel, $"yakıt ×{region.FuelPriceMultiplier:0.00}");
+                DetailRow(UIIcon.Pilot, $"maaş ×{region.WageMultiplier:0.00}");
+                GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
                 if (!unlocked)
@@ -586,10 +629,12 @@ namespace BusTycoon.Game
                 bool done = goals.IsCompleted(goal);
                 GUILayout.BeginVertical(s.Card);
                 GUILayout.BeginHorizontal();
+                LayoutIcon(done ? UIIcon.Check : goal == current ? UIIcon.Goals : UIIcon.Lock, 22f, 1f);
+                Sp(6f);
                 ColorLabel(goal.Title, done ? UIStyles.DimText : UIStyles.Text, s.Bold);
                 GUILayout.FlexibleSpace();
-                if (done) ColorLabel("TAMAM", UIStyles.Green, s.Bold);
-                else if (goal == current) ColorLabel("SIRADAKİ", UIStyles.Gold, s.Bold);
+                if (done) Badge("Tamam", s.BadgeSuccess);
+                else if (goal == current) Badge("Sıradaki", s.BadgeWarning);
                 GUILayout.EndHorizontal();
                 GUILayout.Label(goal.Hint, s.WrapDim);
                 if (goal.Reward > 0f) ColorLabel($"Ödül: {Fmt.Money(goal.Reward)}", done ? UIStyles.DimText : UIStyles.Gold, s.Small);
@@ -607,6 +652,8 @@ namespace BusTycoon.Game
             for (int i = log.Count - 1; i >= 0; i--)
             {
                 GUILayout.BeginHorizontal();
+                LayoutIcon(ToastIcon(log[i].Color), 16f, 3f);
+                Sp(4f);
                 GUILayout.Label($"Gün {log[i].Day + 1}", s.Small, Wd(64f));
                 ColorLabel(log[i].Text, log[i].Color, s.Wrap);
                 GUILayout.EndHorizontal();

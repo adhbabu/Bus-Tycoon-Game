@@ -280,7 +280,7 @@ namespace BusTycoon.Game
             if (compact && panel != Panel.None) return; // telefonda harita alanı dar; panel açıkken gizle
 
             float width = 400f * u, height = 108f * u;
-            var rect = new Rect(ContentLeft + Margin, ContentBottom - height - Margin, width, height);
+            var rect = new Rect(MinimapRect.xMax + Margin, ContentBottom - height - Margin, width, height); // mini haritanın sağında
             if (panel != Panel.None && rect.xMax > PanelRect.x - Margin) return; // dar ekranda panelle çakışmasın
             uiRects.Add(rect);
 

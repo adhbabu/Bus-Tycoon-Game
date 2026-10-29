@@ -30,6 +30,7 @@ namespace BusTycoon.Game
             GameUI.ProfileOverride = GameUI.ParseProfile(LaunchOptions.Get("profil") ?? LaunchOptions.Get("profile"));
             GameContent content = DefaultContent.Build(csv.text);
             var mapTexture = Resources.Load<Texture2D>(DefaultContent.MapTextureResourcePath);
+            var outerTexture = Resources.Load<Texture2D>(DefaultContent.OuterMapTextureResourcePath);
 
             var root = new GameObject("Bus Tycoon");
 
@@ -43,7 +44,7 @@ namespace BusTycoon.Game
 
             var world = new GameObject("World").AddComponent<WorldRenderer>();
             world.transform.SetParent(root.transform, false);
-            world.Init(session, content.Projection, mapTexture, LoadRoads());
+            world.Init(session, content.Projection, mapTexture, outerTexture, LoadRoads());
 
             Camera camera = SetupCamera(world.SeaColor);
             SetupLighting();

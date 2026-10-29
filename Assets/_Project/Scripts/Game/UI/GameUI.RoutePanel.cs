@@ -155,15 +155,15 @@ namespace BusTycoon.Game
 
             // Tahmin
             GUILayout.BeginVertical(s.Card);
-            KeyValue("Yolcu / gün", Fmt.Num(pendingForecast.Passengers));
+            KeyValue("Yolcu / gün", Fmt.Num(pendingForecast.Passengers), icon: UIIcon.People);
             KeyValue("Doluluk", $"{Fmt.Pct(pendingForecast.LoadFactor)} · {pendingForecast.TripsPerDay:0.#} sefer/gün");
             // Not: satır sayısı sabit tutulur (IMGUI Layout/Repaint tutarlılığı); değer duruma göre değişir.
             bool spill = pendingForecast.UnmetDemand > pendingForecast.Demand * 0.1f;
             KeyValue("Kaçan yolcu", spill ? $"~{Fmt.Num(pendingForecast.UnmetDemand)} / gün (otobüs ekleyin)" : "yok",
                 spill ? UIStyles.Orange : UIStyles.DimText);
-            KeyValue("Gelir", $"{Fmt.Money(pendingForecast.Revenue)} / gün");
-            KeyValue("Gider", $"{Fmt.Money(pendingForecast.TotalCost)} / gün");
-            KeyValue("Kâr", $"{Fmt.Signed(pendingForecast.Profit)} / gün", pendingForecast.Profit >= 0 ? UIStyles.Green : UIStyles.Red);
+            KeyValue("Gelir", $"{Fmt.Money(pendingForecast.Revenue)} / gün", icon: UIIcon.Ticket);
+            KeyValue("Gider", $"{Fmt.Money(pendingForecast.TotalCost)} / gün", icon: UIIcon.Fuel);
+            KeyValue("Kâr", $"{Fmt.Signed(pendingForecast.Profit)} / gün", pendingForecast.Profit >= 0 ? UIStyles.Green : UIStyles.Red, pendingForecast.Profit >= 0 ? UIIcon.ChartUp : UIIcon.ChartDown);
             bool changed = Mathf.Abs(pendingPrice - selectedRoute.ticketPrice) > 0.001f;
             float delta = pendingForecast.Profit - appliedForecast.Profit;
             KeyValue("Mevcut fiyata göre", changed ? $"{Fmt.Signed(delta)} / gün" : "uygulanan fiyat",

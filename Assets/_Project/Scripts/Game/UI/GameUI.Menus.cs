@@ -200,7 +200,12 @@ namespace BusTycoon.Game
             if (startCity != null)
             {
                 GUILayout.BeginVertical(s.Card);
+                GUILayout.BeginHorizontal();
+                LayoutIcon(UIIcons.Flag(startCity.Region.Id), 22f, 3f);
+                Sp(6f);
                 GUILayout.Label($"{startCity.DisplayName}, {startCity.Region.DisplayName}", s.H2);
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
                 GUILayout.Label(startCityInfo, s.Wrap);
                 ColorLabel(startDifficulty, startDifficultyColor, s.Bold);
                 GUILayout.EndVertical();

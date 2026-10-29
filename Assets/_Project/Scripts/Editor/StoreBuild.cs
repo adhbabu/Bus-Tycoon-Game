@@ -312,24 +312,30 @@ namespace BusTycoon.EditorTools
 
         /// <summary>
         /// Harita dokusu 4096 px'tir (Tools/build_map.py); Unity varsayılanı 2048'e küçültür. Tam boyut, mipmap,
-        /// yüksek kaliteli sıkıştırma ve keskin eğik bakış (anizotropik) ayarlanır.
+        /// yüksek kaliteli sıkıştırma ve keskin eğik bakış (anizotropik) ayarlanır. Çevre dokusu (map_outer) 2048 px.
         /// </summary>
         static void EnsureMapTextureImport()
         {
-            string path = $"Assets/_Project/Resources/{DefaultContent.MapTextureResourcePath}.jpg";
+            EnsureMapTextureImport(DefaultContent.MapTextureResourcePath, 4096);
+            EnsureMapTextureImport(DefaultContent.OuterMapTextureResourcePath, 2048);
+        }
+
+        static void EnsureMapTextureImport(string resourcePath, int maxSize)
+        {
+            string path = $"Assets/_Project/Resources/{resourcePath}.jpg";
             if (!(AssetImporter.GetAtPath(path) is TextureImporter importer))
             {
                 Debug.LogWarning($"[Mağaza] Harita dokusu bulunamadı: {path}");
                 return;
             }
 
-            bool upToDate = importer.maxTextureSize == 4096 && importer.npotScale == TextureImporterNPOTScale.None &&
+            bool upToDate = importer.maxTextureSize == maxSize && importer.npotScale == TextureImporterNPOTScale.None &&
                             importer.mipmapEnabled && importer.anisoLevel >= 4 && importer.wrapMode == TextureWrapMode.Clamp &&
                             importer.textureCompression == TextureImporterCompression.CompressedHQ;
             if (upToDate) return;
 
             importer.textureType = TextureImporterType.Default;
-            importer.maxTextureSize = 4096;
+            importer.maxTextureSize = maxSize;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.mipmapEnabled = true;
             importer.anisoLevel = 4;
@@ -341,24 +347,29 @@ namespace BusTycoon.EditorTools
         }
 
         /// <summary>
-        /// Arayüz dokuları (ana menü çizimi, ikon atlası): saydam kenarlar koyu hale bırakmasın, ölçeklenmesin
-        /// (atlas 2'nin kuvveti değil; ikon koordinatları piksel hesabıdır) ve arayüzde keskin dursun.
+        /// Arayüz dokuları (ana menü çizimi, ikon atlası, otobüs çizimleri): saydam kenarlar koyu hale bırakmasın,
+        /// ölçeklenmesin (atlaslar 2'nin kuvveti olmayabilir; hücre koordinatları piksel hesabıdır). Küçük çizilenler
+        /// (ikonlar, mini haritadaki otobüsler) mipmap'li: küçülünce kırpışmaz.
         /// </summary>
         static void EnsureUiTextureImport()
         {
-            foreach (string resource in new[] { DefaultContent.MascotResourcePath, DefaultContent.IconsResourcePath })
+            var textures = new (string resource, bool mipmaps)[]
+            {
+                (DefaultContent.MascotResourcePath, false), (DefaultContent.IconsResourcePath, true), (DefaultContent.BusArtResourcePath, true)
+            };
+            foreach (var (resource, mipmaps) in textures)
             {
                 string path = $"Assets/_Project/Resources/{resource}.png";
                 if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
-                if (importer.alphaIsTransparency && !importer.mipmapEnabled && importer.wrapMode == TextureWrapMode.Clamp &&
+                if (importer.alphaIsTransparency && importer.mipmapEnabled == mipmaps && importer.wrapMode == TextureWrapMode.Clamp &&
                     importer.npotScale == TextureImporterNPOTScale.None && importer.textureCompression == TextureImporterCompression.Uncompressed) continue;
 
                 importer.textureType = TextureImporterType.Default;
                 importer.alphaIsTransparency = true;
-                importer.mipmapEnabled = false;
+                importer.mipmapEnabled = mipmaps;
                 importer.npotScale = TextureImporterNPOTScale.None;
                 importer.wrapMode = TextureWrapMode.Clamp;
-                importer.filterMode = FilterMode.Bilinear;
+                importer.filterMode = mipmaps ? FilterMode.Trilinear : FilterMode.Bilinear;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();
                 Debug.Log($"[Mağaza] Arayüz dokusu içe aktarma ayarları güncellendi: {path}");

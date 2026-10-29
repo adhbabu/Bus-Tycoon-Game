@@ -257,6 +257,11 @@ para ödülü verir.
 * **Gösterge paneli ve menü:** üstte küçük BÜYÜK HARF etiketli istatistik kutuları (ŞİRKET, ŞİRKET KASASI, TARİH,
   İTİBAR, HATLAR, FİLO); masaüstünde solda tam boy, telefonda altta ikonlu menü (ikon üstte, yazı altta; seçili
   öğe turuncu; sorunlu hat sayısı kırmızı rozet). İkonlar Twemoji atlasından (`UIIcons`).
+* **Mini harita (sol alt):** harita dokusu, hat çizgileri (renkleri haritadakiyle aynı), hatlarında giden otobüslerin
+  model çizimleri (gittikleri yöne bakar), hatlı şehirler, merkez ve kameranın gördüğü alan (yamuk). Tıklayınca ya da
+  sürükleyince kamera oraya gider; başlıktaki düğme küçültür. Görev kartı mini haritanın sağındadır.
+* **Görseller:** galeride ve filo kartlarında otobüsün yandan çizimi; Bölgeler, ipucu ve yeni oyun ekranında ülke
+  bayrakları; finans kalemlerinde, planlayıcıda, görevlerde ve günlükte ikonlar.
 * **Otobüs kartları (Filo):** başlık + durum rozeti, ikonlu ayrıntı satırları (📍 hat, 💺 model, 👥 doluluk,
   🔧 durum, 🛣️ km) ve iki ana düğme (garaja çek / revizyon + hatta ata).
 * **Hareket:** panel açılış 150 ms kaydırma; değişen sayılarda 300 ms sayaç animasyonu (kâr artışı yeşil yanıp söner).
