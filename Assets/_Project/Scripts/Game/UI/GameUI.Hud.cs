@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BusTycoon.Core;
+using BusTycoon.Multiplayer;
 using UnityEngine;
 
 namespace BusTycoon.Game
@@ -87,10 +88,20 @@ namespace BusTycoon.Game
             GUILayout.BeginVertical();
             Sp(9f);
             GUILayout.BeginHorizontal();
-            SpeedButton("II", 0);
-            SpeedButton("1x", 1);
-            SpeedButton("2x", 2);
-            SpeedButton("4x", 4);
+            if (RaceLocked)
+            {
+                // Yarışta hız odaya bağlı: değiştirilemez, duraklatılamaz
+                LayoutIcon(UIIcon.Finish, 18f, 6f);
+                Sp(4f);
+                GUILayout.Label($"{MatchRules.Name(Room.Mode)} · {Room.Speed}x", s.SpeedButtonActive, Ht(32f));
+            }
+            else
+            {
+                SpeedButton("II", 0);
+                SpeedButton("1x", 1);
+                SpeedButton("2x", 2);
+                SpeedButton("4x", 4);
+            }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 

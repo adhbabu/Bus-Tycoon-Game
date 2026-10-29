@@ -280,6 +280,14 @@ para ödülü verir.
   rozetli). Satın alınan geliştirme yerinde zıplayarak belirir, kamera ona döner, konfeti saçılır. Sürükle = döndür,
   tekerlek/sıkıştırma = yakınlaştır, Esc / "Haritaya dön" = çık. Yolcular, trafik, saat kulesi ve kalkış panosu oyun
   zamanıyla (gece-gündüz dahil) canlıdır. Test için vitrin: `SendMessage('ShowcaseDirector','VisitStation','TR_ARTVIN')`.
+* **Çok oyunculu:** ana menü → **Çok Oyunculu**. Adını yaz; **Oda kur** (Blitz: $1M, 2x · Normal: $10M, 1x) ya da 5
+  karakterlik kodla **Odaya katıl** (`?oda=KOD` bağlantısı ekranı kod dolu açar). Lobide oda kodu ve davet bağlantısı,
+  kurucu mod ve hızı değiştirir, herkes merkez şehrini seçer, kurucu **Yarışı başlat**'a basar (en az 2 oyuncu). Yarışta:
+  hız düğmeleri yerine "Blitz · 2x" etiketi (hız ve gün süresi değiştirilemez, menü oyunu durdurmaz), haritanın sol
+  üstünde canlı sıralama kartı (kasaya göre, hedefe ilerleme çubuğu). Hedefe ilk ulaşan için herkese yarış sonu penceresi;
+  oyun tek başına sürebilir. Mantık `Runtime/Multiplayer` (RoomSession: lobi, START/TICK/STATS/END mesajları; NUnit ile
+  bellek içi bağlantıda test edilir), web bağlantısı `Plugins/WebGL/BusTycoonNet.jslib` (PeerJS), oyuna bağlantı
+  `MultiplayerDirector` (katılımcının saati `SimulationClock.DayLimit` ile kurucunun gününde bekler).
 * **Görseller:** galeride ve filo kartlarında otobüsün yandan çizimi; Bölgeler, ipucu ve yeni oyun ekranında ülke
   bayrakları; finans kalemlerinde, planlayıcıda, görevlerde ve günlükte ikonlar.
 * **Otobüs kartları (Filo):** başlık + durum rozeti, ikonlu ayrıntı satırları (📍 hat, 💺 model, 👥 doluluk,

@@ -76,6 +76,8 @@ Kurulum (bir kerelik sırlar) ve kullanım: **[store/BULUT-DERLEME.md](store/BUL
 * **8 otobüs modeli, 6 segment:** minibüs → midibüs → şehirlerarası → konfor → VIP 2+1 → çift katlı.
 * **Ekonomi:** çekim (gravity) talep modeli, yarı-logaritmik fiyat esnekliği, otomatik sefer planı, yakıt/şoför/bakım/otoyol/otogar/ikram/sigorta giderleri, arıza ve yıpranma, itibar döngüsü, pazar araştırması belirsizliği.
 * **15 görev** (öğretici zincir + ödüller), zafer ve iflas sonu, kayıt/yükleme.
+* **Bakım asistanı:** yıpranan otobüsleri revizyona sokar, arızalananı acil tamirle hattına döndürür; "Hepsini onar ve hatlara gönder" tek tuşla bütün filoyu onarır.
+* **Çok oyunculu (web):** ana menüden **Çok Oyunculu → Oda kur**; arkadaşın 5 karakterlik oda kodunu (ya da `oyna/?oda=KOD` bağlantısını) girer. Herkes kendi şirketini kurar, oyun günlerini kurucunun saati belirler; canlı sıralamada hedef kasaya ilk ulaşan kazanır: **Blitz** $1.000.000 (2x hız), **Normal** $10.000.000 (1x). Bağlantı tarayıcıdan tarayıcıya (PeerJS / WebRTC): sunucu ya da hesap gerekmez.
 
 ## Dokümanlar
 

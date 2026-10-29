@@ -26,9 +26,9 @@ namespace BusTycoon.Game
         internal enum DeviceProfile { Auto, Desktop, Phone, Tablet }
         internal static DeviceProfile ProfileOverride = DeviceProfile.Auto;
 
-        enum Mode { MainMenu, NewGame, Playing }
+        enum Mode { MainMenu, NewGame, Playing, Multiplayer }
         enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help }
-        enum Modal { None, Pause, GameOver, Victory, Confirm }
+        enum Modal { None, Pause, GameOver, Victory, Confirm, MatchEnd }
 
         const string SaveSlot = "save1";
         const string AutosaveSlot = "autosave";
@@ -41,6 +41,8 @@ namespace BusTycoon.Game
         UIStyles s;
 
         Mode mode = Mode.MainMenu;
+        /// <summary>Ana menü ya da çok oyunculu ekranı: arkadaki harita kendi kendine süzülür, tıklanmaz.</summary>
+        bool InMenu => mode == Mode.MainMenu || mode == Mode.Multiplayer;
         Panel panel = Panel.None;
         Modal modal = Modal.None;
 
@@ -100,7 +102,9 @@ namespace BusTycoon.Game
             session.Bankrupt += OnBankrupt;
 
             Fmt.Symbol = session.Economy.CurrencySymbol;
+            BindMultiplayer();
             EnterMainMenu();
+            OpenInviteIfAny();
         }
 
         void OnDestroy()
@@ -111,6 +115,7 @@ namespace BusTycoon.Game
             session.MonthCompleted -= OnMonthCompleted;
             session.Bankrupt -= OnBankrupt;
             UnbindSystems();
+            UnbindMultiplayer();
         }
 
         void OnApplicationFocus(bool focused)
@@ -228,7 +233,7 @@ namespace BusTycoon.Game
         {
             string reward = goal.Reward > 0f ? $" · Ödül {Fmt.Money(goal.Reward)}" : string.Empty;
             Toast($"Görev tamamlandı: {goal.Title}{reward}", UIStyles.Gold);
-            if (goal.IsVictory) modal = Modal.Victory;
+            if (goal.IsVictory && !(Multiplayer != null && Multiplayer.InMatch)) modal = Modal.Victory; // yarışta kazananı oda belirler
         }
 
         void OnLevelChanged(int level) =>
@@ -325,7 +330,7 @@ namespace BusTycoon.Game
                 multiTouch = suppressTap = true;
                 float now = (t0 - t1).magnitude;
                 float before = ((t0 - d0) - (t1 - d1)).magnitude;
-                if (before > 1f && mode != Mode.MainMenu && modal == Modal.None)
+                if (before > 1f && !InMenu && modal == Modal.None)
                 {
                     if (StationUi) Stations.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f);
                     else mapCamera.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f, (t0 + t1) * 0.5f);
@@ -338,7 +343,7 @@ namespace BusTycoon.Game
 
             // Tarayıcıda touchpad: iki parmakla kaydırma haritayı kaydırır, sıkıştırma yakınlaştırır.
             if (WheelInput.TakeWebGesture(out WheelInput.Kind gesture, out Vector2 gesturePixels) &&
-                mode != Mode.MainMenu && modal == Modal.None && !IsOverUI(lastMouseGui))
+                !InMenu && modal == Modal.None && !IsOverUI(lastMouseGui))
             {
                 if (StationUi)
                 {
@@ -361,7 +366,7 @@ namespace BusTycoon.Game
                 if (turn != 0f || tilt != 0f) Stations.Orbit(new Vector2(turn, tilt) * (dt * Screen.height * 0.5f));
                 if (zoomIn != 0f) Stations.Zoom(zoomIn * dt * 10f);
             }
-            else if (mode != Mode.MainMenu && modal == Modal.None && !textFieldFocused && !StationBusy)
+            else if (!InMenu && modal == Modal.None && !textFieldFocused && !StationBusy)
             {
                 Vector2 axis = Vector2.zero;
                 if (Held(KeyCode.W) || Held(KeyCode.UpArrow)) axis.y += 1f;
@@ -421,7 +426,7 @@ namespace BusTycoon.Game
             if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && !textFieldFocused) HandleShortcut(e);
             HandleTouchScroll(e);
 
-            if (mode != Mode.MainMenu && e.type == EventType.Repaint && !StationBusy) DrawCityLabels();
+            if (!InMenu && e.type == EventType.Repaint && !StationBusy) DrawCityLabels();
 
             bool previousEnabled = GUI.enabled;
             GUI.enabled = modal == Modal.None;
@@ -432,6 +437,9 @@ namespace BusTycoon.Game
                     break;
                 case Mode.NewGame:
                     DrawNewGame();
+                    break;
+                case Mode.Multiplayer:
+                    DrawMultiplayer();
                     break;
                 case Mode.Playing:
                     DrawTopBar();
@@ -447,6 +455,7 @@ namespace BusTycoon.Game
                         DrawZoomButtons();
                         DrawMinimap();
                         DrawGoalWidget();
+                        DrawRaceWidget();
                     }
                     DrawToasts();
                     break;
@@ -581,6 +590,7 @@ namespace BusTycoon.Game
             {
                 case Mode.Playing: return StationUi || panel != Panel.None ? PanelRect : default;
                 case Mode.NewGame: return NewGameRect;
+                case Mode.Multiplayer: return MultiplayerRect;
                 case Mode.MainMenu: return showMenuHelp ? MainMenuRect : default;
                 default: return default;
             }
@@ -695,6 +705,9 @@ namespace BusTycoon.Game
             if (panelKey && StationBusy) Stations.ExitImmediate(); // panel haritada açılır
 
             bool used = true;
+            bool speedKey = key == KeyCode.Space || key == KeyCode.Alpha1 || key == KeyCode.Keypad1 || key == KeyCode.Alpha2 ||
+                            key == KeyCode.Keypad2 || key == KeyCode.Alpha3 || key == KeyCode.Keypad3;
+            if (speedKey && RaceLocked) return; // yarışta hız odaya bağlı
             switch (key)
             {
                 case KeyCode.Space: session.Clock.TogglePause(); break;
@@ -727,6 +740,7 @@ namespace BusTycoon.Game
                     ClosePauseMenu();
                     return;
                 case Modal.Victory:
+                case Modal.MatchEnd:
                     modal = Modal.None;
                     return;
                 case Modal.GameOver:
@@ -734,6 +748,7 @@ namespace BusTycoon.Game
             }
 
             if (mode == Mode.NewGame) EnterMainMenu();
+            else if (mode == Mode.Multiplayer) LeaveRoomToMenu();
             else if (mode == Mode.Playing)
             {
                 if (StationBusy) ExitStationNow();
@@ -756,14 +771,14 @@ namespace BusTycoon.Game
         {
             if (e.type != EventType.Repaint) return;
             hoveredCity = null;
-            if (mode == Mode.MainMenu || modal != Modal.None || dragging || mobile || StationBusy) return; // dokunmatikte hover yok
+            if (InMenu || modal != Modal.None || dragging || mobile || StationBusy) return; // dokunmatikte hover yok
             if (IsOverUI(e.mousePosition)) return;
             world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), PickRadius, out hoveredCity);
         }
 
         void HandleMapInput(Event e)
         {
-            if (mode == Mode.MainMenu || modal != Modal.None || StationBusy) return;
+            if (InMenu || modal != Modal.None || StationBusy) return;
             Vector2 mouse = e.mousePosition;
 
             switch (e.type)
@@ -989,7 +1004,7 @@ namespace BusTycoon.Game
 
         void DrawTooltip()
         {
-            if (hoveredCity == null || mode == Mode.MainMenu) return;
+            if (hoveredCity == null || InMenu) return;
             CityData city = hoveredCity;
 
             var lines = new List<(string text, GUIStyle style, Color color)>
