@@ -10,7 +10,9 @@ namespace BusTycoon.Game
         Help, Save, Settings, Star,
         Pin, People, Fuel, Wrench, Road, Seat, Calendar, Ticket,
         ChartUp, ChartDown, Clock, Building,
-        Check, Cross, Info, Trophy, Warning, Party, Unlock, Sparkles
+        Check, Cross, Info, Trophy, Warning, Party, Unlock, Sparkles,
+        FlagTR, FlagBG, FlagGE, FlagGR, FlagRO, Lock, Finish, Coffee,
+        Shield, Tools, Gift, Pilot, Ruler, Hourglass, Bank
     }
 
     /// <summary>
@@ -37,6 +39,17 @@ namespace BusTycoon.Game
                 return atlas;
             }
         }
+
+        /// <summary>Bölgenin bayrağı (DefaultContent.Regions kimlikleri); bilinmeyen bölgede dünya ikonu.</summary>
+        public static UIIcon Flag(string regionId) => regionId switch
+        {
+            "TR" => UIIcon.FlagTR,
+            "BG" => UIIcon.FlagBG,
+            "GE" => UIIcon.FlagGE,
+            "GR" => UIIcon.FlagGR,
+            "RO" => UIIcon.FlagRO,
+            _ => UIIcon.Regions
+        };
 
         public static void Draw(Rect rect, UIIcon icon)
         {

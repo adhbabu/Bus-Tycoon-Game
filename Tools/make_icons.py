@@ -3,6 +3,7 @@
 Arayüz ikonlarını tek bir dokuda toplar: Twemoji (https://github.com/jdecked/twemoji, grafikler CC BY 4.0).
 
   Assets/_Project/Resources/BusTycoon/UI/icons.png   8 sütun, 80 px hücre (72 px ikon + 4 px saydam pay)
+  (Bayraklar: Twemoji bölge bayrakları — Türkiye, Bulgaristan, Gürcistan, Yunanistan, Romanya)
 
 Sıra Assets/_Project/Scripts/Game/UI/UIIcons.cs içindeki UIIcon sırasıyla AYNI olmalıdır.
 Kullanım: python3 Tools/make_icons.py      Gereksinim: Pillow, internet (jsdelivr)
@@ -30,6 +31,11 @@ ICONS = [
     # bildirimler
     ("Check", "2705"), ("Cross", "274c"), ("Info", "2139"), ("Trophy", "1f3c6"),
     ("Warning", "26a0"), ("Party", "1f389"), ("Unlock", "1f513"), ("Sparkles", "2728"),
+    # bölge bayrakları (DefaultContent.Regions) ve paneller
+    ("FlagTR", "1f1f9-1f1f7"), ("FlagBG", "1f1e7-1f1ec"), ("FlagGE", "1f1ec-1f1ea"), ("FlagGR", "1f1ec-1f1f7"),
+    ("FlagRO", "1f1f7-1f1f4"), ("Lock", "1f512"), ("Finish", "1f3c1"), ("Coffee", "2615"),
+    ("Shield", "1f6e1"), ("Tools", "1f6e0"), ("Gift", "1f381"), ("Pilot", "1f9d1-200d-2708-fe0f"),
+    ("Ruler", "1f4cf"), ("Hourglass", "23f3"), ("Bank", "1f3e6"),
 ]
 
 

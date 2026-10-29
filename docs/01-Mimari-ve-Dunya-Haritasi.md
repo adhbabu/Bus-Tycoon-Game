@@ -79,7 +79,8 @@ flowchart TB
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/      cities.csv (93 şehir) + map.jpg + roads.txt — oyun Play'de bunlardan kendini kurar
+├─ Resources/BusTycoon/      cities.csv (93 şehir) + map.jpg + map_outer.jpg + roads.txt + Fonts/ + UI/ (ikonlar,
+│                            otobüs çizimleri, maskot) — oyun Play'de bunlardan kendini kurar
 ├─ Data/                      ← (opsiyonel) "Create Default Content" ile üretilen düzenlenebilir asset'ler
 │  ├─ Config/                 EconomyConfig, ProgressionConfig
 │  ├─ Fleet/                  Bus_*.asset, BusCatalog
@@ -204,6 +205,10 @@ flowchart LR
   ve 12 komşu ülke şehri. `Tools/build_world_data.py` bu dosyayı üretir. `Tools/build_map.py` Natural Earth
   1:10m verisinden `map.jpg` harita dokusunu (gölgeli kabartma, göller, nehirler, sınırlar) ve `roads.txt` karayolu
   ağını üretir; sınırlar `DefaultContent.cs` içindeki `MinLongitude…MaxLatitude` ile aynı olmalıdır.
+* Harita "tak" diye bitmez: `build_map.py` ayrıca `map_outer.jpg` (boylam 1–65°, enlem 27–54°, 2048 px) üretir —
+  uzaklaştıkça bulanıklaşan, kararan ve koyu denize (kameranın arka plan rengi) karışan çevre. `WorldRenderer` bunu
+  haritanın biraz altına daha geniş bir düzlem olarak koyar; harita dokusunun dış %4'lük şeridi çevre dokusuna
+  (ekran kartının büyüteceği hâliyle) karışır, yollar da kenarda silikleşir: dikiş görünmez.
 * `RoadNetwork` (Runtime/World) yol ağını okur; şehirleri en yakın yola bağlar ve A* ile güzergâh bulur. Hat
   çizgileri ve otobüsler bu güzergâhı izler (görsel; ekonomi `WorldGraph` mesafe modelini kullanır).
 * Çalışma anında `DefaultContent.Build(csv)` tüm ScriptableObject'leri bellekte oluşturur (asset gerekmez).

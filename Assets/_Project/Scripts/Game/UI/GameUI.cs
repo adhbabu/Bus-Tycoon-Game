@@ -400,6 +400,7 @@ namespace BusTycoon.Game
                     else DrawSideBar();
                     DrawPanel();
                     DrawZoomButtons();
+                    DrawMinimap();
                     DrawGoalWidget();
                     DrawToasts();
                     break;
@@ -961,6 +962,7 @@ namespace BusTycoon.Game
             if (rect.yMax > H) rect.y = mouse.y - rect.height - 12f * u;
 
             GUI.Box(rect, GUIContent.none, s.Tooltip);
+            UIIcons.Draw(new Rect(rect.xMax - 32f * u, rect.y + 8f * u, 22f * u, 22f * u), UIIcons.Flag(city.Region.Id));
             for (int i = 0; i < lines.Count; i++)
             {
                 Color previous = GUI.contentColor;
@@ -1033,10 +1035,15 @@ namespace BusTycoon.Game
             GUI.contentColor = previous;
         }
 
-        /// <summary>Anahtar–değer satırı: solda soluk etiket, sağda kalın değer.</summary>
-        void KeyValue(string key, string value, Color? color = null)
+        /// <summary>Anahtar–değer satırı: solda (isteğe bağlı ikon ve) soluk etiket, sağda kalın değer.</summary>
+        void KeyValue(string key, string value, Color? color = null, UIIcon? icon = null)
         {
             GUILayout.BeginHorizontal();
+            if (icon.HasValue)
+            {
+                LayoutIcon(icon.Value, 16f, 3f);
+                Sp(4f);
+            }
             GUILayout.Label(key, s.Dim);
             GUILayout.FlexibleSpace();
             ColorLabel(value, color ?? UIStyles.Text, s.Bold);

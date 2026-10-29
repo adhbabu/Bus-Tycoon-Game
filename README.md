@@ -64,8 +64,9 @@ Kurulum (bir kerelik sırlar) ve kullanım: **[store/BULUT-DERLEME.md](store/BUL
 
 ## İçerik
 
-* **Harita:** Natural Earth 1:10m verisinden 4096 px Mercator dokusu: gölgeli dağlar, göller, nehirler, il ve ülke sınırları (Türkiye, Balkanlar, Kafkasya).
+* **Harita:** Natural Earth 1:10m verisinden 4096 px Mercator dokusu: gölgeli dağlar, göller, nehirler, il ve ülke sınırları (Türkiye, Balkanlar, Kafkasya). Harita "tak" diye bitmez: çevresi (İtalya'dan Hazar'a, Ukrayna'dan Mısır'a) uzaklaştıkça bulanıklaşarak denize karışır.
 * **Karayolları:** Natural Earth otoyol, devlet yolu ve feribot ağı (+ Osmangazi ve 1915 Çanakkale köprüleri); hatlar ve otobüsler bu yolları izler.
+* **Otobüs modelleri:** her model için 3B model (kaputlu minibüs, midibüs, şehirlerarası, VIP, çift katlı) ve yandan çizim (galeri, filo, planlayıcı); köşedeki mini haritada otobüsler hatlarında hareket eder.
 * **93 şehir:** 81 il merkezi (GeoNames koordinatları ve il nüfusları) + Bulgaristan, Yunanistan, Gürcistan, Romanya'dan 12 şehir.
 * **5 ülke / bölge:** Türkiye başlangıçta açık; diğerleri seviye + lisans ücretiyle açılır.
 * **8 otobüs modeli, 6 segment:** minibüs → midibüs → şehirlerarası → konfor → VIP 2+1 → çift katlı.
@@ -119,10 +120,11 @@ Assets/WebGLTemplates/     Web sürümünün sayfa şablonu (tam ekran, yükleme
 site/                      Web sitesinin giriş sayfası (Tools/build_site.py ile üretilir)
 Tools/store-screenshots.mjs Web sürümünden mağaza ekran görüntüleri (Playwright)
 Tools/build_world_data.py  GeoNames → cities.csv üretir
-Tools/build_map.py         Natural Earth 1:10m → map.jpg (harita) ve roads.txt (yol ağı) üretir
+Tools/build_map.py         Natural Earth 1:10m → map.jpg (harita), map_outer.jpg (bulanık çevre) ve roads.txt (yol ağı) üretir
 Tools/make_store_art.py    Uygulama ikonu, mağaza tanıtım görseli ve ana menüdeki otobüs çizimi
 Tools/make_fonts.py        Inter yazı tipinden arayüzün üç kalınlığını üretir (Resources/BusTycoon/Fonts)
 Tools/make_icons.py        Twemoji ikonlarından arayüz ikon atlasını üretir (Resources/BusTycoon/UI/icons.png)
+Tools/make_bus_art.py      Otobüs modellerinin yandan çizimleri (Resources/BusTycoon/UI/buses.png)
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 

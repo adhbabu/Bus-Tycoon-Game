@@ -32,6 +32,15 @@ namespace BusTycoon.Data
 
         public const string CitiesResourcePath = "BusTycoon/cities";
         public const string MapTextureResourcePath = "BusTycoon/map";
+        /// <summary>
+        /// Haritanın çevresi (Tools/build_map.py → map_outer.jpg): düşük çözünürlüklü, uzaklaştıkça bulanıklaşan ve
+        /// denize karışan devam; harita "tak" diye bitmez. Sınırlar build_map.py'deki OUTER_LON/OUTER_LAT ile AYNI.
+        /// </summary>
+        public const string OuterMapTextureResourcePath = "BusTycoon/map_outer";
+        public const double OuterMinLongitude = 1.0;
+        public const double OuterMaxLongitude = 65.0;
+        public const double OuterMinLatitude = 27.0;
+        public const double OuterMaxLatitude = 54.0;
         /// <summary>Karayolu ağı (Tools/build_map.py üretir): hat çizgileri ve otobüsler yolları izler.</summary>
         public const string RoadsResourcePath = "BusTycoon/roads";
         /// <summary>
@@ -49,6 +58,8 @@ namespace BusTycoon.Data
         public const string DisplayFontResourcePath = "BusTycoon/Fonts/Inter-ExtraBold";
         public const string IconsResourcePath = "BusTycoon/UI/icons";
         public const string MascotResourcePath = "BusTycoon/UI/mascot";
+        /// <summary>Otobüs modellerinin yandan çizimleri (Tools/make_bus_art.py): galeri, filo, planlayıcı, mini harita.</summary>
+        public const string BusArtResourcePath = "BusTycoon/UI/buses";
 
         public readonly struct ModelSpec
         {

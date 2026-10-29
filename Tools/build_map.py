@@ -12,8 +12,12 @@ Girdi (indirip tek klasöre koyun; hepsi Natural Earth, kamu malı):
   https://naciscdn.org/naturalearth/10m/raster/SR_HR.zip → SR_HR.tif   gölgeli kabartma (dağlar)
 
 Çıktı:
-  Assets/_Project/Resources/BusTycoon/map.jpg    4096 px Mercator doku (sınırlar DefaultContent.MapBounds ile AYNI)
-  Assets/_Project/Resources/BusTycoon/roads.txt  yol ağı: düğümler + kenarlar (Runtime/World/RoadNetwork.cs okur)
+  Assets/_Project/Resources/BusTycoon/map.jpg        4096 px Mercator doku (sınırlar DefaultContent.MapBounds ile AYNI);
+                                                     kenarına doğru hafifçe bulanıklaşır
+  Assets/_Project/Resources/BusTycoon/map_outer.jpg  haritanın çevresi (DefaultContent.OuterMapBounds): düşük çözünürlük,
+                                                     uzaklaştıkça bulanıklaşır, kararır ve denize/sise karışır —
+                                                     harita "tak" diye bitmez, devam ediyormuş gibi görünür
+  Assets/_Project/Resources/BusTycoon/roads.txt      yol ağı: düğümler + kenarlar (Runtime/World/RoadNetwork.cs okur)
 
 Kullanım:  python3 Tools/build_map.py <veri_klasörü> [--preview önizleme.png]
 Gereksinim: Pillow, numpy
@@ -32,6 +36,9 @@ MIN_LON, MAX_LON = 19.0, 47.0
 MIN_LAT, MAX_LAT = 34.0, 45.0
 TEX_WIDTH = 4096
 SUPERSAMPLE = 2
+# --- Çevre haritası: DefaultContent.OuterMap* ile aynı. Kamera en uzaktan ~14° kuzeye, ~20° yana görebilir. ---
+OUTER_LON, OUTER_LAT = (1.0, 65.0), (27.0, 54.0)
+OUTER_WIDTH = 2048
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon")
@@ -71,8 +78,33 @@ def merc_y(lat):
 
 
 Y_MIN, Y_MAX = merc_y(MIN_LAT), merc_y(MAX_LAT)
-# Blok sıkıştırma (DXT/ASTC) için kenarlar 4'ün katı olmalı; en-boy farkı ihmal edilebilir (%0,05).
-TEX_HEIGHT = 4 * round(TEX_WIDTH * (Y_MAX - Y_MIN) / math.radians(MAX_LON - MIN_LON) / 4)
+
+
+class View:
+    """Mercator görüntü alanı: coğrafi sınırlar + piksel boyutu."""
+
+    def __init__(self, lon, lat, width):
+        self.min_lon, self.max_lon = lon
+        self.min_lat, self.max_lat = lat
+        self.y_min, self.y_max = merc_y(self.min_lat), merc_y(self.max_lat)
+        self.width = width
+        # Blok sıkıştırma (DXT/ASTC) için kenarlar 4'ün katı olmalı; en-boy farkı ihmal edilebilir (%0,05).
+        self.height = 4 * round(width * (self.y_max - self.y_min) / math.radians(self.max_lon - self.min_lon) / 4)
+        # Çekirdek haritaya göre piksel yoğunluğu: bulanıklık yarıçapları buna göre ölçeklenir.
+        self.density = (width / (self.max_lon - self.min_lon)) / (TEX_WIDTH / (MAX_LON - MIN_LON))
+
+    def project(self, lon, lat, scale=1):
+        return ((lon - self.min_lon) / (self.max_lon - self.min_lon) * self.width * scale,
+                (1.0 - (merc_y(lat) - self.y_min) / (self.y_max - self.y_min)) * self.height * scale)
+
+    def near(self, ring, margin=3.0):
+        return any(self.min_lon - margin <= x <= self.max_lon + margin and self.min_lat - margin <= y <= self.max_lat + margin
+                   for x, y in ring[:: max(1, len(ring) // 50)])
+
+
+CORE = View((MIN_LON, MAX_LON), (MIN_LAT, MAX_LAT), TEX_WIDTH)
+OUTER = View(OUTER_LON, OUTER_LAT, OUTER_WIDTH)
+TEX_HEIGHT = CORE.height
 
 
 def load(data_dir, name):
@@ -98,11 +130,6 @@ def lines(geometry):
         yield from geometry["coordinates"]
 
 
-def near_map(ring, margin=3.0):
-    return any(MIN_LON - margin <= x <= MAX_LON + margin and MIN_LAT - margin <= y <= MAX_LAT + margin
-               for x, y in ring[:: max(1, len(ring) // 50)])
-
-
 def km(a, b):
     lat1, lat2 = math.radians(a[1]), math.radians(b[1])
     dlat, dlon = lat2 - lat1, math.radians(b[0] - a[0])
@@ -112,17 +139,14 @@ def km(a, b):
 
 # =============================================================================== harita dokusu
 
-def build_texture(data_dir):
-    """Vektörler 2× çizilip küçültülür (yumuşak kenar); kabartma ve renk hesabı doğrudan doku boyutunda yapılır."""
-    width, height = TEX_WIDTH * SUPERSAMPLE, TEX_HEIGHT * SUPERSAMPLE
-    size = (TEX_WIDTH, TEX_HEIGHT)
-
-    def project(lon, lat):
-        return ((lon - MIN_LON) / (MAX_LON - MIN_LON) * width,
-                (1.0 - (merc_y(lat) - Y_MIN) / (Y_MAX - Y_MIN)) * height)
+def render_map(data_dir, view, outer=False):
+    """Haritayı verilen görüntü alanında çizer. Vektörler 2× çizilip küçültülür (yumuşak kenar); kabartma ve renk
+    hesabı doğrudan doku boyutunda yapılır. Çevre haritasında il sınırları yerine soluk ana yollar çizilir."""
+    width, height = view.width * SUPERSAMPLE, view.height * SUPERSAMPLE
+    size = (view.width, view.height)
 
     def ring_points(ring):
-        return [project(x, max(-85.0, min(85.0, y))) for x, y in ring]
+        return [view.project(x, max(-85.0, min(85.0, y)), SUPERSAMPLE) for x, y in ring]
 
     countries = [f for f in load(data_dir, "ne_10m_admin_0_countries")]
 
@@ -136,12 +160,12 @@ def build_texture(data_dir):
         low = LOWLAND.get(iso3, LOWLAND_PLAYABLE if iso3 in PLAYABLE else LOWLAND_OTHER)
         high = MOUNTAIN if iso3 in PLAYABLE else MOUNTAIN_OTHER
         for polygon in polygons(feature["geometry"]):
-            if not near_map(polygon[0]):
+            if not view.near(polygon[0]):
                 continue
-            outer = ring_points(polygon[0])
-            land_draw.polygon(outer, fill=255)
-            low_draw.polygon(outer, fill=low)
-            mount_draw.polygon(outer, fill=high)
+            outer_ring = ring_points(polygon[0])
+            land_draw.polygon(outer_ring, fill=255)
+            low_draw.polygon(outer_ring, fill=low)
+            mount_draw.polygon(outer_ring, fill=high)
             for hole in polygon[1:]:
                 land_draw.polygon(ring_points(hole), fill=0)
 
@@ -153,15 +177,15 @@ def build_texture(data_dir):
     lowland = lowland.resize(size, Image.BOX)
     mountain = mountain.resize(size, Image.BOX)
 
-    shade, rough = relief_layers(data_dir, TEX_WIDTH, TEX_HEIGHT)
+    shade, rough = relief_layers(data_dir, view)
     land_a = np.asarray(land, dtype=np.float32) / 255.0
     low_a = np.asarray(lowland, dtype=np.float32)
     high_a = np.asarray(mountain, dtype=np.float32)
     terrain = (low_a + (high_a - low_a) * (rough[..., None] * 0.6)) * shade[..., None]
 
     # 2) Deniz: açıkta koyu, kıyıda sığ su parlaması
-    glow_near = np.asarray(land.filter(ImageFilter.GaussianBlur(14)), dtype=np.float32) / 255.0
-    glow_far = np.asarray(land.filter(ImageFilter.GaussianBlur(70)), dtype=np.float32) / 255.0
+    glow_near = np.asarray(land.filter(ImageFilter.GaussianBlur(14 * view.density)), dtype=np.float32) / 255.0
+    glow_far = np.asarray(land.filter(ImageFilter.GaussianBlur(70 * view.density)), dtype=np.float32) / 255.0
     sea = np.empty_like(terrain)
     for c in range(3):
         depth = SEA_DEEP[c] + (SEA[c] - SEA_DEEP[c]) * np.clip(glow_far * 2.2, 0, 1)
@@ -176,7 +200,7 @@ def build_texture(data_dir):
     draw = ImageDraw.Draw(overlay)
     for feature in load(data_dir, "ne_10m_lakes"):
         for polygon in polygons(feature["geometry"]):
-            if near_map(polygon[0], 0.5):
+            if view.near(polygon[0], 0.5):
                 draw.polygon(ring_points(polygon[0]), fill=LAKE + (255,), outline=(36, 84, 116, 255))
 
     for feature in load(data_dir, "ne_10m_rivers_lake_centerlines"):
@@ -185,50 +209,129 @@ def build_texture(data_dir):
             continue
         river_width = max(1, round((2.6 if rank <= 3 else 1.9 if rank <= 5 else 1.3) * SUPERSAMPLE))
         for line in lines(feature["geometry"]):
-            if near_map(line, 0.5):
+            if view.near(line, 0.5):
                 draw.line(ring_points(line), fill=RIVER, width=river_width, joint="curve")
 
-    for feature in load(data_dir, "ne_10m_admin_1_states_provinces"):
-        if feature["properties"].get("adm0_a3") != "TUR":
-            continue
-        for polygon in polygons(feature["geometry"]):
-            draw.line(ring_points(polygon[0]), fill=(255, 255, 240, 38), width=SUPERSAMPLE, joint="curve")
+    if not outer:
+        for feature in load(data_dir, "ne_10m_admin_1_states_provinces"):
+            if feature["properties"].get("adm0_a3") != "TUR":
+                continue
+            for polygon in polygons(feature["geometry"]):
+                draw.line(ring_points(polygon[0]), fill=(255, 255, 240, 38), width=SUPERSAMPLE, joint="curve")
 
     for feature in countries:
         for polygon in polygons(feature["geometry"]):
-            if near_map(polygon[0]):
+            if view.near(polygon[0]):
                 draw.line(ring_points(polygon[0]), fill=(24, 26, 26, 150), width=3 * SUPERSAMPLE, joint="curve")
     for feature in countries:
         for polygon in polygons(feature["geometry"]):
-            if near_map(polygon[0]):
+            if view.near(polygon[0]):
                 draw.line(ring_points(polygon[0]), fill=(240, 230, 205, 105), width=SUPERSAMPLE, joint="curve")
+
+    if outer:
+        # Oyunda yollar ayrı çizilir (RoadNetwork); çevrede ise yolların devamı dokuya soluk olarak işlenir.
+        for feature in load(data_dir, "ne_10m_roads"):
+            road_class = ROAD_TYPES.get(feature["properties"].get("type"))
+            if road_class not in (0, 1):
+                continue
+            color = (255, 184, 77, 190) if road_class == 0 else (250, 242, 219, 110)
+            for line in lines(feature["geometry"]):
+                if view.near(line, 0.5):
+                    draw.line(ring_points(line), fill=color, width=SUPERSAMPLE * (2 if road_class == 0 else 1), joint="curve")
 
     image = Image.alpha_composite(image, overlay.resize(size, Image.LANCZOS))
     del overlay
 
     coast = Image.new("RGBA", size, (16, 40, 60, 255))
-    image = Image.composite(coast, image, coast_edge.point(lambda v: v * 150 // 255)).convert("RGB")
+    return Image.composite(coast, image, coast_edge.point(lambda v: v * 150 // 255)).convert("RGB")
 
+
+def smoothstep(edge0, edge1, x):
+    t = np.clip((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def blur_levels(image, sigmas, distance_px, sigma_of):
+    """Uzaklığa göre artan bulanıklık: önceden bulanıklaştırılmış katmanlar arasında piksel piksel ara değer."""
+    layers = [np.asarray(image if s == 0 else image.filter(ImageFilter.GaussianBlur(s)), dtype=np.float32) for s in sigmas]
+    wanted = sigma_of(distance_px)
+    result = np.zeros_like(layers[0])
+    for i in range(len(sigmas) - 1):
+        lo, hi = sigmas[i], sigmas[i + 1]
+        weight_lo = np.clip((hi - wanted) / (hi - lo), 0, 1) * (wanted >= lo) * (wanted <= hi)
+        weight_hi = np.clip((wanted - lo) / (hi - lo), 0, 1) * (wanted >= lo) * (wanted < hi)
+        result += layers[i] * weight_lo[..., None] + layers[i + 1] * weight_hi[..., None]
+    result += layers[-1] * (wanted >= sigmas[-1])[..., None]
+    return result
+
+
+def soften_core_edges(core, outer):
+    """Çekirdek haritanın dış şeridi kenara doğru çevre haritasına karışır: çevre dokusu, ekran kartının
+    çizeceği gibi (çift doğrusal) çekirdek çözünürlüğüne büyütülür; kenarda iki doku piksel piksel aynıdır,
+    dikiş görünmez. İçeri doğru keskin harita yumuşakça geri gelir."""
+    w, h = core.size
+    x0, y0 = OUTER.project(MIN_LON, MAX_LAT)
+    x1, y1 = OUTER.project(MAX_LON, MIN_LAT)
+    outer_up = outer.resize((w, h), Image.BILINEAR, box=(x0, y0, x1, y1))
+    band = 0.04 * w
+    x = np.minimum(np.arange(w, dtype=np.float32), np.arange(w, dtype=np.float32)[::-1])
+    y = np.minimum(np.arange(h, dtype=np.float32), np.arange(h, dtype=np.float32)[::-1])
+    edge = np.minimum(x[None, :], y[:, None])
+    weight = 1 - smoothstep(0, band, edge)
+    mask = Image.fromarray((weight * 255).astype(np.uint8))
+    return Image.composite(outer_up, core, mask)
+
+
+def finish_outer(image):
+    """Çevre haritası: çekirdekten uzaklaştıkça bulanıklık, hafif kararma ve renk solması; dış kenarda koyu
+    denize (kameranın arka plan rengi) karışır."""
+    w, h = image.size
+    x0, y0 = OUTER.project(MIN_LON, MAX_LAT)
+    x1, y1 = OUTER.project(MAX_LON, MIN_LAT)
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    dx = np.maximum(np.maximum(x0 - xx, xx - x1), 0)
+    dy = np.maximum(np.maximum(y0 - yy, yy - y1), 0)
+    distance = np.sqrt(dx * dx + dy * dy)                  # çekirdek dikdörtgenine uzaklık (piksel)
+    border = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy))
+
+    result = blur_levels(image, [0, 1.5, 3.0, 5.0, 8.0], distance, lambda d: np.minimum(8.0, d * 0.045))
+    luminance = result @ np.array([0.299, 0.587, 0.114], np.float32)
+    fade = smoothstep(0, 0.22 * w, distance)
+    result = result + (luminance[..., None] - result) * (0.35 * fade)[..., None]   # renk solması
+    result *= (1.0 - 0.3 * fade)[..., None]                                      # kararma
+    fog = 1.0 - smoothstep(0, 0.11 * w, border)
+    result = result + (np.array(SEA_DEEP, np.float32) - result) * fog[..., None]
+    return Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), "RGB")
+
+
+def build_textures(data_dir):
+    outer = finish_outer(render_map(data_dir, OUTER, outer=True))
+    path = os.path.join(OUT_DIR, "map_outer.jpg")
+    outer.save(path, quality=88, subsampling=0, optimize=True)
+    print(f"map_outer.jpg: {outer.size[0]}×{outer.size[1]}, {os.path.getsize(path) // 1024} KB")
+
+    core = soften_core_edges(render_map(data_dir, CORE), outer)
     path = os.path.join(OUT_DIR, "map.jpg")
-    image.save(path, quality=93, subsampling=0, optimize=True)
-    print(f"map.jpg: {image.size[0]}×{image.size[1]}, {os.path.getsize(path) // 1024} KB")
+    core.save(path, quality=93, subsampling=0, optimize=True)
+    print(f"map.jpg: {core.size[0]}×{core.size[1]}, {os.path.getsize(path) // 1024} KB")
 
 
-def relief_layers(data_dir, width, height):
+def relief_layers(data_dir, view):
     """SR_HR (eşdikdörtgen) → Mercator gölge çarpanı ve engebe (0..1)."""
     Image.MAX_IMAGE_PIXELS = None
+    width, height = view.width, view.height
     source = Image.open(os.path.join(data_dir, "SR_HR.tif"))
     sw, sh = source.size
-    lat_top, lat_bottom = MAX_LAT + 0.5, MIN_LAT - 0.5
-    box = (round((MIN_LON + 180) / 360 * sw), round((90 - lat_top) / 180 * sh),
-           round((MAX_LON + 180) / 360 * sw), round((90 - lat_bottom) / 180 * sh))
+    lat_top, lat_bottom = view.max_lat + 0.5, view.min_lat - 0.5
+    box = (round((view.min_lon + 180) / 360 * sw), round((90 - lat_top) / 180 * sh),
+           round((view.max_lon + 180) / 360 * sw), round((90 - lat_bottom) / 180 * sh))
     crop = source.crop(box)
     crop_h = crop.size[1]
     columns = np.asarray(crop.resize((width, crop_h), Image.BICUBIC), dtype=np.float32)
 
     # Her çıktı satırının enlemi → kaynak satırı (doğrusal ara değer)
     rows = (np.arange(height, dtype=np.float64) + 0.5) / height
-    lat = np.degrees(2 * np.arctan(np.exp(Y_MAX - rows * (Y_MAX - Y_MIN))) - np.pi / 2)
+    lat = np.degrees(2 * np.arctan(np.exp(view.y_max - rows * (view.y_max - view.y_min))) - np.pi / 2)
     src = (lat_top - lat) / (lat_top - lat_bottom) * crop_h - 0.5
     i0 = np.clip(np.floor(src).astype(int), 0, crop_h - 1)
     i1 = np.clip(i0 + 1, 0, crop_h - 1)
@@ -236,11 +339,11 @@ def relief_layers(data_dir, width, height):
     values = columns[i0] * (1 - t) + columns[i1] * t
     # PIL bulanıklaştırması kayan nokta görüntü kabul etmez; 8 bit gri yeterince hassas.
     gray = Image.fromarray(np.clip(values, 0, 255).astype(np.uint8))
-    values = np.asarray(gray.filter(ImageFilter.GaussianBlur(1.2)), dtype=np.float32)
+    values = np.asarray(gray.filter(ImageFilter.GaussianBlur(max(0.4, 1.2 * view.density))), dtype=np.float32)
 
     shade = np.clip(values / FLAT_SHADE, 0.55, 1.2) ** 0.7
     variance = np.clip(((values - FLAT_SHADE) / 50.0) ** 2, 0, 4) * 63.0
-    variance = Image.fromarray(variance.astype(np.uint8)).filter(ImageFilter.GaussianBlur(9))
+    variance = Image.fromarray(variance.astype(np.uint8)).filter(ImageFilter.GaussianBlur(9 * view.density))
     rough = np.clip(np.sqrt(np.asarray(variance, dtype=np.float32) / 63.0) * 1.4 - 0.12, 0, 1)
     return shade.astype(np.float32), rough.astype(np.float32)
 
@@ -618,7 +721,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.roads_only:
-        build_texture(args.data_dir)
+        build_textures(args.data_dir)
     road_nodes, road_edges = write_roads(*build_roads(args.data_dir))
     check_cities(road_nodes, road_edges)
     if args.preview:

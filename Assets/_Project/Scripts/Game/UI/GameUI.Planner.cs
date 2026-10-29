@@ -122,7 +122,12 @@ namespace BusTycoon.Game
 
             // Kalkış satırı
             GUILayout.BeginHorizontal();
+            GUILayout.BeginHorizontal();
+            LayoutIcon(UIIcon.Pin, 20f, 4f);
             ColorLabel($"Kalkış: {plannerOrigin.DisplayName}", UIStyles.Blue, s.H2);
+            LayoutIcon(UIIcons.Flag(plannerOrigin.Region.Id), 20f, 4f);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Değiştir", s.Ghost, Wd(90f)))
                 Defer(() => { plannerOrigin = plannerDestination = null; plannerQuoteValid = false; });
@@ -154,6 +159,8 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             if (EnabledButton(plannerModelIndex > 0, "<", s.Button, Wd(40f), Ht(34f)))
                 Defer(() => ChangePlannerModel(-1));
+            UIBusArt.Layout(model, 40f * u);
+            Sp(4f);
             GUILayout.BeginVertical();
             GUILayout.Label($"{model.DisplayName} · {SegmentName(model.Segment)}", s.Bold);
             GUILayout.Label($"{model.Seats} koltuk · rahat menzil {Fmt.Km(model.ComfortableRangeKm)}", s.Small);
@@ -211,7 +218,12 @@ namespace BusTycoon.Game
             BusModelData model = PlannerModel;
 
             GUILayout.BeginHorizontal();
-            ColorLabel($"Varış: {plannerDestination.DisplayName}", new Color(1f, 0.6f, 0.2f), s.H2);
+            GUILayout.BeginHorizontal();
+            LayoutIcon(UIIcon.Finish, 20f, 4f);
+            ColorLabel($"Varış: {plannerDestination.DisplayName}", UIStyles.Orange, s.H2);
+            LayoutIcon(UIIcons.Flag(plannerDestination.Region.Id), 20f, 4f);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Değiştir", s.Ghost, Wd(90f)))
                 Defer(() => { plannerDestination = null; plannerQuoteValid = false; });
@@ -221,14 +233,14 @@ namespace BusTycoon.Game
             int idleSame = busBuffer.FindAll(b => b.Model == model).Count;
 
             GUILayout.BeginVertical(s.Card);
-            KeyValue("Mesafe / süre", $"{Fmt.Km(quote.DistanceKm)} · {Fmt.Hours(quote.TravelHours)}");
-            KeyValue("Tahmini talep", $"~{Fmt.Num(quote.Forecast.Demand)} yolcu/gün");
-            KeyValue("Önerilen bilet", Fmt.Price(quote.SuggestedPrice), UIStyles.Blue);
-            KeyValue("Önerilen otobüs", $"{quote.RecommendedBusCount} × {model.DisplayName}");
-            KeyValue("Garajda bekleyen", $"{busBuffer.Count} otobüs ({idleSame} adet bu model)");
-            KeyValue("Tahmini doluluk", Fmt.Pct(quote.Forecast.LoadFactor));
-            KeyValue("Tahmini kâr", $"{Fmt.Signed(quote.Forecast.Profit)}/gün", quote.Forecast.Profit >= 0 ? UIStyles.Green : UIStyles.Red);
-            KeyValue("Hat lisansı", Fmt.Money(quote.LicenseCost));
+            KeyValue("Mesafe / süre", $"{Fmt.Km(quote.DistanceKm)} · {Fmt.Hours(quote.TravelHours)}", icon: UIIcon.Ruler);
+            KeyValue("Tahmini talep", $"~{Fmt.Num(quote.Forecast.Demand)} yolcu/gün", icon: UIIcon.People);
+            KeyValue("Önerilen bilet", Fmt.Price(quote.SuggestedPrice), UIStyles.Blue, UIIcon.Ticket);
+            KeyValue("Önerilen otobüs", $"{quote.RecommendedBusCount} × {model.DisplayName}", icon: UIIcon.Fleet);
+            KeyValue("Garajda bekleyen", $"{busBuffer.Count} otobüs ({idleSame} adet bu model)", icon: UIIcon.Building);
+            KeyValue("Tahmini doluluk", Fmt.Pct(quote.Forecast.LoadFactor), icon: UIIcon.Seat);
+            KeyValue("Tahmini kâr", $"{Fmt.Signed(quote.Forecast.Profit)}/gün", quote.Forecast.Profit >= 0 ? UIStyles.Green : UIStyles.Red, UIIcon.ChartUp);
+            KeyValue("Hat lisansı", Fmt.Money(quote.LicenseCost), icon: UIIcon.Log);
             GUILayout.EndVertical();
 
             if (model.ComfortableRangeKm < quote.DistanceKm)
