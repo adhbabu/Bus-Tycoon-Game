@@ -108,6 +108,12 @@ namespace BusTycoon.Game
                 case RouteTab.History: DrawHistoryTab(); break;
             }
             GUILayout.EndScrollView();
+            // Telefonda Önerilen / Geri al / UYGULA kaydırma alanının dışında, panelin altında sabit
+            if (phone && routeTab == RouteTab.Price)
+            {
+                Sp(4f);
+                DrawPriceActions(Mathf.Abs(pendingPrice - selectedRoute.ticketPrice) > 0.001f);
+            }
         }
 
         void RouteTabButton(string text, RouteTab tab)
@@ -171,9 +177,8 @@ namespace BusTycoon.Game
 
             if (phone)
             {
-                // Telefonda panel kısa: fiyat ayarı ve düğmeler kaydırmadan görünsün, grafik altta
+                // Telefonda panel kısa: önce fiyat ayarı (düğmeler panelin altında sabit), grafik altta
                 DrawPriceControls();
-                DrawPriceActions(changed);
                 Sp(6f);
                 DrawPriceChart(90f);
             }
