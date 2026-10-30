@@ -502,11 +502,11 @@ namespace BusTycoon.Game
             if (route != null && session.Routes.GetRoute(route.routeId) != null)
             {
                 session.Routes.TryAssignBus(bus.busId, route.routeId);
-                Toast($"{bus.nickname} alındı ve {RouteName(route)} hattına atandı.", UIStyles.Green);
+                Toast($"{bus.nickname} alındı ve {RouteName(route)} hattına atandı.", UIStyles.Green, Sfx.Coin);
             }
             else
             {
-                Toast($"{bus.nickname} alındı. Filo (F) panelinden bir hatta atayın.", UIStyles.Green);
+                Toast($"{bus.nickname} alındı. Filo (F) panelinden bir hatta atayın.", UIStyles.Green, Sfx.Coin);
             }
             goals.Evaluate();
         }

@@ -99,7 +99,7 @@ namespace BusTycoon.Game
             GUILayout.Label("Arkadaşlarınla aynı anda yarış: herkes kendi şirketini kurar, hedef kasaya ilk ulaşan kazanır.", s.Wrap);
             Sp(8f);
             GUILayout.Label("Adın", s.Dim);
-            mpName = GUILayout.TextField(mpName ?? string.Empty, 18, s.Field, Ht(40f));
+            mpName = TextInput("mp_name", mpName, 18, "Adın (diğer oyuncular görür)", 40f);
             Sp(10f);
 
             GUILayout.Label("Oda kur", s.H2);
@@ -118,7 +118,7 @@ namespace BusTycoon.Game
             Sp(14f);
             GUILayout.Label("Odaya katıl", s.H2);
             GUILayout.BeginHorizontal();
-            mpCode = MatchRules.NormalizeCode(GUILayout.TextField(mpCode ?? string.Empty, 8, s.Field, Ht(44f)));
+            mpCode = MatchRules.NormalizeCode(TextInput("mp_code", mpCode, 8, "Oda kodu (5 karakter)", 44f));
             if (EnabledButton(mpCode.Length == MatchRules.CodeLength, "KATIL", s.Primary, Wd(120f), Ht(44f)))
                 Defer(() =>
                 {
@@ -126,7 +126,7 @@ namespace BusTycoon.Game
                     Multiplayer.JoinRoom(mpName, mpCode);
                 });
             GUILayout.EndHorizontal();
-            GUILayout.Label("Arkadaşının verdiği 5 karakterlik oda kodunu yaz.", s.WrapDim);
+            GUILayout.Label("Arkadaşının verdiği 5 karakterlik oda kodunu yaz ya da gönderdiği bağlantıyı aç.", s.WrapDim);
 
             if (failed != null && failed.Phase == RoomPhase.Closed && !string.IsNullOrEmpty(failed.Status))
             {
@@ -169,18 +169,11 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             GUILayout.Label(room.Code, s.Title);
             GUILayout.FlexibleSpace();
-            if (Application.platform == RuntimePlatform.WebGLPlayer && GUILayout.Button("Bağlantıyı kopyala", s.Tab, Wd(170f), Ht(36f)))
-            {
-                string link = InviteLink(room.Code);
-                Defer(() =>
-                {
-                    WebClipboard.Copy(link);
-                    Toast("Davet bağlantısı kopyalandı.", UIStyles.Green);
-                });
-            }
+            DrawInviteButton(room.Code);
             GUILayout.EndHorizontal();
-            GUILayout.Label("Arkadaşların Çok Oyunculu → Odaya katıl'a bu kodu yazsın" +
-                            (Application.platform == RuntimePlatform.WebGLPlayer ? " ya da bağlantıyı açsın." : "."), s.WrapDim);
+            GUILayout.Label("Arkadaşların Çok Oyunculu → Odaya katıl'a bu kodu yazsın ya da bağlantıyı açsın.", s.WrapDim);
+            if (room.IsHost)
+                ColorLabel("Odayı sen kurdun: yarış bitene kadar bu oyun açık kalsın (kapatırsan oda kapanır).", UIStyles.Orange, s.WrapDim);
             Sp(8f);
 
             // Mod ve hız
@@ -265,9 +258,32 @@ namespace BusTycoon.Game
             if (GUILayout.Button("Odadan çık", s.Button, Ht(40f))) Defer(() => Multiplayer.Leave());
         }
 
+        /// <summary>
+        /// Davet bağlantısı: telefon/tablette paylaşım menüsü (WhatsApp, Mesajlar…), bilgisayarda panoya kopyalar.
+        /// Tarayıcı bunlara yalnız dokunuşun içinde izin verdiği için web'de işi WebTap yapar.
+        /// </summary>
+        void DrawInviteButton(string code)
+        {
+            string link = InviteLink(code);
+            bool web = WebTap.Available;
+            if (GUILayout.Button(web && mobile ? "Bağlantıyı paylaş" : "Bağlantıyı kopyala", s.Tab, Wd(170f), Ht(36f)) && !web)
+                Defer(() =>
+                {
+                    GUIUtility.systemCopyBuffer = link;
+                    Toast("Davet bağlantısı kopyalandı.", UIStyles.Green);
+                });
+            if (web && Event.current.type == EventType.Repaint && GUI.enabled)
+                WebTap.Zone("mp_invite", WebTap.ShareKind, GUILayoutUtility.GetLastRect(), link,
+                    $"Otobüs İmparatoru'nda yarışalım! Oda kodu: {code}");
+            if (WebTap.TryTake("mp_invite", out string result))
+                Toast(result == "copied" ? "Davet bağlantısı kopyalandı." : result == "shared" ? "Davet gönderildi." : "Bağlantıyı kopyalayıp arkadaşına gönder.",
+                    UIStyles.Green);
+        }
+
         static string InviteLink(string code)
         {
-            string url = Application.absoluteURL ?? string.Empty;
+            string url = Application.absoluteURL;
+            if (string.IsNullOrEmpty(url) || !url.StartsWith("http")) url = "https://adhbabu.github.io/Bus-Tycoon-Game/oyna/"; // web dışı sürüm
             int query = url.IndexOf('?');
             if (query >= 0) url = url.Substring(0, query);
             int hash = url.IndexOf('#');
@@ -282,7 +298,7 @@ namespace BusTycoon.Game
             RoomSession room = Room;
             mpWinner = null;
             session.SecondsPerDay = 4f; // herkes aynı gün süresiyle
-            Toast($"Yarış başladı! {MatchRules.Name(room.Mode)}: kasada {Fmt.Money(room.TargetCash)} biriktiren ilk oyuncu kazanır.", UIStyles.Gold);
+            Toast($"Yarış başladı! {MatchRules.Name(room.Mode)}: kasada {Fmt.Money(room.TargetCash)} biriktiren ilk oyuncu kazanır.", UIStyles.Gold, Sfx.Horn);
             CityData hq = session.Headquarters;
             if (hq != null) OpenPlannerNow(hq);
         }
@@ -290,6 +306,8 @@ namespace BusTycoon.Game
         void OnMatchEnded(RoomPlayer winner)
         {
             mpWinner = winner;
+            RoomSession room = Room;
+            GameAudio.Play(room != null && winner != null && winner.Id == room.LocalId ? Sfx.Success : Sfx.Notify);
             if (StationBusy) Stations.ExitImmediate();
             modal = Modal.MatchEnd;
         }

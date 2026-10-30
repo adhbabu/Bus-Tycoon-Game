@@ -134,6 +134,9 @@ namespace BusTycoon.Multiplayer
             while (queue.Count > 0) handler(queue.Dequeue());
         }
 
+        /// <summary>Testler için: bağlantı hatası (peer boşsa bağlantının kendisi, doluysa tek bir oyuncu).</summary>
+        public void SimulateError(string peer, string kind) => Enqueue(TransportEventType.Error, peer, kind);
+
         void Enqueue(TransportEventType type, string peer, string data)
         {
             if (closed && type != TransportEventType.Error) return;

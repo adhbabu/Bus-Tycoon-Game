@@ -111,11 +111,22 @@ namespace BusTycoon.Game
 
                 if (GUILayout.Button("Nasıl Oynanır?", s.Button, Ht(46f))) Defer(() => showMenuHelp = true);
                 if (CanQuit && GUILayout.Button("Çıkış", s.Button, Ht(46f))) Defer(QuitGame);
+                Sp(4f);
+                DrawSoundToggle();
             }
 
             GUILayout.FlexibleSpace();
             GUILayout.Label("Harita: Natural Earth · Şehirler: GeoNames (CC BY 4.0) · Simgeler: Twemoji (CC BY 4.0) · Yazı tipi: Inter (SIL OFL)", s.WrapDim);
             GUILayout.EndArea();
+        }
+
+        void DrawSoundToggle()
+        {
+            if (GameAudio.Instance == null) return;
+            bool on = GUILayout.Toggle(GameAudio.Enabled, "Ses efektleri (tıklama, korna, para, uyarılar)", s.Toggle);
+            if (on == GameAudio.Enabled) return;
+            GameAudio.Enabled = on;
+            GameAudio.Play(Sfx.Notify); // açılınca örnek ses
         }
 
         /// <summary>Ana menüdeki güler yüzlü otobüs; yolda gidiyormuş gibi hafifçe zıplar.</summary>
@@ -180,7 +191,7 @@ namespace BusTycoon.Game
             GUILayout.Label("Yeni Şirket Kur", s.H1);
             Divider();
             GUILayout.Label("Şirket adı", s.Dim);
-            companyName = GUILayout.TextField(companyName ?? string.Empty, 28, s.Field, Ht(40f));
+            companyName = TextInput("company", companyName, 28, "Şirket adı", 40f);
             Sp(10f);
             GUILayout.Label("Haritadan merkez ofisinizin bulunacağı şehre tıklayın. O şehrin ülkesi ücretsiz açılır; diğer ülkeler sonradan lisansla açılır.", s.Wrap);
             Sp(6f);
@@ -374,6 +385,7 @@ namespace BusTycoon.Game
                 bool on = GUILayout.Toggle(cycle.Enabled, "Gece-gündüz döngüsü (gece şehir ışıkları ve farlar)", s.Toggle);
                 if (on != cycle.Enabled) cycle.SetEnabled(on);
             }
+            DrawSoundToggle();
 
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);

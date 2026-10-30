@@ -270,7 +270,7 @@ namespace BusTycoon.Game
             Toast(assigned > 0
                     ? $"{RouteName(route)} hattı açıldı · {assigned} otobüs atandı"
                     : $"{RouteName(route)} hattı açıldı · otobüs atamayı unutmayın!",
-                assigned > 0 ? UIStyles.Green : UIStyles.Orange);
+                assigned > 0 ? UIStyles.Green : UIStyles.Orange, Sfx.Horn);
 
             goals.Evaluate();
             OpenRoutePanelNow(route, assigned > 0 ? RouteTab.Price : RouteTab.Buses);

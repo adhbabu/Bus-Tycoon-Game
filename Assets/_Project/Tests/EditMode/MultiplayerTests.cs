@@ -9,14 +9,17 @@ namespace BusTycoon.Tests
     public sealed class MultiplayerTests
     {
         LoopbackTransport.Hub hub;
+        LoopbackTransport hostLink, aliLink;
         RoomSession host, ali, ayse;
 
         [SetUp]
         public void SetUp()
         {
             hub = new LoopbackTransport.Hub();
-            host = new RoomSession(new LoopbackTransport(hub), 7);
-            ali = new RoomSession(new LoopbackTransport(hub), 8);
+            hostLink = new LoopbackTransport(hub);
+            aliLink = new LoopbackTransport(hub);
+            host = new RoomSession(hostLink, 7);
+            ali = new RoomSession(aliLink, 8);
             ayse = new RoomSession(new LoopbackTransport(hub), 9);
         }
 
@@ -166,12 +169,61 @@ namespace BusTycoon.Tests
             Assert.That(ayse.Phase, Is.EqualTo(RoomPhase.Closed));
             Assert.That(ayse.Status, Does.Contain("başladı"));
 
-            string notice = null;
-            host.Notice += text => notice = text;
+            var notices = new List<string>();
+            host.Notice += notices.Add;
             ali.Leave();
             Pump();
-            Assert.That(notice, Does.Contain("Ali"));
+            Assert.That(notices, Has.Count.EqualTo(1), "Ayrılma iletisi ve bağlantının kapanması tek duyuru olur.");
+            Assert.That(notices[0], Does.Contain("Ali"));
             Assert.That(host.Players.First(p => p.Name == "Ali").Connected, Is.False);
+        }
+
+        [Test]
+        public void HostLeavingRace_PlayersContinueAlone_WithClearMessage()
+        {
+            host.Create("Kurucu", MatchMode.Blitz);
+            Pump();
+            ali.Join("Ali", host.Code);
+            Pump();
+            host.SetCity("TR_ISTANBUL");
+            ali.SetCity("TR_ANKARA");
+            Pump();
+            host.Start();
+            Pump();
+            host.Leave();
+            Pump();
+            Assert.That(ali.Phase, Is.EqualTo(RoomPhase.Closed));
+            Assert.That(ali.Status, Does.Contain("yarıştan ayrıldı"));
+        }
+
+        [Test]
+        public void LostConnection_WithoutGoodbye_IsReportedAsDisconnect()
+        {
+            Lobby();
+            hostLink.Close(); // kurucunun bağlantısı haber vermeden koptu
+            Pump();
+            Assert.That(ali.Phase, Is.EqualTo(RoomPhase.Closed));
+            Assert.That(ali.Status, Does.Contain("bağlantı koptu"));
+        }
+
+        [Test]
+        public void OnePlayersConnectionError_DoesNotCloseTheRoom()
+        {
+            Lobby();
+            hostLink.SimulateError("baska-oyuncu", "negotiation-failed");
+            Pump();
+            Assert.That(host.Phase, Is.EqualTo(RoomPhase.Lobby));
+            Assert.That(ali.Phase, Is.EqualTo(RoomPhase.Lobby));
+
+            // Katılımcının bağlantısı kurulamazsa (NAT, zaman aşımı) anlaşılır mesajla biter; sonraki hatalar mesajı ezmez
+            var strangerLink = new LoopbackTransport(hub);
+            var stranger = new RoomSession(strangerLink, 12);
+            stranger.Join("Yabancı", host.Code);
+            strangerLink.SimulateError(null, "timeout");
+            strangerLink.SimulateError(null, "network");
+            stranger.Update(1f);
+            Assert.That(stranger.Phase, Is.EqualTo(RoomPhase.Closed));
+            Assert.That(stranger.Status, Does.Contain("bağlanılamadı"));
         }
 
         [Test]
@@ -184,6 +236,7 @@ namespace BusTycoon.Tests
             Pump();
             Assert.That(closed, Is.True);
             Assert.That(ali.Phase, Is.EqualTo(RoomPhase.Closed));
+            Assert.That(ali.Status, Does.Contain("odayı kapattı"));
         }
 
         [Test]
