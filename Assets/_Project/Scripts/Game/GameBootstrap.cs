@@ -63,6 +63,11 @@ namespace BusTycoon.Game
             multiplayer.transform.SetParent(root.transform, false);
             multiplayer.Init(session);
 
+            // Ses efektleri (menüden açılıp kapatılır)
+            var audio = new GameObject("GameAudio").AddComponent<GameAudio>();
+            audio.transform.SetParent(root.transform, false);
+            audio.Init();
+
             var ui = new GameObject("GameUI").AddComponent<GameUI>();
             ui.transform.SetParent(root.transform, false);
             ui.Init(session, world, mapCamera);

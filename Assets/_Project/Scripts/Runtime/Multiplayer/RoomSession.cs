@@ -96,6 +96,12 @@ namespace BusTycoon.Multiplayer
         public void Leave()
         {
             if (Phase == RoomPhase.Idle) return;
+            // Diğerleri bağlantının kopmasını beklemeden ayrıldığını öğrensin
+            if (Phase == RoomPhase.Lobby || Phase == RoomPhase.Playing || Phase == RoomPhase.Ended)
+            {
+                if (IsHost) transport.Broadcast(RoomMessage.Pack("BYE"));
+                else transport.Send(HostId, RoomMessage.Pack("BYE"));
+            }
             transport.Close();
             Phase = RoomPhase.Idle;
             players.Clear();
@@ -235,18 +241,11 @@ namespace BusTycoon.Multiplayer
                     break;
 
                 case TransportEventType.Closed:
-                    if (!IsHost && Phase != RoomPhase.Idle)
-                    {
-                        bool wasPlaying = Phase == RoomPhase.Playing;
-                        Phase = RoomPhase.Closed;
-                        Status = wasPlaying ? "Oda sahibi ayrıldı; oyun tek başına sürüyor." : "Oda kapandı.";
-                        Notice?.Invoke(Status);
-                        Closed?.Invoke();
-                        Changed?.Invoke();
-                    }
+                    if (!IsHost) HostGone(Phase == RoomPhase.Playing ? "Odayla bağlantı koptu; oyun tek başına sürüyor." : "Odayla bağlantı koptu.");
                     break;
 
                 case TransportEventType.Error:
+                    if (IsHost && !string.IsNullOrEmpty(e.Peer)) break; // tek oyuncunun bağlantı sorunu odayı kapatmaz
                     OnError(e.Data);
                     break;
 
@@ -275,6 +274,10 @@ namespace BusTycoon.Multiplayer
                     BroadcastRoom();
                     Notice?.Invoke(player.Name + " odaya katıldı.");
                     Changed?.Invoke();
+                    break;
+
+                case "BYE":
+                    OnPeerLeft(peer);
                     break;
 
                 case "CITY":
@@ -351,6 +354,11 @@ namespace BusTycoon.Multiplayer
                     DayAllowed?.Invoke(HostDay);
                     break;
 
+                case "BYE":
+                    HostGone(Phase == RoomPhase.Playing ? "Oda sahibi yarıştan ayrıldı; oyun tek başına sürüyor." : "Oda sahibi odayı kapattı.");
+                    transport.Close();
+                    break;
+
                 case "END":
                     if (m.Length < 2 || Phase != RoomPhase.Playing) return;
                     Winner = players.Find(p => p.Id == m[1]) ?? new RoomPlayer
@@ -364,11 +372,22 @@ namespace BusTycoon.Multiplayer
             }
         }
 
+        /// <summary>Katılımcı: kurucuya ulaşılamıyor ya da kurucu ayrıldı. Yarış sürüyorsa oyun tek başına devam eder.</summary>
+        void HostGone(string status)
+        {
+            if (Phase == RoomPhase.Idle || Phase == RoomPhase.Closed) return;
+            Phase = RoomPhase.Closed;
+            Status = status;
+            Notice?.Invoke(Status);
+            Closed?.Invoke();
+            Changed?.Invoke();
+        }
+
         void OnPeerLeft(string peer)
         {
             if (!IsHost) return;
             RoomPlayer player = players.Find(p => p.Id == peer);
-            if (player == null) return;
+            if (player == null || (Phase != RoomPhase.Lobby && !player.Connected)) return;
             if (Phase == RoomPhase.Lobby) players.Remove(player);
             else player.Connected = false;
             Notice?.Invoke(player.Name + " odadan ayrıldı.");
@@ -378,6 +397,7 @@ namespace BusTycoon.Multiplayer
 
         void OnError(string kind)
         {
+            if (Phase == RoomPhase.Idle || Phase == RoomPhase.Closed) return; // ilk hata durumu belirledi
             // Kod başka bir odada kullanılıyorsa yeni kodla birkaç kez daha dene
             if (IsHost && kind == "unavailable-id" && Phase == RoomPhase.Connecting && hostAttempts++ < 3)
             {
@@ -399,7 +419,18 @@ namespace BusTycoon.Multiplayer
         {
             switch (kind)
             {
-                case "peer-unavailable": return "Bu kodla açık bir oda bulunamadı.";
+                case "peer-unavailable": return "Bu kodla açık bir oda bulunamadı. Kodu kontrol et; odayı kuranın oyunu açık kalmalı.";
+                case "timeout":
+                case "negotiation-failed":
+                case "webrtc":
+                    return "Odaya bağlanılamadı: iki cihaz arasında bağlantı kurulamadı. İkiniz de oyunu açık tutun; olmazsa biriniz Wi-Fi ya da mobil veriye geçip tekrar deneyin.";
+                case "server-timeout":
+                case "network":
+                case "server-error":
+                case "socket-error":
+                case "socket-closed":
+                case "disconnected":
+                    return "Eşleştirme sunucusuna ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.";
                 case "unavailable-id": return "Oda açılamadı, tekrar deneyin.";
                 case "browser-incompatible": return "Tarayıcınız çok oyunculu bağlantıyı desteklemiyor.";
                 case "unsupported": return "Çok oyunculu şimdilik web sürümünde oynanıyor.";

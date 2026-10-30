@@ -7,23 +7,6 @@ using System.Runtime.InteropServices;
 
 namespace BusTycoon.Game
 {
-    /// <summary>Tarayıcı panosuna metin kopyalama (web dışında Unity'nin kendi panosu).</summary>
-    public static class WebClipboard
-    {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        [DllImport("__Internal")] static extern void BusTycoon_CopyText(string text);
-#endif
-
-        public static void Copy(string text)
-        {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            BusTycoon_CopyText(text);
-#else
-            GUIUtility.systemCopyBuffer = text;
-#endif
-        }
-    }
-
     /// <summary>
     /// Tarayıcıda oda bağlantısı: Assets/Plugins/WebGL/BusTycoonNet.jslib (PeerJS / WebRTC). Olaylar JavaScript'te
     /// kuyruğa alınır, <see cref="Poll"/> her karede okur. Web dışında çok oyunculu desteklenmez ("unsupported").

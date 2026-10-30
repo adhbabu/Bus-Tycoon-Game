@@ -213,14 +213,14 @@ namespace BusTycoon.Game
             {
                 int left = session.ProgressionConfig.BankruptcyGraceDays - session.Finance.DaysInDebt;
                 if (session.Finance.DaysInDebt == 1 || left % 5 == 0)
-                    Toast($"Kasa eksiye düştü! {left} gün içinde toparlanmazsanız iflas edersiniz.", UIStyles.Red);
+                    Toast($"Kasa eksiye düştü! {left} gün içinde toparlanmazsanız iflas edersiniz.", UIStyles.Red, Sfx.Warning);
             }
         }
 
         void OnMonthCompleted(int month)
         {
             double net = session.Finance.GetNetProfit(SimulationClock.DaysPerMonth);
-            Toast($"{month}. ay kapandı · Net {Fmt.Signed(net)}", net >= 0 ? UIStyles.Green : UIStyles.Red);
+            Toast($"{month}. ay kapandı · Net {Fmt.Signed(net)}", net >= 0 ? UIStyles.Green : UIStyles.Red, net >= 0 ? Sfx.Coin : Sfx.Warning);
         }
 
         void OnBankrupt()
@@ -243,7 +243,7 @@ namespace BusTycoon.Game
             Toast($"Yeni otobüs açıldı: {model.DisplayName} — Galeri (G)", UIStyles.Blue);
 
         void OnRegionUnlocked(RegionData region) =>
-            Toast($"{region.DisplayName} işletme lisansı alındı. Yeni şehirler açıldı!", UIStyles.Green);
+            Toast($"{region.DisplayName} işletme lisansı alındı. Yeni şehirler açıldı!", UIStyles.Green, Sfx.Success);
 
         void OnBusBrokeDown(BusInstance bus) =>
             Toast($"{bus.nickname} arızalandı ({bus.outOfServiceDays} gün servis dışı)", UIStyles.Orange);
@@ -257,7 +257,7 @@ namespace BusTycoon.Game
             if (report.Reassigned > 0) parts.Add($"{report.Reassigned} otobüs hatta");
             string text = parts.Count > 0 ? $"Bakım asistanı: {string.Join(" · ", parts)} ({Fmt.Money(report.Spent)})" : "Bakım asistanı";
             if (report.Postponed > 0) text += $" · {report.Postponed} iş para bekliyor";
-            Toast(text, report.Postponed > 0 && parts.Count == 0 ? UIStyles.Orange : UIStyles.Blue);
+            Toast(text, report.Postponed > 0 && parts.Count == 0 ? UIStyles.Orange : UIStyles.Blue, Sfx.None); // her gün olabilir: sessiz
         }
 
         void OnFleetChanged(BusInstance _) => MarkDataDirty();
@@ -300,7 +300,7 @@ namespace BusTycoon.Game
                 if (insight.Severity == InsightSeverity.Critical && route.HasHistory)
                 {
                     if (criticalRoutes.Add(route.routeId) && announce)
-                        Toast($"{RouteName(route)}: {insight.Message}", UIStyles.Red);
+                        Toast($"{RouteName(route)}: {insight.Message}", UIStyles.Red, Sfx.Warning);
                 }
                 else
                 {
@@ -315,6 +315,7 @@ namespace BusTycoon.Game
         {
             if (session == null) return;
             float dt = Time.unscaledDeltaTime;
+            WebTap.Pump();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
             if (TouchInput.BackPressed() && Time.frameCount != lastEscapeFrame)
@@ -419,12 +420,18 @@ namespace BusTycoon.Game
             uiRects.Clear();
             Event e = Event.current;
             textFieldFocused = GUIUtility.keyboardControl != 0;
-            if (e.type == EventType.Repaint) sliderRectsNext.Clear();
+            bool repaint = e.type == EventType.Repaint;
+            if (repaint)
+            {
+                sliderRectsNext.Clear();
+                WebTap.BeginFrame();
+            }
 
             if (e.isMouse || e.type == EventType.ScrollWheel) lastMouseGui = e.mousePosition;
             TrackHeldKeys(e);
             if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && !textFieldFocused) HandleShortcut(e);
             HandleTouchScroll(e);
+            bool pressEnded = e.type == EventType.MouseUp && e.button == 0; // kaydırma için kullanılmadıysa
 
             if (!InMenu && e.type == EventType.Repaint && !StationBusy) DrawCityLabels();
 
@@ -464,13 +471,15 @@ namespace BusTycoon.Game
 
             DrawStationFade();
             if (modal != Modal.None) DrawModal();
+            if (pressEnded && e.type == EventType.Used) GameAudio.Play(Sfx.Click); // bir düğme/anahtar basışı aldı
 
             UpdateHover(e);
-            if (e.type == EventType.Repaint)
+            if (repaint)
             {
                 DrawTooltip();
                 sliderRects.Clear();
                 sliderRects.AddRange(sliderRectsNext);
+                WebTap.EndFrame();
             }
             if (!HandleStationInput(e)) HandleMapInput(e);
             RunDeferred();
@@ -663,7 +672,33 @@ namespace BusTycoon.Game
 
         void Defer(Action action) => deferred.Add(action);
 
-        void Toast(string text, Color color) => notes.Push(text, color, session.State != null ? session.State.currentDay : 0);
+        /// <summary>
+        /// Yazı alanı. Dokunmatik tarayıcıda (iPad, telefon) Unity ekran klavyesini açamadığı için alan düğme gibi
+        /// çizilir; dokununca tarayıcının klavyeli penceresi açılır, yazılan değer bir sonraki karede gelir (WebTap).
+        /// </summary>
+        string TextInput(string id, string value, int maxLength, string title, float height)
+        {
+            value ??= string.Empty;
+            if (!mobile || !WebTap.Available) return GUILayout.TextField(value, maxLength, s.Field, Ht(height));
+
+            if (WebTap.TryTake(id, out string typed))
+            {
+                value = typed.Trim();
+                if (value.Length > maxLength) value = value.Substring(0, maxLength);
+            }
+            GUILayout.Label(value.Length > 0 ? value : "Yazmak için dokun", s.Field, Ht(height));
+            if (Event.current.type == EventType.Repaint && GUI.enabled)
+                WebTap.Zone(id, WebTap.PromptKind, GUILayoutUtility.GetLastRect(), title, value);
+            return value;
+        }
+
+        /// <summary>Bildirim ve sesi: renk sesi belirler (altın başarı, kırmızı hata, turuncu uyarı, diğerleri zil).</summary>
+        void Toast(string text, Color color, Sfx? sound = null)
+        {
+            notes.Push(text, color, session.State != null ? session.State.currentDay : 0);
+            GameAudio.Play(sound ?? (color.Equals(UIStyles.Gold) ? Sfx.Success : color.Equals(UIStyles.Red) ? Sfx.Error
+                : color.Equals(UIStyles.Orange) ? Sfx.Warning : Sfx.Notify));
+        }
 
         // ------------------------------------------------------------------ girdi
 
@@ -694,7 +729,7 @@ namespace BusTycoon.Game
                 System.IO.Directory.CreateDirectory(folder);
                 string file = System.IO.Path.Combine(folder, $"bus_{Screen.width}x{Screen.height}_{System.DateTime.Now:yyyyMMdd_HHmmss}.png");
                 ScreenCapture.CaptureScreenshot(file);
-                Toast($"Ekran görüntüsü: Screenshots/{System.IO.Path.GetFileName(file)}", UIStyles.Blue);
+                Toast($"Ekran görüntüsü: Screenshots/{System.IO.Path.GetFileName(file)}", UIStyles.Blue, Sfx.None);
                 e.Use();
                 return;
             }

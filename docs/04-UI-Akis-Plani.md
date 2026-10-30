@@ -288,6 +288,18 @@ para ödülü verir.
   oyun tek başına sürebilir. Mantık `Runtime/Multiplayer` (RoomSession: lobi, START/TICK/STATS/END mesajları; NUnit ile
   bellek içi bağlantıda test edilir), web bağlantısı `Plugins/WebGL/BusTycoonNet.jslib` (PeerJS), oyuna bağlantı
   `MultiplayerDirector` (katılımcının saati `SimulationClock.DayLimit` ile kurucunun gününde bekler).
+  Dayanıklılık: eşleştirme sunucusu bağlantısı koparsa (telefonda kodu paylaşmak için başka uygulamaya geçmek gibi)
+  oda kapanmaz, aynı kimlikle yeniden bağlanılır; tek oyuncunun bağlantı hatası odayı kapatmaz; katılımcı 25 sn'de
+  bağlanamazsa anlaşılır mesaj görür; çıkan oyuncu `BYE` ile haber verir ("odayı kapattı" ile "bağlantı koptu" ayrılır).
+* **Dokunmatik yazı girişi (web):** iPad ve telefon tarayıcısında Unity ekran klavyesi açamaz. Ad, oda kodu ve şirket
+  adı alanları orada düğme gibi çizilir; dokununca tarayıcının klavyeli penceresi açılır. Davet düğmesi telefonda
+  paylaşım menüsünü (WhatsApp, Mesajlar…), bilgisayarda panoya kopyalamayı kullanır. Tarayıcı bunlara yalnız dokunuşun
+  içinde izin verdiği için arayüz her karede alanları bildirir, işi `Plugins/WebGL/BusTycoonTap.jslib` dokunma olayında
+  yapar (`WebTap`).
+* **Sesler:** `GameAudio` (Resources/BusTycoon/Audio, `Tools/make_sounds.py` ile sentezlenmiş telifsiz WAV'lar):
+  düğme tıklaması, hat açılınca korna, satın alma / kârlı ay için para sesi, arızada uyarı, görev ve seviyede başarı,
+  başarısız işlemde hata. Bildirimin rengi sesini belirler; sık tekrarlanan bildirimler sessizdir. Ana menü ve
+  duraklatma menüsünde "Ses efektleri" anahtarı (kalıcı).
 * **Görseller:** galeride ve filo kartlarında otobüsün yandan çizimi; Bölgeler, ipucu ve yeni oyun ekranında ülke
   bayrakları; finans kalemlerinde, planlayıcıda, görevlerde ve günlükte ikonlar.
 * **Otobüs kartları (Filo):** başlık + durum rozeti, ikonlu ayrıntı satırları (📍 hat, 💺 model, 👥 doluluk,
