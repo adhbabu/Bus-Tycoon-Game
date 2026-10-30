@@ -567,7 +567,7 @@ namespace BusTycoon.Game
         }
 
         float Margin => (phone ? 8f : 12f) * u;
-        float TopBarHeight => (phone ? 54f : 70f) * u;
+        float TopBarHeight => (SlimTopBar ? 54f : 70f) * u;
         float BottomBarHeight => (phone ? 58f : 66f) * u;
         float PanelWidth => phone ? Mathf.Min(620f * u, (SafeRight - SafeLeft) * 0.62f)
             : compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.58f) : 490f * u;
