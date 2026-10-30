@@ -135,6 +135,7 @@ Tools/make_icons.py        Twemoji ikonlarından arayüz ikon atlasını üretir
 Tools/make_bus_art.py      Otobüs modellerinin yandan çizimleri (Resources/BusTycoon/UI/buses.png)
 Tools/make_city_icons.py   Her şehrin ikonu ve "nesiyle ünlü" açıklaması (Resources/BusTycoon/UI/cities.png, city_icons.txt)
 Tools/make_sounds.py       Oyun sesleri: tıklama, para, korna, bildirim, uyarı, başarı, hata (Resources/BusTycoon/Audio)
+Tools/webtest/             Web eklentilerinin (jslib) Unity'siz tarayıcı testleri: dokunuş/klavye/paylaşım ve çok oyunculu bağlantı
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 
