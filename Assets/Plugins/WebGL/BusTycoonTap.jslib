@@ -74,8 +74,11 @@ mergeInto(LibraryManager.library, {
         if (!down || !down.z) return false;
         var p = toCanvas(x, y);
         var slop = 14 * (window.devicePixelRatio || 1);
-        if (!p || Math.abs(p.x - down.p.x) > slop || Math.abs(p.y - down.p.y) > slop || find(p) !== down.z) return false;
-        run(down.z, touch);
+        if (!p || Math.abs(p.x - down.p.x) > slop || Math.abs(p.y - down.p.y) > slop) return false;
+        // Alanlar her karede yeniden bildirilir: aynı alan kimliğe göre aranır, güncel değeriyle çalıştırılır
+        var zone = find(p);
+        if (!zone || zone.id !== down.z.id) return false;
+        run(zone, touch);
         return true;
       }
       window.addEventListener("touchstart", function (e) {

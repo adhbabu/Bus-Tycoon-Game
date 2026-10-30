@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- Tools/webtest: jslib eklentilerini Unity olmadan çalıştıran en küçük sayfa --><html><head><meta charset="utf-8"><style>body{margin:0}canvas{width:800px;height:600px;display:block}</style></head>
+<body><canvas id="c" width="800" height="600"></canvas>
+<script>
+// jslib dosyalarını Unity olmadan çalıştırmak için en küçük ortam
+var Module = { canvas: document.getElementById('c') };
+var LibraryManager = { library: {} };
+function mergeInto(lib, obj) { for (var k in obj) window[k] = obj[k]; }
+function UTF8ToString(s) { return s; }
+function lengthBytesUTF8(s) { return s.length; }
+var heap = {}; var nextPtr = 1;
+function _malloc() { return nextPtr++; }
+function stringToUTF8(s, ptr) { heap[ptr] = s; }
+function poll(fn) { var p = window[fn](); return p ? heap[p] : null; }
+</script>
+</body></html>
