@@ -148,6 +148,18 @@ namespace BusTycoon.Game
             else DrawQuote();
 
             GUILayout.EndScrollView();
+            // Telefonda panel kısa: "Hattı aç" kaydırma alanının dışında, panelin altında sabit durur
+            if (phone && plannerDestination != null && plannerQuoteValid)
+            {
+                Sp(6f);
+                DrawOpenRouteButton(plannerQuote);
+            }
+        }
+
+        void DrawOpenRouteButton(RouteQuote quote)
+        {
+            if (EnabledButton(quote.IsValid, $"HATTI AÇ  ·  lisans {Fmt.Money(quote.LicenseCost)}", s.Primary, Ht(48f)))
+                Defer(OpenRouteFromPlanner);
         }
 
         void DrawModelSelector()
@@ -250,9 +262,9 @@ namespace BusTycoon.Game
             assignIdleOnOpen = GUILayout.Toggle(assignIdleOnOpen, " Garajdaki otobüsleri bu hatta ata", s.Toggle, Ht(32f));
 
             if (!quote.IsValid) ColorLabel(quote.Error, UIStyles.Red, s.Wrap);
+            if (phone) return; // düğme kaydırma alanının dışında (DrawPlanner)
             Sp(6f);
-            if (EnabledButton(quote.IsValid, $"HATTI AÇ  ·  lisans {Fmt.Money(quote.LicenseCost)}", s.Primary, Ht(48f)))
-                Defer(OpenRouteFromPlanner);
+            DrawOpenRouteButton(quote);
         }
 
         void OpenRouteFromPlanner()

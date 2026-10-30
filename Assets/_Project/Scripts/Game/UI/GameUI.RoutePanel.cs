@@ -117,13 +117,10 @@ namespace BusTycoon.Game
 
         // ------------------------------------------------------------------ Fiyat sekmesi
 
-        void DrawPriceTab()
+        /// <summary>Fiyat-kâr eğrisi ve altındaki fiyat aralığı/renk açıklaması.</summary>
+        void DrawPriceChart(float height)
         {
-            // Grafik
-            if (priceChart == null) priceChart = new ChartTexture(640, 220);
-            if (!Mathf.Approximately(chartRenderedPrice, pendingPrice)) RenderPriceChart();
-
-            Rect chartRect = GUILayoutUtility.GetRect(10f, 150f * u, GUILayout.ExpandWidth(true), Ht(150f));
+            Rect chartRect = GUILayoutUtility.GetRect(10f, height * u, GUILayout.ExpandWidth(true), Ht(height));
             if (Event.current.type == EventType.Repaint) GUI.DrawTexture(chartRect, priceChart.Texture);
 
             GUILayout.BeginHorizontal();
@@ -133,25 +130,58 @@ namespace BusTycoon.Game
             GUILayout.FlexibleSpace();
             GUILayout.Label(Fmt.Price(analysis.MaxPrice), s.Small);
             GUILayout.EndHorizontal();
+        }
 
-            // Kaydırıcı ve ince ayar
+        /// <summary>Kaydırıcı, -/+ ile ince ayar, seçili fiyat ve fiyat bölgesi.</summary>
+        void DrawPriceControls()
+        {
             float slider = Slider(pendingPrice, analysis.MinPrice, analysis.MaxPrice);
             if (!Mathf.Approximately(slider, pendingPrice)) SetPendingPrice(slider);
 
+            float step = phone ? 52f : 44f;
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("-", s.Button, Wd(44f), Ht(40f))) SetPendingPrice(pendingPrice - PriceStep(pendingPrice));
+            if (GUILayout.Button("-", s.Button, Wd(step), Ht(40f))) SetPendingPrice(pendingPrice - PriceStep(pendingPrice));
             GUILayout.FlexibleSpace();
             GUILayout.BeginVertical();
             GUILayout.Label(Fmt.Price(pendingPrice), s.Big);
             ColorLabel($"piyasa referansı {Fmt.Price(analysis.ReferencePrice)}", UIStyles.DimText, s.Small);
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("+", s.Button, Wd(44f), Ht(40f))) SetPendingPrice(pendingPrice + PriceStep(pendingPrice));
+            if (GUILayout.Button("+", s.Button, Wd(step), Ht(40f))) SetPendingPrice(pendingPrice + PriceStep(pendingPrice));
             GUILayout.EndHorizontal();
 
-            // Bölge
             PriceZone zone = analysis.Classify(pendingPrice, pendingForecast.Profit);
             ColorLabel(PricingAdvisor.Describe(zone), ZoneColor(zone), s.H2);
+        }
+
+        void DrawPriceActions(bool changed)
+        {
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Önerilen", s.Button, Ht(40f))) SetPendingPrice(analysis.EstimatedBestPrice);
+            if (EnabledButton(changed, "Geri al", s.Button, Ht(40f))) SetPendingPrice(selectedRoute.ticketPrice);
+            if (EnabledButton(changed, "UYGULA", s.Primary, Ht(40f))) Defer(ApplyPendingPrice);
+            GUILayout.EndHorizontal();
+        }
+
+        void DrawPriceTab()
+        {
+            if (priceChart == null) priceChart = new ChartTexture(640, 220);
+            if (!Mathf.Approximately(chartRenderedPrice, pendingPrice)) RenderPriceChart();
+            bool changed = Mathf.Abs(pendingPrice - selectedRoute.ticketPrice) > 0.001f;
+
+            if (phone)
+            {
+                // Telefonda panel kısa: fiyat ayarı ve düğmeler kaydırmadan görünsün, grafik altta
+                DrawPriceControls();
+                DrawPriceActions(changed);
+                Sp(6f);
+                DrawPriceChart(90f);
+            }
+            else
+            {
+                DrawPriceChart(150f);
+                DrawPriceControls();
+            }
 
             // Tahmin
             GUILayout.BeginVertical(s.Card);
@@ -164,7 +194,6 @@ namespace BusTycoon.Game
             KeyValue("Gelir", $"{Fmt.Money(pendingForecast.Revenue)} / gün", icon: UIIcon.Ticket);
             KeyValue("Gider", $"{Fmt.Money(pendingForecast.TotalCost)} / gün", icon: UIIcon.Fuel);
             KeyValue("Kâr", $"{Fmt.Signed(pendingForecast.Profit)} / gün", pendingForecast.Profit >= 0 ? UIStyles.Green : UIStyles.Red, pendingForecast.Profit >= 0 ? UIIcon.ChartUp : UIIcon.ChartDown);
-            bool changed = Mathf.Abs(pendingPrice - selectedRoute.ticketPrice) > 0.001f;
             float delta = pendingForecast.Profit - appliedForecast.Profit;
             KeyValue("Mevcut fiyata göre", changed ? $"{Fmt.Signed(delta)} / gün" : "uygulanan fiyat",
                 !changed ? UIStyles.DimText : delta >= 0 ? UIStyles.Green : UIStyles.Red);
@@ -180,11 +209,7 @@ namespace BusTycoon.Game
                 ? "Pazar araştırması: tam isabetli tahmin"
                 : $"Pazar araştırması: tahminler ±%{analysis.EstimateError * 100f:0} sapabilir (seviyeyle iyileşir)", s.WrapDim);
 
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Önerilen", s.Button, Ht(40f))) SetPendingPrice(analysis.EstimatedBestPrice);
-            if (EnabledButton(changed, "Geri al", s.Button, Ht(40f))) SetPendingPrice(selectedRoute.ticketPrice);
-            if (EnabledButton(changed, "UYGULA", s.Primary, Ht(40f))) Defer(ApplyPendingPrice);
-            GUILayout.EndHorizontal();
+            if (!phone) DrawPriceActions(changed);
 
             // Gelişmiş: sefer planı
             Sp(6f);

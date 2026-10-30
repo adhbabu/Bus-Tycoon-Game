@@ -26,38 +26,42 @@ namespace BusTycoon.Game
             uiRects.Add(bar);
             GUI.Box(bar, GUIContent.none, s.TopBar);
 
+            bool slim = SlimTopBar; // telefon, dikey tablet: etiketsiz, tarih ve hız tek satırda
             var state = session.State;
             var progression = session.Progression;
             double cash = session.Finance.Cash;
             int idle = 0;
             foreach (var bus in session.Fleet.Buses) if (!bus.IsAssigned) idle++;
 
-            float x = Mathf.Max(left, SafeLeft) + (phone ? 10f : 20f) * u;
-            float padTop = (phone ? 6f : 9f) * u;
-            GUILayout.BeginArea(new Rect(x, SafeTop + padTop, SafeRight - x - (phone ? 6f : 16f) * u, TopBarHeight - padTop - 5f * u));
+            float x = Mathf.Max(left, SafeLeft) + (slim ? 10f : 20f) * u;
+            float padTop = (slim ? 6f : 9f) * u;
+            GUILayout.BeginArea(new Rect(x, SafeTop + padTop, SafeRight - x - (slim ? 6f : 16f) * u, TopBarHeight - padTop - 5f * u));
             GUILayout.BeginHorizontal();
 
             // Şirket ve seviye (telefonda başlık yerine yalnız seviye)
-            GUILayout.BeginVertical(Wd(phone ? 150f : N(220f, 170f)));
-            GUILayout.Label(phone ? $"SEVİYE {progression.Level}" : $"ŞİRKET · SEVİYE {progression.Level}", s.StatLabel);
-            GUILayout.Label(state.companyName, phone ? s.Bold : s.Value);
-            LayoutBar(progression.LevelProgress01, UIStyles.Orange, 5f, phone ? 120f : N(180f, 140f), 2f);
+            GUILayout.BeginVertical(Wd(slim ? 150f : N(220f, 170f)));
+            GUILayout.Label(slim ? $"SEVİYE {progression.Level}" : $"ŞİRKET · SEVİYE {progression.Level}", s.StatLabel);
+            GUILayout.Label(state.companyName, slim ? s.Bold : s.Value);
+            LayoutBar(progression.LevelProgress01, UIStyles.Orange, 5f, slim ? 120f : N(180f, 140f), 2f);
             GUILayout.EndVertical();
             Sp(N(16f, 8f));
 
             // Kasa: parlak yeşil (eksideyse kırmızı), yanında dünkü net
-            GUILayout.BeginVertical(Wd(phone ? 250f : N(270f, 215f)));
-            if (!phone) GUILayout.Label("ŞİRKET KASASI", s.StatLabel);
+            // Dar sade çubukta (dikey tablet) dünkü net yazılmaz (Finans panelinde); iflas uyarısı her zaman görünür
+            bool debt = session.Finance.DaysInDebt > 0;
+            bool showNet = !slim || (SafeRight - SafeLeft) / u >= 880f;
+            GUILayout.BeginVertical(Wd(slim ? (showNet ? 250f : 185f) : N(270f, 215f)));
+            if (!slim) GUILayout.Label("ŞİRKET KASASI", s.StatLabel);
             GUILayout.BeginHorizontal();
             MoneyLabel(cash);
             GUILayout.BeginVertical();
             Sp(10f);
-            if (session.Finance.DaysInDebt > 0)
+            if (debt)
             {
                 int daysLeft = session.ProgressionConfig.BankruptcyGraceDays - session.Finance.DaysInDebt;
                 ColorLabel($"İflasa {daysLeft} gün!", UIStyles.Red, s.Small);
             }
-            else
+            else if (showNet)
             {
                 double net = LastDayNet();
                 ColorLabel($"Dün {Fmt.Signed(net)}", net >= 0 ? UIStyles.Green : UIStyles.Red, s.Small);
@@ -69,14 +73,14 @@ namespace BusTycoon.Game
             GUILayout.FlexibleSpace();
 
             // Tarih ve hız (telefonda tek satırda)
-            if (phone)
+            if (slim)
             {
                 GUILayout.BeginVertical();
                 Sp(7f);
                 GUILayout.BeginHorizontal();
             }
             GUILayout.BeginVertical();
-            if (!phone) GUILayout.Label("TARİH", s.StatLabel);
+            if (!slim) GUILayout.Label("TARİH", s.StatLabel);
             else Sp(5f);
             GUILayout.BeginHorizontal();
             DayNightCycle cycle = DayNightCycle.Instance;
@@ -94,9 +98,9 @@ namespace BusTycoon.Game
             GUILayout.Label(SimulationClock.FormatDate(state.currentDay), s.Bold);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
-            Sp(phone ? 6f : 0f);
+            Sp(slim ? 6f : 0f);
             GUILayout.BeginVertical();
-            if (!phone) Sp(9f);
+            if (!slim) Sp(9f);
             GUILayout.BeginHorizontal();
             if (RaceLocked)
             {
@@ -114,7 +118,7 @@ namespace BusTycoon.Game
             }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
-            if (phone)
+            if (slim)
             {
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
@@ -129,8 +133,8 @@ namespace BusTycoon.Game
             if (compact)
             {
                 GUILayout.BeginVertical();
-                Sp(phone ? 0f : 4f);
-                if (IconButton(UIIcon.Settings, "Menü", phone ? 42f : 46f)) Defer(OpenPauseMenu);
+                Sp(slim ? 0f : 4f);
+                if (IconButton(UIIcon.Settings, "Menü", slim ? 42f : 46f)) Defer(OpenPauseMenu);
                 GUILayout.EndVertical();
             }
 
