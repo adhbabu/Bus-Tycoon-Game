@@ -54,7 +54,7 @@ namespace BusTycoon.Game
         bool phone;     // küçük ekran (telefon): sade üst çubuk, tam boy paneller, kapalı mini harita, görev şeridi
         bool mobile;    // dokunmatik platform: hover yok, kısayol ipuçları yok, parmakla kaydırma
         bool phoneDefaultsApplied;
-        const float PhonePointsPerUnit = 0.82f;
+        const float PhonePointsPerUnit = 0.78f;
         float W = 1920f, H = 1080f;
         float SafeLeft, SafeRight = 1920f, SafeTop, SafeBottom; // çentik/ev çubuğu güvenli alanı (GUI koordinatı)
         readonly List<Rect> uiRects = new List<Rect>();
@@ -200,6 +200,8 @@ namespace BusTycoon.Game
             goals.ResetSessionFlags();
             notes.Clear();
             criticalRoutes.Clear();
+            criticalAnnouncedDay.Clear();
+            lastToastAt.Clear();
             mapCamera.AutoDrift = false;
 
             CityData hq = session.Headquarters;
@@ -217,14 +219,15 @@ namespace BusTycoon.Game
             {
                 int left = session.ProgressionConfig.BankruptcyGraceDays - session.Finance.DaysInDebt;
                 if (session.Finance.DaysInDebt == 1 || left % 5 == 0)
-                    Toast($"Kasa eksiye düştü! {left} gün içinde toparlanmazsanız iflas edersiniz.", UIStyles.Red, Sfx.Warning);
+                    Toast($"Kasa eksiye düştü! {left} gün içinde toparlanmazsanız iflas edersiniz.", UIStyles.Red, Sfx.Warning, Throttled("borç", 15f));
             }
         }
 
         void OnMonthCompleted(int month)
         {
             double net = session.Finance.GetNetProfit(SimulationClock.DaysPerMonth);
-            Toast($"{month}. ay kapandı · Net {Fmt.Signed(net)}", net >= 0 ? UIStyles.Green : UIStyles.Red, net >= 0 ? Sfx.Coin : Sfx.Warning);
+            // Kârlı ay yalnız günlüğe (Finans'ta da görünür); zararlı ay uyarılır
+            Toast($"{month}. ay kapandı · Net {Fmt.Signed(net)}", net >= 0 ? UIStyles.Green : UIStyles.Red, net >= 0 ? Sfx.Coin : Sfx.Warning, quiet: net >= 0);
         }
 
         void OnBankrupt()
@@ -249,8 +252,10 @@ namespace BusTycoon.Game
         void OnRegionUnlocked(RegionData region) =>
             Toast($"{region.DisplayName} işletme lisansı alındı. Yeni şehirler açıldı!", UIStyles.Green, Sfx.Success);
 
+        // Bakım asistanı açıksa arıza kendiliğinden onarılır: yalnız günlüğe. Kapalıysa uyarı, ama sık değil.
         void OnBusBrokeDown(BusInstance bus) =>
-            Toast($"{bus.nickname} arızalandı ({bus.outOfServiceDays} gün servis dışı)", UIStyles.Orange);
+            Toast($"{bus.nickname} arızalandı ({bus.outOfServiceDays} gün servis dışı)", UIStyles.Orange,
+                quiet: session.Maintenance.Enabled || Throttled("arıza", 12f));
 
         /// <summary>Bakım asistanının özeti: "2 revizyon · 1 acil tamir · 3 otobüs hatta ($12 B)".</summary>
         void OnMaintenance(MaintenanceReport report)
@@ -261,7 +266,9 @@ namespace BusTycoon.Game
             if (report.Reassigned > 0) parts.Add($"{report.Reassigned} otobüs hatta");
             string text = parts.Count > 0 ? $"Bakım asistanı: {string.Join(" · ", parts)} ({Fmt.Money(report.Spent)})" : "Bakım asistanı";
             if (report.Postponed > 0) text += $" · {report.Postponed} iş para bekliyor";
-            Toast(text, report.Postponed > 0 && parts.Count == 0 ? UIStyles.Orange : UIStyles.Blue, Sfx.None); // her gün olabilir: sessiz
+            // Günlük özet yalnız günlüğe; yalnız para yetmediği için iş bekliyorsa (oyuncunun yapacağı bir şey var) seyrek uyarı
+            bool waitingForCash = report.Postponed > 0 && parts.Count == 0;
+            Toast(text, waitingForCash ? UIStyles.Orange : UIStyles.Blue, Sfx.None, quiet: !waitingForCash || Throttled("bakım", 45f));
         }
 
         void OnFleetChanged(BusInstance _) => MarkDataDirty();
@@ -303,8 +310,13 @@ namespace BusTycoon.Game
 
                 if (insight.Severity == InsightSeverity.Critical && route.HasHistory)
                 {
-                    if (criticalRoutes.Add(route.routeId) && announce)
-                        Toast($"{RouteName(route)}: {insight.Message}", UIStyles.Red, Sfx.Warning);
+                    // Sınırda gidip gelen hat her gün yeniden uyarmasın: aynı hat için en çok 20 günde bir
+                    if (criticalRoutes.Add(route.routeId) && announce &&
+                        (!criticalAnnouncedDay.TryGetValue(route.routeId, out int lastDay) || session.State.currentDay - lastDay >= 20))
+                    {
+                        criticalAnnouncedDay[route.routeId] = session.State.currentDay;
+                        Toast($"{RouteName(route)}: {insight.Message}", UIStyles.Red, Sfx.Warning, Throttled("hat", 10f));
+                    }
                 }
                 else
                 {
@@ -569,8 +581,8 @@ namespace BusTycoon.Game
         float Margin => (phone ? 8f : 12f) * u;
         float TopBarHeight => (SlimTopBar ? 54f : 70f) * u;
         float BottomBarHeight => (phone ? 58f : 66f) * u;
-        float PanelWidth => phone ? Mathf.Min(620f * u, (SafeRight - SafeLeft) * 0.62f)
-            : compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.58f) : 490f * u;
+        float PanelWidth => phone ? Mathf.Min(490f * u, (SafeRight - SafeLeft) * 0.52f) // harita yarıdan fazla görünsün
+            : compact ? Mathf.Min(480f * u, (SafeRight - SafeLeft) * 0.54f) : 490f * u;
         /// <summary>
         /// Alt menü çubuğu görünür mü? Telefonda bir panel açıkken gizlenir: panel tam boy kullanır, harita solda
         /// görünür kalır; menüye panel kapatılınca dönülür.
@@ -724,12 +736,33 @@ namespace BusTycoon.Game
             return value;
         }
 
-        /// <summary>Bildirim ve sesi: renk sesi belirler (altın başarı, kırmızı hata, turuncu uyarı, diğerleri zil).</summary>
-        void Toast(string text, Color color, Sfx? sound = null)
+        /// <summary>
+        /// Bildirim ve sesi: renk sesi belirler (altın başarı, kırmızı hata, turuncu uyarı, diğerleri zil).
+        /// <paramref name="quiet"/>: yalnız Günlük'e yazılır, ekranda görünmez ve ses çıkmaz.
+        /// </summary>
+        void Toast(string text, Color color, Sfx? sound = null, bool quiet = false)
         {
-            notes.Push(text, color, session.State != null ? session.State.currentDay : 0);
+            // Oyuncunun kendi işleminin onayı (yeşil) kısa görünür; uyarı ve başarılar biraz daha uzun
+            float duration = color.Equals(UIStyles.Green) ? (phone ? 2.5f : 3.5f) : (phone ? 4.5f : 5.5f);
+            notes.Push(text, color, session.State != null ? session.State.currentDay : 0, quiet, duration);
+            if (quiet) return;
             GameAudio.Play(sound ?? (color.Equals(UIStyles.Gold) ? Sfx.Success : color.Equals(UIStyles.Red) ? Sfx.Error
                 : color.Equals(UIStyles.Orange) ? Sfx.Warning : Sfx.Notify));
+        }
+
+        readonly Dictionary<string, float> lastToastAt = new Dictionary<string, float>();
+        readonly Dictionary<string, int> criticalAnnouncedDay = new Dictionary<string, int>();
+
+        /// <summary>
+        /// Aynı türden bildirim son <paramref name="seconds"/> saniyede gösterildiyse true (bu sefer yalnız günlüğe).
+        /// Hızlı oyunda (4x) tekrar eden uyarılar ekranı doldurmasın diye gerçek zamana göre sayılır.
+        /// </summary>
+        bool Throttled(string kind, float seconds)
+        {
+            float now = Time.unscaledTime;
+            if (lastToastAt.TryGetValue(kind, out float last) && now - last < seconds) return true;
+            lastToastAt[kind] = now;
+            return false;
         }
 
         // ------------------------------------------------------------------ girdi
