@@ -60,6 +60,32 @@ mergeInto(LibraryManager.library, {
     return state ? state.touch : 0;
   },
 
+  // Tuval pikseli / CSS pikseli. iOS'ta 1 CSS pikseli 1 noktadır: telefonda arayüz ölçeği fiziksel boyuta göre ayarlanır.
+  BusTycoon_CanvasScale: function () {
+    var canvas = Module.canvas;
+    if (!canvas) return 0;
+    var width = canvas.getBoundingClientRect().width;
+    return width > 0 ? canvas.width / width : 0;
+  },
+
+  // Çentik/ada ve ana ekran çubuğu için güvenli alan payı (CSS env(safe-area-inset-*)), tuval pikseli.
+  // side: 0 sol, 1 sağ, 2 üst, 3 alt. Ölçüm için görünmez bir kutu bir kez eklenir.
+  BusTycoon_SafeInset: function (side) {
+    var canvas = Module.canvas;
+    if (!canvas || !document.body) return 0;
+    var probe = Module.busTycoonSafeProbe;
+    if (!probe) {
+      probe = Module.busTycoonSafeProbe = document.createElement("div");
+      probe.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;" +
+        "padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)";
+      document.body.appendChild(probe);
+    }
+    var style = getComputedStyle(probe);
+    var value = parseFloat([style.paddingLeft, style.paddingRight, style.paddingTop, style.paddingBottom][side]) || 0;
+    var width = canvas.getBoundingClientRect().width;
+    return width > 0 ? value * canvas.width / width : 0;
+  },
+
   BusTycoon_WheelKind: function () {
     var state = Module.busTycoonWheel;
     return state ? state.kind : 0;

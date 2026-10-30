@@ -48,9 +48,13 @@ namespace BusTycoon.Game
 
         public float Unit => u;
 
-        public UIStyles(float unit)
+        /// <summary>Dokunmatik ekran için mi üretildi (kaydırıcı ve tutamacı parmakla tutulacak kadar büyük).</summary>
+        public bool Touch { get; }
+
+        public UIStyles(float unit, bool touch = false)
         {
             u = unit;
+            Touch = touch;
             LoadFonts();
             regular = regularFont != null ? regularFont : GUI.skin.font;
             heavy = heavyFont != null ? heavyFont : regular;
@@ -166,9 +170,10 @@ namespace BusTycoon.Game
             Toggle.onNormal.textColor = Toggle.onHover.textColor = Toggle.onActive.textColor = Text;
 
             // Dokunmatik ekranda tutulabilir kalın kaydırıcı: yuvarlak uçlu ray + beyaz halkalı turuncu tutamaç.
-            Slider = new GUIStyle(GUI.skin.horizontalSlider) { fixedHeight = Px(26), border = Offset(6, 6, 0, 0), margin = Offset(4, 4, 6, 6) };
+            int knob = Px(touch ? 36 : 26);
+            Slider = new GUIStyle(GUI.skin.horizontalSlider) { fixedHeight = knob, border = Offset(6, 6, 0, 0), margin = Offset(4, 4, 6, 6) };
             Slider.normal.background = Track(new Color(1f, 1f, 1f, 0.15f));
-            SliderThumb = new GUIStyle(GUI.skin.horizontalSliderThumb) { fixedWidth = Px(26), fixedHeight = Px(26), border = new RectOffset(0, 0, 0, 0) };
+            SliderThumb = new GUIStyle(GUI.skin.horizontalSliderThumb) { fixedWidth = knob, fixedHeight = knob, border = new RectOffset(0, 0, 0, 0) };
             SliderThumb.normal.background = SliderThumb.hover.background = Disc(Orange, Color.white, 0.2f);
             SliderThumb.active.background = Disc(AccentHover, Color.white, 0.2f);
 
