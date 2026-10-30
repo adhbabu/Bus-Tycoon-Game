@@ -47,10 +47,14 @@ namespace BusTycoon.Game
         Modal modal = Modal.None;
 
         // Ölçek: "u" = bir tasarım biriminin gerçek piksel karşılığı. Masaüstünde ekran yüksekliği 1000 birim,
-        // telefonda 620 birim (daha büyük düğme ve yazı), tablette 820 birim. Tüm çizim gerçek piksellerle yapılır.
+        // tablette kısa kenar 820 birim; telefonda ölçek fiziksel boyuta göredir (1 birim ≈ 0,82 nokta: yazılar
+        // ~12 pt, düğmeler ~36 pt). Tüm çizim gerçek piksellerle yapılır.
         float u = 1f;
-        bool compact;   // telefon düzeni: alt menü çubuğu, dar üst çubuk
+        bool compact;   // alt menü çubuğu düzeni (telefon, dikey tablet)
+        bool phone;     // küçük ekran (telefon): sade üst çubuk, tam boy paneller, kapalı mini harita, görev şeridi
         bool mobile;    // dokunmatik platform: hover yok, kısayol ipuçları yok, parmakla kaydırma
+        bool phoneDefaultsApplied;
+        const float PhonePointsPerUnit = 0.82f;
         float W = 1920f, H = 1080f;
         float SafeLeft, SafeRight = 1920f, SafeTop, SafeBottom; // çentik/ev çubuğu güvenli alanı (GUI koordinatı)
         readonly List<Rect> uiRects = new List<Rect>();
@@ -456,10 +460,10 @@ namespace BusTycoon.Game
                     }
                     else
                     {
-                        if (compact) DrawBottomBar();
-                        else DrawSideBar();
+                        if (BottomBarVisible) DrawBottomBar();
+                        else if (!compact) DrawSideBar();
                         DrawPanel();
-                        DrawZoomButtons();
+                        if (!phone) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
                         DrawMinimap();
                         DrawGoalWidget();
                         DrawRaceWidget();
@@ -490,45 +494,65 @@ namespace BusTycoon.Game
         void ComputeMetrics()
         {
             mobile = Application.isMobilePlatform || TouchInput.IsTouchPrimaryBrowser; // masaüstü kimlikli iPad dahil
-            float designHeight;
+            float shortSide = Mathf.Min(Screen.width, Screen.height);
+            float unit;
+            phone = false;
             if (!mobile)
             {
-                designHeight = 1000f;
-            }
-            else if (Application.platform == RuntimePlatform.WebGLPlayer)
-            {
-                // Tarayıcıda DPI güvenilmez; yatay telefon ekranı tabletten belirgin şekilde daha geniştir.
-                designHeight = Screen.width >= Screen.height * 1.7f ? 620f : 820f;
+                unit = Screen.height / 1000f;
             }
             else
             {
-                float dpi = Screen.dpi > 1f ? Screen.dpi : 96f;
-                designHeight = Screen.height / dpi < 4.2f ? 620f : 820f;
+                // Telefon mu tablet mi: kısa kenarın fiziksel boyuna göre (500 noktadan kısa = telefon)
+                float pixelsPerPoint = PixelsPerPoint();
+                phone = shortSide / pixelsPerPoint < 500f;
+                unit = phone ? pixelsPerPoint * PhonePointsPerUnit : shortSide / 820f;
             }
 
             switch (ProfileOverride)
             {
-                case DeviceProfile.Desktop: mobile = false; designHeight = 1000f; break;
-                case DeviceProfile.Phone: mobile = true; designHeight = 620f; break;
-                case DeviceProfile.Tablet: mobile = true; designHeight = 820f; break;
+                case DeviceProfile.Desktop: mobile = phone = false; unit = Screen.height / 1000f; break;
+                case DeviceProfile.Phone: mobile = phone = true; unit = shortSide / 540f; break;    // mağaza görüntüsü: uygulama tam ekran
+                case DeviceProfile.Tablet: mobile = true; phone = false; unit = shortSide / 820f; break;
             }
-            float unit = Mathf.Clamp(Mathf.Round(Screen.height / designHeight * 20f) / 20f, 0.5f, 4f);
+            unit = Mathf.Clamp(Mathf.Round(unit * 20f) / 20f, 0.5f, 4f);
 
-            if (s == null || !Mathf.Approximately(unit, u))
+            if (s == null || !Mathf.Approximately(unit, u) || s.Touch != mobile)
             {
                 u = unit;
                 s?.Dispose();
-                s = new UIStyles(u);
+                s = new UIStyles(u, mobile);
             }
 
-            compact = Screen.height / u < 700f;
+            // Telefonda harita alanı dar: mini harita kapalı başlar (oyuncu açabilir)
+            if (phone && !phoneDefaultsApplied)
+            {
+                phoneDefaultsApplied = true;
+                minimapCollapsed = true;
+            }
+
             W = Screen.width;
             H = Screen.height;
+            compact = phone || H / u < 700f || (mobile && H > W); // dikey tablette de alt menü
             Rect safe = Screen.safeArea;
             SafeLeft = safe.xMin;
             SafeRight = safe.xMax;
             SafeTop = H - safe.yMax;
             SafeBottom = safe.yMin;
+            // Tarayıcıda Unity güvenli alanı bilmez: Safari'nin çentik/ada ve ana ekran çubuğu payları uygulanır
+            SafeLeft = Mathf.Max(SafeLeft, WebScreen.InsetLeft);
+            SafeRight = Mathf.Min(SafeRight, W - WebScreen.InsetRight);
+            SafeTop = Mathf.Max(SafeTop, WebScreen.InsetTop);
+            SafeBottom = Mathf.Max(SafeBottom, WebScreen.InsetBottom);
+        }
+
+        /// <summary>Ekran pikseli başına nokta (iOS pt / Android dp; tarayıcıda CSS pikseli).</summary>
+        static float PixelsPerPoint()
+        {
+            float css = WebScreen.PixelsPerCssPixel;
+            if (css > 0.1f) return css;
+            float dpi = Screen.dpi > 1f ? Screen.dpi : 96f;
+            return dpi / (Application.platform == RuntimePlatform.WebGLPlayer ? 96f : 160f);
         }
 
         internal static DeviceProfile ParseProfile(string value)
@@ -542,12 +566,20 @@ namespace BusTycoon.Game
             }
         }
 
-        float Margin => 12f * u;
-        float TopBarHeight => 70f * u;
-        float BottomBarHeight => 66f * u;
-        float PanelWidth => compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.55f) : 490f * u;
+        float Margin => (phone ? 8f : 12f) * u;
+        float TopBarHeight => (phone ? 54f : 70f) * u;
+        float BottomBarHeight => (phone ? 58f : 66f) * u;
+        float PanelWidth => phone ? Mathf.Min(620f * u, (SafeRight - SafeLeft) * 0.62f)
+            : compact ? Mathf.Min(560f * u, (SafeRight - SafeLeft) * 0.58f) : 490f * u;
+        /// <summary>
+        /// Alt menü çubuğu görünür mü? Telefonda bir panel açıkken gizlenir: panel tam boy kullanır, harita solda
+        /// görünür kalır; menüye panel kapatılınca dönülür.
+        /// </summary>
+        bool BottomBarVisible => compact && mode == Mode.Playing && !StationUi && !(phone && panel != Panel.None);
         /// <summary>Harita/arayüz için kullanılabilir alanın alt sınırı (alt menü çubuğunun üstü).</summary>
-        float ContentBottom => H - SafeBottom - (compact && mode == Mode.Playing && !StationUi ? BottomBarHeight : 0f);
+        float ContentBottom => H - SafeBottom - (BottomBarVisible ? BottomBarHeight : 0f);
+        /// <summary>Üst çubuk sade mi (telefon, dikey tablet): itibar/hat/filo sütunları gösterilmez.</summary>
+        bool SlimTopBar => phone || (SafeRight - SafeLeft) / u < 1000f;
 
         Rect PanelRect
         {
@@ -594,7 +626,7 @@ namespace BusTycoon.Game
 
         Rect CurrentScrollArea()
         {
-            if (modal != Modal.None) return default;
+            if (modal != Modal.None) return phone ? ModalRect : default;
             switch (mode)
             {
                 case Mode.Playing: return StationUi || panel != Panel.None ? PanelRect : default;
@@ -1181,7 +1213,7 @@ namespace BusTycoon.Game
             GUILayout.BeginHorizontal();
             GUILayout.Label(title, s.H1);
             GUILayout.FlexibleSpace();
-            bool close = GUILayout.Button("×", s.Button, Wd(38f), Ht(36f));
+            bool close = GUILayout.Button("×", s.Button, Wd(phone ? 52f : 38f), Ht(phone ? 46f : 36f));
             GUILayout.EndHorizontal();
             if (!string.IsNullOrEmpty(subtitle)) GUILayout.Label(subtitle, s.Dim);
             Divider();

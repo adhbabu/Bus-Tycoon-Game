@@ -19,7 +19,8 @@
     #rotate { display: none; z-index: 10; }
     #rotate .phone { width: 46px; height: 78px; border: 4px solid var(--text); border-radius: 10px; animation: turn 2s ease-in-out infinite; }
     @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
-    @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+    /* Yalnız telefonda dikey uyarısı; tablet (iPad) dikeyde de oynanır */
+    @media (orientation: portrait) and (pointer: coarse) and (max-width: 599px) { #rotate { display: flex; } }
     #error { display: none; z-index: 20; }
     #error code { color: #ff9b8f; white-space: pre-wrap; max-width: 90vw; }
   </style>

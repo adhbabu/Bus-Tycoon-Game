@@ -19,13 +19,13 @@ namespace BusTycoon.Game
         float MinimapMapWidth => (compact ? 250f : 330f) * u;
         float MinimapMapHeight => MinimapMapWidth * world.MapBoundsXZ.height / Mathf.Max(1f, world.MapBoundsXZ.width);
         float MinimapPad => 8f * u;
-        float MinimapHeader => 30f * u;
+        float MinimapHeader => (phone ? 44f : 30f) * u; // telefonda parmakla açılacak kadar yüksek
 
         Rect MinimapRect
         {
             get
             {
-                float width = MinimapMapWidth + 2f * MinimapPad;
+                float width = phone && minimapCollapsed ? 150f * u : MinimapMapWidth + 2f * MinimapPad;
                 float height = MinimapHeader + (minimapCollapsed ? 0f : MinimapMapHeight + MinimapPad);
                 return new Rect(ContentLeft + Margin, ContentBottom - height - Margin, width, height);
             }
@@ -40,9 +40,11 @@ namespace BusTycoon.Game
             // Başlık: ikon + HARİTA + küçült/büyüt
             float iconSize = 16f * u;
             UIIcons.Draw(new Rect(rect.x + MinimapPad + 2f * u, rect.y + (MinimapHeader - iconSize) / 2f + 1f * u, iconSize, iconSize), UIIcon.Routes);
-            GUI.Label(new Rect(rect.x + MinimapPad + iconSize + 8f * u, rect.y + 7f * u, 160f * u, 18f * u), "HARİTA", s.StatLabel);
-            var toggle = new Rect(rect.xMax - MinimapPad - 30f * u, rect.y + 4f * u, 30f * u, 22f * u);
-            if (GUI.Button(toggle, minimapCollapsed ? "Büyüt" : "Küçült", s.IconOnly)) Defer(() => minimapCollapsed = !minimapCollapsed);
+            GUI.Label(new Rect(rect.x + MinimapPad + iconSize + 8f * u, rect.y + (MinimapHeader - 18f * u) / 2f, 160f * u, 18f * u), "HARİTA", s.StatLabel);
+            var toggle = new Rect(rect.xMax - MinimapPad - 30f * u, rect.y + (MinimapHeader - 22f * u) / 2f, 30f * u, 22f * u);
+            // Telefonda başlığın tamamı düğmedir (küçük işarete isabet etmek zor)
+            Rect hit = phone ? new Rect(rect.x, rect.y, rect.width, MinimapHeader) : toggle;
+            if (GUI.Button(hit, minimapCollapsed ? "Büyüt" : "Küçült", s.IconOnly)) Defer(() => minimapCollapsed = !minimapCollapsed);
             if (Event.current.type == EventType.Repaint)
             {
                 // Eksi / artı işareti (yazı tipinden bağımsız, her boyutta net)

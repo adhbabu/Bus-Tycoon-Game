@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BusTycoon.Core;
 using BusTycoon.Multiplayer;
+using BusTycoon.Progression;
 using UnityEngine;
 
 namespace BusTycoon.Game
@@ -31,21 +32,22 @@ namespace BusTycoon.Game
             int idle = 0;
             foreach (var bus in session.Fleet.Buses) if (!bus.IsAssigned) idle++;
 
-            float x = Mathf.Max(left, SafeLeft) + 20f * u;
-            GUILayout.BeginArea(new Rect(x, SafeTop + 9f * u, SafeRight - x - 16f * u, TopBarHeight - 14f * u));
+            float x = Mathf.Max(left, SafeLeft) + (phone ? 10f : 20f) * u;
+            float padTop = (phone ? 6f : 9f) * u;
+            GUILayout.BeginArea(new Rect(x, SafeTop + padTop, SafeRight - x - (phone ? 6f : 16f) * u, TopBarHeight - padTop - 5f * u));
             GUILayout.BeginHorizontal();
 
-            // Şirket ve seviye
-            GUILayout.BeginVertical(Wd(N(220f, 170f)));
-            GUILayout.Label($"ŞİRKET · SEVİYE {progression.Level}", s.StatLabel);
-            GUILayout.Label(state.companyName, s.Value);
-            LayoutBar(progression.LevelProgress01, UIStyles.Orange, 5f, N(180f, 140f), 2f);
+            // Şirket ve seviye (telefonda başlık yerine yalnız seviye)
+            GUILayout.BeginVertical(Wd(phone ? 150f : N(220f, 170f)));
+            GUILayout.Label(phone ? $"SEVİYE {progression.Level}" : $"ŞİRKET · SEVİYE {progression.Level}", s.StatLabel);
+            GUILayout.Label(state.companyName, phone ? s.Bold : s.Value);
+            LayoutBar(progression.LevelProgress01, UIStyles.Orange, 5f, phone ? 120f : N(180f, 140f), 2f);
             GUILayout.EndVertical();
             Sp(N(16f, 8f));
 
             // Kasa: parlak yeşil (eksideyse kırmızı), yanında dünkü net
-            GUILayout.BeginVertical(Wd(N(270f, 215f)));
-            GUILayout.Label("ŞİRKET KASASI", s.StatLabel);
+            GUILayout.BeginVertical(Wd(phone ? 250f : N(270f, 215f)));
+            if (!phone) GUILayout.Label("ŞİRKET KASASI", s.StatLabel);
             GUILayout.BeginHorizontal();
             MoneyLabel(cash);
             GUILayout.BeginVertical();
@@ -66,9 +68,16 @@ namespace BusTycoon.Game
 
             GUILayout.FlexibleSpace();
 
-            // Tarih ve hız
+            // Tarih ve hız (telefonda tek satırda)
+            if (phone)
+            {
+                GUILayout.BeginVertical();
+                Sp(7f);
+                GUILayout.BeginHorizontal();
+            }
             GUILayout.BeginVertical();
-            GUILayout.Label("TARİH", s.StatLabel);
+            if (!phone) GUILayout.Label("TARİH", s.StatLabel);
+            else Sp(5f);
             GUILayout.BeginHorizontal();
             DayNightCycle cycle = DayNightCycle.Instance;
             if (cycle != null && cycle.Enabled)
@@ -85,8 +94,9 @@ namespace BusTycoon.Game
             GUILayout.Label(SimulationClock.FormatDate(state.currentDay), s.Bold);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
+            Sp(phone ? 6f : 0f);
             GUILayout.BeginVertical();
-            Sp(9f);
+            if (!phone) Sp(9f);
             GUILayout.BeginHorizontal();
             if (RaceLocked)
             {
@@ -104,10 +114,36 @@ namespace BusTycoon.Game
             }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
+            if (phone)
+            {
+                GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
+            }
 
             GUILayout.FlexibleSpace();
 
-            // İtibar, hatlar, filo
+            // İtibar, hatlar, filo (sade üst çubukta yok: Hatlarım ve Filo panellerinde)
+            if (!SlimTopBar) DrawTopBarStats(progression, idle);
+
+            // Telefonda menü düğmesi burada (masaüstünde sol menünün altında)
+            if (compact)
+            {
+                GUILayout.BeginVertical();
+                Sp(phone ? 0f : 4f);
+                if (IconButton(UIIcon.Settings, "Menü", phone ? 42f : 46f)) Defer(OpenPauseMenu);
+                GUILayout.EndVertical();
+            }
+
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
+
+            // Günün ilerleyişi: gösterge panelinin altında ince turuncu çizgi
+            if (Event.current.type == EventType.Repaint)
+                DrawRect(new Rect(bar.x, SafeTop + TopBarHeight - 2f * u, bar.width * session.Clock.DayProgress01, 2f * u), new Color(1f, 0.57f, 0f, 0.8f));
+        }
+
+        void DrawTopBarStats(ProgressionSystem progression, int idle)
+        {
             GUILayout.BeginVertical(Wd(N(96f, 82f)));
             GUILayout.Label("İTİBAR", s.StatLabel);
             GUILayout.BeginHorizontal();
@@ -128,22 +164,6 @@ namespace BusTycoon.Game
             if (!Narrow || idle > 0) ColorLabel(Narrow ? $"{idle} boşta" : $"otobüs · {idle} garajda", idle > 0 ? UIStyles.Orange : UIStyles.DimText, s.Small);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
-
-            // Telefonda menü düğmesi burada (masaüstünde sol menünün altında)
-            if (compact)
-            {
-                GUILayout.BeginVertical();
-                Sp(4f);
-                if (IconButton(UIIcon.Settings, "Menü", 46f)) Defer(OpenPauseMenu);
-                GUILayout.EndVertical();
-            }
-
-            GUILayout.EndHorizontal();
-            GUILayout.EndArea();
-
-            // Günün ilerleyişi: gösterge panelinin altında ince turuncu çizgi
-            if (Event.current.type == EventType.Repaint)
-                DrawRect(new Rect(bar.x, SafeTop + TopBarHeight - 2f * u, bar.width * session.Clock.DayProgress01, 2f * u), new Color(1f, 0.57f, 0f, 0.8f));
         }
 
         /// <summary>Kasa: büyük, parlak yeşil; çevresine aynı rengin saydam kopyaları çizilerek hafif parıltı verilir.</summary>
@@ -166,7 +186,7 @@ namespace BusTycoon.Game
         void SpeedButton(string label, int speed)
         {
             bool active = session.Clock.Speed == speed;
-            if (GUILayout.Button(label, active ? s.SpeedButtonActive : s.SpeedButton, Ht(32f)))
+            if (GUILayout.Button(label, active ? s.SpeedButtonActive : s.SpeedButton, Ht(phone ? 36f : 32f)))
                 session.Clock.SetSpeed(speed);
         }
 
@@ -259,15 +279,18 @@ namespace BusTycoon.Game
 
             NavEntry[] entries = NavEntries;
             int count = 0;
-            foreach (var entry in entries) if (entry.Target != Panel.Log) count++;
+            foreach (var entry in entries) if (InBottomBar(entry)) count++;
             float x = SafeLeft + 6f * u, width = (SafeRight - SafeLeft - 12f * u) / count;
             foreach (var entry in entries)
             {
-                if (entry.Target == Panel.Log) continue; // telefonda Günlük, Görevler panelinden açılır
-                NavItem(new Rect(x + 2f * u, bar.y + 4f * u, width - 4f * u, BottomBarHeight - 8f * u), entry, 24f);
+                if (!InBottomBar(entry)) continue;
+                NavItem(new Rect(x + 2f * u, bar.y + 4f * u, width - 4f * u, BottomBarHeight - 8f * u), entry, phone ? 22f : 24f);
                 x += width;
             }
         }
+
+        /// <summary>Alt çubukta Günlük yok (Görevler panelinden ve menüden açılır); telefonda Yardım da menüdedir.</summary>
+        bool InBottomBar(NavEntry entry) => entry.Target != Panel.Log && !(phone && entry.Target == Panel.Help);
 
         void NavItem(Rect rect, NavEntry entry, float iconSize)
         {
@@ -303,6 +326,11 @@ namespace BusTycoon.Game
             GoalTracker.Goal goal = goals.Current;
             if (goal == null) return;
             if (compact && panel != Panel.None) return; // telefonda harita alanı dar; panel açıkken gizle
+            if (phone)
+            {
+                DrawGoalChip(goal);
+                return;
+            }
 
             float width = 400f * u, height = 108f * u;
             var rect = new Rect(MinimapRect.xMax + Margin, ContentBottom - height - Margin, width, height); // mini haritanın sağında
@@ -319,6 +347,26 @@ namespace BusTycoon.Game
             GUI.Label(new Rect(textX, rect.y + 52f * u, inner, 48f * u), goal.Hint, s.WrapDim);
 
             if (GUI.Button(new Rect(rect.xMax - 78f * u, rect.y + 8f * u, 68f * u, 28f * u), "Tümü", s.TabActive)) Defer(() => OpenPanelNow(Panel.Goals));
+        }
+
+        /// <summary>Telefonda görev kartı yerine tek satırlık şerit; dokununca Görevler paneli açılır.</summary>
+        void DrawGoalChip(GoalTracker.Goal goal)
+        {
+            float height = 44f * u;
+            float left = MinimapRect.xMax + Margin;
+            float width = Mathf.Min(460f * u, SafeRight - Margin - left);
+            if (width < 200f * u) return;
+            var rect = new Rect(left, ContentBottom - height - Margin, width, height);
+            uiRects.Add(rect);
+            GUI.Box(rect, GUIContent.none, s.Panel);
+            if (GUI.Button(rect, "Görevler", s.IconOnly)) Defer(() => OpenPanelNow(Panel.Goals)); // yazı saydam: şeridin tamamı düğme
+            float icon = 24f * u;
+            UIIcons.Draw(new Rect(rect.x + 12f * u, rect.center.y - icon / 2f, icon, icon), UIIcon.Goals);
+            float textX = rect.x + 12f * u + icon + 10f * u;
+            GUI.Label(new Rect(textX, rect.y + 4f * u, rect.xMax - textX - 30f * u, 16f * u),
+                $"GÖREV {goals.CompletedCount + 1}/{goals.Goals.Count}" + (goal.Reward > 0 ? $"  ·  ÖDÜL {Fmt.Money(goal.Reward)}" : ""), s.StatLabel);
+            GUI.Label(new Rect(textX, rect.y + 19f * u, rect.xMax - textX - 30f * u, 22f * u), goal.Title, s.Bold);
+            GUI.Label(new Rect(rect.xMax - 26f * u, rect.y, 20f * u, rect.height), "›", s.H2);
         }
 
         /// <summary>Hap biçimli bildirimler: yeşil = başarı (siyah yazı), kırmızı = hata, diğerleri koyu; başta ikon.</summary>

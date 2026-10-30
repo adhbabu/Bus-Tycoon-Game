@@ -312,27 +312,46 @@ para ödülü verir.
 
 ## 4.12 Mobil düzen (telefon / tablet)
 
-Oynanabilir arayüz (`GameUI`) çizimi gerçek piksellerle yapar; bir tasarım birimi `u` piksele denk gelir:
-masaüstünde ekran yüksekliği 1000 birim, **telefonda 620 birim** (daha büyük yazı ve düğme), tablette 820 birim.
+Oynanabilir arayüz (`GameUI`) çizimi gerçek piksellerle yapar; bir tasarım birimi `u` piksele denk gelir.
 GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce bulanıklaşır.
 
-| Öğe | Masaüstü / tablet | Telefon (`compact`) |
-|---|---|---|
-| Ana menü | solda dikey araç çubuğu | **altta yatay menü çubuğu** (başparmak erişimi) |
-| Yan panel | 490 birim | ekranın en fazla %55'i (harita solda dokunulabilir kalır) |
-| Görev kutusu | sol alt | panel açıkken gizlenir |
-| Hover ipucu | var | yok (dokunmatikte hover olmaz) |
-| Kısayol ipuçları "[N]" | var | yok |
-| Kaydırma | tekerlek (dokunmatik ekranda parmakla da) | panel içinde parmakla sürükleme (kaydırıcı üstünde değilse) |
-| Yakınlaştırma | tekerlek, Q/E, +/- | iki parmak (pinch) ve ekrandaki +/- |
-| Geri | Esc | Android geri tuşu |
+* **Masaüstü:** ekran yüksekliği 1000 birim.
+* **Tablet:** kısa kenar 820 birim (yatayda ve dikeyde aynı ölçek).
+* **Telefon:** ölçek **fiziksel boyuta** göre: 1 birim ≈ 0,82 nokta (iOS pt / Android dp). Gövde yazısı ~12 pt,
+  düğmeler ~36 pt. Eski "ekran yüksekliği 620 birim" kuralı yatay iPhone Safari'de (≈340 pt yükseklik) her şeyi
+  ~0,55 ölçeğe küçültüyordu (7 pt yazı, 13 pt kaydırıcı). Telefon/tablet ayrımı kısa kenarın nokta cinsinden boyuna
+  göredir (500 pt altı telefon). Tarayıcıda nokta ölçüsü tuvalin piksel/CSS piksel oranından okunur (`WebScreen`).
 
-Web'de iPadOS Safari kendini masaüstü Mac olarak tanıttığı için Unity iPad'i mobil saymaz; tarayıcıdan
+| Öğe | Masaüstü / yatay tablet | Telefon (`phone`) | Dikey tablet |
+|---|---|---|---|
+| Menü | solda dikey araç çubuğu | altta 7 öğe (Yardım ve Günlük Menü'de); **panel açıkken gizli** | altta 8 öğe |
+| Üst çubuk | şirket, kasa, tarih+hız, itibar, hat, filo | sade: seviye+şirket, kasa, tarih ve hız tek satırda, Menü | sade (itibar/hat/filo yok) |
+| Yan panel | 490 birim | güvenli alanın %62'si, **tam boy** (harita solda dokunulabilir) | %58 |
+| Mini harita | açık | **kapalı başlar**; başlığın tamamı açma düğmesi | açık |
+| Görev | kart (sol alt) | tek satırlık şerit; dokununca Görevler | kart |
+| Ana menü | dikey | **yan yana**: solda başlık, sağda düğmeler | dikey |
+| Pencereler (Menü vb.) | sabit | parmakla kaydırılır | sabit |
+| Kapat (×), kaydırıcı | 38×36, 26 birim | 52×46, 36 birim | 38×36, 36 birim |
+| Yakınlaştırma | tekerlek, Q/E, +/- | iki parmak (pinch); +/- düğmeleri yok | pinch ve +/- |
+| Hover ipucu, "[N]" kısayol ipucu | var | yok | yok |
+| Geri | Esc | Android geri tuşu | — |
+
+**Güvenli alan:** Unity WebGL `Screen.safeArea` ile tüm ekranı verir. Safari'nin çentik/ada ve ana ekran çubuğu
+payları CSS `env(safe-area-inset-*)` ile okunur (`BusTycoonInput.jslib` → `WebScreen`) ve arayüze uygulanır
+(sayfa `viewport-fit=cover`). Yerel uygulamada `Screen.safeArea` kullanılır.
+
+**Yön:** telefonda dikey tutulunca "yan çevirin" uyarısı çıkar (genişlik < 600 CSS px). iPad dikeyde de oynanır:
+alt menü, sade üst çubuk.
+
+**iPad:** iPadOS Safari kendini masaüstü Mac olarak tanıttığı için Unity iPad'i mobil saymaz. Tarayıcıdan
 `(pointer: coarse)` ve dokunma noktası olan "Macintosh" kimliği okunur (`TouchInput.IsTouchPrimaryBrowser`) ve iPad
 tablet düzeniyle açılır. Basış parmakla yapıldıysa (`TouchInput.LastPressWasTouch`) panel her cihazda parmakla kayar.
 
-Ayrıca: `Screen.safeArea` ile çentik ve ev çubuğu boşlukları, dar ekranlarda (4:3 tablet) daralan üst çubuk sütunları,
-iOS'ta "Çıkış" düğmesi gizli (Apple kuralı), arka plana alınınca (`OnApplicationPause`) otomatik kayıt.
+**Diğer:**
+* iOS'ta "Çıkış" düğmesi gizli (Apple kuralı).
+* Arka plana alınınca (`OnApplicationPause`) otomatik kayıt yapılır.
+* Arayüz testinde iPhone/iPad Safari profilleri (`iphone-web`, `ipad-web`, `ipad-dikey`) her karede tüm alanların
+  ekranda, panellerin güvenli alanda kaldığını denetler.
 
 ## 4.13 Unity sahne kurulumu (yalnızca uGUI/prefab yolu için)
 

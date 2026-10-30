@@ -57,12 +57,17 @@ namespace BusTycoon.Game
             {
                 if (showMenuHelp) return CenteredBox(560f, 600f);
                 int buttons = 4 + (session.IsRunning && !session.IsBankrupt ? 1 : 0) + (CanQuit ? 1 : 0);
+                if (phone) return CenteredBox(840f, 92f + 54f * buttons + 40f); // yatay telefon: solda başlık, sağda düğmeler
                 return CenteredBox(560f, (compact ? 300f : 335f) + 56f * buttons);
             }
         }
 
         Rect NewGameRect => new Rect(SafeLeft + Margin, SafeTop + Margin,
             Mathf.Min(470f * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
+
+        Rect ModalRect => CenteredBox(480f, 470f);
+        Vector2 modalScroll;
+        Modal scrolledModal;
 
         /// <summary>Güvenli alanın ortasında, ekrana sığacak şekilde küçültülen kutu.</summary>
         Rect CenteredBox(float widthUnits, float heightUnits)
@@ -81,6 +86,27 @@ namespace BusTycoon.Game
             uiRects.Add(box);
             GUILayout.BeginArea(box, s.Modal);
 
+            if (phone && !showMenuHelp)
+            {
+                // Yatay telefon: ekran kısa, geniş; başlık solda, düğmeler sağda (kaydırmasız sığar)
+                GUILayout.BeginHorizontal();
+                GUILayout.BeginVertical(Wd(300f));
+                GUILayout.FlexibleSpace();
+                DrawMascot(70f);
+                ColorLabel("Otobüs İmparatoru", UIStyles.Orange, s.Big);
+                GUILayout.Label("Bus Tycoon · otobüs şirketini kur, büyüt!", s.WrapDim);
+                GUILayout.FlexibleSpace();
+                GUILayout.Label("Harita: Natural Earth · Şehirler: GeoNames · Simgeler: Twemoji · Yazı tipi: Inter", s.WrapDim);
+                GUILayout.EndVertical();
+                Sp(16f);
+                GUILayout.BeginVertical();
+                DrawMainMenuButtons();
+                GUILayout.EndVertical();
+                GUILayout.EndHorizontal();
+                GUILayout.EndArea();
+                return;
+            }
+
             DrawMascot(compact ? 78f : 108f);
             GUILayout.Label("Otobüs İmparatoru", s.Title);
             GUILayout.Label("Bus Tycoon · otobüs şirketini kur, büyüt!", s.Center);
@@ -95,29 +121,34 @@ namespace BusTycoon.Game
             }
             else
             {
-                if (session.IsRunning && !session.IsBankrupt &&
-                    GUILayout.Button($"Oyuna Dön  ({session.State.companyName})", s.Primary, Ht(50f)))
-                    Defer(ResumeFromMenu);
-
-                if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, Ht(50f)))
-                    Defer(BeginNewGame);
-
-                if (GUILayout.Button("Çok Oyunculu  (Blitz · Normal)", s.Button, Ht(46f)))
-                    Defer(OpenMultiplayer);
-
-                string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
-                if (EnabledButton(latestSaveSlot != null, continueText, s.Button, Ht(46f)))
-                    Defer(() => LoadSlot(latestSaveSlot));
-
-                if (GUILayout.Button("Nasıl Oynanır?", s.Button, Ht(46f))) Defer(() => showMenuHelp = true);
-                if (CanQuit && GUILayout.Button("Çıkış", s.Button, Ht(46f))) Defer(QuitGame);
-                Sp(4f);
-                DrawSoundToggle();
+                DrawMainMenuButtons();
             }
 
             GUILayout.FlexibleSpace();
             GUILayout.Label("Harita: Natural Earth · Şehirler: GeoNames (CC BY 4.0) · Simgeler: Twemoji (CC BY 4.0) · Yazı tipi: Inter (SIL OFL)", s.WrapDim);
             GUILayout.EndArea();
+        }
+
+        void DrawMainMenuButtons()
+        {
+            if (session.IsRunning && !session.IsBankrupt &&
+                GUILayout.Button($"Oyuna Dön  ({session.State.companyName})", s.Primary, Ht(50f)))
+                Defer(ResumeFromMenu);
+
+            if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, Ht(50f)))
+                Defer(BeginNewGame);
+
+            if (GUILayout.Button("Çok Oyunculu  (Blitz · Normal)", s.Button, Ht(46f)))
+                Defer(OpenMultiplayer);
+
+            string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
+            if (EnabledButton(latestSaveSlot != null, continueText, s.Button, Ht(46f)))
+                Defer(() => LoadSlot(latestSaveSlot));
+
+            if (GUILayout.Button("Nasıl Oynanır?", s.Button, Ht(46f))) Defer(() => showMenuHelp = true);
+            if (CanQuit && GUILayout.Button("Çıkış", s.Button, Ht(46f))) Defer(QuitGame);
+            Sp(4f);
+            DrawSoundToggle();
         }
 
         void DrawSoundToggle()
@@ -334,8 +365,15 @@ namespace BusTycoon.Game
             uiRects.Add(full);
             if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0.02f, 0.03f, 0.1f, 0.55f));
 
-            var box = CenteredBox(480f, 470f);
+            var box = ModalRect;
+            if (modal != scrolledModal)
+            {
+                scrolledModal = modal;
+                modalScroll = Vector2.zero;
+            }
             GUILayout.BeginArea(box, s.Modal);
+            // Telefonda kutu ekrana sığmayabilir: içerik parmakla kaydırılır
+            if (phone) modalScroll = BeginScroll(modalScroll);
             switch (modal)
             {
                 case Modal.Pause: DrawPauseModal(); break;
@@ -344,6 +382,7 @@ namespace BusTycoon.Game
                 case Modal.Confirm: DrawConfirmModal(); break;
                 case Modal.MatchEnd: DrawMatchEndModal(); break;
             }
+            if (phone) GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
@@ -356,6 +395,8 @@ namespace BusTycoon.Game
             if (GUILayout.Button("Kaydet", s.Button, Ht(40f))) Defer(() => SaveTo(SaveSlot));
             if (compact && GUILayout.Button("Günlük (son olaylar)", s.Button, Ht(40f)))
                 Defer(() => { ClosePauseMenu(); OpenPanelNow(Panel.Log); });
+            if (phone && GUILayout.Button("Nasıl Oynanır? (yardım)", s.Button, Ht(40f)))
+                Defer(() => { ClosePauseMenu(); OpenPanelNow(Panel.Help); });
             if (race)
             {
                 if (GUILayout.Button("Yarıştan Çık (tek başına devam)", s.Danger, Ht(40f)))
