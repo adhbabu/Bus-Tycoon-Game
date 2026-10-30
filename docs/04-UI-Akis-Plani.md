@@ -317,8 +317,8 @@ GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce 
 
 * **Masaüstü:** ekran yüksekliği 1000 birim.
 * **Tablet:** kısa kenar 820 birim (yatayda ve dikeyde aynı ölçek).
-* **Telefon:** ölçek **fiziksel boyuta** göre: 1 birim ≈ 0,82 nokta (iOS pt / Android dp). Gövde yazısı ~12 pt,
-  düğmeler ~36 pt. Eski "ekran yüksekliği 620 birim" kuralı yatay iPhone Safari'de (≈340 pt yükseklik) her şeyi
+* **Telefon:** ölçek **fiziksel boyuta** göre: 1 birim ≈ 0,78 nokta (iOS pt / Android dp). Gövde yazısı ~11 pt,
+  düğmeler ~34 pt. Eski "ekran yüksekliği 620 birim" kuralı yatay iPhone Safari'de (≈340 pt yükseklik) her şeyi
   ~0,55 ölçeğe küçültüyordu (7 pt yazı, 13 pt kaydırıcı). Telefon/tablet ayrımı kısa kenarın nokta cinsinden boyuna
   göredir (500 pt altı telefon). Tarayıcıda nokta ölçüsü tuvalin piksel/CSS piksel oranından okunur (`WebScreen`).
 
@@ -326,7 +326,7 @@ GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce 
 |---|---|---|---|
 | Menü | solda dikey araç çubuğu | altta 7 öğe (Yardım ve Günlük Menü'de); **panel açıkken gizli** | altta 8 öğe |
 | Üst çubuk | şirket, kasa, tarih+hız, itibar, hat, filo | sade: seviye+şirket, kasa, tarih ve hız tek satırda, Menü | sade (itibar/hat/filo yok) |
-| Yan panel | 490 birim | güvenli alanın %62'si, **tam boy** (harita solda dokunulabilir) | %58 |
+| Yan panel | 490 birim | en fazla 490 birim ve güvenli alanın %52'si, **tam boy** (haritanın yarıdan fazlası görünür) | %54 |
 | Mini harita | açık | **kapalı başlar**; başlığın tamamı açma düğmesi | açık |
 | Görev | kart (sol alt) | tek satırlık şerit; dokununca Görevler | kart |
 | Ana menü | dikey | **yan yana**: solda başlık, sağda düğmeler | dikey |
@@ -335,6 +335,18 @@ GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce 
 | Yakınlaştırma | tekerlek, Q/E, +/- | iki parmak (pinch); +/- düğmeleri yok | pinch ve +/- |
 | Hover ipucu, "[N]" kısayol ipucu | var | yok | yok |
 | Geri | Esc | Android geri tuşu | — |
+
+**Bildirimler:** haritanın görünen kısmında (panel açıksa solunda) ortalanır; telefonda 36 birim yüksek, en fazla 2
+tane (masaüstünde 3).
+* **Süre:** oyuncunun kendi işleminin onayı (yeşil) telefonda 2,5 sn, uyarı ve başarılar 4,5 sn kalır.
+* **Birleştirme:** aynı metin 12 sn içinde tekrar gelirse yeni bildirim açılmaz, sayısı artar ("×3").
+* **Yalnız Günlük'e yazılanlar** (eylem gerektirmeyen olaylar):
+  * bakım asistanının günlük özeti;
+  * asistan açıkken otobüs arızaları (asistan onarır);
+  * kârlı ay sonu.
+* **Seyreltme** (gerçek zamana göre; 4x hızda ekran dolmasın):
+  * aynı türden uyarı en çok 10–45 sn'de bir gösterilir;
+  * sınırda gidip gelen bir hat en çok 20 günde bir uyarır.
 
 **Güvenli alan:** Unity WebGL `Screen.safeArea` ile tüm ekranı verir. Safari'nin çentik/ada ve ana ekran çubuğu
 payları CSS `env(safe-area-inset-*)` ile okunur (`BusTycoonInput.jslib` → `WebScreen`) ve arayüze uygulanır

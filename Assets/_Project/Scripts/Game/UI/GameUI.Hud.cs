@@ -373,33 +373,47 @@ namespace BusTycoon.Game
             GUI.Label(new Rect(rect.xMax - 26f * u, rect.y, 20f * u, rect.height), "›", s.H2);
         }
 
-        /// <summary>Hap biçimli bildirimler: yeşil = başarı (siyah yazı), kırmızı = hata, diğerleri koyu; başta ikon.</summary>
+        /// <summary>
+        /// Hap biçimli bildirimler: yeşil = başarı (siyah yazı), kırmızı = hata, diğerleri koyu; başta ikon.
+        /// Haritanın görünen kısmında (panel açıksa onun solunda) ortalanır; telefonda küçük ve en fazla iki tane.
+        /// </summary>
         void DrawToasts()
         {
-            notes.GetActive(6f, 4, activeToasts);
-            float maxWidth = Mathf.Min(620f * u, SafeRight - ContentLeft - 2f * Margin);
-            float y = SafeTop + TopBarHeight + 14f * u;
+            notes.GetActive(phone ? 2 : 3, activeToasts);
+            if (activeToasts.Count == 0) return;
+
+            float left = ContentLeft + Margin;
+            float right = (panel != Panel.None && !StationUi ? PanelRect.x : SafeRight) - Margin;
+            if (right - left < 260f * u)
+            {
+                left = ContentLeft + Margin;
+                right = SafeRight - Margin;
+            }
+            float maxWidth = Mathf.Min((phone ? 460f : 620f) * u, right - left);
+            float icon = (phone ? 16f : 20f) * u, height = (phone ? 36f : 44f) * u, pad = (phone ? 14f : 20f) * u;
+            float y = SafeTop + TopBarHeight + (phone ? 8f : 14f) * u;
 
             foreach (var toast in activeToasts)
             {
                 float age = Time.unscaledTime - toast.Time;
-                float alpha = Mathf.Clamp01(Mathf.Min(age * 6f, (6f - age) * 2f));
+                float alpha = Mathf.Clamp01(Mathf.Min(age * 6f, (toast.Duration - age) * 2f));
                 float slide = (1f - Mathf.Clamp01(age * 4f)) * -16f * u; // yukarıdan kayarak gelir
 
                 GUIStyle box = s.ToastBox(toast.Color);
                 GUIStyle text = box == s.ToastSuccessBox ? s.ToastDarkText : s.ToastText;
-                ToastContent.text = toast.Text;
-                float icon = 20f * u, height = 44f * u;
-                float width = Mathf.Min(maxWidth, text.CalcSize(ToastContent).x + icon + 52f * u);
-                var rect = new Rect(ContentLeft + (SafeRight - ContentLeft - width) * 0.5f, y + slide, width, height);
+                string message = toast.Display;
+                ToastContent.text = message;
+                float width = Mathf.Min(maxWidth, text.CalcSize(ToastContent).x + icon + 2.6f * pad);
+                var rect = new Rect(left + (right - left - width) * 0.5f, y + slide, width, height);
 
                 Color previous = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
                 GUI.Box(rect, GUIContent.none, box);
-                UIIcons.Draw(new Rect(rect.x + 20f * u, rect.center.y - icon / 2f, icon, icon), ToastIcon(toast.Color));
-                GUI.Label(new Rect(rect.x + 20f * u + icon + 10f * u, rect.y + 11f * u, rect.width - icon - 50f * u, 24f * u), toast.Text, text);
+                UIIcons.Draw(new Rect(rect.x + pad, rect.center.y - icon / 2f, icon, icon), ToastIcon(toast.Color));
+                float textX = rect.x + pad + icon + 8f * u;
+                GUI.Label(new Rect(textX, rect.center.y - 12f * u, rect.xMax - pad - textX, 24f * u), message, text);
                 GUI.color = previous;
-                y += height + 10f * u;
+                y += height + (phone ? 6f : 10f) * u;
             }
         }
 

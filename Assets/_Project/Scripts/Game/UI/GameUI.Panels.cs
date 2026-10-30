@@ -718,7 +718,7 @@ namespace BusTycoon.Game
                 LayoutIcon(ToastIcon(log[i].Color), 16f, 3f);
                 Sp(4f);
                 GUILayout.Label($"Gün {log[i].Day + 1}", s.Small, Wd(64f));
-                ColorLabel(log[i].Text, log[i].Color, s.Wrap);
+                ColorLabel(log[i].Display, log[i].Color, s.Wrap);
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndScrollView();
