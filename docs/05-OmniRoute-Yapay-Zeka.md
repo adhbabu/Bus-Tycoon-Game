@@ -115,6 +115,35 @@ setx ANTHROPIC_AUTH_TOKEN "ANAHTARINIZ"
 
 ---
 
+## 3b. Token tasarrufu ve ücretsiz kotalar
+
+**Sıkıştırma (geliştirici bilgisayarında açık):** Panel → Bağlam → Sıkıştırma. Ayar: ana anahtar AÇIK,
+varsayılan mod `stacked` (RTK → Caveman), 32.000 token üstü isteklerde otomatik `stacked`, sistem talimatı korunur,
+yanıtlar kısa çıktı modunda. Önizlemede 120 satırlık test çıktısı 1.608 → 32 token'a indi.
+Dikkat: RTK başarılı satırlarla birlikte bazı ayrıntıları da atabilir (örnekte "Expected 42, received 41" satırı
+düştü). Araç hata ayıklarken bocalarsa modu `lite` yapın:
+
+```bash
+curl -X PUT http://localhost:20128/api/settings/compression -H "Content-Type: application/json" -d '{"defaultMode":"lite"}'
+```
+
+**"Ayda ~1,6 milyar ücretsiz token"**, OmniRoute'un verdiği bir kota değildir: her sağlayıcının ücretsiz katmanının
+toplamıdır ve her biri için ayrı hesap gerekir. Resmî ve tekrarlayan kotası olanlar (Panel → Sağlayıcılar → ara):
+
+| Sağlayıcı | Anahtar | Not |
+|---|---|---|
+| Google Gemini | https://aistudio.google.com/apikey | Proje başına hız sınırı |
+| Groq | https://console.groq.com/keys | ~15M token/ay |
+| GitHub Models | GitHub → Settings → Developer settings → Personal access tokens | ~18M token/ay |
+| Cloudflare Workers AI | Cloudflare hesabı → AI → API token | ~30M token/ay |
+| OpenRouter (`:free` modeller) | https://openrouter.ai/keys | İstek sınırlı |
+
+Hepsini bağlayıp model olarak `auto` kullanınca OmniRoute kotası biteni atlayıp sıradakine geçer.
+
+**Claude Code'u OmniRoute'tan geçirmek:** `Belgeler\OmniRoute\claude-code-omniroute-kur.cmd` Claude Code'u kurar,
+OmniRoute anahtarını sorar ve `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` ayarlarını yapar.
+`claude-code-omniroute-kaldir.cmd` geri alır.
+
 ## 4. Web (WebGL) sürümü
 
 https://adhbabu.github.io/Bus-Tycoon-Game/oyna/ tarayıcıda açıldığında istek tarayıcıdan gider, bu yüzden
