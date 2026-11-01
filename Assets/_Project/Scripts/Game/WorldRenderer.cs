@@ -24,14 +24,19 @@ namespace BusTycoon.Game
         {
             public CityData City;
             public Vector3 Position;
-            public Material Material;
+            /// <summary>Durak modelinin malzemeleri; çatı (vurgu) katmanı renge göre paylaşılan malzemedir.</summary>
+            public MeshRenderer Renderer;
+            public Material[] Materials;
+            public int AccentIndex = -1;
+            public Color AccentColor;
             public Transform Root;
             /// <summary>İşaretin tepesi (ölçeklenmeden önce); şehir adı bunun üstüne yazılır.</summary>
             public float Height;
             /// <summary>Merkez ofis bayrağı (yalnız merkezde görünür).</summary>
             public GameObject Flag;
-            /// <summary>Üzerine gelince / seçilince hafifçe büyüme (1 = normal).</summary>
+            /// <summary>Üzerine gelince / seçilince hafifçe büyüme (1 = normal); yaylı: hızlanır, hafifçe taşar, oturur.</summary>
             public float Bump = 1f;
+            public float BumpVelocity;
         }
 
         sealed class RouteVisual
@@ -41,6 +46,8 @@ namespace BusTycoon.Game
             public Vector3[] Points;
             public float[] Cumulative;
             public float TripSeconds;
+            /// <summary>Yeni açılan hat kalkıştan varışa doğru çizilerek belirir (0..1; 1 = tam).</summary>
+            public float Reveal = 1f;
             public readonly List<BusToken> Tokens = new List<BusToken>();
         }
 
@@ -144,7 +151,11 @@ namespace BusTycoon.Game
         float markerScale = 1f;
         readonly List<Vector3> roadVertices = new List<Vector3>();
         readonly List<Color> roadVertexColors = new List<Color>();
+        readonly List<Vector2> roadOffsets = new List<Vector2>();
         readonly List<int> roadIndices = new List<int>();
+        /// <summary>Kalınlık gölgelendiricide (BusTycoon/MapRoads): ağ bir kez örülür. Gölgelendirici yoksa eski yol.</summary>
+        bool roadWidthInShader;
+        static readonly int WidthScaleId = Shader.PropertyToID("_WidthScale");
 
         RouteSystem boundRoutes;
         FleetSystem boundFleet;
@@ -322,7 +333,7 @@ namespace BusTycoon.Game
             beamMesh.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) };
             beamMesh.triangles = new[] { 0, 2, 3, 0, 3, 1 };
             beamMesh.RecalculateBounds();
-            beamMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2960, mainTexture = BeamTexture() };
+            beamMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2960, mainTexture = BeamTexture(), enableInstancing = true };
         }
 
         Renderer CreateLayer(string layerName, Mesh mesh, Material material)
@@ -444,8 +455,11 @@ namespace BusTycoon.Game
             roadMesh = new Mesh { name = "Roads", indexFormat = IndexFormat.UInt32 };
             go.AddComponent<MeshFilter>().sharedMesh = roadMesh;
             var renderer = go.AddComponent<MeshRenderer>();
-            // Köşe renkli, ışıksız; hat çizgilerinden önce çizilir.
-            roadMaterial = new Material(MaterialFactory.LineMaterial) { renderQueue = 2950 };
+            // Köşe renkli, ışıksız; hat çizgilerinden önce çizilir. Kalınlık gölgelendiricide ölçeklenir.
+            Shader shader = Resources.Load<Shader>(DefaultContent.MapRoadsShaderResourcePath);
+            if (shader == null) shader = Shader.Find("BusTycoon/MapRoads");
+            roadWidthInShader = shader != null && shader.isSupported;
+            roadMaterial = roadWidthInShader ? new Material(shader) { renderQueue = 2950 } : new Material(MaterialFactory.LineMaterial) { renderQueue = 2950 };
             renderer.sharedMaterial = roadMaterial;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
@@ -455,8 +469,15 @@ namespace BusTycoon.Game
         void RebuildRoadMesh(float scale)
         {
             roadScale = scale;
+            if (roadWidthInShader)
+            {
+                roadMaterial.SetFloat(WidthScaleId, scale);
+                if (roadMesh.vertexCount > 0) return; // ağ hazır: yalnız kalınlık değişir
+                scale = 1f;
+            }
             roadVertices.Clear();
             roadVertexColors.Clear();
+            roadOffsets.Clear();
             roadIndices.Clear();
 
             // Çizim sırası: diğer yollar → feribot → ana yollar → otoyol kenarı → otoyol
@@ -469,8 +490,16 @@ namespace BusTycoon.Game
             roadMesh.Clear();
             roadMesh.SetVertices(roadVertices);
             roadMesh.SetColors(roadVertexColors);
+            if (roadWidthInShader) roadMesh.SetUVs(0, roadOffsets);
             roadMesh.SetTriangles(roadIndices, 0);
             roadMesh.RecalculateBounds();
+            if (roadWidthInShader)
+            {
+                // Merkez çizgiden hesaplanan sınırlar kalın yolları kesmesin
+                Bounds bounds = roadMesh.bounds;
+                bounds.Expand(1f);
+                roadMesh.bounds = bounds;
+            }
         }
 
         void AppendRoadClass(RoadNetwork.RoadClass roadClass, float width, Color color)
@@ -576,8 +605,19 @@ namespace BusTycoon.Game
                 }
 
                 Vector3 offset = new Vector3(-direction.z, 0f, direction.x) * (half * miter);
-                roadVertices.Add(points[i] + offset);
-                roadVertices.Add(points[i] - offset);
+                if (roadWidthInShader)
+                {
+                    // Köşe merkezde; kenara uzaklık gölgelendiricide kalınlık ölçeğiyle uygulanır
+                    roadVertices.Add(points[i]);
+                    roadVertices.Add(points[i]);
+                    roadOffsets.Add(new Vector2(offset.x, offset.z));
+                    roadOffsets.Add(new Vector2(-offset.x, -offset.z));
+                }
+                else
+                {
+                    roadVertices.Add(points[i] + offset);
+                    roadVertices.Add(points[i] - offset);
+                }
                 Color faded = color;
                 faded.a *= EdgeFade(points[i]);
                 roadVertexColors.Add(faded);
@@ -611,11 +651,14 @@ namespace BusTycoon.Game
                 root.SetParent(cityRoot, false);
                 root.position = position;
 
-                var material = MaterialFactory.CreateLit(CityNormal, 0.35f);
+                // Çatı rengi şehre özel malzeme yerine renge göre paylaşılan malzemeyle: aynı kademedeki duraklar
+                // GPU'da tek çizimde örneklenir (ör. 90 şehirde yüzlerce çizim çağrısı yerine birkaç tane)
                 var station = new GameObject("Station");
                 station.transform.SetParent(root, false);
                 station.AddComponent<MeshFilter>().sharedMesh = StationModels.MeshFor(tier, out MeshLayer[] layers);
-                station.AddComponent<MeshRenderer>().sharedMaterials = StationMaterials.For(layers, material);
+                Material[] materials = StationMaterials.For(layers, AccentMaterial(CityNormal));
+                var renderer = station.AddComponent<MeshRenderer>();
+                renderer.sharedMaterials = materials;
 
                 var flag = new GameObject("Flag");
                 flag.transform.SetParent(root, false);
@@ -624,10 +667,26 @@ namespace BusTycoon.Game
                 flag.AddComponent<MeshRenderer>().sharedMaterials = StationMaterials.For(flagLayers, null);
                 flag.SetActive(false);
 
-                var marker = new CityMarker { City = city, Position = position, Material = material, Root = root, Height = StationModels.Height(tier), Flag = flag };
+                var marker = new CityMarker
+                {
+                    City = city, Position = position, Root = root, Height = StationModels.Height(tier), Flag = flag,
+                    Renderer = renderer, Materials = materials, AccentIndex = Array.IndexOf(layers, MeshLayer.Accent), AccentColor = CityNormal
+                };
                 markers.Add(marker);
                 markerByCity[city] = marker;
             }
+        }
+
+        static readonly Dictionary<Color, Material> accentMaterials = new Dictionary<Color, Material>();
+
+        /// <summary>Durak çatısı malzemesi: aynı renkteki bütün duraklar aynı malzemeyi paylaşır (örneklemeli çizim).</summary>
+        static Material AccentMaterial(Color color)
+        {
+            if (accentMaterials.TryGetValue(color, out Material material) && material != null) return material;
+            material = MaterialFactory.CreateLit(color, 0.35f);
+            material.name = "StationAccent";
+            accentMaterials[color] = material;
+            return material;
         }
 
         /// <summary>Haritadaki otobüs: modeline göre tek parça 3B model (<see cref="BusModels"/>).</summary>
@@ -710,10 +769,16 @@ namespace BusTycoon.Game
         void HandleFleetChanged(BusInstance _) => tokensDirty = true;
         void HandleRegionUnlocked(RegionData _) => colorsDirty = true;
 
+        readonly HashSet<string> previousRouteIds = new HashSet<string>();
+        readonly List<Vector3> revealBuffer = new List<Vector3>();
+        const float RevealSeconds = 0.9f;
+
         void RebuildRoutes()
         {
+            previousRouteIds.Clear();
             foreach (var visual in routeVisuals.Values)
             {
+                previousRouteIds.Add(visual.Route.routeId);
                 foreach (var token in visual.Tokens) Destroy(token.Transform.gameObject);
                 Destroy(visual.Line.gameObject);
             }
@@ -738,6 +803,14 @@ namespace BusTycoon.Game
                     };
                     visual.Line.positionCount = points.Length;
                     visual.Line.SetPositions(points);
+                    if (!previousRouteIds.Contains(route.routeId))
+                    {
+                        // Yeni hat: çizilerek belirir, uçlarındaki duraklar yaylanır
+                        visual.Reveal = 0f;
+                        SetRevealedLine(visual, 0f);
+                        Pop(a);
+                        Pop(b);
+                    }
                     routeVisuals[route.routeId] = visual;
                 }
             }
@@ -806,16 +879,67 @@ namespace BusTycoon.Game
 
         void LateUpdate()
         {
-            if (roadMesh != null && Mathf.Abs(ZoomScale - roadScale) > roadScale * 0.12f)
+            // Kalınlıklar her kare yakınlaştırmayla birlikte akıcı değişir (eskiden %12'lik basamaklarla)
+            float scale = ZoomScale;
+            markerScale = Mathf.Clamp(zoomDistance / 32f, 0.7f, 2.1f); // uzaktan da duraklar seçilsin
+            if (roadMesh != null)
             {
-                RebuildRoadMesh(ZoomScale);
-                markerScale = Mathf.Clamp(zoomDistance / 32f, 0.7f, 2.1f); // uzaktan da duraklar seçilsin
-                colorsDirty = true;
+                if (roadWidthInShader) roadMaterial.SetFloat(WidthScaleId, scale);
+                else if (Mathf.Abs(scale - roadScale) > roadScale * 0.12f) RebuildRoadMesh(scale);
             }
+            UpdateLineWidths(scale);
             ScaleCityMarkers();
             if (colorsDirty) RefreshColors();
             if (tokensDirty) RebuildTokens();
+            AnimateReveals();
             AnimateTokens();
+        }
+
+        /// <summary>Durağı yaylanarak büyüt (yeni hat bağlandı).</summary>
+        public void Pop(CityData city)
+        {
+            if (city != null && markerByCity.TryGetValue(city, out CityMarker marker)) marker.BumpVelocity += 7f;
+        }
+
+        void AnimateReveals()
+        {
+            float step = Time.unscaledDeltaTime / RevealSeconds;
+            foreach (var visual in routeVisuals.Values)
+            {
+                if (visual.Reveal >= 1f) continue;
+                visual.Reveal = Mathf.Min(1f, visual.Reveal + step);
+                float eased = 1f - (1f - visual.Reveal) * (1f - visual.Reveal) * (1f - visual.Reveal); // hızlı başlar, yavaşlayarak biter
+                SetRevealedLine(visual, eased);
+            }
+        }
+
+        /// <summary>Çizginin baştan <paramref name="fraction"/> kadarını göster (son nokta ara noktaya kesilir).</summary>
+        void SetRevealedLine(RouteVisual visual, float fraction)
+        {
+            Vector3[] points = visual.Points;
+            if (fraction >= 1f)
+            {
+                visual.Line.positionCount = points.Length;
+                visual.Line.SetPositions(points);
+                return;
+            }
+            float[] lengths = visual.Cumulative;
+            float goal = Mathf.Max(fraction, 0.001f) * lengths[lengths.Length - 1];
+            revealBuffer.Clear();
+            revealBuffer.Add(points[0]);
+            for (int i = 1; i < points.Length; i++)
+            {
+                if (lengths[i] < goal)
+                {
+                    revealBuffer.Add(points[i]);
+                    continue;
+                }
+                float segment = lengths[i] - lengths[i - 1];
+                revealBuffer.Add(Vector3.Lerp(points[i - 1], points[i], segment > 1e-6f ? (goal - lengths[i - 1]) / segment : 1f));
+                break;
+            }
+            visual.Line.positionCount = revealBuffer.Count;
+            for (int i = 0; i < revealBuffer.Count; i++) visual.Line.SetPosition(i, revealBuffer[i]);
         }
 
         /// <summary>
@@ -824,12 +948,14 @@ namespace BusTycoon.Game
         /// </summary>
         void ScaleCityMarkers()
         {
-            float step = Time.unscaledDeltaTime * 3f;
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
             foreach (var marker in markers)
             {
                 CityData city = marker.City;
                 float target = city == hovered || city == origin || city == destination ? 1.18f : 1f;
-                marker.Bump = Mathf.MoveTowards(marker.Bump, target, step);
+                // Az sönümlü yay: seçilince hafifçe taşıp oturur
+                marker.BumpVelocity += ((target - marker.Bump) * 220f - marker.BumpVelocity * 15f) * dt;
+                marker.Bump = Mathf.Clamp(marker.Bump + marker.BumpVelocity * dt, 0.6f, 1.8f);
                 marker.Root.localScale = Vector3.one * (markerScale * marker.Bump);
             }
         }
@@ -852,13 +978,16 @@ namespace BusTycoon.Game
                 if (city == origin) color = CityOrigin;
                 else if (city == destination) color = CityDestination;
                 if (city == hovered) color = Color.Lerp(color, Color.white, 0.45f);
-                marker.Material.color = color;
-                if (marker.Material.HasProperty("_BaseColor")) marker.Material.SetColor("_BaseColor", color);
+                if (marker.AccentIndex >= 0 && !marker.AccentColor.Equals(color))
+                {
+                    marker.AccentColor = color;
+                    marker.Materials[marker.AccentIndex] = AccentMaterial(color);
+                    marker.Renderer.sharedMaterials = marker.Materials;
+                }
                 bool flag = city == headquarters;
                 if (marker.Flag.activeSelf != flag) marker.Flag.SetActive(flag);
             }
 
-            float scale = ZoomScale;
             int signature = routeVisuals.Count;
             foreach (var visual in routeVisuals.Values)
             {
@@ -867,14 +996,19 @@ namespace BusTycoon.Game
                 signature = signature * 31 + visual.Route.routeId.GetHashCode() + (selected ? 7 : 0) + Mathf.RoundToInt(color.r * 9 + color.g * 90 + color.b * 900);
                 if (selected) color = Color.Lerp(color, Color.white, 0.35f);
                 visual.Line.startColor = visual.Line.endColor = color;
-                visual.Line.widthMultiplier = (selected ? 0.32f : 0.17f) * scale;
             }
-            previewLine.widthMultiplier = 0.2f * scale;
             if (signature != routeSignature)
             {
                 routeSignature = signature;
                 RoutesVersion++; // mini harita yalnız hat renkleri/seçimi değişince yeniden çizer
             }
+        }
+
+        void UpdateLineWidths(float scale)
+        {
+            foreach (var visual in routeVisuals.Values)
+                visual.Line.widthMultiplier = (visual.Route.routeId == selectedRouteId ? 0.32f : 0.17f) * scale;
+            previewLine.widthMultiplier = 0.2f * scale;
         }
 
         bool HasRoute(CityData city)
@@ -940,7 +1074,7 @@ namespace BusTycoon.Game
                 {
                     float cycle = Mathf.Repeat(animationTime / visual.TripSeconds + token.Phase, 2f);
                     bool returning = cycle > 1f;
-                    Evaluate(visual, returning ? 2f - cycle : cycle, out Vector3 position, out Vector3 direction);
+                    Evaluate(visual, LegProgress(returning ? cycle - 1f : cycle, returning), out Vector3 position, out Vector3 direction);
                     if (returning) direction = -direction;
 
                     // Gidiş ve dönüş otobüsleri yolun iki şeridinde; yolda hafifçe sallanır.
@@ -952,6 +1086,18 @@ namespace BusTycoon.Game
                         token.Transform.rotation = Quaternion.Slerp(token.Transform.rotation, Quaternion.LookRotation(direction, Vector3.up), turn);
                 }
             }
+        }
+
+        /// <summary>
+        /// Bir seferin zamanı (0..1) → güzergâhtaki konum (0..1): uçlarda kısa bekleme, duraktan yavaşça çıkar ve
+        /// yavaşlayarak girer (sabit hızlı kayma yerine). Dönüşte konum tersten okunur.
+        /// </summary>
+        static float LegProgress(float legTime, bool returning)
+        {
+            const float dwell = 0.08f, ease = 0.55f;
+            float t = Mathf.Clamp01((legTime - dwell * 0.5f) / (1f - dwell));
+            t -= ease * Mathf.Sin(2f * Mathf.PI * t) / (2f * Mathf.PI); // uçlarda hız ortalamanın %45'i
+            return returning ? 1f - t : t;
         }
 
         /// <summary>Güzergâh boyunca t (0..1) oranındaki nokta ve yön (yay uzunluğuna göre, sabit hız).</summary>

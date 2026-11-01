@@ -60,11 +60,30 @@ namespace BusTycoon.Game
         ChartTexture financeChart;
         bool financeChartDirty = true;
 
+        Panel animatedPanel = Panel.None;
+        float panelShownAt;
+        const float PanelInSeconds = 0.22f;
+
         void DrawPanel()
         {
-            if (panel == Panel.None) return;
+            if (panel == Panel.None)
+            {
+                animatedPanel = Panel.None;
+                return;
+            }
             var rect = PanelRect;
             uiRects.Add(rect);
+
+            // Açılış: sağdan kayarak ve belirerek gelir (hızlı başlar, yavaşlayarak oturur); başka panele geçişte de
+            if (panel != animatedPanel)
+            {
+                animatedPanel = panel;
+                panelShownAt = Time.unscaledTime;
+            }
+            float eased = EaseOut((Time.unscaledTime - panelShownAt) / PanelInSeconds);
+            Color previousColor = GUI.color;
+            GUI.color = new Color(previousColor.r, previousColor.g, previousColor.b, previousColor.a * Mathf.Lerp(0.2f, 1f, eased));
+            rect.x += (1f - eased) * 36f * u;
             GUILayout.BeginArea(rect, s.Panel);
             switch (panel)
             {
@@ -80,6 +99,15 @@ namespace BusTycoon.Game
                 case Panel.Help: DrawHelpPanel(); break;
             }
             GUILayout.EndArea();
+            GUI.color = previousColor;
+        }
+
+        /// <summary>0..1 → yavaşlayarak biten eğri (kübik).</summary>
+        static float EaseOut(float t)
+        {
+            t = Mathf.Clamp01(t);
+            float inv = 1f - t;
+            return 1f - inv * inv * inv;
         }
 
         // ------------------------------------------------------------------ Hatlarım

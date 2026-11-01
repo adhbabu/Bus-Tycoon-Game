@@ -212,6 +212,7 @@ namespace BusTycoon.Game
         void OnDayCompleted(DayReport report)
         {
             MarkDataDirty();
+            SpawnIncomeLabels();
             goals.Evaluate();
             RefreshRouteIndicators(announce: true);
 
@@ -449,7 +450,11 @@ namespace BusTycoon.Game
             HandleTouchScroll(e);
             bool pressEnded = e.type == EventType.MouseUp && e.button == 0; // kaydırma için kullanılmadıysa
 
-            if (!InMenu && e.type == EventType.Repaint && !StationBusy) DrawCityLabels();
+            if (!InMenu && e.type == EventType.Repaint && !StationBusy)
+            {
+                DrawCityLabels();
+                DrawFloatingLabels();
+            }
 
             bool previousEnabled = GUI.enabled;
             GUI.enabled = modal == Modal.None;
@@ -493,6 +498,7 @@ namespace BusTycoon.Game
             if (repaint)
             {
                 DrawTooltip();
+                DrawFpsOverlay();
                 sliderRects.Clear();
                 sliderRects.AddRange(sliderRectsNext);
                 WebTap.EndFrame();
@@ -603,8 +609,27 @@ namespace BusTycoon.Game
             }
         }
 
-        GUILayoutOption Ht(float units) => GUILayout.Height(units * u);
-        GUILayoutOption Wd(float units) => GUILayout.Width(units * u);
+        // GUILayout.Height/Width her çağrıda yeni nesne üretir; aynı ölçek ve boy için önbellekten verilir (kare başına çöp azalır)
+        readonly Dictionary<float, GUILayoutOption> heightOptions = new Dictionary<float, GUILayoutOption>();
+        readonly Dictionary<float, GUILayoutOption> widthOptions = new Dictionary<float, GUILayoutOption>();
+        float optionScale = -1f;
+
+        GUILayoutOption Ht(float units) => CachedOption(heightOptions, units, true);
+        GUILayoutOption Wd(float units) => CachedOption(widthOptions, units, false);
+
+        GUILayoutOption CachedOption(Dictionary<float, GUILayoutOption> cache, float units, bool height)
+        {
+            if (!Mathf.Approximately(optionScale, u))
+            {
+                optionScale = u;
+                heightOptions.Clear();
+                widthOptions.Clear();
+            }
+            if (cache.TryGetValue(units, out GUILayoutOption option)) return option;
+            option = height ? GUILayout.Height(units * u) : GUILayout.Width(units * u);
+            cache[units] = option;
+            return option;
+        }
         void Sp(float units) => GUILayout.Space(units * u);
         /// <summary>Kullanılabilir genişlik dar mı (4:3 tablet, telefon)? Üst çubuk sütunları buna göre daralır.</summary>
         bool Narrow => (SafeRight - SafeLeft) / u < 1300f;
@@ -890,6 +915,7 @@ namespace BusTycoon.Game
                     if (!multiTouch) suppressTap = false; // önceki pinch hareketinin kilidi yeni dokunuşu yutmasın
                     pointerButton = e.button;
                     pointerDownPos = lastPointerPos = mouse;
+                    mapCamera.BeginDrag(); // süzülen harita parmağa yapışır
                     if (textFieldFocused) GUIUtility.keyboardControl = 0;
                     e.Use();
                     break;
@@ -906,9 +932,10 @@ namespace BusTycoon.Game
                 case EventType.MouseUp:
                     if (!pointerOnMap) return;
                     pointerOnMap = false;
+                    mapCamera.EndDrag(); // bırakılan hızla süzülür
                     if (!dragging && !suppressTap)
                     {
-                        if (pointerButton == 0) OnMapClick(mouse);
+                        if (pointerButton == 0) OnMapTap(mouse);
                         else if (pointerButton == 1) OnMapRightClick();
                     }
                     dragging = false;
@@ -938,6 +965,25 @@ namespace BusTycoon.Game
                 mapCamera.DragPan(at, at + new Vector2(-pixels.x, pixels.y)); // ekran y'si yukarı, tarayıcı y'si aşağı
             else if (kind == WheelInput.Kind.Pinch)
                 mapCamera.Zoom(Mathf.Clamp(pixels.y, -60f, 60f) * 0.07f, at);
+        }
+
+        float lastTapTime = -10f;
+        Vector2 lastTapPosition;
+
+        /// <summary>Tek dokunuş/tık şehir veya hat seçer; aynı yere hızlı ikinci dokunuş oraya yakınlaşır.</summary>
+        void OnMapTap(Vector2 guiPoint)
+        {
+            float now = Time.unscaledTime;
+            bool second = now - lastTapTime < 0.32f && (guiPoint - lastTapPosition).sqrMagnitude < 28f * u * 28f * u;
+            if (second)
+            {
+                lastTapTime = -10f;
+                mapCamera.ZoomInAt(GuiToScreen(guiPoint));
+                return;
+            }
+            lastTapTime = now;
+            lastTapPosition = guiPoint;
+            OnMapClick(guiPoint);
         }
 
         void OnMapClick(Vector2 guiPoint)

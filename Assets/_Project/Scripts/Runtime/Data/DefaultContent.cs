@@ -65,6 +65,7 @@ namespace BusTycoon.Data
         public const string CityIconIndexResourcePath = "BusTycoon/UI/city_icons";
         /// <summary>Durak tabelaları için derinlik testli yazı shader'ı (Resources'ta: derlemeye girer).</summary>
         public const string SignTextShaderResourcePath = "BusTycoon/Shaders/SignText";
+        public const string MapRoadsShaderResourcePath = "BusTycoon/Shaders/MapRoads";
 
         public readonly struct ModelSpec
         {

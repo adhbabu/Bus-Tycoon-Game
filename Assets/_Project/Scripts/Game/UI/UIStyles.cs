@@ -42,7 +42,7 @@ namespace BusTycoon.Game
         public readonly GUIStyle Title, H1, H2, Label, Small, Dim, Bold, Big, Center, Wrap, WrapDim, Right;
         public readonly GUIStyle StatLabel, Money, MoneyGlow, MoneyNegative, MoneyNegativeGlow, Value, CardTitle, Detail, CountBadge;
         public readonly GUIStyle BadgeSuccess, BadgeWarning, BadgeDanger, BadgeInfo;
-        public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, RaceBadge, NavItem, NavItemActive, IconOnly;
+        public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, RaceBadge, NavItem, NavItemActive, NavItemSelected, IconOnly;
         public readonly GUIStyle Field, Toggle, Slider, SliderThumb, VerticalScrollbar;
         public readonly GUIStyle MapLabel, MapLabelBold, MapLabelShadow, MapLabelBoldShadow;
 
@@ -145,6 +145,9 @@ namespace BusTycoon.Game
             NavItemActive = MakeButton(new Color(Orange.r, Orange.g, Orange.b, 0.1f), new Color(Orange.r, Orange.g, Orange.b, 0.16f), Orange, 12, true);
             NavItemActive.alignment = TextAnchor.LowerCenter;
             NavItemActive.padding = NavItem.padding;
+            // Seçili öğenin yalnız yazısı; zemin (vurgu) ayrı çizilip öğeler arasında kayar
+            NavItemSelected = new GUIStyle(NavItemActive);
+            NavItemSelected.normal.background = NavItemSelected.hover.background = NavItemSelected.active.background = null;
 
             Field = new GUIStyle(GUI.skin.textField) { font = regular, fontSize = Px(17), padding = Offset(14, 14, 10, 10) };
             Field.normal.textColor = Field.focused.textColor = Field.hover.textColor = Text;

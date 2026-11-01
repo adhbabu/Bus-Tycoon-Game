@@ -15,6 +15,7 @@ namespace BusTycoon.Game
         readonly List<WorldRenderer.RouteShape> minimapShapes = new List<WorldRenderer.RouteShape>();
         readonly List<WorldRenderer.BusMarker> minimapBuses = new List<WorldRenderer.BusMarker>();
         readonly Vector3[] viewCorners = new Vector3[4];
+        readonly Vector2[] screenCorners = new Vector2[4];
 
         float MinimapMapWidth => (compact ? 250f : 330f) * u;
         float MinimapMapHeight => MinimapMapWidth * world.MapBoundsXZ.height / Mathf.Max(1f, world.MapBoundsXZ.width);
@@ -144,9 +145,12 @@ namespace BusTycoon.Game
         /// <summary>Kameranın yerde gördüğü alan (yamuk): ekran köşelerinin yer düzlemindeki izdüşümü.</summary>
         void DrawCameraView(Rect local)
         {
-            var screen = new[] { new Vector2(0f, 0f), new Vector2(Screen.width, 0f), new Vector2(Screen.width, Screen.height), new Vector2(0f, Screen.height) };
+            screenCorners[0] = new Vector2(0f, 0f);
+            screenCorners[1] = new Vector2(Screen.width, 0f);
+            screenCorners[2] = new Vector2(Screen.width, Screen.height);
+            screenCorners[3] = new Vector2(0f, Screen.height);
             for (int i = 0; i < 4; i++)
-                if (!mapCamera.TryGetGroundPoint(screen[i], out viewCorners[i])) return;
+                if (!mapCamera.TryGetGroundPoint(screenCorners[i], out viewCorners[i])) return;
             Color color = new Color(1f, 1f, 1f, 0.85f);
             for (int i = 0; i < 4; i++)
             {
