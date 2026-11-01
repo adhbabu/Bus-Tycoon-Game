@@ -1,10 +1,12 @@
 // Harita yolları: köşe rengi, ışıksız, saydam. Şeridin merkezi POSITION'da, kenara uzaklığı (1x ölçekte, dünya XZ)
 // TEXCOORD0'da; kalınlık _WidthScale ile çarpılır. Böylece yakınlaştırırken yol ağı yeniden örülmez (takılma olmaz).
+// _Color: gece sönükleşmesi ve uzaktan bakınca soluklaşma (WorldRenderer).
 Shader "BusTycoon/MapRoads"
 {
     Properties
     {
         _WidthScale ("Width Scale", Float) = 1
+        _Color ("Tint", Color) = (1, 1, 1, 1)
     }
     SubShader
     {
@@ -23,6 +25,7 @@ Shader "BusTycoon/MapRoads"
             #include "UnityCG.cginc"
 
             float _WidthScale;
+            fixed4 _Color;
 
             struct appdata
             {
@@ -51,7 +54,7 @@ Shader "BusTycoon/MapRoads"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed4 c = i.color;
+                fixed4 c = i.color * _Color;
                 UNITY_APPLY_FOG(i.fogCoord, c);
                 return c;
             }
