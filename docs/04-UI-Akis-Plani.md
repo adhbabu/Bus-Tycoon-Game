@@ -358,7 +358,7 @@ GUI.matrix ölçeklemesi kullanılmaz çünkü IMGUI yazıları büyütülünce 
 |---|---|---|---|
 | Menü | solda dikey araç çubuğu | altta 7 öğe (Yardım ve Günlük Menü'de); **panel açıkken gizli** | altta 8 öğe |
 | Üst çubuk | şirket, kasa, tarih+hız, itibar, hat, filo | sade: seviye+şirket, kasa, tarih ve hız tek satırda, Menü | sade (itibar/hat/filo yok) |
-| Yan panel | 490 birim | en fazla 490 birim ve güvenli alanın %52'si, **tam boy** (haritanın yarıdan fazlası görünür) | %54 |
+| Yan panel | 490 panel birimi (içerik ×0,8 ölçekte: ~392 birim) | içerik ×0,9 ölçekte, güvenli alanın en çok %42'si, **tam boy** (haritanın çoğu görünür) | ×0,8, en çok %48 |
 | Mini harita | açık | **kapalı başlar**; başlığın tamamı açma düğmesi | açık |
 | Görev | kart (sol alt) | tek satırlık şerit; dokununca Görevler | kart |
 | Ana menü | dikey | **yan yana**: solda başlık, sağda düğmeler | dikey |

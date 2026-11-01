@@ -84,21 +84,29 @@ namespace BusTycoon.Game
             Color previousColor = GUI.color;
             GUI.color = new Color(previousColor.r, previousColor.g, previousColor.b, previousColor.a * Mathf.Lerp(0.2f, 1f, eased));
             rect.x += (1f - eased) * 36f * u;
-            GUILayout.BeginArea(rect, s.Panel);
-            switch (panel)
+            BeginPanelScale();
+            try
             {
-                case Panel.Planner: DrawPlanner(); break;
-                case Panel.Route: DrawRoutePanel(); break;
-                case Panel.RouteList: DrawRouteList(); break;
-                case Panel.Fleet: DrawFleet(); break;
-                case Panel.Dealership: DrawDealership(); break;
-                case Panel.Finance: DrawFinance(); break;
-                case Panel.Regions: DrawRegions(); break;
-                case Panel.Goals: DrawGoals(); break;
-                case Panel.Log: DrawLog(); break;
-                case Panel.Help: DrawHelpPanel(); break;
+                GUILayout.BeginArea(rect, s.Panel);
+                switch (panel)
+                {
+                    case Panel.Planner: DrawPlanner(); break;
+                    case Panel.Route: DrawRoutePanel(); break;
+                    case Panel.RouteList: DrawRouteList(); break;
+                    case Panel.Fleet: DrawFleet(); break;
+                    case Panel.Dealership: DrawDealership(); break;
+                    case Panel.Finance: DrawFinance(); break;
+                    case Panel.Regions: DrawRegions(); break;
+                    case Panel.Goals: DrawGoals(); break;
+                    case Panel.Log: DrawLog(); break;
+                    case Panel.Help: DrawHelpPanel(); break;
+                }
+                GUILayout.EndArea();
             }
-            GUILayout.EndArea();
+            finally
+            {
+                EndPanelScale();
+            }
             GUI.color = previousColor;
         }
 
