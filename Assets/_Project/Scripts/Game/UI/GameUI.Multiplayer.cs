@@ -229,12 +229,14 @@ namespace BusTycoon.Game
             // Merkez şehir
             GUILayout.Label("Merkez şehrin", s.H2);
             RoomPlayer local = room.Local;
-            for (int row = 0; row < 2; row++)
+            // Avrupa Paketi varsa üçüncü sıra: Avrupa başkentleri (paket web'de herkeste var: odadaki herkes aynı haritada)
+            int rows = Entitlements.Owns(ContentPacks.Europe) ? 3 : 2;
+            for (int row = 0; row < rows; row++)
             {
                 GUILayout.BeginHorizontal();
                 for (int col = 0; col < 3; col++)
                 {
-                    CityData city = session.World.GetCity(QuickStartCityIds[row * 3 + col]);
+                    CityData city = session.World.GetCity(row < 2 ? QuickStartCityIds[row * 3 + col] : EuropeStartCityIds[col]);
                     if (city == null) continue;
                     bool chosen = local != null && local.CityId == city.Id;
                     string id = city.Id;

@@ -173,6 +173,8 @@ namespace BusTycoon.Game
         public IReadOnlyList<CityMarker> Markers => markers;
         /// <summary>Harita dokusu (mini harita da çizer).</summary>
         public Texture2D MapTexture { get; private set; }
+        /// <summary>Harita yüzeyinin malzemesi (MapSurface); yakın plan döşemeleri bunu kopyalar. Yedek malzemede null.</summary>
+        public Material MapSurfaceMaterial { get; private set; }
         /// <summary>Hat çizgileri ya da renkleri değişince artar (mini harita yeniden çizer).</summary>
         public int RoutesVersion { get; private set; }
         int routeSignature;
@@ -188,7 +190,7 @@ namespace BusTycoon.Game
         /// <summary>Kamera uzaklığı: yol ve hat kalınlıkları, otobüs ve şehir boyları buna göre ölçeklenir.</summary>
         public float ZoomDistance { set => zoomDistance = value; }
 
-        float ZoomScale => Mathf.Clamp(zoomDistance / ReferenceZoom, 0.45f, 1.6f);
+        float ZoomScale => Mathf.Clamp(zoomDistance / ReferenceZoom, 0.45f, 2.4f);
 
         public void Init(GameSession gameSession, MapProjection mapProjection, Texture2D mapTexture, Texture2D outerTexture,
             RoadNetwork roadNetwork, Texture2D waterMask = null)
@@ -257,6 +259,8 @@ namespace BusTycoon.Game
             renderer.sharedMaterial = texture != null
                 ? CreateMapMaterial(texture, waterMask, true)
                 : MaterialFactory.CreateLit(new Color(0.35f, 0.45f, 0.32f), 0f);
+            if (renderer.sharedMaterial.shader != null && renderer.sharedMaterial.shader.name == "BusTycoon/MapSurface")
+                MapSurfaceMaterial = renderer.sharedMaterial;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = true; // duraklar ve otobüsler haritaya gölge düşürür
         }
@@ -266,7 +270,7 @@ namespace BusTycoon.Game
         /// Gölgelendirici yoksa ya da cihaz desteklemiyorsa düz ışıksız dokuya düşer. Çevre haritasında deniz ve arazi
         /// efektleri kapalıdır (bulut, gölge ve pus sürer).
         /// </summary>
-        static Material CreateMapMaterial(Texture2D texture, Texture2D waterMask, bool effects)
+        Material CreateMapMaterial(Texture2D texture, Texture2D waterMask, bool effects)
         {
             Shader shader = Resources.Load<Shader>(DefaultContent.MapSurfaceShaderResourcePath);
             if (shader == null) shader = Shader.Find("BusTycoon/MapSurface");
@@ -276,6 +280,8 @@ namespace BusTycoon.Game
             material.SetTexture("_WaterTex", waterMask != null ? waterMask : Texture2D.blackTexture);
             material.SetTexture("_NoiseTex", MapTextures.Noise);
             material.SetFloat("_Effects", effects && waterMask != null ? 1f : 0f);
+            Rect map = MapBoundsXZ; // deniz maskesi ve kenar sönmesi dünya konumundan (döşemelerde de aynı)
+            material.SetVector("_MapRect", new Vector4(map.xMin, map.yMin, map.width, map.height));
             return material;
         }
 

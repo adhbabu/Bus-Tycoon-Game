@@ -17,7 +17,7 @@ namespace BusTycoon.Game
         readonly Vector3[] viewCorners = new Vector3[4];
         readonly Vector2[] screenCorners = new Vector2[4];
 
-        float MinimapMapWidth => (compact ? 250f : 330f) * u;
+        float MinimapMapWidth => (compact ? 220f : 290f) * u; // Avrupa haritası daha kare: yükseklik orantılı
         float MinimapMapHeight => MinimapMapWidth * world.MapBoundsXZ.height / Mathf.Max(1f, world.MapBoundsXZ.width);
         float MinimapPad => 8f * u;
         float MinimapHeader => (phone ? 44f : 30f) * u; // telefonda parmakla açılacak kadar yüksek

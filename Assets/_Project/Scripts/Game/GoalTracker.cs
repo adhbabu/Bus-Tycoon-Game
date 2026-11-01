@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BusTycoon.Core;
+using BusTycoon.Data;
 using BusTycoon.Economy;
 
 namespace BusTycoon.Game
@@ -67,12 +68,22 @@ namespace BusTycoon.Game
                 s => LastNet(s) >= 5000);
             Add("abroad", "Yurt dışına açıl", "Bölgeler (B) panelinden bir ülke lisansı alın.", 30000,
                 s => s.State.unlockedRegionIds.Count >= 2);
+            bool europe = Entitlements.Owns(ContentPacks.Europe);
+            if (europe)
+                Add("europe_first", "Avrupa'ya ilk hat", "Seviye 8'de Sırbistan ve Kuzey Makedonya açılır: Bölgeler panelinin Avrupa Paketi bölümü.", 40000,
+                    s => CountPackCities(s, ContentPacks.Europe, capitalsOnly: false) >= 1);
             Add("vip", "Lüks segment: VIP otobüs", "Seviye 12 ve itibar 55 gerekir.", 50000,
                 s => HasTier(s, 4));
+            if (europe)
+                Add("istanbul_vienna", "İstanbul–Viyana hattı", "Avusturya seviye 15'te açılır; Sofya ve Belgrad üzerinden ~1.300 km'lik efsane güzergâh.", 75000,
+                    s => HasRoute(s, "TR_ISTANBUL", "AT_VIYANA"));
             Add("millionaire", "İlk milyon: $1.000.000 kasa", "Yolun yarısı bile değil: asıl hedef 10 milyon!", 0,
                 s => s.Finance.Cash >= 1_000_000);
             Add("profit_25000", "Günde $25.000 net kâr", "Büyük şehirleri VIP ve çift katlı otobüslerle bağlayın.", 100000,
                 s => LastNet(s) >= 25000);
+            if (europe)
+                Add("capitals_5", "5 Avrupa başkentini bağla", "Hat ağınız Avrupa Paketi'nden 5 başkente ulaşsın (Belgrad, Viyana, Budapeşte...).", 150000,
+                    s => CountPackCities(s, ContentPacks.Europe, capitalsOnly: true) >= 5);
             Add("tycoon", "Otobüs İmparatoru: $10.000.000 kasa", "Büyük hedef! Ulaştığınızda oyunu kazanırsınız.", 0,
                 s => s.Finance.Cash >= VictoryCash, isVictory: true);
         }
@@ -124,6 +135,29 @@ namespace BusTycoon.Game
 
         void Add(string id, string title, string hint, float reward, Func<GameSession, bool> condition, bool isVictory = false) =>
             goals.Add(new Goal(id, title, hint, reward, condition, isVictory));
+
+        static bool HasRoute(GameSession s, string cityA, string cityB)
+        {
+            foreach (var route in s.Routes.Routes)
+                if ((route.cityAId == cityA && route.cityBId == cityB) || (route.cityAId == cityB && route.cityBId == cityA))
+                    return true;
+            return false;
+        }
+
+        /// <summary>Hat ağının ulaştığı, verilen pakete ait (farklı) şehir sayısı.</summary>
+        static int CountPackCities(GameSession s, string packId, bool capitalsOnly)
+        {
+            var seen = new HashSet<string>();
+            foreach (var route in s.Routes.Routes)
+                foreach (string id in new[] { route.cityAId, route.cityBId })
+                {
+                    CityData city = s.World.GetCity(id);
+                    if (city == null || city.Region == null || city.Region.PackId != packId) continue;
+                    if (capitalsOnly && !city.IsCapital) continue;
+                    seen.Add(id);
+                }
+            return seen.Count;
+        }
 
         static double LastNet(GameSession s)
         {

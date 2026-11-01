@@ -23,12 +23,14 @@ namespace BusTycoon.Data
     /// </summary>
     public static class DefaultContent
     {
-        // Harita sınırları — Tools/build_world_data.py ile AYNI olmalı (map.png bu sınırlarla üretilir).
-        public const double MinLongitude = 19.0;
+        // Harita sınırları — Tools/build_map.py ile AYNI olmalı (harita dokusu bu sınırlarla üretilir). Kıta Avrupası,
+        // Britanya, Türkiye ve Kafkasya. Genişlik boylam başına ~3,57 birim: eski (yalnız Türkiye ve çevresi) haritayla
+        // aynı ölçek; kamera, otobüs ve durak boyları değişmez.
+        public const double MinLongitude = -11.0;
         public const double MaxLongitude = 47.0;
         public const double MinLatitude = 34.0;
-        public const double MaxLatitude = 45.0;
-        public const float MapWidth = 100f;
+        public const double MaxLatitude = 61.0;
+        public const float MapWidth = 100f / 28f * 58f;
 
         public const string CitiesResourcePath = "BusTycoon/cities";
         /// <summary>
@@ -43,10 +45,10 @@ namespace BusTycoon.Data
         public const string OuterMapTextureResourcePath = "BusTycoon/map_outer_jpg";
         /// <summary>Deniz maskesi (PNG baytı; R su, G kıyı, B açık deniz): canlı deniz ve kıyı köpüğü (MapSurface).</summary>
         public const string WaterMaskResourcePath = "BusTycoon/map_water_png";
-        public const double OuterMinLongitude = 1.0;
-        public const double OuterMaxLongitude = 65.0;
-        public const double OuterMinLatitude = 27.0;
-        public const double OuterMaxLatitude = 54.0;
+        public const double OuterMinLongitude = -40.0;
+        public const double OuterMaxLongitude = 76.0;
+        public const double OuterMinLatitude = 22.0;
+        public const double OuterMaxLatitude = 72.0;
         /// <summary>Karayolu ağı (Tools/build_map.py üretir): hat çizgileri ve otobüsler yolları izler.</summary>
         public const string RoadsResourcePath = "BusTycoon/roads";
         /// <summary>
@@ -143,6 +145,17 @@ namespace BusTycoon.Data
                 600000, 16, 50, 72, 0.8f, 85, 2000, 1200000, 1.3f, 0.8f, 38, 0.22f, 70, 1.2f),
         };
 
+        /// <summary>Avrupa Paketi'nin otobüsleri (paket sahibiyse katalogda; uydurma markalar). docs/03 tablosuyla aynı.</summary>
+        public static readonly ModelSpec[] EuropeModels =
+        {
+            new ModelSpec("NORDSTAR_E12", "Nordstar E12 Elektrik", "Nordstar Mobility", BusSegment.StandardCoach,
+                "Sessiz elektrikli şehirlerarası: yakıt gideri çok düşük, bakımı ucuz. Rahat menzili 800 km.",
+                360000, 14, 45, 44, 0.7f, 90, 800, 1400000, 1.1f, 0.95f, 8, 0.09f, 36, 0.6f),
+            new ModelSpec("ALPINA_C50", "Alpina Reisestar 50", "Alpina Reisen", BusSegment.ComfortCoach,
+                "Alp geçitlerinin hâkimi: 50 koltuk, tuvalet ve güçlü motor. Uzun Avrupa hatlarının konfor yıldızı.",
+                340000, 15, 50, 50, 0.8f, 95, 2200, 1300000, 1.25f, 0.85f, 29, 0.14f, 38, 1f),
+        };
+
         /// <summary>Bölge ekonomisi ve genişleme kilitleri. Listede olmayan bölgeler varsayılan (×1, seviye 1, lisans yok) alır.</summary>
         public static readonly RegionSpec[] Regions =
         {
@@ -152,6 +165,39 @@ namespace BusTycoon.Data
             new RegionSpec("GE", 0.80f, 0.90f, 0.70f, 7, 30000),
             new RegionSpec("GR", 1.40f, 1.30f, 1.80f, 9, 60000),
             new RegionSpec("RO", 1.10f, 1.10f, 1.40f, 11, 70000),
+            // Avrupa Paketi (ContentPacks.Europe): yakın Balkanlar erken ve ucuz; Batı ve Kuzey Avrupa geç ve pahalı.
+            // Batı'da bilet yüksek ama maaş ve yakıt daha da yüksek: uzun ve dolu hatlar kâr eder.
+            new RegionSpec("RS", 1.10f, 1.10f, 1.40f, 8, 40000),
+            new RegionSpec("MK", 0.95f, 1.05f, 1.10f, 8, 25000),
+            new RegionSpec("AL", 1.00f, 1.10f, 1.10f, 9, 30000),
+            new RegionSpec("XK", 0.95f, 1.05f, 1.00f, 9, 25000),
+            new RegionSpec("ME", 1.15f, 1.15f, 1.40f, 10, 30000),
+            new RegionSpec("BA", 1.00f, 1.10f, 1.20f, 10, 35000),
+            new RegionSpec("MD", 0.85f, 1.00f, 0.90f, 10, 25000),
+            new RegionSpec("HU", 1.50f, 1.40f, 2.10f, 12, 120000),
+            new RegionSpec("HR", 1.60f, 1.50f, 2.30f, 12, 120000),
+            new RegionSpec("SI", 1.70f, 1.50f, 2.60f, 13, 140000),
+            new RegionSpec("SK", 1.50f, 1.45f, 2.20f, 13, 120000),
+            new RegionSpec("PL", 1.45f, 1.35f, 2.10f, 13, 150000),
+            new RegionSpec("CZ", 1.60f, 1.45f, 2.40f, 14, 160000),
+            new RegionSpec("LT", 1.50f, 1.40f, 2.30f, 15, 120000),
+            new RegionSpec("LV", 1.50f, 1.40f, 2.20f, 15, 110000),
+            new RegionSpec("EE", 1.60f, 1.45f, 2.50f, 16, 120000),
+            new RegionSpec("AT", 1.85f, 1.60f, 3.40f, 15, 250000),
+            new RegionSpec("IT", 1.80f, 1.75f, 3.10f, 15, 300000),
+            new RegionSpec("ES", 1.65f, 1.55f, 2.80f, 16, 300000),
+            new RegionSpec("PT", 1.55f, 1.65f, 2.40f, 16, 220000),
+            new RegionSpec("DE", 2.00f, 1.70f, 3.60f, 16, 400000),
+            new RegionSpec("FR", 1.90f, 1.75f, 3.50f, 16, 380000),
+            new RegionSpec("BE", 1.90f, 1.70f, 3.60f, 17, 280000),
+            new RegionSpec("NL", 2.00f, 1.80f, 3.80f, 17, 300000),
+            new RegionSpec("LU", 2.10f, 1.50f, 4.20f, 17, 200000),
+            new RegionSpec("GB", 2.05f, 1.75f, 3.70f, 18, 450000),
+            new RegionSpec("IE", 2.05f, 1.75f, 3.80f, 19, 300000),
+            new RegionSpec("DK", 2.15f, 1.90f, 4.40f, 19, 350000),
+            new RegionSpec("CH", 2.55f, 1.80f, 4.90f, 19, 500000),
+            new RegionSpec("SE", 2.10f, 1.90f, 4.10f, 20, 380000),
+            new RegionSpec("NO", 2.45f, 2.00f, 4.90f, 20, 450000),
         };
 
         public static bool TryGetRegionSpec(string regionId, out RegionSpec spec)
@@ -164,7 +210,7 @@ namespace BusTycoon.Data
 
         /// <summary>
         /// Tüm içeriği bellekte oluşturur. <paramref name="citiesCsv"/>: Resources/BusTycoon/cities.csv içeriği
-        /// (sütunlar: city, lat, lng, country, iso2, population, capital, tourism).
+        /// (sütunlar: city, lat, lng, country, iso2, population, capital, tourism, pack — pack: içerik paketi, ör. "europe").
         /// </summary>
         public static GameContent Build(string citiesCsv)
         {
@@ -184,6 +230,13 @@ namespace BusTycoon.Data
                 spec.ApplyTo(model);
                 models.Add(model);
             }
+            if (Entitlements.Owns(ContentPacks.Europe))
+                foreach (var spec in EuropeModels)
+                {
+                    var model = Create<BusModelData>("Bus_" + spec.Id);
+                    spec.ApplyTo(model);
+                    models.Add(model);
+                }
             content.Catalog.SetModels(models);
             content.Progression.SetStartingBus(models[0], 0.6f);
 
@@ -207,6 +260,7 @@ namespace BusTycoon.Data
             int colPopulation = CsvUtility.Column(header, "population");
             int colCapital = CsvUtility.Column(header, "capital");
             int colTourism = CsvUtility.Column(header, "tourism");
+            int colPack = CsvUtility.Column(header, "pack");
 
             var regions = new Dictionary<string, RegionData>(StringComparer.Ordinal);
             var usedIds = new HashSet<string>(StringComparer.Ordinal);
@@ -222,6 +276,7 @@ namespace BusTycoon.Data
                 {
                     region = Create<RegionData>("Region_" + iso);
                     region.Initialize(iso, CsvUtility.Cell(row, colCountry), "eurasia");
+                    if (colPack >= 0) region.SetPack(CsvUtility.Cell(row, colPack).Trim().ToLowerInvariant());
                     if (TryGetRegionSpec(iso, out RegionSpec spec))
                         region.SetEconomy(spec.Fare, spec.Fuel, spec.Wage, spec.Level, spec.License);
                     regions[iso] = region;

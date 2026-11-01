@@ -635,11 +635,19 @@ namespace BusTycoon.Game
             PanelHeader("Bölgeler", "Yeni ülkelerde hat açmak için işletme lisansı alın.");
             regionScroll = BeginScroll(regionScroll);
 
-            foreach (var region in session.World.Regions)
+            string currentPack = null;
+            foreach (var region in SortedRegions())
             {
-                int cities = 0;
-                foreach (var city in session.World.Cities) if (city.Region == region) cities++;
+                // Paket başlığı: temel oyunun ülkelerinden sonra Avrupa Paketi'nin ülkeleri
+                if (region.PackId != currentPack)
+                {
+                    currentPack = region.PackId;
+                    if (!string.IsNullOrEmpty(currentPack)) DrawPackHeader(currentPack);
+                }
+
+                int cities = CityCount(region);
                 bool unlocked = session.Progression.IsRegionUnlocked(region);
+                bool packOwned = Entitlements.Owns(region.PackId);
 
                 GUILayout.BeginVertical(s.Card);
                 GUILayout.BeginHorizontal();
@@ -648,6 +656,7 @@ namespace BusTycoon.Game
                 GUILayout.Label(region.DisplayName, s.H2);
                 GUILayout.FlexibleSpace();
                 if (unlocked) Badge("Açık", s.BadgeSuccess);
+                else if (!packOwned) Badge("Paket gerekli", s.BadgeWarning);
                 else Badge("Kilitli", s.BadgeWarning);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
@@ -658,7 +667,7 @@ namespace BusTycoon.Game
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                if (!unlocked)
+                if (!unlocked && packOwned)
                 {
                     var check = session.Progression.CanUnlockRegion(region);
                     GUILayout.Label($"Seviye {region.RequiredCompanyLevel} · lisans {Fmt.Money(region.OperatingLicenseCost)}", s.Small);
@@ -693,6 +702,47 @@ namespace BusTycoon.Game
                 GUILayout.EndVertical();
             }
             GUILayout.EndScrollView();
+        }
+
+        readonly List<RegionData> sortedRegions = new List<RegionData>();
+        readonly Dictionary<RegionData, int> regionCityCounts = new Dictionary<RegionData, int>();
+
+        /// <summary>Önce temel oyunun ülkeleri, sonra paketler; her grupta gereken seviyeye göre (bir kez sıralanır).</summary>
+        List<RegionData> SortedRegions()
+        {
+            if (sortedRegions.Count == session.World.Regions.Count) return sortedRegions;
+            sortedRegions.Clear();
+            sortedRegions.AddRange(session.World.Regions);
+            sortedRegions.Sort((a, b) =>
+            {
+                int pack = string.Compare(a.PackId, b.PackId, System.StringComparison.Ordinal);
+                if (pack != 0) return pack;
+                int level = a.RequiredCompanyLevel.CompareTo(b.RequiredCompanyLevel);
+                return level != 0 ? level : string.Compare(a.DisplayName, b.DisplayName, System.StringComparison.CurrentCulture);
+            });
+            regionCityCounts.Clear();
+            foreach (var city in session.World.Cities)
+                regionCityCounts[city.Region] = regionCityCounts.TryGetValue(city.Region, out int n) ? n + 1 : 1;
+            return sortedRegions;
+        }
+
+        int CityCount(RegionData region) => regionCityCounts.TryGetValue(region, out int n) ? n : 0;
+
+        void DrawPackHeader(string packId)
+        {
+            Sp(6f);
+            GUILayout.BeginHorizontal();
+            LayoutIcon(UIIcon.Package, 26f, 0f);
+            Sp(6f);
+            ColorLabel(ContentPacks.DisplayName(packId), UIStyles.Orange, s.H2);
+            GUILayout.FlexibleSpace();
+            if (Entitlements.Owns(packId)) Badge("Sahipsiniz", s.BadgeSuccess);
+            else Badge("Satın alınmadı", s.BadgeWarning);
+            GUILayout.EndHorizontal();
+            GUILayout.Label(Entitlements.Owns(packId)
+                ? "Kıta Avrupası ve Britanya: 31 ülke, 128 şehir. Seviye ilerledikçe lisansla açılır; Batı'da bilet de maaş da yüksektir."
+                : "Bu ülkeler Avrupa Paketi ile açılır.", s.WrapDim);
+            Sp(4f);
         }
 
         void FocusRegion(RegionData region)

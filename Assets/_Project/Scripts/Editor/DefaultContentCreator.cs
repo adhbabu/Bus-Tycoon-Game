@@ -9,7 +9,7 @@ namespace BusTycoon.EditorTools
 {
     /// <summary>
     /// Oyunun çalışma anında kendini kurduğu içeriği (<see cref="DefaultContent"/>) düzenlenebilir ASSET'ler olarak üretir:
-    /// ayarlar, 8 otobüs modeli, Mercator projeksiyonu ve Resources/BusTycoon/cities.csv'deki 93 şehir.
+    /// ayarlar, 8 otobüs modeli, Mercator projeksiyonu ve Resources/BusTycoon/cities.csv'deki şehirler (Avrupa Paketi dahil 221).
     /// Kendi sahnenizi kuracaksanız (uGUI/prefab yolu) bu asset'leri GameSession'a bağlayın.
     /// Var olan asset'lere dokunmaz (tasarımcının yaptığı ayarlar ezilmez).
     /// </summary>

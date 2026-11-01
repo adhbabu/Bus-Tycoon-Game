@@ -333,6 +333,10 @@ para ödülü verir.
   * Yüksek: Orta + yumuşak gölgeler ve kayan bulut gölgeleri.
   * Düşük: harita efektleri ve gölgeler kapalı; web'de tuval 1 CSS pikseli çözünürlükte (en akıcı, pil dostu).
   * `?kalite=dusuk|orta|yuksek` açılış seçeneği kaydı değiştirmeden zorlar (test ve ekran görüntüleri).
+* **Bölgeler paneli ve Avrupa Paketi:** önce temel oyunun ülkeleri, sonra 📦 "Avrupa Paketi" başlığı (sahiplik
+  rozeti) ve 31 ülke; her grup gereken seviyeye göre sıralı. Paket yoksa ülke kartında "Paket gerekli" rozeti çıkar,
+  lisans düğmesi gizlenir; yeni oyunda o ülkelerin şehirleri merkez seçilemez. Çok oyunculuda merkez şehir
+  seçimine Berlin, Paris ve Londra eklenir.
 * **Kısayollar:** `Space` duraklat, `1/2/3` hız, `N` yeni hat, `R` hatlarım, `F` filo, `G` galeri, `K` finans,
   `B` bölgeler, `J` görevler, `L` günlük, `H` yardım, `F5` kaydet, `Esc` geri / menü, `WASD` kaydır, `Q/E` yakınlaştır.
 

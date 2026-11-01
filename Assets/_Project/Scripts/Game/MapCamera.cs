@@ -15,7 +15,8 @@ namespace BusTycoon.Game
         const float FarPitch = 62f, NearPitch = 42f;   // uzakta tepeden, yakında sinematik
         const float FarFov = 40f, NearFov = 35f;
         const float MinDistance = 7f;
-        const float MaxDistance = 85f;
+        const float MaxDistance = 140f;     // Avrupa haritasının tamamı görünür
+        const float TiltDistance = 85f;     // eğim ve görüş açısı bu uzaklığa kadar değişir, ötesinde sabit
         const float UserSmooth = 0.11f;     // kullanıcı girdisi: çabuk tepki
         const float FocusSmooth = 0.42f;    // odaklanma (şehre/hatta): sinematik
         const float DriftSmooth = 1.6f;
@@ -84,7 +85,7 @@ namespace BusTycoon.Game
 
         void Apply()
         {
-            float t = Mathf.Pow(Zoom01, 0.7f);
+            float t = Mathf.Pow(Mathf.InverseLerp(MinDistance, TiltDistance, distance), 0.7f);
             Quaternion rotation = Quaternion.Euler(Mathf.Lerp(NearPitch, FarPitch, t), 0f, 0f);
             cam.fieldOfView = Mathf.Lerp(NearFov, FarFov, t);
             cam.transform.SetPositionAndRotation(target - rotation * Vector3.forward * distance, rotation);

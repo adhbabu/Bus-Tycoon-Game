@@ -16,6 +16,8 @@ namespace BusTycoon.Data
         [Tooltip("Karayolu bağlantısı olan kara kütlesi. Farklı kütleler arasında hat açılamaz (feribot bağlantısı hariç).")]
         [SerializeField] string defaultLandmassId = "eurasia";
         [SerializeField] Color mapColor = new Color(0.85f, 0.85f, 0.85f);
+        [Tooltip("İçerik paketi (DLC) kimliği; boşsa temel oyun. Bkz. ContentPacks.")]
+        [SerializeField] string packId = "";
 
         [Header("Ekonomi çarpanları")]
         [Tooltip("Alım gücü: referans bilet fiyatını ölçekler.")]
@@ -32,6 +34,8 @@ namespace BusTycoon.Data
         public string DisplayName => string.IsNullOrEmpty(displayName) ? regionId : displayName;
         public string DefaultLandmassId => defaultLandmassId;
         public Color MapColor => mapColor;
+        /// <summary>Bölgenin ait olduğu içerik paketi (boş: temel oyun).</summary>
+        public string PackId => packId ?? string.Empty;
         public float FareMultiplier => fareMultiplier;
         public float FuelPriceMultiplier => fuelPriceMultiplier;
         public float WageMultiplier => wageMultiplier;
@@ -44,6 +48,8 @@ namespace BusTycoon.Data
             displayName = name;
             defaultLandmassId = landmassId;
         }
+
+        internal void SetPack(string pack) => packId = pack ?? string.Empty;
 
         internal void SetEconomy(float fare, float fuel, float wage, int requiredLevel, float licenseCost)
         {

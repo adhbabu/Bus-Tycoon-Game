@@ -92,3 +92,131 @@ Varna	89	Karadeniz plajları
 Burgaz	90	Plajlar ve tuz gölleri
 Batum	91	Palmiyeli bulvar
 Dedeağaç	92	Meriç Deltası kuğuları
+Londra	93	Big Ben ve kraliyet muhafızları
+Paris	94	Eyfel Kulesi
+Madrid	95	Kraliyet Sarayı ve Prado
+Barselona	96	Gaudí ve Sagrada Familia
+Milano	97	Moda başkenti
+Berlin	98	Brandenburg Kapısı, ayı simgesi
+Roma	99	Kolezyum
+Hamburg	100	Liman ve Elbphilharmonie
+Napoli	101	Pizzanın doğduğu yer
+Varşova	102	Deniz kızı heykeli, eski şehir
+Budapeşte	103	Kaplıcalar ve Tuna
+Birmingham	104	Sanayi devriminin kalbi
+Münih	105	Oktoberfest ve brezel
+Viyana	106	Klasik müzik ve Sacher pastası
+Lizbon	107	Sarı tramvaylar
+Manchester	108	Futbolun başkenti
+Stuttgart	109	Otomobil şehri
+Prag	110	Bira ve Karl Köprüsü
+Amsterdam	111	Kanallar ve bisikletler
+Stockholm	112	Nobel ödülleri
+Lyon	113	Fransız mutfağının başkenti
+Frankfurt	114	Avrupa Merkez Bankası
+Torino	115	Alplerin eteğinde otomobil şehri
+Brüksel	116	Çikolata ve AB'nin merkezi
+Köln	117	Köln Katedrali
+Kopenhag	118	Küçük Deniz Kızı
+Dublin	119	Yonca ve pub'lar
+Katowice	120	Silezya maden ocakları
+Leeds	121	Yün ve tekstil geçmişi
+Marsilya	122	Akdeniz limanı
+Zürih	123	Saatler ve bankalar
+Glasgow	124	Clyde tersaneleri
+Rotterdam	125	Avrupa'nın en büyük limanı
+Dortmund	126	Futbol ve Ruhr
+Porto	127	Porto şarabı
+Belgrad	128	Kalemegdan Kalesi
+Liverpool	129	Beatles'ın şehri
+Valensiya	130	Paellanın memleketi
+Oslo	131	Viking gemileri
+Lille	132	Gofret ve Flaman mirası
+Düsseldorf	133	Moda ve Ren kıyısı
+Sevilla	134	Flamenko
+Krakov	135	Wawel ejderhası
+Toulouse	136	Havacılık ve uzay
+Bordo	137	Şarap bağları
+Dresden	138	Barok sanat, Zwinger
+Nürnberg	139	Oyuncak fuarı
+Wrocław	140	Cüce heykelleri
+Bari	141	Adriyatik balıkçıları
+Palermo	142	Sicilya limonları ve pazarlar
+Newcastle	143	Kömür madenciliği geçmişi
+Cardiff	144	Gal ejderhası
+Anvers	145	Elmas başkenti
+Hannover	146	Dünyanın en büyük fuarları
+Gdańsk	147	Kehribar başkenti
+Łódź	148	Film okulu ve sinema
+Zagreb	149	Kravatın doğduğu yer
+Göteborg	150	İskandinavya'nın en büyük limanı
+Bristol	151	Sıcak hava balonu festivali
+Nice	152	Fransız Rivierası
+Nantes	153	Dev mekanik fil
+Lahey	154	Uluslararası Adalet Divanı
+Leipzig	155	Bach ve müzik
+Bremen	156	Bremen mızıkacıları
+Cenevre	157	Barış ve uluslararası kuruluşlar
+Floransa	158	Rönesans sanatı
+Bologna	159	Bolonez ve en eski üniversite
+Malaga	160	Costa del Sol plajları
+Bilbao	161	Guggenheim Müzesi
+Poznań	162	Tos vuran keçiler
+Riga	163	Art Nouveau binaları
+Aarhus	164	Gökkuşağı panoraması
+Edinburgh	165	Kale ve festival şehri
+Utrecht	166	Miffy'nin şehri, kanallar
+Basel	167	İlaç sanayi ve sanat fuarı
+Verona	168	Romeo ve Juliet
+Tiran	169	Renkli binalar
+Venedik	170	Gondollar ve kanallar
+Cenova	171	Kolomb'un şehri
+Strazburg	172	Noel pazarı ve Avrupa Parlamentosu
+Montpellier	173	Güneşli öğrenci şehri
+Linz	174	Dijital sanat festivali
+Vilnius	175	Sıcak hava balonları
+Zaragoza	176	Roma ve Endülüs mirası
+Rennes	177	Breton krepi
+Liège	178	Patates kızartması
+Eindhoven	179	Işık şehri, teknoloji
+Alicante	180	Palmiyeli sahil
+Kişinev	181	Şarap mahzenleri
+Malmö	182	Öresund Köprüsü
+Bratislava	183	Tuna kıyısında kale
+Brno	184	Mendel ve genetik
+Lüksemburg	185	Finans merkezi
+Graz	186	Saat Kulesi
+Gent	187	Ortaçağ kanalları ve katedral
+Ostrava	188	Çelik ve sanayi
+Üsküp	189	Heykeller şehri
+Tallinn	190	Dijital devlet, Ortaçağ surları
+Salzburg	191	Mozart'ın doğduğu şehir
+Saraybosna	192	Başçarşı ve Boşnak kahvesi
+Lublyana	193	Ejderha Köprüsü
+Granada	194	Elhamra Sarayı
+Odense	195	Andersen masalları
+Faro	196	Algarve sahilleri
+Split	197	Diocletianus Sarayı
+Coimbra	198	Tarihî üniversite
+Innsbruck	199	Alp kayak merkezi
+Bern	200	Ayılar ve Saat Kulesi
+Lozan	201	Olimpiyat Komitesi
+Bergen	202	Yağmurlu fiyort şehri
+Cork	203	Liman şehri
+Debrecen	204	Çiçek karnavalı
+Banja Luka	205	Yeşil şehir, Vrbas
+Novi Sad	206	EXIT festivali
+Niş	207	Büyük Konstantin'in doğduğu yer
+Priştine	208	Ulusal Kütüphane
+Kaunas	209	Basketbol tutkusu
+Koşice	210	Gotik katedral
+Segedin	211	Kırmızı biber ve balık çorbası
+Peçuy	212	Zsolnay seramikleri
+Maribor	213	Dünyanın en yaşlı asması
+Rijeka	214	Adriyatik limanı
+Dıraç	215	Roma amfitiyatrosu
+Podgorica	216	Dağlar arasında başkent
+Galway	217	Kelt müziği
+Mostar	218	Tarihî Mostar Köprüsü
+Dubrovnik	219	Surlarla çevrili inci
+Ohri	220	Ohri Gölü
