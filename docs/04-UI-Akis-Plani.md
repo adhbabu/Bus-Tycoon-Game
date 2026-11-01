@@ -325,6 +325,14 @@ para ödülü verir.
   * Durak ve otobüs malzemeleri paylaşılır; GPU örneklemeli çizim kullanılır.
   * Üst çubuk ve GUILayout seçenekleri önbellekte: kare başına çöp azalır.
   * `?fps=1` kare süresi göstergesini açar.
+* **Görüntü kalitesi** (`GraphicsQuality`; ana menü ve duraklatma menüsü: Otomatik / Düşük / Orta / Yüksek, kalıcı):
+  * Otomatik: telefonda Orta, tablet ve bilgisayarda Yüksek; ekran kartsız (yazılımla çizen) tarayıcıda Düşük.
+  * Hepsinde 4x kenar yumuşatma (derlemede açılır) ve anizotropik harita süzmesi.
+  * Orta: canlı deniz (dalga, güneş yansıması, kıyı köpüğü), yakın arazi dokusu, keskin gölgeler, ufuk pusu, ekran
+    kenarı karartması.
+  * Yüksek: Orta + yumuşak gölgeler ve kayan bulut gölgeleri.
+  * Düşük: harita efektleri ve gölgeler kapalı; web'de tuval 1 CSS pikseli çözünürlükte (en akıcı, pil dostu).
+  * `?kalite=dusuk|orta|yuksek` açılış seçeneği kaydı değiştirmeden zorlar (test ve ekran görüntüleri).
 * **Kısayollar:** `Space` duraklat, `1/2/3` hız, `N` yeni hat, `R` hatlarım, `F` filo, `G` galeri, `K` finans,
   `B` bölgeler, `J` görevler, `L` günlük, `H` yardım, `F5` kaydet, `Esc` geri / menü, `WASD` kaydır, `Q/E` yakınlaştır.
 

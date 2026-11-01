@@ -29,8 +29,13 @@ namespace BusTycoon.Game
             ConfigurePlatform();
             GameUI.ProfileOverride = GameUI.ParseProfile(LaunchOptions.Get("profil") ?? LaunchOptions.Get("profile"));
             GameContent content = DefaultContent.Build(csv.text);
-            var mapTexture = Resources.Load<Texture2D>(DefaultContent.MapTextureResourcePath);
-            var outerTexture = Resources.Load<Texture2D>(DefaultContent.OuterMapTextureResourcePath);
+            // Harita dokuları JPEG/PNG baytından çözülür (MapTextures): web indirmesi ~13 MB küçük
+            Texture2D mapTexture = MapTextures.LoadMap();
+            Texture2D outerTexture = MapTextures.LoadOuter();
+            Texture2D waterMask = MapTextures.LoadWaterMask();
+            if (mapTexture != null)
+                Debug.Log($"[Bus Tycoon] Harita dokusu {mapTexture.width}x{mapTexture.height}, {mapTexture.mipmapCount} mip, " +
+                          $"deniz maskesi {(waterMask != null ? "var" : "yok")}");
 
             var root = new GameObject("Bus Tycoon");
 
@@ -44,10 +49,11 @@ namespace BusTycoon.Game
 
             var world = new GameObject("World").AddComponent<WorldRenderer>();
             world.transform.SetParent(root.transform, false);
-            world.Init(session, content.Projection, mapTexture, outerTexture, LoadRoads());
+            world.Init(session, content.Projection, mapTexture, outerTexture, LoadRoads(), waterMask);
 
             Camera camera = SetupCamera(world.SeaColor);
             Light sun = SetupLighting();
+            GraphicsQuality.Init(sun); // gölgeler, harita efektleri, web çözünürlüğü (cihaza göre ya da menüden)
             new GameObject("DayNightCycle").AddComponent<DayNightCycle>().Init(session, sun, world);
 
             var mapCamera = camera.gameObject.AddComponent<MapCamera>();
@@ -144,12 +150,13 @@ namespace BusTycoon.Game
             sun.transform.rotation = Quaternion.Euler(62f, -35f, 0f);
             sun.intensity = 1.15f;
             sun.color = new Color(1f, 0.97f, 0.92f);
-            sun.shadows = Application.isMobilePlatform ? LightShadows.Hard : LightShadows.Soft;
+            sun.shadows = LightShadows.Soft; // kaliteye göre GraphicsQuality ayarlar
             sun.shadowStrength = 0.6f;
 
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.5f, 0.53f, 0.58f);
-            RenderSettings.fog = false;
+            RenderSettings.fog = false; // ufuk pusu haritadayken WorldRenderer'da açılır (kaliteye göre)
+            RenderSettings.fogMode = FogMode.Linear;
             return sun;
         }
     }

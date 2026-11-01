@@ -7,7 +7,7 @@ Mağaza görsellerini üretir (özgün çizim; harici görsel kullanılmaz):
   store/google-play/feature-graphic.png      1024×500   Google Play tanıtım görseli
   Assets/_Project/Resources/BusTycoon/UI/mascot.png  512×256  ana menüdeki güler yüzlü otobüs (saydam)
 
-Arka plan, oyunun kendi harita dokusundan (Assets/_Project/Resources/BusTycoon/map.jpg) alınır.
+Arka plan, oyunun kendi harita dokusundan (Assets/_Project/Resources/BusTycoon/map_jpg.bytes, JPEG) alınır.
 Kullanım: python3 Tools/make_store_art.py      Gereksinim: Pillow, Inter yazı tipi (veya DejaVu Sans)
 """
 import os
@@ -15,7 +15,7 @@ import os
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MAP = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon", "map.jpg")
+MAP = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon", "map_jpg.bytes")  # JPEG
 SS = 4  # süper örnekleme (kenar yumuşatma)
 
 FONT_CANDIDATES = {
