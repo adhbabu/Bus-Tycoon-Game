@@ -11,7 +11,8 @@ namespace BusTycoon.Game
     /// üzerine belirerek gelir. Uzaklaşınca ya da başka yere gidince söner; bellekte en çok birkaç döşeme kalır.
     /// <list type="bullet">
     /// <item>Döşeme sayısı kaliteye göre: Yüksek 9, Orta 5, Düşük 0 (yalnız genel harita).</item>
-    /// <item>Aynı anda en çok iki indirme; kare başına en çok bir döşeme çözülür (takılma olmasın).</item>
+    /// <item>Aynı anda en çok iki indirme. Tarayıcıda görüntü arka planda çözülür (WebImage); kare başına en çok bir
+    /// döşeme ekran kartına yüklenir (takılma olmasın).</item>
     /// <item>Döşeme, harita gölgelendiricisinin BT_TILE çeşidiyle çizilir: deniz, bulut, gölge, pus aynen sürer.</item>
     /// <item>Dizin ya da bir döşeme inemezse oyun genel haritayla devam eder (hata göstermez).</item>
     /// </list>
@@ -49,6 +50,7 @@ namespace BusTycoon.Game
             public Rect Area;       // dünya XZ
             public float TexV;      // harita sınırında kırpılan döşemenin doku üst kenarı
             public UnityWebRequest Request;
+            public int ImageId;     // tarayıcıda çözülüyor (WebImage)
             public Texture2D Texture;
             public Material Material;
             public GameObject Object;
@@ -166,13 +168,21 @@ namespace BusTycoon.Game
             }
 
             int loading = 0;
-            foreach (var tile in tiles) if (tile.Request != null) loading++;
+            foreach (var tile in tiles) if (tile.Request != null || tile.ImageId != 0) loading++;
             foreach (var tile in candidates)
             {
                 if (loading >= MaxConcurrentLoads) break;
-                if (!tile.Wanted || tile.Texture != null || tile.Request != null) continue;
-                tile.Request = UnityWebRequest.Get($"{root}/{Folder}/{tile.Name}.jpg");
-                tile.Request.SendWebRequest();
+                if (!tile.Wanted || tile.Texture != null || tile.Request != null || tile.ImageId != 0) continue;
+                string url = $"{root}/{Folder}/{tile.Name}.jpg";
+                if (WebImage.Supported)
+                {
+                    tile.ImageId = WebImage.Begin(url); // tarayıcı arka planda indirip çözer
+                }
+                else
+                {
+                    tile.Request = UnityWebRequest.Get(url);
+                    tile.Request.SendWebRequest();
+                }
                 loading++;
             }
         }
@@ -207,6 +217,25 @@ namespace BusTycoon.Game
             bool decoded = false;
             foreach (var tile in tiles)
             {
+                if (tile.ImageId != 0)
+                {
+                    int state = WebImage.State(tile.ImageId);
+                    if (state == 0 || (state == 1 && decoded)) continue; // bekliyor / kare başına bir yükleme
+                    if (state == 1)
+                    {
+                        decoded = true;
+                        Texture2D texture = WebImage.Finish(tile.ImageId, "MapTile_" + tile.Name, 8);
+                        if (texture != null) CreateVisual(tile, texture);
+                        else tile.Failed = true;
+                    }
+                    else
+                    {
+                        tile.Failed = true; // bu döşeme yok/inemedi: genel harita yeter
+                    }
+                    tile.ImageId = 0;
+                    continue;
+                }
+
                 UnityWebRequest request = tile.Request;
                 if (request == null || !request.isDone) continue;
                 if (request.result != UnityWebRequest.Result.Success)
@@ -217,14 +246,15 @@ namespace BusTycoon.Game
                 {
                     if (decoded) continue; // kare başına bir çözme; kalan istek sonraki karede
                     decoded = true;
-                    CreateVisual(tile, request.downloadHandler.data);
+                    CreateVisualFromBytes(tile, request.downloadHandler.data);
                 }
                 request.Dispose();
                 tile.Request = null;
             }
         }
 
-        void CreateVisual(Tile tile, byte[] bytes)
+        /// <summary>Eski yol (web dışı ya da ?eskidoku=1): görüntü ana iş parçacığında çözülür.</summary>
+        void CreateVisualFromBytes(Tile tile, byte[] bytes)
         {
             var texture = new Texture2D(2, 2, TextureFormat.RGB24, true) { name = "MapTile_" + tile.Name };
             if (bytes == null || !texture.LoadImage(bytes, true))
@@ -236,6 +266,11 @@ namespace BusTycoon.Game
             texture.wrapMode = TextureWrapMode.Clamp;
             texture.filterMode = FilterMode.Trilinear;
             texture.anisoLevel = 8;
+            CreateVisual(tile, texture);
+        }
+
+        void CreateVisual(Tile tile, Texture2D texture)
+        {
             tile.Texture = texture;
 
             var material = new Material(template) { name = "MapTile_" + tile.Name, mainTexture = texture };
@@ -316,6 +351,11 @@ namespace BusTycoon.Game
                 tile.Request.Dispose();
                 tile.Request = null;
             }
+            if (tile.ImageId != 0)
+            {
+                WebImage.Cancel(tile.ImageId);
+                tile.ImageId = 0;
+            }
             if (tile.Object != null)
             {
                 var filter = tile.Object.GetComponent<MeshFilter>();
@@ -323,7 +363,7 @@ namespace BusTycoon.Game
                 Destroy(tile.Object);
             }
             if (tile.Material != null) Destroy(tile.Material);
-            if (tile.Texture != null) Destroy(tile.Texture);
+            if (tile.Texture != null) WebImage.Release(tile.Texture); // tarayıcı dokusuysa WebGL dokusu da silinir
             tile.Object = null;
             tile.Renderer = null;
             tile.Material = null;

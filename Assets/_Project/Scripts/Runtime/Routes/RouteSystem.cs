@@ -105,8 +105,9 @@ namespace BusTycoon.Routes
             quote.LicenseCost = economy.GetRouteLicenseCost(quote.DistanceKm);
 
             float bias = ElasticityBiasFor(a.Id, b.Id);
-            float busSeatsAtTarget = plannedModel.Seats * economy.AutoScheduleTargetLoadFactor
-                                     * RouteEconomics.MaxTripsPerDay(plannedModel, quote.DistanceKm, economy);
+            // Koltuksuz model ya da sefer yapılamayacak kadar uzun hat: sıfıra bölme olmasın
+            float busSeatsAtTarget = Mathf.Max(1f, plannedModel.Seats * economy.AutoScheduleTargetLoadFactor
+                                                   * RouteEconomics.MaxTripsPerDay(plannedModel, quote.DistanceKm, economy));
 
             // Talep 30. gün olgunluğunda değerlendirilir: açılış günündeki düşük talep oyuncuyu yanıltmasın.
             const int matureDays = 30;

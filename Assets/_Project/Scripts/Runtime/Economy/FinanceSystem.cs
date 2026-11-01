@@ -34,6 +34,29 @@ namespace BusTycoon.Economy
         public double[] byCategory;
 
         public double Net => income - expenses;
+
+        /// <summary>
+        /// İşletme kârı: bilet geliri eksi işletme giderleri (yakıt, maaş, bakım, otoyol, otogar, ikram, sigorta, onarım).
+        /// Otobüs alım-satımı, lisanslar, durak yatırımları ve görev ödülleri girmez: "günlük kâr" görevleri bunu ölçer.
+        /// </summary>
+        public double OperatingNet
+        {
+            get
+            {
+                if (byCategory == null) return Net;
+                double total = 0;
+                foreach (LedgerCategory category in OperatingCategories)
+                    if ((int)category < byCategory.Length) total += byCategory[(int)category];
+                return total;
+            }
+        }
+
+        static readonly LedgerCategory[] OperatingCategories =
+        {
+            LedgerCategory.TicketRevenue, LedgerCategory.Fuel, LedgerCategory.DriverWages, LedgerCategory.Maintenance,
+            LedgerCategory.Tolls, LedgerCategory.TerminalFees, LedgerCategory.PassengerService, LedgerCategory.Insurance,
+            LedgerCategory.Repairs
+        };
     }
 
     [Serializable]

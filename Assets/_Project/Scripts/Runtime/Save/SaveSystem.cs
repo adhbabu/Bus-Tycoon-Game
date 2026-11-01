@@ -26,11 +26,17 @@ namespace BusTycoon.Save
         {
             state.saveVersion = CompanyState.CurrentSaveVersion;
             string path = GetPath(slot);
+            string json = JsonUtility.ToJson(state);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // Tarayıcıda dosya sistemi bellektedir ve her işlem IndexedDB eşitlemesi tetikler: tek yazma yeterli
+            // (geçici dosya + sil + taşı üç eşitleme demekti).
+            File.WriteAllText(path, json);
+#else
             string tempPath = path + ".tmp";
-
-            File.WriteAllText(tempPath, JsonUtility.ToJson(state));
+            File.WriteAllText(tempPath, json);
             if (File.Exists(path)) File.Delete(path);
             File.Move(tempPath, path);
+#endif
         }
 
         public static bool TryLoad(string slot, out CompanyState state)

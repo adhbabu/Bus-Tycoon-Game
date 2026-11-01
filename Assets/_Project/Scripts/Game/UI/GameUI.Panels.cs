@@ -120,6 +120,33 @@ namespace BusTycoon.Game
 
         // ------------------------------------------------------------------ Hatlarım
 
+        readonly Dictionary<string, RouteInsight> routeInsightCache = new Dictionary<string, RouteInsight>();
+        bool routeListDirty = true;
+
+        /// <summary>
+        /// Hat listesi ve her hattın içgörüsü günde bir (veri değişince) hesaplanır: sıralama karşılaştırmasında
+        /// içgörü metni üretmek her kare yüzlerce metin ve çöp demekti.
+        /// </summary>
+        void EnsureRouteList()
+        {
+            var routes = session.Routes.Routes;
+            if (!routeListDirty && sortedRoutes.Count == routes.Count) return;
+            routeListDirty = false;
+            routeInsightCache.Clear();
+            foreach (var route in routes)
+                routeInsightCache[route.routeId] = RouteAdvisor.GetTopInsight(route, session.Fleet.CountBusesOnRoute(route.routeId));
+            sortedRoutes.Clear();
+            sortedRoutes.AddRange(routes);
+            sortedRoutes.Sort(CompareRoutes);
+        }
+
+        int CompareRoutes(RouteState x, RouteState y)
+        {
+            var ix = routeInsightCache[x.routeId];
+            var iy = routeInsightCache[y.routeId];
+            return ix.Severity != iy.Severity ? iy.Severity.CompareTo(ix.Severity) : y.LastReport.Profit.CompareTo(x.LastReport.Profit);
+        }
+
         void DrawRouteList()
         {
             var routes = session.Routes;
@@ -137,20 +164,14 @@ namespace BusTycoon.Game
                 return;
             }
 
-            sortedRoutes.Clear();
-            sortedRoutes.AddRange(routes.Routes);
-            sortedRoutes.Sort((x, y) =>
-            {
-                var ix = RouteAdvisor.GetTopInsight(x, fleet.CountBusesOnRoute(x.routeId));
-                var iy = RouteAdvisor.GetTopInsight(y, fleet.CountBusesOnRoute(y.routeId));
-                return ix.Severity != iy.Severity ? iy.Severity.CompareTo(ix.Severity) : y.LastReport.Profit.CompareTo(x.LastReport.Profit);
-            });
+            EnsureRouteList();
 
             listScroll = BeginScroll(listScroll);
             foreach (var route in sortedRoutes)
             {
                 int buses = fleet.CountBusesOnRoute(route.routeId);
-                RouteInsight insight = RouteAdvisor.GetTopInsight(route, buses);
+                if (!routeInsightCache.TryGetValue(route.routeId, out RouteInsight insight))
+                    insight = RouteAdvisor.GetTopInsight(route, buses);
                 RouteDayReport last = route.LastReport;
 
                 GUILayout.BeginVertical(s.Card);

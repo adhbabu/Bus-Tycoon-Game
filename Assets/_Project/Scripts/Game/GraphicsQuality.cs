@@ -40,6 +40,9 @@ namespace BusTycoon.Game
         public static QualityLevel Current { get; private set; } = QualityLevel.High;
         /// <summary>Oyuncu bir seviye seçmediyse (cihaza göre otomatik).</summary>
         public static bool IsAuto => !forced.HasValue && Stored == Automatic;
+        /// <summary>Haritadaki gölge kalitesi (durak içinden çıkınca da bu uygulanır).</summary>
+        public static ShadowQuality MapShadows => Current == QualityLevel.High ? ShadowQuality.All
+            : Current == QualityLevel.Medium ? ShadowQuality.HardOnly : ShadowQuality.Disable;
         /// <summary>Ufuk pusu, ekran kenarı karartması gibi ucuz atmosfer efektleri (Düşük'te kapalı).</summary>
         public static bool Atmosphere => Current != QualityLevel.Low;
         public static event Action Changed;
@@ -121,9 +124,10 @@ namespace BusTycoon.Game
             Shader.SetGlobalFloat(CloudsId, level == QualityLevel.High ? 1f : 0f);
 
             QualitySettings.anisotropicFiltering = level == QualityLevel.Low ? AnisotropicFiltering.Enable : AnisotropicFiltering.ForceEnable;
-            QualitySettings.shadows = level == QualityLevel.High ? ShadowQuality.All
-                : level == QualityLevel.Medium ? ShadowQuality.HardOnly : ShadowQuality.Disable;
+            QualitySettings.shadows = MapShadows;
             QualitySettings.shadowResolution = level == QualityLevel.High ? ShadowResolution.High : ShadowResolution.Medium;
+            // Tek gölge katmanı: katmanlı gölgede yerleşik hat her şeyi bir kez daha derinlik geçişinde çizer
+            QualitySettings.shadowCascades = 1;
             if (sun != null)
                 sun.shadows = level == QualityLevel.High ? LightShadows.Soft
                     : level == QualityLevel.Medium ? LightShadows.Hard : LightShadows.None;
