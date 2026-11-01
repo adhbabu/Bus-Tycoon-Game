@@ -39,6 +39,13 @@ namespace BusTycoon.Game
         GoalTracker goals;
         readonly Notifications notes = new Notifications();
         UIStyles s;
+        // Sağdaki paneller haritayı az kapatsın: içerikleri (yazı, düğme, boşluk) kendi, daha küçük ölçeğinde çizilir
+        const float PanelScale = 0.8f, PanelScalePhone = 0.9f;
+        UIStyles panelStyles;
+        float panelU = 1f;
+        UIStyles savedStyles;
+        float savedU;
+        int panelScaleDepth;
 
         Mode mode = Mode.MainMenu;
         /// <summary>Ana menü ya da çok oyunculu ekranı: arkadaki harita kendi kendine süzülür, tıklanmaz.</summary>
@@ -431,6 +438,11 @@ namespace BusTycoon.Game
         void OnGUI()
         {
             if (session == null) return;
+            if (panelScaleDepth > 0) // önceki karede panel çizimi yarıda kaldıysa genel ölçeğe dön
+            {
+                panelScaleDepth = 1;
+                EndPanelScale();
+            }
             ComputeMetrics();
             GUI.skin.settings.cursorColor = UIStyles.Text;
 
@@ -542,6 +554,13 @@ namespace BusTycoon.Game
                 s?.Dispose();
                 s = new UIStyles(u, mobile);
             }
+            float panelUnit = Mathf.Clamp(Mathf.Round(u * (phone ? PanelScalePhone : PanelScale) * 20f) / 20f, 0.5f, 4f);
+            if (panelStyles == null || !Mathf.Approximately(panelUnit, panelU) || panelStyles.Touch != mobile)
+            {
+                panelU = panelUnit;
+                panelStyles?.Dispose();
+                panelStyles = new UIStyles(panelU, mobile);
+            }
 
             // Telefonda harita alanı dar: mini harita kapalı başlar (oyuncu açabilir)
             if (phone && !phoneDefaultsApplied)
@@ -588,8 +607,30 @@ namespace BusTycoon.Game
         float Margin => (phone ? 8f : 12f) * u;
         float TopBarHeight => (SlimTopBar ? 54f : 70f) * u;
         float BottomBarHeight => (phone ? 58f : 66f) * u;
-        float PanelWidth => phone ? Mathf.Min(490f * u, (SafeRight - SafeLeft) * 0.52f) // harita yarıdan fazla görünsün
-            : compact ? Mathf.Min(480f * u, (SafeRight - SafeLeft) * 0.54f) : 490f * u;
+        /// <summary>Panel genişliği: panel ölçeğinde 490 birim; telefonda ekranın en çok %42'si (haritanın çoğu görünsün).</summary>
+        float PanelWidth => phone ? Mathf.Min(490f * panelU, (SafeRight - SafeLeft) * 0.42f)
+            : compact ? Mathf.Min(490f * panelU, (SafeRight - SafeLeft) * 0.48f) : 490f * panelU;
+
+        /// <summary>
+        /// Panel içeriğini panel ölçeğinde çizmeye başla: <c>u</c> ve <c>s</c> geçici olarak küçük ölçeğe geçer
+        /// (Ht, Wd, Sp, ikonlar, yazılar kendiliğinden küçülür). Her çağrı <see cref="EndPanelScale"/> ile kapanır.
+        /// </summary>
+        void BeginPanelScale()
+        {
+            if (panelScaleDepth++ > 0 || panelStyles == null) return;
+            savedU = u;
+            savedStyles = s;
+            u = panelU;
+            s = panelStyles;
+        }
+
+        void EndPanelScale()
+        {
+            if (panelScaleDepth == 0 || --panelScaleDepth > 0 || savedStyles == null) return;
+            u = savedU;
+            s = savedStyles;
+            savedStyles = null;
+        }
         /// <summary>
         /// Alt menü çubuğu görünür mü? Telefonda bir panel açıkken gizlenir: panel tam boy kullanır, harita solda
         /// görünür kalır; menüye panel kapatılınca dönülür.
@@ -611,24 +652,20 @@ namespace BusTycoon.Game
         }
 
         // GUILayout.Height/Width her çağrıda yeni nesne üretir; aynı ölçek ve boy için önbellekten verilir (kare başına çöp azalır)
+        // Piksel boyuna göre saklanır: panel ölçeği ile genel ölçek aynı karede birlikte kullanılabilir
         readonly Dictionary<float, GUILayoutOption> heightOptions = new Dictionary<float, GUILayoutOption>();
         readonly Dictionary<float, GUILayoutOption> widthOptions = new Dictionary<float, GUILayoutOption>();
-        float optionScale = -1f;
 
         GUILayoutOption Ht(float units) => CachedOption(heightOptions, units, true);
         GUILayoutOption Wd(float units) => CachedOption(widthOptions, units, false);
 
         GUILayoutOption CachedOption(Dictionary<float, GUILayoutOption> cache, float units, bool height)
         {
-            if (!Mathf.Approximately(optionScale, u))
-            {
-                optionScale = u;
-                heightOptions.Clear();
-                widthOptions.Clear();
-            }
-            if (cache.TryGetValue(units, out GUILayoutOption option)) return option;
-            option = height ? GUILayout.Height(units * u) : GUILayout.Width(units * u);
-            cache[units] = option;
+            float pixels = units * u;
+            if (cache.TryGetValue(pixels, out GUILayoutOption option)) return option;
+            if (cache.Count > 1024) cache.Clear(); // pencere boyu çok değişti: eski boyları bırak
+            option = height ? GUILayout.Height(pixels) : GUILayout.Width(pixels);
+            cache[pixels] = option;
             return option;
         }
         void Sp(float units) => GUILayout.Space(units * u);

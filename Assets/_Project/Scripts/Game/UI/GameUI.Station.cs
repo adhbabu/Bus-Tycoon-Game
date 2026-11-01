@@ -188,11 +188,25 @@ namespace BusTycoon.Game
             }
         }
 
+        /// <summary>Durak geliştirmeleri paneli: harita panelleri gibi küçük panel ölçeğinde.</summary>
         void DrawUpgradePanel(CityData city)
+        {
+            Rect rect = PanelRect; // genel ölçekte (kenar payları ve üst çubuk) hesaplanır
+            BeginPanelScale();
+            try
+            {
+                DrawUpgradePanelScaled(city, rect);
+            }
+            finally
+            {
+                EndPanelScale();
+            }
+        }
+
+        void DrawUpgradePanelScaled(CityData city, Rect rect)
         {
             StationSystem stations = session.Stations;
             StationTier tier = StationCatalog.TierOf(city);
-            Rect rect = PanelRect;
             uiRects.Add(rect);
             GUILayout.BeginArea(rect, s.Panel);
             GUILayout.Label("Durak Geliştirmeleri", s.H1);
