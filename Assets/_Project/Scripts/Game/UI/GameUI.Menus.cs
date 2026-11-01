@@ -405,6 +405,8 @@ namespace BusTycoon.Game
                 Defer(() => { ClosePauseMenu(); OpenPanelNow(Panel.Log); });
             if (phone && GUILayout.Button("Nasıl Oynanır? (yardım)", s.Button, Ht(40f)))
                 Defer(() => { ClosePauseMenu(); OpenPanelNow(Panel.Help); });
+            if (compact && GUILayout.Button("Yapay Zekâ Danışman", s.Button, Ht(40f)))
+                Defer(() => { ClosePauseMenu(); OpenAdvisorNow(); });
             if (race)
             {
                 if (GUILayout.Button("Yarıştan Çık (tek başına devam)", s.Danger, Ht(40f)))
@@ -526,7 +528,11 @@ namespace BusTycoon.Game
             HelpSection("Kontroller",
                 "Sol tık: seç · Sürükle veya WASD/ok tuşları: kaydır · Tekerlek veya Q/E: yakınlaştır · Sağ tık: seçimi iptal\n" +
                 "Boşluk: duraklat · 1/2/3: hız · N: yeni hat · R: hatlar · F: filo · G: galeri · K: finans · B: bölgeler · " +
-                "J: görevler · F5: kaydet · Esc: geri / menü");
+                "J: görevler · Y: yapay zekâ danışman · F5: kaydet · Esc: geri / menü");
+            HelpSection("Yapay zekâ danışman (Y)",
+                "İsteğe bağlı. Bilgisayarınızda OmniRoute (ücretsiz, açık kaynak yapay zekâ ağ geçidi) çalışıyorsa Danışman paneli " +
+                "kasanızı, hatlarınızı ve filonuzu okuyup öneri verir: hangi hattın fiyatı değişmeli, nereye otobüs eklenmeli. " +
+                "Ayarlar'dan adresi (http://localhost:20128/v1) ve OmniRoute panelindeki API anahtarını girip açın.");
             HelpSection("Çok oyunculu",
                 "Ana menüde Çok Oyunculu → Oda kur: arkadaşların 5 karakterlik oda kodunla katılır. Herkes kendi şirketini kurar, " +
                 "günler aynı anda ilerler. Blitz'de $1.000.000, Normal'de $10.000.000 kasaya ilk ulaşan kazanır.");

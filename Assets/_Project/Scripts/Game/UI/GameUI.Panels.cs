@@ -97,6 +97,7 @@ namespace BusTycoon.Game
                 case Panel.Goals: DrawGoals(); break;
                 case Panel.Log: DrawLog(); break;
                 case Panel.Help: DrawHelpPanel(); break;
+                case Panel.Advisor: DrawAdvisor(); break;
             }
             GUILayout.EndArea();
             GUI.color = previousColor;

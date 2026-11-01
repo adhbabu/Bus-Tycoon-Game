@@ -15,7 +15,7 @@ namespace BusTycoon.Game
     /// Fare/klavye girdisi de IMGUI olaylarından okunur; bu yüzden projenin girdi ayarından bağımsızdır.
     ///
     /// Dosyalar (partial): GameUI.cs (çekirdek, girdi, harita etiketleri, modallar) · GameUI.Hud.cs ·
-    /// GameUI.Menus.cs · GameUI.Planner.cs · GameUI.RoutePanel.cs · GameUI.Panels.cs
+    /// GameUI.Menus.cs · GameUI.Planner.cs · GameUI.RoutePanel.cs · GameUI.Panels.cs · GameUI.Advisor.cs (yapay zekâ danışmanı)
     ///
     /// IMGUI kuralı: Layout ve Repaint geçişlerinde aynı GUILayout çağrıları yapılmalıdır. Bu yüzden düzeni
     /// değiştiren tüm eylemler <see cref="Defer"/> ile OnGUI geçişinin sonuna ertelenir.
@@ -27,7 +27,7 @@ namespace BusTycoon.Game
         internal static DeviceProfile ProfileOverride = DeviceProfile.Auto;
 
         enum Mode { MainMenu, NewGame, Playing, Multiplayer }
-        enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help }
+        enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help, Advisor }
         enum Modal { None, Pause, GameOver, Victory, Confirm, MatchEnd }
 
         const string SaveSlot = "save1";
@@ -826,7 +826,7 @@ namespace BusTycoon.Game
 #endif
             if (mode != Mode.Playing || modal != Modal.None) return;
             bool panelKey = key == KeyCode.N || key == KeyCode.R || key == KeyCode.F || key == KeyCode.G || key == KeyCode.K ||
-                            key == KeyCode.B || key == KeyCode.J || key == KeyCode.L || key == KeyCode.H;
+                            key == KeyCode.B || key == KeyCode.J || key == KeyCode.L || key == KeyCode.H || key == KeyCode.Y;
             if (panelKey && StationBusy) Stations.ExitImmediate(); // panel haritada açılır
 
             bool used = true;
@@ -848,6 +848,7 @@ namespace BusTycoon.Game
                 case KeyCode.J: Defer(() => OpenPanelNow(Panel.Goals)); break;
                 case KeyCode.L: Defer(() => OpenPanelNow(Panel.Log)); break;
                 case KeyCode.H: Defer(() => OpenPanelNow(Panel.Help)); break;
+                case KeyCode.Y: Defer(OpenAdvisorNow); break;
                 case KeyCode.F5: Defer(() => SaveTo(SaveSlot)); break;
                 default: used = false; break;
             }

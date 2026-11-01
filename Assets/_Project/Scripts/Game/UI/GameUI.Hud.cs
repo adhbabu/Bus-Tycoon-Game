@@ -265,6 +265,7 @@ namespace BusTycoon.Game
             new NavEntry(UIIcon.Regions, "Bölgeler", Panel.Regions, () => OpenPanelNow(Panel.Regions)),
             new NavEntry(UIIcon.Goals, "Görevler", Panel.Goals, () => OpenPanelNow(Panel.Goals)),
             new NavEntry(UIIcon.Log, "Günlük", Panel.Log, () => OpenPanelNow(Panel.Log)),
+            new NavEntry(UIIcon.Sparkles, "Danışman", Panel.Advisor, OpenAdvisorNow),
             new NavEntry(UIIcon.Help, "Yardım", Panel.Help, () => OpenPanelNow(Panel.Help)),
         };
 
@@ -360,8 +361,8 @@ namespace BusTycoon.Game
             GUI.color = previous;
         }
 
-        /// <summary>Alt çubukta Günlük yok (Görevler panelinden ve menüden açılır); telefonda Yardım da menüdedir.</summary>
-        bool InBottomBar(NavEntry entry) => entry.Target != Panel.Log && !(phone && entry.Target == Panel.Help);
+        /// <summary>Alt çubukta Günlük ve Danışman yok (menüden açılır); telefonda Yardım da menüdedir.</summary>
+        bool InBottomBar(NavEntry entry) => entry.Target != Panel.Log && entry.Target != Panel.Advisor && !(phone && entry.Target == Panel.Help);
 
         void NavItem(Rect rect, NavEntry entry, float iconSize)
         {
