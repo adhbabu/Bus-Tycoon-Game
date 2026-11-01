@@ -47,6 +47,14 @@ ekrandaki +/- · panelde parmakla kaydır · Android geri tuşu = geri / menü.
 Boşluk duraklat · 1/2/3 hız · N yeni hat · R hatlar · F filo · G galeri · K finans · B bölgeler · J görevler ·
 L günlük · H yardım · F5 kaydet · Esc geri / menü. Oyun her 7 günde ve çıkışta otomatik kaydeder.
 
+## 🤖 Yapay zekâ danışman (isteğe bağlı, OmniRoute)
+
+Bilgisayarınızda [OmniRoute](https://github.com/diegosouzapw/OmniRoute) (Claude, GPT, Gemini ve ücretsiz modelleri tek
+adreste toplayan açık kaynak ağ geçidi) çalışıyorsa oyundaki **Danışman** paneli (**Y**) şirketinizi okuyup öneri verir:
+hangi hattın fiyatı değişmeli, nereye otobüs eklenmeli, nakit riskli mi. Varsayılan olarak kapalıdır; API anahtarı derlemeye
+gömülmez. Kurulum, oyun ayarları ve kodlama araçlarını (Claude Code, Cursor, Cline…) aynı ağ geçidine bağlama:
+**[docs/05-OmniRoute-Yapay-Zeka.md](docs/05-OmniRoute-Yapay-Zeka.md)**.
+
 ## 📱 Mobil (Android / iOS) ve mağaza yayını
 
 Oyun telefon ve tablette oynanacak şekilde uyarlandı: dokunmatik seçim ve sürükleme, iki parmakla yakınlaştırma,
