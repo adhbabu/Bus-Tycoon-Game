@@ -58,14 +58,14 @@ namespace BusTycoon.Game
                 if (showMenuHelp) return CenteredBox(560f, 600f);
                 int buttons = 4 + (session.IsRunning && !session.IsBankrupt ? 1 : 0) + (CanQuit ? 1 : 0);
                 if (phone) return CenteredBox(840f, 92f + 54f * buttons + 40f); // yatay telefon: solda başlık, sağda düğmeler
-                return CenteredBox(560f, (compact ? 300f : 335f) + 56f * buttons);
+                return CenteredBox(560f, (compact ? 300f : 335f) + 56f * buttons + 62f); // + kalite seçimi
             }
         }
 
         Rect NewGameRect => new Rect(SafeLeft + Margin, SafeTop + Margin,
             Mathf.Min(470f * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
 
-        Rect ModalRect => CenteredBox(480f, 470f);
+        Rect ModalRect => CenteredBox(480f, modal == Modal.Pause ? 560f : 470f); // duraklatma: ayarlar (kalite) dahil
         Vector2 modalScroll;
         Modal scrolledModal;
         float modalShownAt;
@@ -97,6 +97,8 @@ namespace BusTycoon.Game
                 ColorLabel("Otobüs İmparatoru", UIStyles.Orange, s.Big);
                 GUILayout.Label("Bus Tycoon · otobüs şirketini kur, büyüt!", s.WrapDim);
                 GUILayout.FlexibleSpace();
+                DrawQualitySelector();
+                Sp(6f);
                 GUILayout.Label("Harita: Natural Earth · Şehirler: GeoNames · Simgeler: Twemoji · Yazı tipi: Inter", s.WrapDim);
                 GUILayout.EndVertical();
                 Sp(16f);
@@ -150,6 +152,32 @@ namespace BusTycoon.Game
             if (CanQuit && GUILayout.Button("Çıkış", s.Button, Ht(46f))) Defer(QuitGame);
             Sp(4f);
             DrawSoundToggle();
+            if (!phone) // telefonda başlık sütununda
+            {
+                Sp(6f);
+                DrawQualitySelector();
+            }
+        }
+
+        static readonly QualityLevel?[] QualityChoices = { null, QualityLevel.Low, QualityLevel.Medium, QualityLevel.High };
+
+        /// <summary>
+        /// Görüntü kalitesi: Otomatik (cihaza göre) / Düşük / Orta / Yüksek. Düşük en akıcısı (gölge ve harita efektleri
+        /// kapalı, web'de daha düşük çözünürlük); Yüksek'te bulut gölgeleri ve yumuşak gölgeler.
+        /// </summary>
+        void DrawQualitySelector()
+        {
+            string current = GraphicsQuality.Label(GraphicsQuality.Current);
+            GUILayout.Label(GraphicsQuality.IsAuto ? $"Görüntü kalitesi · otomatik: {current}" : "Görüntü kalitesi", s.Dim);
+            GUILayout.BeginHorizontal();
+            foreach (QualityLevel? choice in QualityChoices)
+            {
+                bool active = choice.HasValue ? !GraphicsQuality.IsAuto && GraphicsQuality.Current == choice.Value : GraphicsQuality.IsAuto;
+                string label = choice.HasValue ? GraphicsQuality.Label(choice.Value) : "Otomatik";
+                if (GUILayout.Button(label, active ? s.TabActive : s.Tab, Ht(32f)) && !active)
+                    GraphicsQuality.Select(choice);
+            }
+            GUILayout.EndHorizontal();
         }
 
         void DrawSoundToggle()
@@ -437,6 +465,8 @@ namespace BusTycoon.Game
             DrawSoundToggle();
             bool income = GUILayout.Toggle(IncomeLabelsEnabled, "Gün sonu kazanç yazıları (hatların üstünde)", s.Toggle);
             if (income != IncomeLabelsEnabled) IncomeLabelsEnabled = income;
+            Sp(4f);
+            DrawQualitySelector();
 
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);

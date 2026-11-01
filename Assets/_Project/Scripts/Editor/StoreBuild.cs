@@ -76,8 +76,8 @@ namespace BusTycoon.EditorTools
 
             EnsureMainScene();
             EnsureRuntimeMaterials();
-            EnsureMapTextureImport();
             EnsureUiTextureImport();
+            EnsureRenderingSettings();
             AssetDatabase.SaveAssets();
             Debug.Log($"[Mağaza] Ayarlar uygulandı: {StoreSettings.ProductName} {StoreSettings.Version} ({StoreSettings.BuildNumber}) · {StoreSettings.ApplicationId}");
         }
@@ -202,6 +202,65 @@ namespace BusTycoon.EditorTools
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.dataCaching = true;
+            // Dizüstünde ayrık ekran kartı varsa onu iste (daha akıcı)
+            PlayerSettings.WebGL.powerPreference = WebGLPowerPreference.HighPerformance;
+        }
+
+        /// <summary>
+        /// Görüntü kalitesi ayarları (proje ayarları depoda değil; derlemede yazılır):
+        ///  · Tüm kalite seviyelerinde 4x kenar yumuşatma (MSAA). WebGL'de çizim bağlamı açılırken sabitlenir,
+        ///    oyun içinde değiştirilemez; Apple ve Android ekran kartlarında neredeyse bedavadır.
+        ///  · Sis çeşitleri korunur: ufuk pusu oyunda kodla açılır (WorldRenderer); sahnede sis kapalı olduğu için Unity
+        ///    "kullanılmıyor" deyip sisli gölgelendirici çeşitlerini atardı.
+        ///  · GPU örnekleme (instancing) çeşitleri korunur: malzemeler çalışma anında oluşturulduğundan Unity onları
+        ///    göremez; şablon malzemede açık olunca derlemeye girer.
+        /// Diğer kalite ayarları (gölge, anizotropi, harita efektleri) oyun içinde GraphicsQuality'dedir.
+        /// </summary>
+        static void EnsureRenderingSettings()
+        {
+            int current = QualitySettings.GetQualityLevel();
+            for (int level = 0; level < QualitySettings.names.Length; level++)
+            {
+                QualitySettings.SetQualityLevel(level, false);
+                QualitySettings.antiAliasing = 4;
+            }
+            QualitySettings.SetQualityLevel(current, false);
+
+            var assets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset");
+            if (assets != null && assets.Length > 0 && assets[0] != null)
+            {
+                var graphics = new SerializedObject(assets[0]);
+                SetProperty(graphics, "m_FogStripping", 1);       // 1 = elle seçilen sis kipleri
+                SetProperty(graphics, "m_FogKeepLinear", true);
+                SetProperty(graphics, "m_FogKeepExp", false);
+                SetProperty(graphics, "m_FogKeepExp2", false);
+                graphics.ApplyModifiedPropertiesWithoutUndo();
+            }
+            else
+            {
+                Debug.LogWarning("[Mağaza] GraphicsSettings okunamadı: ufuk pusu derlemede çalışmayabilir.");
+            }
+
+            var lit = AssetDatabase.LoadAssetAtPath<Material>($"Assets/_Project/Resources/{DefaultContent.LitMaterialResourcePath}.mat");
+            if (lit != null && !lit.enableInstancing)
+            {
+                lit.enableInstancing = true;
+                EditorUtility.SetDirty(lit);
+            }
+        }
+
+        static void SetProperty(SerializedObject target, string name, int value)
+        {
+            SerializedProperty property = target.FindProperty(name);
+            if (property != null) property.intValue = value;
+            else Debug.LogWarning($"[Mağaza] Grafik ayarı bulunamadı: {name}");
+        }
+
+        static void SetProperty(SerializedObject target, string name, bool value)
+        {
+            SerializedProperty property = target.FindProperty(name);
+            if (property != null) property.boolValue = value;
+            else Debug.LogWarning($"[Mağaza] Grafik ayarı bulunamadı: {name}");
         }
 
         /// <summary>Komut satırından gelen anahtarı oturum için ayarlar; anahtar dosyası yoksa false.</summary>
@@ -308,42 +367,6 @@ namespace BusTycoon.EditorTools
             if (GraphicsSettings.currentRenderPipeline != null) return;
             EnsureMaterial(DefaultContent.LitMaterialResourcePath, "Standard");
             EnsureMaterial(DefaultContent.MapMaterialResourcePath, "Unlit/Texture");
-        }
-
-        /// <summary>
-        /// Harita dokusu 4096 px'tir (Tools/build_map.py); Unity varsayılanı 2048'e küçültür. Tam boyut, mipmap,
-        /// yüksek kaliteli sıkıştırma ve keskin eğik bakış (anizotropik) ayarlanır. Çevre dokusu (map_outer) 2048 px.
-        /// </summary>
-        static void EnsureMapTextureImport()
-        {
-            EnsureMapTextureImport(DefaultContent.MapTextureResourcePath, 4096);
-            EnsureMapTextureImport(DefaultContent.OuterMapTextureResourcePath, 2048);
-        }
-
-        static void EnsureMapTextureImport(string resourcePath, int maxSize)
-        {
-            string path = $"Assets/_Project/Resources/{resourcePath}.jpg";
-            if (!(AssetImporter.GetAtPath(path) is TextureImporter importer))
-            {
-                Debug.LogWarning($"[Mağaza] Harita dokusu bulunamadı: {path}");
-                return;
-            }
-
-            bool upToDate = importer.maxTextureSize == maxSize && importer.npotScale == TextureImporterNPOTScale.None &&
-                            importer.mipmapEnabled && importer.anisoLevel >= 4 && importer.wrapMode == TextureWrapMode.Clamp &&
-                            importer.textureCompression == TextureImporterCompression.CompressedHQ;
-            if (upToDate) return;
-
-            importer.textureType = TextureImporterType.Default;
-            importer.maxTextureSize = maxSize;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.mipmapEnabled = true;
-            importer.anisoLevel = 4;
-            importer.filterMode = FilterMode.Trilinear;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.textureCompression = TextureImporterCompression.CompressedHQ;
-            importer.SaveAndReimport();
-            Debug.Log($"[Mağaza] Harita dokusu içe aktarma ayarları güncellendi: {path}");
         }
 
         /// <summary>

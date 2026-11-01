@@ -31,12 +31,18 @@ namespace BusTycoon.Data
         public const float MapWidth = 100f;
 
         public const string CitiesResourcePath = "BusTycoon/cities";
-        public const string MapTextureResourcePath = "BusTycoon/map";
         /// <summary>
-        /// Haritanın çevresi (Tools/build_map.py → map_outer.jpg): düşük çözünürlüklü, uzaklaştıkça bulanıklaşan ve
+        /// Harita dokusu (Tools/build_map.py → map_jpg.bytes): JPEG baytı, açılışta çözülür (GameBootstrap). Unity'nin
+        /// doku olarak paketlemesi sıkıştırmasız ~13 MB ekliyordu; JPEG 1,5 MB.
+        /// </summary>
+        public const string MapTextureResourcePath = "BusTycoon/map_jpg";
+        /// <summary>
+        /// Haritanın çevresi (Tools/build_map.py → map_outer_jpg.bytes): düşük çözünürlüklü, uzaklaştıkça bulanıklaşan ve
         /// denize karışan devam; harita "tak" diye bitmez. Sınırlar build_map.py'deki OUTER_LON/OUTER_LAT ile AYNI.
         /// </summary>
-        public const string OuterMapTextureResourcePath = "BusTycoon/map_outer";
+        public const string OuterMapTextureResourcePath = "BusTycoon/map_outer_jpg";
+        /// <summary>Deniz maskesi (PNG baytı; R su, G kıyı, B açık deniz): canlı deniz ve kıyı köpüğü (MapSurface).</summary>
+        public const string WaterMaskResourcePath = "BusTycoon/map_water_png";
         public const double OuterMinLongitude = 1.0;
         public const double OuterMaxLongitude = 65.0;
         public const double OuterMinLatitude = 27.0;
@@ -66,6 +72,8 @@ namespace BusTycoon.Data
         /// <summary>Durak tabelaları için derinlik testli yazı shader'ı (Resources'ta: derlemeye girer).</summary>
         public const string SignTextShaderResourcePath = "BusTycoon/Shaders/SignText";
         public const string MapRoadsShaderResourcePath = "BusTycoon/Shaders/MapRoads";
+        /// <summary>Harita yüzeyi: canlı deniz, yakın arazi dokusu, bulut gölgeleri, gölge ve pus (GraphicsQuality).</summary>
+        public const string MapSurfaceShaderResourcePath = "BusTycoon/Shaders/MapSurface";
 
         public readonly struct ModelSpec
         {

@@ -99,7 +99,7 @@ Q_ref = K × √(Nüfus_A × Nüfus_B) × f(mesafe) × turizm × itibar × olgun
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/   cities.csv (93 şehir), map.jpg (harita dokusu), roads.txt (karayolu ağı), Shaders/SignText (tabela yazısı)
+├─ Resources/BusTycoon/   cities.csv (93 şehir), map_jpg.bytes (harita dokusu, JPEG), roads.txt (karayolu ağı), Shaders/ (harita yüzeyi, yollar, tabela yazısı)
 ├─ Scripts/
 │  ├─ Runtime/            BusTycoon.Runtime — oyun kuralları (Unity'den bağımsız test edilebilir)
 │  │  ├─ Core/            GameSession, SimulationClock, CsvUtility, OpResult
@@ -128,7 +128,7 @@ Assets/WebGLTemplates/     Web sürümünün sayfa şablonu (tam ekran, yükleme
 site/                      Web sitesinin giriş sayfası (Tools/build_site.py ile üretilir)
 Tools/store-screenshots.mjs Web sürümünden mağaza ekran görüntüleri (Playwright)
 Tools/build_world_data.py  GeoNames → cities.csv üretir
-Tools/build_map.py         Natural Earth 1:10m → map.jpg (harita), map_outer.jpg (bulanık çevre) ve roads.txt (yol ağı) üretir
+Tools/build_map.py         Natural Earth 1:10m → map_jpg.bytes (harita), map_outer_jpg.bytes (bulanık çevre), map_water_png.bytes (deniz maskesi) ve roads.txt (yol ağı) üretir
 Tools/make_store_art.py    Uygulama ikonu, mağaza tanıtım görseli ve ana menüdeki otobüs çizimi
 Tools/make_fonts.py        Inter yazı tipinden arayüzün üç kalınlığını üretir (Resources/BusTycoon/Fonts)
 Tools/make_icons.py        Twemoji ikonlarından arayüz ikon atlasını üretir (Resources/BusTycoon/UI/icons.png)

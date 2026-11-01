@@ -11,15 +11,18 @@ Girdi (indirip tek klasöre koyun; hepsi Natural Earth, kamu malı):
     ne_10m_roads.geojson                     karayolları ve feribot hatları
   https://naciscdn.org/naturalearth/10m/raster/SR_HR.zip → SR_HR.tif   gölgeli kabartma (dağlar)
 
-Çıktı:
-  Assets/_Project/Resources/BusTycoon/map.jpg        4096 px Mercator doku (sınırlar DefaultContent.MapBounds ile AYNI);
-                                                     kenarına doğru hafifçe bulanıklaşır
-  Assets/_Project/Resources/BusTycoon/map_outer.jpg  haritanın çevresi (DefaultContent.OuterMapBounds): düşük çözünürlük,
-                                                     uzaklaştıkça bulanıklaşır, kararır ve denize/sise karışır —
-                                                     harita "tak" diye bitmez, devam ediyormuş gibi görünür
-  Assets/_Project/Resources/BusTycoon/roads.txt      yol ağı: düğümler + kenarlar (Runtime/World/RoadNetwork.cs okur)
+Çıktı (dokular JPEG/PNG baytı olarak .bytes uzantılı: Unity onları yeniden sıkıştırmadan pakete koyar, oyun açılışta
+çözer — web indirmesi ~13 MB küçülür. Dosyalar sıradan JPEG/PNG'dir; uzantıyı değiştirip açabilirsiniz):
+  Assets/_Project/Resources/BusTycoon/map_jpg.bytes        4096 px Mercator doku (sınırlar DefaultContent.MapBounds ile
+                                                           AYNI); kenarına doğru hafifçe bulanıklaşır
+  Assets/_Project/Resources/BusTycoon/map_outer_jpg.bytes  haritanın çevresi (DefaultContent.OuterMapBounds): düşük
+                                                           çözünürlük, uzaklaştıkça bulanıklaşır, kararır ve denize/sise
+                                                           karışır — harita "tak" diye bitmez, devam ediyormuş gibi görünür
+  Assets/_Project/Resources/BusTycoon/map_water_png.bytes  deniz maskesi (2048 px, MapSurface gölgelendiricisi):
+                                                           R = su (deniz + göl), G = kıyıya yakınlık (köpük), B = açık deniz
+  Assets/_Project/Resources/BusTycoon/roads.txt            yol ağı: düğümler + kenarlar (Runtime/World/RoadNetwork.cs okur)
 
-Kullanım:  python3 Tools/build_map.py <veri_klasörü> [--preview önizleme.png]
+Kullanım:  python3 Tools/build_map.py <veri_klasörü> [--preview önizleme.png] [--water-only] [--roads-only]
 Gereksinim: Pillow, numpy
 """
 import argparse
@@ -39,6 +42,7 @@ SUPERSAMPLE = 2
 # --- Çevre haritası: DefaultContent.OuterMap* ile aynı. Kamera en uzaktan ~14° kuzeye, ~20° yana görebilir. ---
 OUTER_LON, OUTER_LAT = (1.0, 65.0), (27.0, 54.0)
 OUTER_WIDTH = 2048
+WATER_WIDTH = 2048          # deniz maskesi çözünürlüğü (çekirdek haritanın yarısı)
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon")
@@ -304,16 +308,61 @@ def finish_outer(image):
     return Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), "RGB")
 
 
+MAP_FILE = "map_jpg.bytes"
+OUTER_FILE = "map_outer_jpg.bytes"
+WATER_FILE = "map_water_png.bytes"
+
+
 def build_textures(data_dir):
     outer = finish_outer(render_map(data_dir, OUTER, outer=True))
-    path = os.path.join(OUT_DIR, "map_outer.jpg")
-    outer.save(path, quality=88, subsampling=0, optimize=True)
-    print(f"map_outer.jpg: {outer.size[0]}×{outer.size[1]}, {os.path.getsize(path) // 1024} KB")
+    path = os.path.join(OUT_DIR, OUTER_FILE)
+    outer.save(path, "JPEG", quality=88, subsampling=0, optimize=True)
+    print(f"{OUTER_FILE}: {outer.size[0]}×{outer.size[1]}, {os.path.getsize(path) // 1024} KB")
 
     core = soften_core_edges(render_map(data_dir, CORE), outer)
-    path = os.path.join(OUT_DIR, "map.jpg")
-    core.save(path, quality=93, subsampling=0, optimize=True)
-    print(f"map.jpg: {core.size[0]}×{core.size[1]}, {os.path.getsize(path) // 1024} KB")
+    path = os.path.join(OUT_DIR, MAP_FILE)
+    core.save(path, "JPEG", quality=93, subsampling=0, optimize=True)
+    print(f"{MAP_FILE}: {core.size[0]}×{core.size[1]}, {os.path.getsize(path) // 1024} KB")
+    build_water_mask(data_dir)
+
+
+def build_water_mask(data_dir):
+    """MapSurface gölgelendiricisinin deniz maskesi (çekirdek harita sınırlarında, yarı çözünürlük):
+    R = su (deniz ve göller; ülke dışı her yer deniz sayılır), G = kıyıya yakınlık (kıyıda 1, ~6 km açıkta 0:
+    köpük ve sığ su ışıltısı), B = açık deniz (kıyıdan uzaklaştıkça 1: dalgalar büyür). Kenarları yumuşak:
+    2× çizilip küçültülür."""
+    view = View((MIN_LON, MAX_LON), (MIN_LAT, MAX_LAT), WATER_WIDTH)
+    width, height = view.width * SUPERSAMPLE, view.height * SUPERSAMPLE
+
+    def ring_points(ring):
+        return [view.project(x, max(-85.0, min(85.0, y)), SUPERSAMPLE) for x, y in ring]
+
+    land = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(land)
+    for feature in load(data_dir, "ne_10m_admin_0_countries"):
+        for polygon in polygons(feature["geometry"]):
+            if not view.near(polygon[0]):
+                continue
+            draw.polygon(ring_points(polygon[0]), fill=255)
+            for hole in polygon[1:]:
+                draw.polygon(ring_points(hole), fill=0)
+    for feature in load(data_dir, "ne_10m_lakes"):
+        for polygon in polygons(feature["geometry"]):
+            if view.near(polygon[0], 0.5):
+                draw.polygon(ring_points(polygon[0]), fill=0)
+    land = land.resize((view.width, view.height), Image.BOX)
+
+    land_a = np.asarray(land, dtype=np.float32) / 255.0
+    water = 1.0 - land_a
+    near = np.asarray(land.filter(ImageFilter.GaussianBlur(3.0 * view.density * 2)), dtype=np.float32) / 255.0
+    far = np.asarray(land.filter(ImageFilter.GaussianBlur(28.0 * view.density * 2)), dtype=np.float32) / 255.0
+    shore = np.clip(near * 2.4, 0, 1) * water
+    open_sea = (1.0 - np.clip(far * 3.0, 0, 1)) * water
+    rgb = np.stack([water, shore, open_sea], axis=-1)
+    image = Image.fromarray(np.clip(rgb * 255 + 0.5, 0, 255).astype(np.uint8), "RGB")
+    path = os.path.join(OUT_DIR, WATER_FILE)
+    image.save(path, "PNG", optimize=True)
+    print(f"{WATER_FILE}: {image.size[0]}×{image.size[1]}, {os.path.getsize(path) // 1024} KB")
 
 
 def relief_layers(data_dir, view):
@@ -698,7 +747,7 @@ def check_cities(nodes, edges):
 
 def preview(nodes, edges, out):
     """Hızlı kontrol için yol ağını harita üzerine çizer."""
-    image = Image.open(os.path.join(OUT_DIR, "map.jpg")).convert("RGB")
+    image = Image.open(os.path.join(OUT_DIR, MAP_FILE)).convert("RGB")
     w, h = image.size
     draw = ImageDraw.Draw(image)
 
@@ -718,8 +767,12 @@ if __name__ == "__main__":
     parser.add_argument("data_dir")
     parser.add_argument("--preview", help="yol ağını harita üzerine çizen kontrol görüntüsü")
     parser.add_argument("--roads-only", action="store_true", help="yalnızca roads.txt üret")
+    parser.add_argument("--water-only", action="store_true", help="yalnızca deniz maskesini üret")
     args = parser.parse_args()
 
+    if args.water_only:
+        build_water_mask(args.data_dir)
+        raise SystemExit(0)
     if not args.roads_only:
         build_textures(args.data_dir)
     road_nodes, road_edges = write_roads(*build_roads(args.data_dir))

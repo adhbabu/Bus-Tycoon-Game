@@ -450,6 +450,7 @@ namespace BusTycoon.Game
             HandleTouchScroll(e);
             bool pressEnded = e.type == EventType.MouseUp && e.button == 0; // kaydırma için kullanılmadıysa
 
+            if (repaint && GraphicsQuality.Atmosphere) DrawVignette();
             if (!InMenu && e.type == EventType.Repaint && !StationBusy)
             {
                 DrawCityLabels();
@@ -565,7 +566,7 @@ namespace BusTycoon.Game
         }
 
         /// <summary>Ekran pikseli başına nokta (iOS pt / Android dp; tarayıcıda CSS pikseli).</summary>
-        static float PixelsPerPoint()
+        internal static float PixelsPerPoint()
         {
             float css = WebScreen.PixelsPerCssPixel;
             if (css > 0.1f) return css;

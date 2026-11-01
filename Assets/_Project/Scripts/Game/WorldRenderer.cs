@@ -157,6 +157,12 @@ namespace BusTycoon.Game
         bool roadWidthInShader;
         static readonly int WidthScaleId = Shader.PropertyToID("_WidthScale");
 
+        // Harita yüzeyi (BusTycoon/MapSurface) ve atmosfer: gün ışığı efektlere, pus (sis) kameraya göre ayarlanır
+        static readonly int DaylightId = Shader.PropertyToID("_BT_Daylight");
+        static readonly Color DayHaze = new Color(0.55f, 0.66f, 0.76f);
+        Color hazeColor = DayHaze;
+        Color backgroundColor;
+
         RouteSystem boundRoutes;
         FleetSystem boundFleet;
         ProgressionSystem boundProgression;
@@ -184,7 +190,8 @@ namespace BusTycoon.Game
 
         float ZoomScale => Mathf.Clamp(zoomDistance / ReferenceZoom, 0.45f, 1.6f);
 
-        public void Init(GameSession gameSession, MapProjection mapProjection, Texture2D mapTexture, Texture2D outerTexture, RoadNetwork roadNetwork)
+        public void Init(GameSession gameSession, MapProjection mapProjection, Texture2D mapTexture, Texture2D outerTexture,
+            RoadNetwork roadNetwork, Texture2D waterMask = null)
         {
             session = gameSession;
             projection = mapProjection;
@@ -195,7 +202,9 @@ namespace BusTycoon.Game
             routeRoot = new GameObject("Routes").transform;
             routeRoot.SetParent(transform, false);
 
-            BuildMapSurface(mapTexture);
+            Shader.SetGlobalFloat(DaylightId, 1f);
+            backgroundColor = Color.Lerp(SeaColor, DayHaze, 0.12f);
+            BuildMapSurface(mapTexture, waterMask);
             BuildSurroundings(outerTexture);
             BuildRoadLayer();
             BuildCityMarkers();
@@ -218,7 +227,7 @@ namespace BusTycoon.Game
 
         // ------------------------------------------------------------------ kurulum
 
-        void BuildMapSurface(Texture2D texture)
+        void BuildMapSurface(Texture2D texture, Texture2D waterMask)
         {
             var mercator = projection as MercatorMapProjection;
             float width = mercator != null ? mercator.MapWidth : DefaultContent.MapWidth;
@@ -246,9 +255,28 @@ namespace BusTycoon.Game
             surface.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = surface.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = texture != null
-                ? MaterialFactory.CreateUnlitTexture(texture)
+                ? CreateMapMaterial(texture, waterMask, true)
                 : MaterialFactory.CreateLit(new Color(0.35f, 0.45f, 0.32f), 0f);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = true; // duraklar ve otobüsler haritaya gölge düşürür
+        }
+
+        /// <summary>
+        /// Harita malzemesi: BusTycoon/MapSurface (canlı deniz, yakın arazi dokusu, bulut gölgesi, gölge, pus).
+        /// Gölgelendirici yoksa ya da cihaz desteklemiyorsa düz ışıksız dokuya düşer. Çevre haritasında deniz ve arazi
+        /// efektleri kapalıdır (bulut, gölge ve pus sürer).
+        /// </summary>
+        static Material CreateMapMaterial(Texture2D texture, Texture2D waterMask, bool effects)
+        {
+            Shader shader = Resources.Load<Shader>(DefaultContent.MapSurfaceShaderResourcePath);
+            if (shader == null) shader = Shader.Find("BusTycoon/MapSurface");
+            if (shader == null || !shader.isSupported) return MaterialFactory.CreateUnlitTexture(texture);
+
+            var material = new Material(shader) { mainTexture = texture };
+            material.SetTexture("_WaterTex", waterMask != null ? waterMask : Texture2D.blackTexture);
+            material.SetTexture("_NoiseTex", MapTextures.Noise);
+            material.SetFloat("_Effects", effects && waterMask != null ? 1f : 0f);
+            return material;
         }
 
         /// <summary>
@@ -282,7 +310,7 @@ namespace BusTycoon.Game
             surface.transform.SetParent(transform, false);
             surface.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = surface.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = MaterialFactory.CreateUnlitTexture(texture);
+            renderer.sharedMaterial = CreateMapMaterial(texture, null, false);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
         }
@@ -417,9 +445,11 @@ namespace BusTycoon.Game
             tint.a = Mathf.Max(night * 0.5f, dusk * 0.14f);
             nightMaterial.color = tint;
             nightOverlay.enabled = tint.a > 0.005f;
-            // Çevre dokusunun da ötesi (kameranın arka planı) örtüyle aynı oranda kararır: gece sınır görünmez.
-            Camera main = Camera.main;
-            if (main != null) main.backgroundColor = Color.Lerp(SeaColor, new Color(tint.r, tint.g, tint.b), tint.a);
+            // Pus (sis) ve çevre dokusunun ötesi (kameranın arka planı) örtüyle aynı oranda kararır: gece sınır görünmez.
+            var tintColor = new Color(tint.r, tint.g, tint.b);
+            hazeColor = Color.Lerp(DayHaze, tintColor, Mathf.Clamp01(tint.a * 1.6f));
+            backgroundColor = Color.Lerp(Color.Lerp(SeaColor, DayHaze, 0.12f), tintColor, tint.a);
+            Shader.SetGlobalFloat(DaylightId, 1f - night);
             if (roadMaterial != null) roadMaterial.color = Color.Lerp(Color.white, new Color(0.82f, 0.82f, 0.95f), night * 0.7f);
             StationMaterials.SetNight(night);
 
@@ -893,6 +923,30 @@ namespace BusTycoon.Game
             if (tokensDirty) RebuildTokens();
             AnimateReveals();
             AnimateTokens();
+            UpdateAtmosphere();
+        }
+
+        /// <summary>
+        /// Ufuk pusu: kameranın uzaklığına göre doğrusal sis (ekranın üstü hafifçe puslanır, derinlik hissi). Yalnız
+        /// harita görünürken (durak içinde kendi kamerası çizer) ve Düşük kalite dışında. Gölge mesafesi de uzaklıkla
+        /// büyür: uzaktan bakınca da gölgeler görünür.
+        /// </summary>
+        void UpdateAtmosphere()
+        {
+            Camera main = Camera.main; // durak içindeyken ana kamera kapalı → null
+            bool mapVisible = main != null && main.enabled;
+            bool fog = mapVisible && GraphicsQuality.Atmosphere;
+            if (RenderSettings.fog != fog) RenderSettings.fog = fog;
+            if (!mapVisible) return;
+
+            main.backgroundColor = backgroundColor;
+            if (fog)
+            {
+                RenderSettings.fogColor = hazeColor;
+                RenderSettings.fogStartDistance = zoomDistance * 0.9f;
+                RenderSettings.fogEndDistance = zoomDistance * 5.5f;
+            }
+            QualitySettings.shadowDistance = Mathf.Clamp(zoomDistance * 2.4f, 24f, 170f);
         }
 
         /// <summary>Durağı yaylanarak büyüt (yeni hat bağlandı).</summary>

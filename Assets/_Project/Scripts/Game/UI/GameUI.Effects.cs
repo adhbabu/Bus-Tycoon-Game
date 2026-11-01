@@ -80,6 +80,44 @@ namespace BusTycoon.Game
         int fpsFrame = -1;
         string fpsText = string.Empty;
 
+        Texture2D vignette;
+
+        /// <summary>
+        /// Ekran kenarı karartması: köşeler hafifçe koyulaşır, göz haritanın ortasına çekilir (sinematik çerçeve).
+        /// Arayüzün altında, şehir etiketlerinden önce çizilir; Düşük kalitede kapalı.
+        /// </summary>
+        void DrawVignette()
+        {
+            if (vignette == null) vignette = CreateVignette(64);
+            Color previous = GUI.color;
+            GUI.color = Color.white;
+            GUI.DrawTexture(new Rect(0f, 0f, W, H), vignette, ScaleMode.StretchToFill, true);
+            GUI.color = previous;
+        }
+
+        static Texture2D CreateVignette(int size)
+        {
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = (x + 0.5f) / size * 2f - 1f, dy = (y + 0.5f) / size * 2f - 1f;
+                float r = Mathf.Sqrt(dx * dx * 0.85f + dy * dy * 1.15f);  // ekran geniş: yanlar biraz daha az
+                float t = Mathf.Clamp01((r - 0.62f) / 0.78f);
+                float alpha = t * t * (3f - 2f * t) * 0.34f;
+                pixels[y * size + x] = new Color32(4, 10, 20, (byte)Mathf.RoundToInt(alpha * 255f));
+            }
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "Vignette",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return texture;
+        }
+
         /// <summary>
         /// Gerçek cihazda akıcılığı ölçmek için: sol altta ortalama kare hızı, kare süresi ve son saniyenin en kötü
         /// karesi. Bağlantıya "?fps=1" eklenince görünür; metin dörtte bir saniyede bir güncellenir.
