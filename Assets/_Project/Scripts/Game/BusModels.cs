@@ -80,6 +80,9 @@ namespace BusTycoon.Game
                 case "TOROS_42C": return new Shape { RoofUnit = true, DoubleStripe = true, Length = 0.62f, Height = 0.21f, Axles = new[] { -0.2f, 0.2f } };
                 case "ZIRVE_VIP": return new Shape { RoofUnit = true, Tinted = true, Length = 0.64f, Height = 0.2f, Axles = new[] { -0.25f, -0.16f, 0.22f } };
                 case "ZIRVE_DD": return new Shape { DoubleDeck = true, Length = 0.64f, Height = 0.31f, Axles = new[] { -0.25f, -0.16f, 0.22f } };
+                // Avrupa Paketi: elektrikli (tavanda batarya) ve uzun Alp otobüsü (üç dingil, koyu cam)
+                case "NORDSTAR_E12": return new Shape { RoofUnit = true, Length = 0.6f, Height = 0.21f, Axles = new[] { -0.2f, 0.2f } };
+                case "ALPINA_C50": return new Shape { RoofUnit = true, Tinted = true, Length = 0.68f, Height = 0.22f, Axles = new[] { -0.27f, -0.18f, 0.24f } };
             }
             // Bilinmeyen model: segmentin tipik biçimi
             return segment switch

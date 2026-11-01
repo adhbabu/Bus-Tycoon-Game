@@ -79,7 +79,7 @@ flowchart TB
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/      cities.csv (93 şehir) + map_jpg.bytes + map_outer_jpg.bytes + map_water_png.bytes + roads.txt + Fonts/ + UI/ (ikonlar,
+├─ Resources/BusTycoon/      cities.csv (221 şehir) + map_jpg.bytes + map_outer_jpg.bytes + map_water_png.bytes + roads.txt + Fonts/ + UI/ (ikonlar,
 │                            otobüs çizimleri, maskot) — oyun Play'de bunlardan kendini kurar
 ├─ Data/                      ← (opsiyonel) "Create Default Content" ile üretilen düzenlenebilir asset'ler
 │  ├─ Config/                 EconomyConfig, ProgressionConfig
@@ -123,7 +123,15 @@ hiçbir şehir verisine dokunmayı gerektirmez.
 | `GlobeMapProjection` | 3D dünya küresi | Kıtalar arası genişleme veya ana menü için. |
 
 Projeksiyon bir asset olduğu için `WorldMapDatabase` üzerindeki referansı değiştirmek haritanın türünü değiştirir.
-Varsayılan içerik Türkiye + Balkanlar + Kafkasya'yı kapsar: boylam 19°–47°, enlem 34°–45°.
+Varsayılan içerik Kıta Avrupası + Britanya + Türkiye ve Kafkasya'yı kapsar: boylam −11°…47°, enlem 34°…61°
+(`MapWidth` boylam başına ~3,57 birim: eski Türkiye haritasıyla aynı ölçek). Avrupa Paketi'nin ülkeleri haritada
+hep görünür; paket yoksa lisansları alınamaz (`ContentPacks`, `Entitlements`, `RegionData.PackId`).
+
+**Harita döşemeleri.** Genel harita dokusu 4096 px'tir (tüm Avrupa). Kamera ~42 birimden yakına gelince
+`MapTiles`, `StreamingAssets/MapTiles/index.json` dizinindeki döşemelerden (1024 px, 5,8° genişlik; tamamen deniz
+olanlar yok) görünür alandakileri indirir ve genel haritanın üzerine belirterek karıştırır (`MapSurface` gölgelendiricisi,
+`BT_TILE`). Aynı anda en çok 2 indirme, kare başına bir çözme; kaliteye göre en çok 9/5/0 döşeme gösterilir, bellekte
+fazlasıyla 3 tane daha tutulur. Döşemeleri `Tools/build_map.py <veri> --tiles` üretir.
 
 ---
 

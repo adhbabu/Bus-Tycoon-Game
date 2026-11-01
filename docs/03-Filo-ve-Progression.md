@@ -70,6 +70,8 @@ classDiagram
 | 3 Konfor | Toros 42 Comfort | 280.000 | 8 | 40 | 42 | ★★★★☆ | 90 | 1.800 km | 1,20 | 0,85 | 30 | 35 | 1,0 |
 | 4 Lüks VIP | Zirve VIP 2+1 | 420.000 | 12 | 55 | 33 | ★★★★★ | 90 | 2.500 km | 1,55 | 0,75 | 31 | 50 | 2,0 |
 | 5 Çift katlı | Zirve Çift Katlı | 600.000 | 16 | 50 | 72 | ★★★★☆ | 85 | 2.000 km | 1,30 | 0,80 | 38 | 70 | 1,2 |
+| 2 Standart (Avrupa Paketi) | Nordstar E12 Elektrik | 360.000 | 14 | 45 | 44 | ★★★★☆ | 90 | 800 km | 1,10 | 0,95 | 8 | 36 | 0,6 |
+| 3 Konfor (Avrupa Paketi) | Alpina Reisestar 50 | 340.000 | 15 | 50 | 50 | ★★★★☆ | 95 | 2.200 km | 1,25 | 0,85 | 29 | 38 | 1,0 |
 
 Her segmentin **farklı bir oyun rolü** vardır; "üst segment her zaman daha iyi" değildir:
 

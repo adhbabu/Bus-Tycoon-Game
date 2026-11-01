@@ -8,7 +8,7 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// "Sadece Play'e bas" girişi: sahnede bir <see cref="GameSession"/> yoksa oyunun tamamını kodla kurar —
-    /// içerik (93 şehir, 8 otobüs, ayarlar), kamera, ışık, 3D harita ve arayüz. Prefab, sahne veya asset
+    /// içerik (221 şehir — Avrupa Paketi dahil —, otobüsler, ayarlar), kamera, ışık, 3D harita ve arayüz. Prefab, sahne veya asset
     /// bağlamak gerekmez; boş bir sahnede (veya Unity'nin varsayılan SampleScene'inde) çalışır.
     /// Kendi sahnenizi GameSession ile kurduysanız bu sınıf devre dışı kalır.
     /// </summary>
@@ -58,6 +58,11 @@ namespace BusTycoon.Game
 
             var mapCamera = camera.gameObject.AddComponent<MapCamera>();
             mapCamera.Init(camera, world.MapBoundsXZ);
+
+            // Yakın plan harita döşemeleri (yakınlaşınca indirilir; kaliteye göre)
+            var tiles = new GameObject("MapTiles").AddComponent<MapTiles>();
+            tiles.transform.SetParent(world.transform, false);
+            tiles.Init(world, mapCamera);
 
             // Durağa girme: içerisi haritadan uzakta kendi kamerası ve ışığıyla kurulur
             var stations = new GameObject("StationView").AddComponent<StationView>();
@@ -125,6 +130,8 @@ namespace BusTycoon.Game
 
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = background;
+            // Işık efekti (bloom vb.) yok: HDR ara tamponu gereksiz; kapalıyken 4x MSAA tamponu yarı bellek kullanır
+            camera.allowHDR = false;
             camera.fieldOfView = 40f;
             camera.nearClipPlane = 0.3f;
             camera.farClipPlane = 600f;

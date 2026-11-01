@@ -7,6 +7,9 @@
 // Kalite ve gün ışığı genel değerlerle gelir (GraphicsQuality, WorldRenderer.SetDaylight): _BT_Detail, _BT_Waves,
 // _BT_Clouds (0..1), _BT_Daylight (1 gündüz, 0 gece). Değer verilmemişse 0: yalnız doku çizilir.
 // _Effects 0 olan malzemede (çevre haritası) deniz ve arazi efektleri kapalıdır; bulut, gölge ve pus sürer.
+// BT_TILE: yakın plan döşemesi (Game/MapTiles.cs). Döşeme dokusu, alttaki genel haritaya (_OverviewTex) _TileBlend
+// oranında karışır (belirerek gelir) ve harita kenarına yaklaşınca söner; derinlikte biraz öne çekilir (_ZOffset).
+// Deniz maskesi ve kenar sönmesi dünya konumundan hesaplanan harita UV'siyle okunur (_MapRect: x, z, genişlik, derinlik).
 Shader "BusTycoon/MapSurface"
 {
     Properties
@@ -16,6 +19,10 @@ Shader "BusTycoon/MapSurface"
         _NoiseTex ("Noise (R/G fine, B clouds)", 2D) = "gray" {}
         _ShadowStrength ("Shadow Strength", Range(0, 1)) = 0.42
         _Effects ("Sea And Land Effects", Range(0, 1)) = 1
+        _MapRect ("Map Rect (x, z, width, depth)", Vector) = (0, 0, 1, 1)
+        _OverviewTex ("Overview Map (tiles)", 2D) = "white" {}
+        _TileBlend ("Tile Blend", Range(0, 1)) = 1
+        _ZOffset ("Depth Offset", Float) = 0
     }
     SubShader
     {
@@ -25,12 +32,14 @@ Shader "BusTycoon/MapSurface"
         Pass
         {
             Tags { "LightMode"="ForwardBase" }
+            Offset [_ZOffset], [_ZOffset]
 
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
             #pragma multi_compile_fog
+            #pragma multi_compile_local _ BT_TILE
             #pragma target 3.0
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
@@ -42,6 +51,9 @@ Shader "BusTycoon/MapSurface"
             sampler2D _NoiseTex;
             half _ShadowStrength;
             half _Effects;
+            float4 _MapRect;
+            sampler2D _OverviewTex;
+            half _TileBlend;
             half _BT_Detail, _BT_Waves, _BT_Clouds, _BT_Daylight;
 
             struct v2f
@@ -66,10 +78,19 @@ Shader "BusTycoon/MapSurface"
 
             fixed4 frag (v2f i) : SV_Target
             {
+                float2 wp = i.world.xz;
+                float2 mapUV = (wp - _MapRect.xy) / max(_MapRect.zw, 1e-4);   // harita UV'si (döşemede de)
+                float2 e = min(mapUV, 1.0 - mapUV);
+                half edge = saturate(min(e.x, e.y) * 30.0);                      // kenarda efektler söner
+            #ifdef BT_TILE
+                // Genel haritanın kenar şeridi çevre haritasına karışır; döşeme orada söner (dikiş olmaz)
+                half tileWeight = _TileBlend * saturate(min(e.x, e.y) * 25.0 - 0.02);
+                half3 col = lerp(tex2D(_OverviewTex, mapUV).rgb, tex2D(_MainTex, i.uv).rgb, tileWeight);
+            #else
                 half3 col = tex2D(_MainTex, i.uv).rgb;
+            #endif
                 float3 toCamera = _WorldSpaceCameraPos - i.world;
                 float dist = length(toCamera);
-                float2 wp = i.world.xz;
                 float t = _Time.y;
                 half day = saturate(_BT_Daylight);
 
@@ -79,15 +100,12 @@ Shader "BusTycoon/MapSurface"
                 // Dallanma içinde doku okumak için türevler dışarıda hesaplanır (tex2Dgrad): zayıf cihazda
                 // kapalı efektlerin doku okumaları hiç yapılmaz.
                 float2 wdx = ddx(wp), wdy = ddy(wp);
-                float2 udx = ddx(i.uv), udy = ddy(i.uv);
+                float2 udx = ddx(mapUV), udy = ddy(mapUV);
 
                 UNITY_BRANCH
                 if (_Effects > 0.0 && (_BT_Waves > 0.0 || _BT_Detail > 0.0))
                 {
-                    half3 mask = tex2Dgrad(_WaterTex, i.uv, udx, udy).rgb;
-                    // Harita kenarında efektler söner: çevre haritasına dikişsiz karışır
-                    float2 e = min(i.uv, 1.0 - i.uv);
-                    half edge = saturate(min(e.x, e.y) * 30.0);
+                    half3 mask = tex2Dgrad(_WaterTex, mapUV, udx, udy).rgb;
                     half water = mask.r * edge;
 
                     UNITY_BRANCH
@@ -104,8 +122,10 @@ Shader "BusTycoon/MapSurface"
                         float3 normal = normalize(float3((n1 - 0.5) * 1.1, 1.0, (n2 - 0.5) * 1.1));
                         float3 view = toCamera / max(dist, 0.001);
                         float3 halfDir = normalize(normalize(_WorldSpaceLightPos0.xyz) + view);
-                        half glint = pow(saturate(dot(normal, halfDir)), 36.0);
-                        col += water * glint * 0.5 * amp * day * saturate(_LightColor0.rgb);
+                        // Yansıma seyrek ve yumuşak; uzaktan bakınca söner (küçük beyaz kırpışmalar olmasın)
+                        half glint = pow(saturate(dot(normal, halfDir)), 64.0);
+                        half glintFade = saturate((70.0 - dist) / 40.0);
+                        col += water * glint * 0.32 * amp * day * glintFade * saturate(_LightColor0.rgb);
 
                         // Kıyı köpüğü: kıyıya doğru ilerleyen ince şeritler + kıyı dibinde açık ton
                         half shore = mask.g * edge;

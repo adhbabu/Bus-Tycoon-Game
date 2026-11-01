@@ -21,11 +21,16 @@ Girdi (indirip tek klasöre koyun; hepsi Natural Earth, kamu malı):
   Assets/_Project/Resources/BusTycoon/map_water_png.bytes  deniz maskesi (2048 px, MapSurface gölgelendiricisi):
                                                            R = su (deniz + göl), G = kıyıya yakınlık (köpük), B = açık deniz
   Assets/_Project/Resources/BusTycoon/roads.txt            yol ağı: düğümler + kenarlar (Runtime/World/RoadNetwork.cs okur)
+  Assets/StreamingAssets/MapTiles/<sütun>_<satır>.jpg       yakın plan döşemeleri (--tiles): genel görünümün ~2,5 katı
+                                                           çözünürlük; oyun yakınlaşınca kameranın çevresindekileri indirir
+                                                           (Game/MapTiles.cs). Tamamen deniz olan döşeme üretilmez.
+  Assets/StreamingAssets/MapTiles/index.json               döşeme dizini
 
-Kullanım:  python3 Tools/build_map.py <veri_klasörü> [--preview önizleme.png] [--water-only] [--roads-only]
+Kullanım:  python3 Tools/build_map.py <veri_klasörü> [--preview önizleme.png] [--water-only] [--roads-only] [--tiles]
 Gereksinim: Pillow, numpy
 """
 import argparse
+import functools
 import heapq
 import json
 import math
@@ -35,20 +40,32 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 # --- Harita sınırları: Runtime/Data/DefaultContent.cs → MapBounds ile birebir aynı tutun ---
-MIN_LON, MAX_LON = 19.0, 47.0
-MIN_LAT, MAX_LAT = 34.0, 45.0
+# Kıta Avrupası + Britanya + Türkiye ve Kafkasya (Avrupa Paketi). Genel görünüm 4096 px; yakın plan için döşemeler.
+MIN_LON, MAX_LON = -11.0, 47.0
+MIN_LAT, MAX_LAT = 34.0, 61.0
 TEX_WIDTH = 4096
 SUPERSAMPLE = 2
-# --- Çevre haritası: DefaultContent.OuterMap* ile aynı. Kamera en uzaktan ~14° kuzeye, ~20° yana görebilir. ---
-OUTER_LON, OUTER_LAT = (1.0, 65.0), (27.0, 54.0)
+# Bulanıklık yarıçapları ve çizgi kalınlıkları bu yoğunluğa göre ayarlandı (eski 28°'lik haritanın 4096 px'i):
+# farklı çözünürlükteki dokular (genel görünüm, döşemeler) coğrafi olarak aynı görünür.
+REF_PX_PER_DEG = 4096 / 28.0
+# --- Çevre haritası: DefaultContent.OuterMap* ile aynı. Kamera en uzaktan haritanın epey dışını görebilir. ---
+OUTER_LON, OUTER_LAT = (-40.0, 76.0), (22.0, 72.0)
 OUTER_WIDTH = 2048
 WATER_WIDTH = 2048          # deniz maskesi çözünürlüğü (çekirdek haritanın yarısı)
+# Yakın plan döşemeleri: 10 sütun (5,8° boylam), kare; kenarlarda 64 px pay ile çizilip kırpılır (bulanıklıklar dikişsiz)
+TILE_PX = 1024
+TILE_COLS = 10
+TILE_MARGIN = 64
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon")
+TILES_DIR = os.path.join(REPO, "Assets", "StreamingAssets", "MapTiles")
 
-# Oynanabilir ülkeler (DefaultContent bölgeleri) canlı, diğerleri soluk.
-PLAYABLE = {"TUR", "BGR", "GRC", "GEO", "ROU"}
+# Oynanabilir ülkeler (DefaultContent bölgeleri; Avrupa Paketi dahil) canlı, diğerleri soluk.
+PLAYABLE = {"TUR", "BGR", "GRC", "GEO", "ROU",
+            "GBR", "IRL", "FRA", "BEL", "NLD", "LUX", "DEU", "DNK", "AUT", "CHE", "ITA", "ESP", "PRT", "POL", "CZE",
+            "SVK", "HUN", "SVN", "HRV", "BIH", "SRB", "MNE", "ALB", "MKD", "MDA", "KOS", "SWE", "NOR", "LTU", "LVA",
+            "EST"}
 LOWLAND = {"TUR": (140, 158, 104)}
 LOWLAND_PLAYABLE = (128, 148, 104)
 LOWLAND_OTHER = (104, 112, 100)
@@ -70,10 +87,14 @@ SNAP_DEG = 0.012            # ~1,2 km: uç noktası başka bir yola bu kadar yak
 SIMPLIFY_DEG = 0.004        # ~400 m Douglas–Peucker toleransı
 BRIDGE_DEG = 0.06           # ~6 km: kopuk küçük parçaları ana ağa bağlama mesafesi
 
-# Natural Earth 1:10m verisinden yeni otoyol köprüleri (boylam, enlem): uçlar en yakın yol düğümüne bağlanır.
+# Natural Earth 1:10m verisinde olmayan geçişler (boylam, enlem): uçlar en yakın yol düğümüne bağlanır.
+# Sınıf: 0 otoyol (köprü, tünel), 3 feribot (güzergâh bulucu feribota bekleme maliyeti ekler).
 NEW_CROSSINGS = [
-    ("Osmangazi Köprüsü (2016)", (29.512, 40.762), (29.508, 40.722)),
-    ("1915 Çanakkale Köprüsü (2022)", (26.655, 40.370), (26.706, 40.334)),
+    ("Osmangazi Köprüsü (2016)", (29.512, 40.762), (29.508, 40.722), 0),
+    ("1915 Çanakkale Köprüsü (2022)", (26.655, 40.370), (26.706, 40.334), 0),
+    ("Manş Tüneli (Folkestone–Calais)", (1.137, 51.094), (1.812, 50.935), 0),
+    ("İrlanda feribotu (Holyhead–Dublin)", (-4.632, 53.309), (-6.200, 53.346), 3),
+    ("Öresund Köprüsü (Kopenhag–Malmö)", (12.650, 55.620), (12.930, 55.570), 0),
 ]
 
 
@@ -82,6 +103,10 @@ def merc_y(lat):
 
 
 Y_MIN, Y_MAX = merc_y(MIN_LAT), merc_y(MAX_LAT)
+
+
+def inverse_merc_y(y):
+    return math.degrees(2 * math.atan(math.exp(y)) - math.pi / 2)
 
 
 class View:
@@ -94,8 +119,8 @@ class View:
         self.width = width
         # Blok sıkıştırma (DXT/ASTC) için kenarlar 4'ün katı olmalı; en-boy farkı ihmal edilebilir (%0,05).
         self.height = 4 * round(width * (self.y_max - self.y_min) / math.radians(self.max_lon - self.min_lon) / 4)
-        # Çekirdek haritaya göre piksel yoğunluğu: bulanıklık yarıçapları buna göre ölçeklenir.
-        self.density = (width / (self.max_lon - self.min_lon)) / (TEX_WIDTH / (MAX_LON - MIN_LON))
+        # Başvuru yoğunluğuna göre piksel yoğunluğu: bulanıklık yarıçapları buna göre ölçeklenir.
+        self.density = (width / (self.max_lon - self.min_lon)) / REF_PX_PER_DEG
 
     def project(self, lon, lat, scale=1):
         return ((lon - self.min_lon) / (self.max_lon - self.min_lon) * self.width * scale,
@@ -111,6 +136,7 @@ OUTER = View(OUTER_LON, OUTER_LAT, OUTER_WIDTH)
 TEX_HEIGHT = CORE.height
 
 
+@functools.lru_cache(maxsize=None)
 def load(data_dir, name):
     with open(os.path.join(data_dir, name + ".geojson"), encoding="utf-8") as f:
         return json.load(f)["features"]
@@ -365,11 +391,67 @@ def build_water_mask(data_dir):
     print(f"{WATER_FILE}: {image.size[0]}×{image.size[1]}, {os.path.getsize(path) // 1024} KB")
 
 
+def build_tiles(data_dir):
+    """Yakın plan döşemeleri: genel görünümle aynı çizim (render_map), daha yüksek çözünürlükte. Döşemeler Mercator
+    uzayında karedir (dünya biriminde de kare); kuzeydeki son satır harita sınırını aşabilir (oyun kırpar).
+    Kara oranı deniz maskesinden ölçülür: tamamen deniz olan döşemede genel görünüm yeterli."""
+    lon_span = (MAX_LON - MIN_LON) / TILE_COLS
+    merc_span = math.radians(lon_span)
+    rows = math.ceil((Y_MAX - Y_MIN) / merc_span - 1e-9)
+    water = np.asarray(Image.open(os.path.join(OUT_DIR, WATER_FILE)), dtype=np.float32)[..., 0] / 255.0
+    wh, ww = water.shape
+    os.makedirs(TILES_DIR, exist_ok=True)
+    for name in os.listdir(TILES_DIR):
+        if name.endswith(".jpg") or name == "index.json":
+            os.remove(os.path.join(TILES_DIR, name))
+
+    margin_lon = lon_span * TILE_MARGIN / TILE_PX
+    margin_merc = merc_span * TILE_MARGIN / TILE_PX
+    entries, total = [], 0
+    for row in range(rows):
+        y0 = Y_MIN + row * merc_span
+        y1 = y0 + merc_span
+        for col in range(TILE_COLS):
+            lon0 = MIN_LON + col * lon_span
+            u0, u1 = col / TILE_COLS, (col + 1) / TILE_COLS
+            v0, v1 = (y0 - Y_MIN) / (Y_MAX - Y_MIN), min(1.0, (y1 - Y_MIN) / (Y_MAX - Y_MIN))
+            sub = water[int((1 - v1) * wh):max(int((1 - v1) * wh) + 1, int(math.ceil((1 - v0) * wh))),
+                        int(u0 * ww):int(math.ceil(u1 * ww))]
+            land = 1.0 - float(sub.mean())
+            if land < 0.01:
+                continue
+            view = View((lon0 - margin_lon, lon0 + lon_span + margin_lon),
+                        (inverse_merc_y(y0 - margin_merc), inverse_merc_y(y1 + margin_merc)), TILE_PX + 2 * TILE_MARGIN)
+            if view.height != TILE_PX + 2 * TILE_MARGIN:
+                raise SystemExit(f"döşeme kare değil: {view.width}×{view.height}")
+            image = render_map(data_dir, view).crop((TILE_MARGIN, TILE_MARGIN, TILE_MARGIN + TILE_PX, TILE_MARGIN + TILE_PX))
+            name = f"{col}_{row}"
+            path = os.path.join(TILES_DIR, name + ".jpg")
+            image.save(path, "JPEG", quality=88, subsampling=0, optimize=True)
+            total += os.path.getsize(path)
+            entries.append({"name": name, "col": col, "row": row})
+            print(f"  döşeme {name}: kara %{land * 100:.0f}, {os.path.getsize(path) // 1024} KB", flush=True)
+
+    index = {"version": 1, "size": TILE_PX, "cols": TILE_COLS, "rows": rows,
+             "spanU": 1.0 / TILE_COLS, "spanV": merc_span / (Y_MAX - Y_MIN), "tiles": entries}
+    with open(os.path.join(TILES_DIR, "index.json"), "w", encoding="utf-8") as f:
+        json.dump(index, f, indent=1)
+    print(f"MapTiles: {len(entries)} döşeme ({TILE_COLS}×{rows} ızgaradan), toplam {total // (1024 * 1024)} MB")
+
+
+@functools.lru_cache(maxsize=1)
+def relief_source(data_dir):
+    Image.MAX_IMAGE_PIXELS = None
+    source = Image.open(os.path.join(data_dir, "SR_HR.tif"))
+    source.load()   # döşemelerde her seferinde yeniden okunmasın
+    return source
+
+
 def relief_layers(data_dir, view):
     """SR_HR (eşdikdörtgen) → Mercator gölge çarpanı ve engebe (0..1)."""
     Image.MAX_IMAGE_PIXELS = None
     width, height = view.width, view.height
-    source = Image.open(os.path.join(data_dir, "SR_HR.tif"))
+    source = relief_source(data_dir)
     sw, sh = source.size
     lat_top, lat_bottom = view.max_lat + 0.5, view.min_lat - 0.5
     box = (round((view.min_lon + 180) / 360 * sw), round((90 - lat_top) / 180 * sh),
@@ -578,7 +660,7 @@ def stitch_dead_ends(nodes, edges, max_km=4.0):
 
 def add_crossings(nodes, edges):
     """Köprü uçlarını en yakın yol noktasına bağlar; o nokta bir kenarın ortasındaysa kenar ikiye bölünür."""
-    for name, a, b in NEW_CROSSINGS:
+    for name, a, b, crossing_class in NEW_CROSSINGS:
         ends = []
         for p in (a, b):
             best = None
@@ -593,7 +675,7 @@ def add_crossings(nodes, edges):
                 break
             ends.append(split_edge(nodes, edges, index, k))
         if len(ends) == 2:
-            edges.append([ends[0], ends[1], 0, [nodes[ends[0]], a, b, nodes[ends[1]]]])
+            edges.append([ends[0], ends[1], crossing_class, [nodes[ends[0]], a, b, nodes[ends[1]]]])
             print(f"{name} eklendi")
 
 
@@ -738,7 +820,11 @@ def check_cities(nodes, edges):
         return None
 
     for a, b in [("İstanbul", "Ankara"), ("İstanbul", "İzmir"), ("Ankara", "Antalya"), ("İstanbul", "Sofya"),
-                 ("Edirne", "Çanakkale"), ("Trabzon", "Tiflis"), ("Van", "Hakkari"), ("İzmir", "Atina")]:
+                 ("Edirne", "Çanakkale"), ("Trabzon", "Tiflis"), ("Van", "Hakkari"), ("İzmir", "Atina"),
+                 # Avrupa Paketi
+                 ("İstanbul", "Viyana"), ("İstanbul", "Paris"), ("Londra", "Paris"), ("Dublin", "Londra"),
+                 ("Roma", "Palermo"), ("Kopenhag", "Stockholm"), ("Oslo", "Bergen"), ("Varşova", "Tallinn"),
+                 ("Madrid", "Lizbon"), ("Berlin", "Roma"), ("Edinburgh", "Londra"), ("Atina", "Tiran")]:
         cost = route_km(a, b)
         straight = km(cities[a], cities[b])
         print(f"  {a}–{b}: kuş uçuşu {straight:.0f} km, yol maliyeti {cost:.0f}" if cost else f"  {a}–{b}: YOL YOK")
@@ -768,11 +854,20 @@ if __name__ == "__main__":
     parser.add_argument("--preview", help="yol ağını harita üzerine çizen kontrol görüntüsü")
     parser.add_argument("--roads-only", action="store_true", help="yalnızca roads.txt üret")
     parser.add_argument("--water-only", action="store_true", help="yalnızca deniz maskesini üret")
+    parser.add_argument("--tiles", action="store_true", help="yakın plan döşemelerini de üret (birkaç dakika)")
+    parser.add_argument("--tiles-only", action="store_true", help="yalnızca döşemeleri üret")
     args = parser.parse_args()
 
     if args.water_only:
         build_water_mask(args.data_dir)
         raise SystemExit(0)
+    if args.tiles_only:
+        build_tiles(args.data_dir)
+        raise SystemExit(0)
+    if args.tiles and not args.roads_only:
+        build_textures(args.data_dir)
+        build_tiles(args.data_dir)
+        args.roads_only = True
     if not args.roads_only:
         build_textures(args.data_dir)
     road_nodes, road_edges = write_roads(*build_roads(args.data_dir))

@@ -3,7 +3,8 @@
 Arayüz ikonlarını tek bir dokuda toplar: Twemoji (https://github.com/jdecked/twemoji, grafikler CC BY 4.0).
 
   Assets/_Project/Resources/BusTycoon/UI/icons.png   8 sütun, 80 px hücre (72 px ikon + 4 px saydam pay)
-  (Bayraklar: Twemoji bölge bayrakları — Türkiye, Bulgaristan, Gürcistan, Yunanistan, Romanya)
+  (Bayraklar: Twemoji bölge bayrakları — Türkiye, Bulgaristan, Gürcistan, Yunanistan, Romanya ve Avrupa Paketi'nin
+  31 ülkesi)
 
 Sıra Assets/_Project/Scripts/Game/UI/UIIcons.cs içindeki UIIcon sırasıyla AYNI olmalıdır.
 Kullanım: python3 Tools/make_icons.py      Gereksinim: Pillow, internet (jsdelivr)
@@ -43,6 +44,11 @@ ICONS = [
     ("Wifi", "1f4f6"), ("Luggage", "1f9f3"), ("Taxi", "1f695"), ("Umbrella", "26f1"),
     ("Teddy", "1f9f8"), ("Shopping", "1f6cd"), ("Sofa", "1f6cb"), ("Fountain", "26f2"),
     ("MantelClock", "1f570"), ("Door", "1f6aa"), ("Smile", "1f60a"),
+    # Avrupa Paketi bayrakları (ISO 3166 sırası bölge listesindeki gibi; XK = Kosova)
+] + [("Flag" + iso, "-".join(f"{0x1f1e6 + ord(ch) - ord('A'):x}" for ch in iso)) for iso in (
+    "GB", "IE", "FR", "BE", "NL", "LU", "DE", "DK", "AT", "CH", "IT", "ES", "PT", "PL", "CZ", "SK",
+    "HU", "SI", "HR", "BA", "RS", "ME", "AL", "MK", "MD", "XK", "SE", "NO", "LT", "LV", "EE")] + [
+    ("Package", "1f4e6"),
 ]
 
 

@@ -85,6 +85,7 @@ namespace BusTycoon.Game
             stationCamera = cameraObject.AddComponent<Camera>();
             stationCamera.clearFlags = CameraClearFlags.SolidColor;
             stationCamera.backgroundColor = DaySky;
+            stationCamera.allowHDR = false;
             stationCamera.fieldOfView = 40f;
             stationCamera.nearClipPlane = 0.5f;
             stationCamera.farClipPlane = 600f;

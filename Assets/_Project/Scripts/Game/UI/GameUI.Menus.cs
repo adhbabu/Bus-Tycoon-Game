@@ -10,6 +10,7 @@ namespace BusTycoon.Game
     public sealed partial class GameUI
     {
         static readonly string[] QuickStartCityIds = { "TR_ISTANBUL", "TR_ANKARA", "TR_IZMIR", "TR_BURSA", "TR_ANTALYA", "TR_KONYA" };
+        static readonly string[] EuropeStartCityIds = { "DE_BERLIN", "FR_PARIS", "GB_LONDRA" };
 
         string companyName = "Anadolu Turizm";
         CityData startCity;
@@ -310,6 +311,12 @@ namespace BusTycoon.Game
 
         void SelectStartCity(CityData city)
         {
+            if (city == null) return;
+            if (!Entitlements.Owns(city.Region.PackId))
+            {
+                Toast($"{city.DisplayName} {ContentPacks.DisplayName(city.Region.PackId)} ile seçilebilir.", UIStyles.Orange);
+                return;
+            }
             startCity = city;
             mapCamera.FocusOn(world.GetCityPosition(city), 40f);
 

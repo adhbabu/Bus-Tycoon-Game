@@ -15,7 +15,12 @@ namespace BusTycoon.Game
         Shield, Tools, Gift, Pilot, Ruler, Hourglass, Bank,
         Sun, Moon, Sunrise, Sunset,
         Plant, Bulb, Bagel, Screen, Wifi, Luggage, Taxi, Umbrella,
-        Teddy, Shopping, Sofa, Fountain, MantelClock, Door, Smile
+        Teddy, Shopping, Sofa, Fountain, MantelClock, Door, Smile,
+        // Avrupa Paketi bayrakları
+        FlagGB, FlagIE, FlagFR, FlagBE, FlagNL, FlagLU, FlagDE, FlagDK, FlagAT, FlagCH, FlagIT, FlagES, FlagPT, FlagPL,
+        FlagCZ, FlagSK, FlagHU, FlagSI, FlagHR, FlagBA, FlagRS, FlagME, FlagAL, FlagMK, FlagMD, FlagXK, FlagSE, FlagNO,
+        FlagLT, FlagLV, FlagEE,
+        Package
     }
 
     /// <summary>
@@ -43,16 +48,18 @@ namespace BusTycoon.Game
             }
         }
 
-        /// <summary>Bölgenin bayrağı (DefaultContent.Regions kimlikleri); bilinmeyen bölgede dünya ikonu.</summary>
-        public static UIIcon Flag(string regionId) => regionId switch
+        static readonly System.Collections.Generic.Dictionary<string, UIIcon> flags =
+            new System.Collections.Generic.Dictionary<string, UIIcon>(System.StringComparer.Ordinal);
+
+        /// <summary>Bölgenin bayrağı (ISO kodu: UIIcon.Flag&lt;kod&gt;); bilinmeyen bölgede dünya ikonu.</summary>
+        public static UIIcon Flag(string regionId)
         {
-            "TR" => UIIcon.FlagTR,
-            "BG" => UIIcon.FlagBG,
-            "GE" => UIIcon.FlagGE,
-            "GR" => UIIcon.FlagGR,
-            "RO" => UIIcon.FlagRO,
-            _ => UIIcon.Regions
-        };
+            if (string.IsNullOrEmpty(regionId)) return UIIcon.Regions;
+            if (flags.TryGetValue(regionId, out UIIcon icon)) return icon;
+            icon = System.Enum.TryParse("Flag" + regionId, out UIIcon parsed) ? parsed : UIIcon.Regions;
+            flags[regionId] = icon;
+            return icon;
+        }
 
         /// <summary>İkonu çizer; <paramref name="fraction"/> &lt; 1 ise yalnız soldan o kadarı (yarım yıldız).</summary>
         public static void Draw(Rect rect, UIIcon icon, float fraction = 1f)

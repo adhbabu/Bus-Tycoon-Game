@@ -1,8 +1,8 @@
 # 🚌 Bus Tycoon — Otobüs İşletmeciliği Strateji Oyunu (Unity)
 
 Otobüsü sürmediğiniz, **tamamen şirketi yönettiğiniz** 3D bir tycoon oyunu. Gerçek harita üzerinde
-81 il + 12 komşu ülke şehri arasında hat açar, bilet fiyatını talep esnekliğine göre ayarlar, eski bir
-minibüsle başlayıp VIP ve çift katlı otobüslere kadar filonuzu büyütürsünüz.
+81 il + 12 komşu ülke şehri (Avrupa Paketi ile 31 ülke daha, toplam 221 şehir) arasında hat açar, bilet fiyatını
+talep esnekliğine göre ayarlar, eski bir minibüsle başlayıp VIP ve çift katlı otobüslere kadar filonuzu büyütürsünüz.
 
 ## ▶ Hemen oyna (tarayıcıda)
 
@@ -65,14 +65,15 @@ Kurulum (bir kerelik sırlar) ve kullanım: **[store/BULUT-DERLEME.md](store/BUL
 
 ## İçerik
 
-* **Harita:** Natural Earth 1:10m verisinden 4096 px Mercator dokusu: gölgeli dağlar, göller, nehirler, il ve ülke sınırları (Türkiye, Balkanlar, Kafkasya). Harita "tak" diye bitmez: çevresi (İtalya'dan Hazar'a, Ukrayna'dan Mısır'a) uzaklaştıkça bulanıklaşarak denize karışır.
-* **Karayolları:** Natural Earth otoyol, devlet yolu ve feribot ağı (+ Osmangazi ve 1915 Çanakkale köprüleri); hatlar ve otobüsler bu yolları izler.
-* **Her şehrin kendi ikonu:** 93 şehrin her birine nesiyle ünlü olduğunu anlatan bir ikon (İstanbul'a köprü, Rize'ye çay, Van'a kedi, Kapadokya'ya balon…); haritada adının yanında, ipucunda kısa açıklamasıyla.
+* **Harita:** Natural Earth 1:10m verisinden Mercator dokusu: gölgeli dağlar, göller, nehirler, il ve ülke sınırları — Lizbon'dan Kafkasya'ya, Sicilya'dan Norveç'e (boylam −11°…47°, enlem 34°…61°). Genel görünüm 4096 px; yakınlaşınca kameranın çevresindeki yüksek çözünürlüklü döşemeler indirilir (`StreamingAssets/MapTiles`). Canlı deniz (dalga, güneş yansıması, kıyı köpüğü), bulut gölgeleri ve ufuk pusu. Harita "tak" diye bitmez: çevresi uzaklaştıkça bulanıklaşarak denize karışır.
+* **Karayolları:** Natural Earth otoyol, devlet yolu ve feribot ağı (+ Osmangazi, 1915 Çanakkale ve Öresund köprüleri, Manş Tüneli, İrlanda feribotu); hatlar ve otobüsler bu yolları izler.
+* **Her şehrin kendi ikonu:** 221 şehrin her birine nesiyle ünlü olduğunu anlatan bir ikon (İstanbul'a köprü, Rize'ye çay, Van'a kedi, Kapadokya'ya balon…); haritada adının yanında, ipucunda kısa açıklamasıyla.
 * **Şehirler = otobüs durakları:** her şehir haritada büyüklüğüne göre küçük durak, otogar, büyük otogar ya da metropol terminali olarak görünür (çatı rengi: merkez, hatlı, kilitli). Tıklayınca durağın içine girilir: kesit görünümlü 3B salon, peronlarda otobüsler, yolcular (popülerliğe göre kalabalık), cadde trafiği, şehrin adı ve ikonu tabelalarda, kalkış panosunda hatlarınız. 16 geliştirme (koltuk, bitki, aydınlatma, simit-çay büfesi, dijital pano, Wi-Fi, gişe, kafe, emanet, taksi, peron çatısı, oyun alanı, hediyelik eşya, VIP salon, süs havuzu, saat kulesi) sahnede belirir ve talebi artırır.
 * **Gece-gündüz döngüsü:** güneş doğar ve batar, gece harita kararır, şehirlerin ışıkları yanar, otobüsler farlarını açar (duraklatma menüsünden kapatılabilir).
 * **Otobüs modelleri:** her model için 3B model (kaputlu minibüs, midibüs, şehirlerarası, VIP, çift katlı) ve yandan çizim (galeri, filo, planlayıcı); köşedeki mini haritada otobüsler hatlarında hareket eder.
 * **93 şehir:** 81 il merkezi (GeoNames koordinatları ve il nüfusları) + Bulgaristan, Yunanistan, Gürcistan, Romanya'dan 12 şehir.
 * **5 ülke / bölge:** Türkiye başlangıçta açık; diğerleri seviye + lisans ücretiyle açılır.
+* **Avrupa Paketi (DLC, web'de ücretsiz):** Kıta Avrupası + Britanya, 31 ülke, 128 şehir (Londra, Paris, Berlin, Viyana, Roma, Madrid…), her ülkeye kendi ekonomisi (Batı'da bilet de maaş da yüksek), seviye 8–20 arası kilitler, 2 Avrupa otobüsü (Nordstar E12 Elektrik, Alpina Reisestar 50), 3 Avrupa görevi ve çok oyunculuda Avrupa başkentleri. Sahiplik `Runtime/Data/ContentPacks.cs` (`Entitlements`); mağaza içi satın alma eklendiğinde yalnız orası değişir.
 * **8 otobüs modeli, 6 segment:** minibüs → midibüs → şehirlerarası → konfor → VIP 2+1 → çift katlı.
 * **Ekonomi:** çekim (gravity) talep modeli, yarı-logaritmik fiyat esnekliği, otomatik sefer planı, yakıt/şoför/bakım/otoyol/otogar/ikram/sigorta giderleri, arıza ve yıpranma, itibar döngüsü, pazar araştırması belirsizliği.
 * **15 görev** (öğretici zincir + ödüller), zafer ve iflas sonu, kayıt/yükleme.
@@ -99,7 +100,7 @@ Q_ref = K × √(Nüfus_A × Nüfus_B) × f(mesafe) × turizm × itibar × olgun
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/   cities.csv (93 şehir), map_jpg.bytes (harita dokusu, JPEG), roads.txt (karayolu ağı), Shaders/ (harita yüzeyi, yollar, tabela yazısı)
+├─ Resources/BusTycoon/   cities.csv (221 şehir), map_jpg.bytes (harita dokusu, JPEG), roads.txt (karayolu ağı), Shaders/ (harita yüzeyi, yollar, tabela yazısı)
 ├─ Scripts/
 │  ├─ Runtime/            BusTycoon.Runtime — oyun kuralları (Unity'den bağımsız test edilebilir)
 │  │  ├─ Core/            GameSession, SimulationClock, CsvUtility, OpResult

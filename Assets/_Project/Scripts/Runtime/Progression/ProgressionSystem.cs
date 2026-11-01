@@ -137,12 +137,15 @@ namespace BusTycoon.Progression
 
         // ------------------------------------------------------------------ bölge kilitleri
 
+        /// <summary>Lisansı alınmış ve paketi (DLC) sahip olunan bölge.</summary>
         public bool IsRegionUnlocked(RegionData region) =>
-            region != null && state.unlockedRegionIds.Contains(region.Id);
+            region != null && Entitlements.Owns(region.PackId) && state.unlockedRegionIds.Contains(region.Id);
 
         public OpResult CanUnlockRegion(RegionData region)
         {
             if (region == null) return OpResult.Fail("Geçersiz bölge.");
+            if (!Entitlements.Owns(region.PackId))
+                return OpResult.Fail($"{region.DisplayName} {ContentPacks.DisplayName(region.PackId)} ile açılır.");
             if (IsRegionUnlocked(region)) return OpResult.Fail($"{region.DisplayName} zaten açık.");
             if (state.level < region.RequiredCompanyLevel)
                 return OpResult.Fail($"{region.DisplayName} için şirket seviyesi {region.RequiredCompanyLevel} gerekli.");
