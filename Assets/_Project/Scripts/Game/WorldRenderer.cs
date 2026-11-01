@@ -138,6 +138,7 @@ namespace BusTycoon.Game
         readonly List<(RoadNetwork.RoadClass Class, Vector3[] Points)> roadPieces = new List<(RoadNetwork.RoadClass, Vector3[])>();
         Mesh roadMesh;
         Material roadMaterial;
+        Color roadNightTint = Color.white;
 
         // Gece: haritayı karartan örtü, şehir ışıkları, otobüs farları (DayNightCycle → SetDaylight)
         static readonly Color NightTint = new Color(0.02f, 0.04f, 0.14f);
@@ -456,7 +457,7 @@ namespace BusTycoon.Game
             hazeColor = Color.Lerp(DayHaze, tintColor, Mathf.Clamp01(tint.a * 1.6f));
             backgroundColor = Color.Lerp(Color.Lerp(SeaColor, DayHaze, 0.12f), tintColor, tint.a);
             Shader.SetGlobalFloat(DaylightId, 1f - night);
-            if (roadMaterial != null) roadMaterial.color = Color.Lerp(Color.white, new Color(0.82f, 0.82f, 0.95f), night * 0.7f);
+            roadNightTint = Color.Lerp(Color.white, new Color(0.82f, 0.82f, 0.95f), night * 0.7f); // LateUpdate uygular
             StationMaterials.SetNight(night);
 
             float lights = Mathf.Clamp01((night - 0.15f) / 0.6f);
@@ -920,8 +921,14 @@ namespace BusTycoon.Game
             markerScale = Mathf.Clamp(zoomDistance / 32f, 0.7f, 2.1f); // uzaktan da duraklar seçilsin
             if (roadMesh != null)
             {
-                if (roadWidthInShader) roadMaterial.SetFloat(WidthScaleId, scale);
-                else if (Mathf.Abs(scale - roadScale) > roadScale * 0.12f) RebuildRoadMesh(scale);
+                // Yollar uzakta hatlar kadar kalınlaşmaz ve soluklaşır: Avrupa'nın tüm ağı haritayı boğmasın,
+                // oyuncunun hatları öne çıksın
+                float roadZoom = Mathf.Min(scale, 1.6f);
+                if (roadWidthInShader) roadMaterial.SetFloat(WidthScaleId, roadZoom);
+                else if (Mathf.Abs(roadZoom - roadScale) > roadScale * 0.12f) RebuildRoadMesh(roadZoom);
+                Color tint = roadNightTint;
+                tint.a *= Mathf.Lerp(1f, 0.45f, Mathf.InverseLerp(55f, 130f, zoomDistance));
+                if (!tint.Equals(roadMaterial.color)) roadMaterial.color = tint;
             }
             UpdateLineWidths(scale);
             ScaleCityMarkers();
