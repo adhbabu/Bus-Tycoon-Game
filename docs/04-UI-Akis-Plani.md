@@ -304,7 +304,27 @@ para ödülü verir.
   bayrakları; finans kalemlerinde, planlayıcıda, görevlerde ve günlükte ikonlar.
 * **Otobüs kartları (Filo):** başlık + durum rozeti, ikonlu ayrıntı satırları (📍 hat, 💺 model, 👥 doluluk,
   🔧 durum, 🛣️ km) ve iki ana düğme (garaja çek / revizyon + hatta ata).
-* **Hareket:** panel açılış 150 ms kaydırma; değişen sayılarda 300 ms sayaç animasyonu (kâr artışı yeşil yanıp söner).
+* **Hareket:**
+  * **Kamera** (`MapCamera`):
+    * kritik sönümlü yay geçişleri;
+    * sürükleme bırakılınca süzülme;
+    * yakınlaştıkça eğim 62° → 42° ve görüş açısı 40° → 35°;
+    * çift dokunuşla yakınlaşma.
+  * **Harita** (`WorldRenderer`):
+    * yeni hat çizilerek belirir (0,9 sn);
+    * duraklar yaylanarak büyür;
+    * otobüsler duraklarda kısa bekler, hızlanıp yavaşlar.
+  * **Gün sonu** (`GameUI.Effects`): hatların üstünden yükselen kazanç yazıları; en çok 4, menüden kapatılır.
+  * **Arayüz:**
+    * paneller 220 ms kayarak ve belirerek açılır;
+    * pencereler belirerek yükselir;
+    * menüde seçili öğenin zemini kayar;
+    * değişen sayılarda 300 ms sayaç animasyonu (kâr artışı yeşil yanıp söner).
+* **Akıcılık:**
+  * Yol kalınlığı gölgelendiricide (`MapRoads.shader`): yakınlaşırken ağ yeniden örülmez.
+  * Durak ve otobüs malzemeleri paylaşılır; GPU örneklemeli çizim kullanılır.
+  * Üst çubuk ve GUILayout seçenekleri önbellekte: kare başına çöp azalır.
+  * `?fps=1` kare süresi göstergesini açar.
 * **Kısayollar:** `Space` duraklat, `1/2/3` hız, `N` yeni hat, `R` hatlarım, `F` filo, `G` galeri, `K` finans,
   `B` bölgeler, `J` görevler, `L` günlük, `H` yardım, `F5` kaydet, `Esc` geri / menü, `WASD` kaydır, `Q/E` yakınlaştır.
 

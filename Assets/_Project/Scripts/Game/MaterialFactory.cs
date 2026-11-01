@@ -21,7 +21,8 @@ namespace BusTycoon.Game
         {
             if (litTemplate == null) litTemplate = LoadLitTemplate();
 
-            var material = new Material(litTemplate) { color = color };
+            // Örneklemeli çizim: aynı mesh + aynı malzemeli nesneler (duraklar, otobüsler) tek çizim çağrısında
+            var material = new Material(litTemplate) { color = color, enableInstancing = true };
             if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
             if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", smoothness);
             if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", smoothness);

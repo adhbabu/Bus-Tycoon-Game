@@ -68,6 +68,7 @@ namespace BusTycoon.Game
         Rect ModalRect => CenteredBox(480f, 470f);
         Vector2 modalScroll;
         Modal scrolledModal;
+        float modalShownAt;
 
         /// <summary>Güvenli alanın ortasında, ekrana sığacak şekilde küçültülen kutu.</summary>
         Rect CenteredBox(float widthUnits, float heightUnits)
@@ -361,16 +362,22 @@ namespace BusTycoon.Game
 
         void DrawModal()
         {
-            var full = new Rect(0f, 0f, W, H);
-            uiRects.Add(full);
-            if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0.02f, 0.03f, 0.1f, 0.55f));
-
-            var box = ModalRect;
             if (modal != scrolledModal)
             {
                 scrolledModal = modal;
                 modalScroll = Vector2.zero;
+                modalShownAt = Time.unscaledTime;
             }
+            // Açılış: arka plan kararır, kutu belirerek hafifçe yükselir
+            float eased = EaseOut((Time.unscaledTime - modalShownAt) / 0.18f);
+            var full = new Rect(0f, 0f, W, H);
+            uiRects.Add(full);
+            if (Event.current.type == EventType.Repaint) DrawRect(full, new Color(0.02f, 0.03f, 0.1f, 0.55f * eased));
+
+            var box = ModalRect;
+            box.y += (1f - eased) * 14f * u;
+            Color previousColor = GUI.color;
+            GUI.color = new Color(previousColor.r, previousColor.g, previousColor.b, previousColor.a * Mathf.Lerp(0.2f, 1f, eased));
             GUILayout.BeginArea(box, s.Modal);
             // Telefonda kutu ekrana sığmayabilir: içerik parmakla kaydırılır
             if (phone) modalScroll = BeginScroll(modalScroll);
@@ -384,6 +391,7 @@ namespace BusTycoon.Game
             }
             if (phone) GUILayout.EndScrollView();
             GUILayout.EndArea();
+            GUI.color = previousColor;
         }
 
         void DrawPauseModal()
@@ -427,6 +435,8 @@ namespace BusTycoon.Game
                 if (on != cycle.Enabled) cycle.SetEnabled(on);
             }
             DrawSoundToggle();
+            bool income = GUILayout.Toggle(IncomeLabelsEnabled, "Gün sonu kazanç yazıları (hatların üstünde)", s.Toggle);
+            if (income != IncomeLabelsEnabled) IncomeLabelsEnabled = income;
 
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Ana Menü", s.Button, Ht(40f))) Defer(EnterMainMenu);

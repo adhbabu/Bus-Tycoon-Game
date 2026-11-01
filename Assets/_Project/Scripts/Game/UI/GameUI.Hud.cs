@@ -11,6 +11,22 @@ namespace BusTycoon.Game
     public sealed partial class GameUI
     {
         readonly List<Notifications.Entry> activeToasts = new List<Notifications.Entry>();
+        // Üst çubuk ve görev kartı metinleri: değer değişmedikçe her kare yeniden biçimlenmez
+        readonly CachedText levelText = new CachedText(), levelShortText = new CachedText(), debtText = new CachedText(),
+            netText = new CachedText(), dateText = new CachedText(), reputationText = new CachedText(), routesText = new CachedText(),
+            fleetText = new CachedText(), idleText = new CachedText(), idleShortText = new CachedText(), cashText = new CachedText();
+        string goalHeader;
+        GoalTracker.Goal goalHeaderGoal;
+        int goalHeaderCount = -1;
+
+        string GoalHeader(GoalTracker.Goal goal)
+        {
+            if (goal == goalHeaderGoal && goals.CompletedCount == goalHeaderCount) return goalHeader;
+            goalHeaderGoal = goal;
+            goalHeaderCount = goals.CompletedCount;
+            goalHeader = $"GÖREV {goals.CompletedCount + 1}/{goals.Goals.Count}" + (goal.Reward > 0 ? $"  ·  ÖDÜL {Fmt.Money(goal.Reward)}" : "");
+            return goalHeader;
+        }
         static readonly GUIContent ToastContent = new GUIContent("");
 
         /// <summary>Masaüstünde sol menü vardır; telefonda menü alttadır.</summary>
@@ -40,7 +56,7 @@ namespace BusTycoon.Game
 
             // Şirket ve seviye (telefonda başlık yerine yalnız seviye)
             GUILayout.BeginVertical(Wd(slim ? 150f : N(220f, 170f)));
-            GUILayout.Label(slim ? $"SEVİYE {progression.Level}" : $"ŞİRKET · SEVİYE {progression.Level}", s.StatLabel);
+            GUILayout.Label(slim ? levelShortText.Get(progression.Level, v => $"SEVİYE {v}") : levelText.Get(progression.Level, v => $"ŞİRKET · SEVİYE {v}"), s.StatLabel);
             GUILayout.Label(state.companyName, slim ? s.Bold : s.Value);
             LayoutBar(progression.LevelProgress01, UIStyles.Orange, 5f, slim ? 120f : N(180f, 140f), 2f);
             GUILayout.EndVertical();
@@ -59,12 +75,12 @@ namespace BusTycoon.Game
             if (debt)
             {
                 int daysLeft = session.ProgressionConfig.BankruptcyGraceDays - session.Finance.DaysInDebt;
-                ColorLabel($"İflasa {daysLeft} gün!", UIStyles.Red, s.Small);
+                ColorLabel(debtText.Get(daysLeft, v => $"İflasa {v} gün!"), UIStyles.Red, s.Small);
             }
             else if (showNet)
             {
                 double net = LastDayNet();
-                ColorLabel($"Dün {Fmt.Signed(net)}", net >= 0 ? UIStyles.Green : UIStyles.Red, s.Small);
+                ColorLabel(netText.Get(net, v => $"Dün {Fmt.Signed(v)}"), net >= 0 ? UIStyles.Green : UIStyles.Red, s.Small);
             }
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -95,7 +111,7 @@ namespace BusTycoon.Game
                 }, 18f, 3f);
                 Sp(2f);
             }
-            GUILayout.Label(SimulationClock.FormatDate(state.currentDay), s.Bold);
+            GUILayout.Label(dateText.Get(state.currentDay, v => SimulationClock.FormatDate((int)v)), s.Bold);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
             Sp(slim ? 6f : 0f);
@@ -152,20 +168,22 @@ namespace BusTycoon.Game
             GUILayout.Label("İTİBAR", s.StatLabel);
             GUILayout.BeginHorizontal();
             LayoutIcon(UIIcon.Star, 18f, 4f);
-            GUILayout.Label($"{progression.Reputation:0}", s.Value);
+            GUILayout.Label(reputationText.Get(Math.Round(progression.Reputation), v => v.ToString("0")), s.Value);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
             GUILayout.BeginVertical(Wd(N(96f, 82f)));
             GUILayout.Label("HATLAR", s.StatLabel);
-            GUILayout.Label($"{session.Routes.Routes.Count} / {progression.MaxRoutes}", s.Value);
+            GUILayout.Label(routesText.Get(session.Routes.Routes.Count, progression.MaxRoutes, (a, b) => $"{a} / {b}"), s.Value);
             GUILayout.EndVertical();
 
             GUILayout.BeginVertical(Wd(N(150f, 96f)));
             GUILayout.Label("FİLO", s.StatLabel);
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"{session.Fleet.Buses.Count}", s.Value);
-            if (!Narrow || idle > 0) ColorLabel(Narrow ? $"{idle} boşta" : $"otobüs · {idle} garajda", idle > 0 ? UIStyles.Orange : UIStyles.DimText, s.Small);
+            GUILayout.Label(fleetText.Get(session.Fleet.Buses.Count, v => v.ToString("0")), s.Value);
+            if (!Narrow || idle > 0)
+                ColorLabel(Narrow ? idleShortText.Get(idle, v => $"{v} boşta") : idleText.Get(idle, v => $"otobüs · {v} garajda"),
+                    idle > 0 ? UIStyles.Orange : UIStyles.DimText, s.Small);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
@@ -173,7 +191,7 @@ namespace BusTycoon.Game
         /// <summary>Kasa: büyük, parlak yeşil; çevresine aynı rengin saydam kopyaları çizilerek hafif parıltı verilir.</summary>
         void MoneyLabel(double cash)
         {
-            ToastContent.text = Fmt.Money(cash);
+            ToastContent.text = cashText.Get(Math.Round(cash), v => Fmt.Money(v));
             bool negative = cash < 0;
             GUIStyle style = negative ? s.MoneyNegative : s.Money;
             Rect rect = GUILayoutUtility.GetRect(ToastContent, style);
@@ -261,6 +279,10 @@ namespace BusTycoon.Game
             float top = SafeTop + 14f * u, bottom = H - SafeBottom - 10f * u;
             float itemHeight = Mathf.Min(64f * u, (bottom - top) / (entries.Length + 2.4f));
             float x = SafeLeft + 6f * u, width = SideBarWidth - 12f * u;
+            Rect? selected = null;
+            for (int i = 0; i < entries.Length; i++)
+                if (panel == entries[i].Target) selected = new Rect(x, top + i * itemHeight, width, itemHeight - 4f * u);
+            DrawNavHighlight(selected);
             float y = top;
             foreach (var entry in entries)
             {
@@ -285,12 +307,57 @@ namespace BusTycoon.Game
             int count = 0;
             foreach (var entry in entries) if (InBottomBar(entry)) count++;
             float x = SafeLeft + 6f * u, width = (SafeRight - SafeLeft - 12f * u) / count;
+            Rect? selected = null;
+            float probe = x;
+            foreach (var entry in entries)
+            {
+                if (!InBottomBar(entry)) continue;
+                if (panel == entry.Target) selected = new Rect(probe + 2f * u, bar.y + 4f * u, width - 4f * u, BottomBarHeight - 8f * u);
+                probe += width;
+            }
+            DrawNavHighlight(selected);
             foreach (var entry in entries)
             {
                 if (!InBottomBar(entry)) continue;
                 NavItem(new Rect(x + 2f * u, bar.y + 4f * u, width - 4f * u, BottomBarHeight - 8f * u), entry, phone ? 22f : 24f);
                 x += width;
             }
+        }
+
+        Rect navHighlight;
+        float navHighlightAlpha;
+        int navHighlightFrame = -1;
+
+        /// <summary>
+        /// Seçili menü öğesinin zemini: öğeler arasında kayarak yer değiştirir; panel kapanınca söner.
+        /// Kare başına bir kez ilerler (OnGUI bir karede birkaç kez çağrılır).
+        /// </summary>
+        void DrawNavHighlight(Rect? target)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            if (navHighlightFrame != Time.frameCount)
+            {
+                navHighlightFrame = Time.frameCount;
+                float dt = Time.unscaledDeltaTime;
+                if (target.HasValue)
+                {
+                    if (navHighlightAlpha <= 0f) navHighlight = target.Value; // görünmüyorsa yerinde belirsin
+                    float k = 1f - Mathf.Exp(-16f * dt);
+                    Rect goal = target.Value;
+                    navHighlight = new Rect(Mathf.Lerp(navHighlight.x, goal.x, k), Mathf.Lerp(navHighlight.y, goal.y, k),
+                        Mathf.Lerp(navHighlight.width, goal.width, k), Mathf.Lerp(navHighlight.height, goal.height, k));
+                    navHighlightAlpha = Mathf.MoveTowards(navHighlightAlpha, 1f, dt * 7f);
+                }
+                else
+                {
+                    navHighlightAlpha = Mathf.MoveTowards(navHighlightAlpha, 0f, dt * 7f);
+                }
+            }
+            if (navHighlightAlpha <= 0f) return;
+            Color previous = GUI.color;
+            GUI.color = new Color(previous.r, previous.g, previous.b, previous.a * navHighlightAlpha);
+            GUI.Box(navHighlight, GUIContent.none, s.NavItemActive);
+            GUI.color = previous;
         }
 
         /// <summary>Alt çubukta Günlük yok (Görevler panelinden ve menüden açılır); telefonda Yardım da menüdedir.</summary>
@@ -307,7 +374,7 @@ namespace BusTycoon.Game
         /// <summary>Menü düğmesi: ikon üstte, yazı altta; uyarı sayısı kırmızı rozetle gösterilir.</summary>
         bool NavButton(Rect rect, UIIcon icon, string label, bool active, int badge, float iconSize)
         {
-            bool clicked = GUI.Button(rect, label, active ? s.NavItemActive : s.NavItem);
+            bool clicked = GUI.Button(rect, label, active ? s.NavItemSelected : s.NavItem);
             float size = iconSize * u;
             float labelSpace = s.NavItem.fontSize * 1.25f + 7f * u;
             float iconTop = rect.y + Mathf.Max(3f * u, (rect.height - labelSpace - size) * 0.5f);
@@ -346,7 +413,7 @@ namespace BusTycoon.Game
             UIIcons.Draw(new Rect(rect.x + pad, rect.y + 16f * u, icon, icon), UIIcon.Goals);
             float textX = rect.x + pad + icon + 12f * u, inner = rect.xMax - pad - textX;
             GUI.Label(new Rect(textX, rect.y + 10f * u, inner - 70f * u, 18f * u),
-                $"GÖREV {goals.CompletedCount + 1}/{goals.Goals.Count}" + (goal.Reward > 0 ? $"  ·  ÖDÜL {Fmt.Money(goal.Reward)}" : ""), s.StatLabel);
+                GoalHeader(goal), s.StatLabel);
             GUI.Label(new Rect(textX, rect.y + 28f * u, inner, 24f * u), goal.Title, s.Bold);
             GUI.Label(new Rect(textX, rect.y + 52f * u, inner, 48f * u), goal.Hint, s.WrapDim);
 
@@ -368,7 +435,7 @@ namespace BusTycoon.Game
             UIIcons.Draw(new Rect(rect.x + 12f * u, rect.center.y - icon / 2f, icon, icon), UIIcon.Goals);
             float textX = rect.x + 12f * u + icon + 10f * u;
             GUI.Label(new Rect(textX, rect.y + 4f * u, rect.xMax - textX - 30f * u, 16f * u),
-                $"GÖREV {goals.CompletedCount + 1}/{goals.Goals.Count}" + (goal.Reward > 0 ? $"  ·  ÖDÜL {Fmt.Money(goal.Reward)}" : ""), s.StatLabel);
+                GoalHeader(goal), s.StatLabel);
             GUI.Label(new Rect(textX, rect.y + 19f * u, rect.xMax - textX - 30f * u, 22f * u), goal.Title, s.Bold);
             GUI.Label(new Rect(rect.xMax - 26f * u, rect.y, 20f * u, rect.height), "›", s.H2);
         }

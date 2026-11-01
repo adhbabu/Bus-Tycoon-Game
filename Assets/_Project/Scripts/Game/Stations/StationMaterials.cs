@@ -19,7 +19,7 @@ namespace BusTycoon.Game
         public static Material Glass => glass != null ? glass : glass = Create("StationGlass", GlassDay, 3005);
 
         static Material Create(string name, Color color, int queue) =>
-            new Material(MaterialFactory.LineMaterial) { name = name, color = color, renderQueue = queue };
+            new Material(MaterialFactory.LineMaterial) { name = name, color = color, renderQueue = queue, enableInstancing = true };
 
         /// <summary>Mesh'in alt mesh sırasına göre malzeme dizisi.</summary>
         public static Material[] For(MeshLayer[] layers, Material accent)
