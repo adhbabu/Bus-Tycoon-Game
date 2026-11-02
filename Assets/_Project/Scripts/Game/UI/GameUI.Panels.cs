@@ -71,6 +71,11 @@ namespace BusTycoon.Game
                 animatedPanel = Panel.None;
                 return;
             }
+            if (ToolkitDrawsPanel(panel)) // yeni arayüzde çiziliyor
+            {
+                animatedPanel = panel;
+                return;
+            }
             var rect = PanelRect;
             uiRects.Add(rect);
 

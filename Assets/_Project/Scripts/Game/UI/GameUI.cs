@@ -304,6 +304,7 @@ namespace BusTycoon.Game
             financeChartDirty = true;
             quoteDirty = true;
             routeListDirty = true;
+            tkSheetDirty = true;
             // Öneriler her gün yeniden hesaplanmaz (pahalı): hat açılıp kapanınca ya da 30 günde bir yenilenir
         }
 

@@ -535,40 +535,46 @@ namespace BusTycoon.Game
 
         // ------------------------------------------------------------------ yardım
 
-        void DrawHelpContent()
+        /// <summary>Nasıl Oynanır? bölümleri (eski ve yeni arayüz ortak).</summary>
+        (string Title, string Body)[] HelpSections() => new (string, string)[]
         {
-            HelpSection("Amaç",
+            ("Amaç",
                 "Otobüs şirketinizi büyütün: şehirleri hatlarla bağlayın, bilet fiyatını doğru ayarlayın, filonuzu " +
-                $"minibüsten VIP otobüse yükseltin. Kasada {Fmt.Money(GoalTracker.VictoryCash)}'a ulaşınca oyunu kazanırsınız.");
-            HelpSection("Hat açmak",
+                $"minibüsten VIP otobüse yükseltin. Kasada {Fmt.Money(GoalTracker.VictoryCash)}'a ulaşınca oyunu kazanırsınız."),
+            ("Hat açmak",
                 "Yeni Hat (N) ile planlayıcıyı açın, kalkış ve varış şehrine tıklayın ya da bir durağa girip 'Buradan hat aç'a " +
                 "basın. Teklif kartı mesafe, tahmini talep, önerilen bilet fiyatı ve otobüs sayısını gösterir. Planlayıcı en kârlı " +
-                "hedefleri de önerir.");
-            HelpSection("Duraklar",
+                "hedefleri de önerir."),
+            ("Duraklar",
                 "Haritada bir durağa tıklayınca içine girersiniz. Durak şehrin büyüklüğüne göre küçük durak, otogar, büyük otogar " +
                 "ya da metropol terminalidir; yolcu trafiğiniz arttıkça içi kalabalıklaşır. Hat işlettiğiniz duraklara kafe, simit " +
                 "büfesi, dijital pano gibi geliştirmeler yapın: her biri durakta görünür ve o duraktan geçen hatların talebini artırır. " +
-                "İçeride sürükleyerek döndürün, tekerlekle yakınlaştırın.");
-            HelpSection("Bilet fiyatı (oyunun kalbi)",
+                "İçeride sürükleyerek döndürün, tekerlekle yakınlaştırın."),
+            ("Bilet fiyatı (oyunun kalbi)",
                 "Fiyat yükseldikçe yolcu azalır. Çok ucuzsa otobüsler dolar ama kâr kaçar; çok pahalıysa koltuklar boş kalır. " +
                 "Fiyat panelindeki yeşil bant 'ideal bölge'dir. Otobüs sayısı değişince ideal fiyat da değişir! " +
-                "Tahminler pazar araştırmanız kadar isabetlidir; 'Dün' satırındaki gerçek sonuçlara bakın.");
-            HelpSection("Filo ve ilerleme",
+                "Tahminler pazar araştırmanız kadar isabetlidir; 'Dün' satırındaki gerçek sonuçlara bakın."),
+            ("Filo ve ilerleme",
                 "Yolcu taşıdıkça seviye atlarsınız: yeni otobüsler, daha fazla hat ve yeni ülkeler açılır. " +
                 "Minibüs uzun hatlarda yolcu kaybeder; 300 km üstü hatlara midibüs veya şehirlerarası otobüs koyun. " +
                 "Lüks modeller ayrıca itibar ister: adil fiyat ve konforlu araç itibarı artırır. " +
                 "Otobüsler yıprandıkça bakımı pahalılaşır ve arıza yapar. Filo panelindeki 'Bakım asistanı' yıpranan " +
                 "otobüsleri revizyona sokar, arızalananı hemen tamir edip hattına gönderir; 'Hepsini onar ve hatlara gönder' " +
-                "bütün filoyu onarır ve garajdakileri hatlarına yollar.");
-            HelpSection("Kontroller",
+                "bütün filoyu onarır ve garajdakileri hatlarına yollar."),
+            ("Kontroller",
                 "Sol tık: seç · Sürükle veya WASD/ok tuşları: kaydır · Tekerlek veya Q/E: yakınlaştır · Sağ tık: seçimi iptal\n" +
                 "Boşluk: duraklat · 1/2/3: hız · N: yeni hat · R: hatlar · F: filo · G: galeri · K: finans · B: bölgeler · " +
-                "J: görevler · F5: kaydet · Esc: geri / menü");
-            HelpSection("Çok oyunculu",
+                "J: görevler · F5: kaydet · Esc: geri / menü"),
+            ("Çok oyunculu",
                 "Ana menüde Çok Oyunculu → Oda kur: arkadaşların 5 karakterlik oda kodunla katılır. Herkes kendi şirketini kurar, " +
-                "günler aynı anda ilerler. Blitz'de $1.000.000, Normal'de $10.000.000 kasaya ilk ulaşan kazanır.");
-            HelpSection("Dikkat",
-                "Kasa 30 gün üst üste eksi kalırsa iflas edersiniz. Garajda bekleyen otobüsler de sigorta öder.");
+                "günler aynı anda ilerler. Blitz'de $1.000.000, Normal'de $10.000.000 kasaya ilk ulaşan kazanır."),
+            ("Dikkat",
+                "Kasa 30 gün üst üste eksi kalırsa iflas edersiniz. Garajda bekleyen otobüsler de sigorta öder.")
+        };
+
+        void DrawHelpContent()
+        {
+            foreach (var (title, body) in HelpSections()) HelpSection(title, body);
         }
 
         void HelpSection(string title, string body)

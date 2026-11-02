@@ -360,3 +360,193 @@
 .phone .bt-toast__text {
     font-size: 13px;
 }
+
+/* ------------------------------------------------------------------ sağ panel */
+
+.bt-sheet {
+    position: absolute;
+    flex-direction: column;
+    padding: 16px 16px 6px 18px;
+    background-color: rgba(255, 255, 255, 0.98);
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.1);
+    border-radius: 16px;
+    opacity: 0.3;
+    translate: 36px 0px;
+    transition-property: opacity, translate;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.bt-sheet.is-open {
+    opacity: 1;
+    translate: 0px 0px;
+}
+
+.bt-sheet__header {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.bt-sheet__title {
+    font-size: 22px;
+    color: #1F2430;
+}
+
+.bt-sheet__subtitle {
+    font-size: 13px;
+    color: #6B7280;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.bt-sheet__close {
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 18px;
+    background-color: #F1F2F5;
+    color: #4B5262;
+    font-size: 22px;
+    -unity-text-align: middle-center;
+}
+
+.bt-sheet__close:hover {
+    background-color: #E4E6EB;
+}
+
+.bt-sheet__scroll {
+    flex-grow: 1;
+    margin-top: 12px;
+    border-top-width: 1px;
+    border-color: #EEF0F3;
+    padding-top: 10px;
+}
+
+.phone .bt-sheet__close {
+    width: 46px;
+    height: 46px;
+    border-radius: 23px;
+}
+
+/* Liste öğesi (görev, hat, otobüs...) */
+.bt-item {
+    padding: 12px 14px;
+    margin: 0 4px 10px 0;
+    border-radius: 12px;
+    background-color: #F7F8FA;
+    border-width: 1px;
+    border-color: #EEF0F3;
+}
+
+.bt-item.is-current {
+    background-color: #FFF7EC;
+    border-color: #FFD9A8;
+}
+
+.bt-item.is-done .bt-item__title {
+    color: #8A90A0;
+}
+
+.bt-item__icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-item__title {
+    font-size: 15px;
+    white-space: normal;
+}
+
+.bt-item__text {
+    font-size: 13px;
+    color: #5B6272;
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.bt-item__reward {
+    font-size: 12.5px;
+    color: #B7791F;
+    margin-top: 4px;
+}
+
+.bt-pill {
+    font-size: 11.5px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    background-color: #ECEEF2;
+    color: #4B5262;
+    flex-shrink: 0;
+}
+
+.bt-pill.is-success {
+    background-color: #E3F6EA;
+    color: #0F7A3D;
+}
+
+.bt-pill.is-warning {
+    background-color: #FFF1DF;
+    color: #B45F00;
+}
+
+.bt-pill.is-danger {
+    background-color: #FDE7E8;
+    color: #C0262D;
+}
+
+.bt-empty {
+    color: #6B7280;
+    margin: 8px 0;
+}
+
+/* Günlük */
+.bt-log {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 6px 4px 6px 0;
+    border-bottom-width: 1px;
+    border-color: #F1F2F5;
+}
+
+.bt-log__icon {
+    width: 16px;
+    height: 16px;
+    margin: 2px 8px 0 0;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-log__day {
+    width: 62px;
+    font-size: 12px;
+    color: #8A90A0;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.bt-log__text {
+    flex-shrink: 1;
+    flex-grow: 1;
+    white-space: normal;
+    font-size: 13.5px;
+}
+
+/* Yardım */
+.bt-help__title {
+    font-size: 16px;
+    margin-top: 6px;
+}
+
+.bt-help__text {
+    font-size: 13.5px;
+    color: #3F4554;
+    white-space: normal;
+    margin: 4px 4px 12px 0;
+}

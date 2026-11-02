@@ -121,6 +121,9 @@ namespace BusTycoon.Game
             AddRailButton(UIIcon.Save, "Kaydet", () => SaveTo(SaveSlot));
             AddRailButton(UIIcon.Settings, "Menü", OpenPauseMenu);
 
+            // ---- sağ panel (taşınan paneller)
+            BuildToolkitSheet();
+
             // ---- bildirimler
             tkToasts = Ui.El("bt-toasts", tkHud);
             tkToasts.pickingMode = PickingMode.Ignore;
@@ -190,6 +193,7 @@ namespace BusTycoon.Game
 
             UpdateToolkitTopBar();
             UpdateToolkitNav();
+            UpdateToolkitSheet(k);
             UpdateToolkitToasts(k);
         }
 
