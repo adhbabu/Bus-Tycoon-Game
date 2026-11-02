@@ -497,7 +497,7 @@ namespace BusTycoon.Game
                     if (!NewUi) DrawTopBar();
                     if (StationUi)
                     {
-                        DrawStation();
+                        if (!NewUi) DrawStation(); // yeni arayüzde durak ekranı UI Toolkit'te
                     }
                     else
                     {

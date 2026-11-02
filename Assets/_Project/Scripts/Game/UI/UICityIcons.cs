@@ -53,6 +53,22 @@ namespace BusTycoon.Game
             GUI.DrawTextureWithTexCoords(rect, texture, uv);
         }
 
+        static readonly System.Collections.Generic.Dictionary<string, Sprite> sprites = new System.Collections.Generic.Dictionary<string, Sprite>();
+
+        /// <summary>Yeni arayüz (UI Toolkit) için şehrin ikonu (önbellekli); ikon yoksa null.</summary>
+        public static Sprite Sprite(CityData city)
+        {
+            if (city == null) return null;
+            if (sprites.TryGetValue(city.DisplayName, out Sprite sprite)) return sprite;
+            if (TryGetUv(city, out Texture2D texture, out Rect uv))
+            {
+                var rect = new Rect(uv.x * texture.width, uv.y * texture.height, uv.width * texture.width, uv.height * texture.height);
+                sprite = UnityEngine.Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            }
+            sprites[city.DisplayName] = sprite;
+            return sprite;
+        }
+
         /// <summary>Şehrin ikonunun atlas dokusu ve UV dikdörtgeni (3B tabelalar da kullanır).</summary>
         public static bool TryGetUv(CityData city, out Texture2D texture, out Rect uv)
         {

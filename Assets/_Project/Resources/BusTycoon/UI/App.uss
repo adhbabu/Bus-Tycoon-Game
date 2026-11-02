@@ -1449,3 +1449,127 @@
     flex-grow: 1;
     margin-bottom: 10px;
 }
+
+/* Durak ekranı */
+.bt-station {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.bt-station__back {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    padding: 0 14px;
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.12);
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.97);
+}
+
+.bt-station__back:hover {
+    background-color: #F1F2F5;
+}
+
+.bt-station__back-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-station__back-label {
+    font-size: 14px;
+}
+
+.bt-station__card {
+    padding-bottom: 14px;
+}
+
+.bt-station__scroll {
+    flex-grow: 1;
+}
+
+.bt-station__city-icon {
+    width: 46px;
+    height: 46px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-station__hint {
+    position: absolute;
+    font-size: 13px;
+    color: #FFFFFF;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0.6px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.6);
+}
+
+.bt-popularity {
+    margin: 10px 0 4px 0;
+}
+
+.bt-star {
+    width: 18px;
+    height: 18px;
+    margin-left: 2px;
+}
+
+.bt-star__empty {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    opacity: 0.22;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-star__clip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 18px;
+    overflow: hidden;
+}
+
+.bt-star__full {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-popularity__score {
+    font-size: 15px;
+    margin-left: 8px;
+}
+
+.bt-popularity__label {
+    width: 104px;
+    flex-shrink: 0;
+}
+
+.bt-station__facts {
+    margin-top: 10px;
+}
+
+.bt-upgrade.is-locked .bt-upgrade__icon {
+    opacity: 0.45;
+}
+
+.bt-upgrade.is-locked .bt-item__title {
+    color: #8A90A0;
+}
+
+.bt-upgrade__icon {
+    width: 34px;
+    height: 34px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
