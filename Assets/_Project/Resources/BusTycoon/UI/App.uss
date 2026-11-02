@@ -796,14 +796,15 @@
     border-color: #F3C4C6;
 }
 
+.bt-actions--fill {
+    margin-left: -4px;
+    margin-right: -4px;
+}
+
 .bt-actions--fill .bt-btn {
     flex-grow: 1;
     flex-basis: 0;
-    margin: 8px 0 0 0;
-}
-
-.bt-actions--fill .bt-btn + .bt-btn {
-    margin-left: 8px;
+    margin: 8px 4px 0 4px;
 }
 
 .bt-bus__art {
