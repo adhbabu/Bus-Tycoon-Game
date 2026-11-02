@@ -154,6 +154,7 @@ namespace BusTycoon.Game
             BuildToolkitMenuLayer();
             BuildToolkitNewGameLayer();
             BuildToolkitMultiplayerLayer();
+            BuildToolkitTooltip();
             BuildToolkitModalLayer();
         }
 
@@ -196,6 +197,7 @@ namespace BusTycoon.Game
             UpdateToolkitMenu();
             UpdateToolkitNewGame();
             UpdateToolkitMultiplayer();
+            UpdateToolkitTooltip();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
             Ui.Show(tkHud, playing);

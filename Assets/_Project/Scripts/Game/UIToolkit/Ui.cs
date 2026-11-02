@@ -115,6 +115,14 @@ namespace BusTycoon.Game
             if (Differs(style.height, height)) style.height = height;
         }
 
+        /// <summary>Yalnız konum (tasarım birimi; boyut içerikten gelir); yalnız değişince yazılır.</summary>
+        public static void Move(VisualElement element, float left, float top)
+        {
+            IStyle style = element.style;
+            if (Differs(style.left, left)) style.left = left;
+            if (Differs(style.top, top)) style.top = top;
+        }
+
         static bool Differs(StyleLength current, float value) =>
             current.keyword != StyleKeyword.Undefined || Mathf.Abs(current.value.value - value) > 0.05f;
 
