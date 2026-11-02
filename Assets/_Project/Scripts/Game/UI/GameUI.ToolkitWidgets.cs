@@ -114,6 +114,7 @@ namespace BusTycoon.Game
         void BuildToolkitTooltip()
         {
             tkTooltip = Ui.El("bt-tooltip", toolkit.Root);
+            tkTooltip.usageHints = UsageHints.DynamicTransform; // fareyi izler
             tkTooltip.pickingMode = PickingMode.Ignore;
             tkTooltip.style.display = DisplayStyle.None;
         }

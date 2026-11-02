@@ -98,6 +98,7 @@ namespace BusTycoon.Game
             if (mascot != null)
             {
                 tkMenuMascot = Ui.El("bt-menu__mascot", parent);
+                tkMenuMascot.usageHints = UsageHints.DynamicTransform; // her kare zıplar
                 tkMenuMascot.style.height = mascotHeight;
                 tkMenuMascot.style.backgroundImage = new StyleBackground(mascot);
             }

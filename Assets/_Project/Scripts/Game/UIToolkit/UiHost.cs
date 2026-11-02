@@ -46,6 +46,7 @@ namespace BusTycoon.Game
             host.Root = host.document.rootVisualElement;
             host.Root.pickingMode = PickingMode.Ignore;
             host.Root.AddToClassList("bt-root");
+            UiDiagnostics.Install(host.Root);
             var styles = Resources.Load<StyleSheet>(StylesResourcePath);
             if (styles != null) host.Root.styleSheets.Add(styles);
             else Debug.LogWarning($"[Bus Tycoon] Arayüz stilleri bulunamadı: Resources/{StylesResourcePath}.uss");
@@ -61,6 +62,10 @@ namespace BusTycoon.Game
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
             settings.scale = 1f;
             settings.sortingOrder = 10;
+            // Deney (?uix=vb4096 vb.): köşe tamponu sayfa boyu
+            string experiments = LaunchOptions.Get("uix") ?? string.Empty;
+            foreach (string item in experiments.Split(','))
+                if (item.StartsWith("vb") && int.TryParse(item.Substring(2), out int budget)) settings.vertexBudget = budget;
             document = gameObject.AddComponent<UIDocument>();
             document.panelSettings = settings;
         }

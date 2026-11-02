@@ -71,6 +71,9 @@ namespace BusTycoon.Game
 
         bool pointerOnMap, dragging;
         Vector2 lastMouseGui, hoverMouseGui;
+        int noMapLabels = -1;
+        /// <summary>Ölçüm deneyi (<c>?uix=nolabels</c>): harita yazıları (IMGUI) çizilmez.</summary>
+        bool NoMapLabelsExperiment => noMapLabels >= 0 ? noMapLabels == 1 : (noMapLabels = Ui.Experiment("nolabels") ? 1 : 0) == 1;
         int pointerButton;
         Vector2 pointerDownPos, lastPointerPos;
         CityData hoveredCity;
@@ -474,7 +477,7 @@ namespace BusTycoon.Game
             HandleTouchScroll(e);
             bool pressEnded = e.type == EventType.MouseUp && e.button == 0; // kaydırma için kullanılmadıysa
 
-            if (!InMenu && e.type == EventType.Repaint && !StationBusy)
+            if (!InMenu && e.type == EventType.Repaint && !StationBusy && !NoMapLabelsExperiment)
             {
                 DrawCityLabels();
                 DrawFloatingLabels();

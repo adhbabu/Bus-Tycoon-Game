@@ -72,6 +72,7 @@ namespace BusTycoon.Game
             VisualElement levelBar = Ui.El("bt-bar", company);
             levelBar.style.width = 170f;
             tkLevelFill = Ui.El("bt-bar__fill", levelBar);
+            tkLevelFill.usageHints = UsageHints.DynamicTransform; // ölçek değişince köşeler yeniden yüklenmesin (GPU'da)
 
             VisualElement cash = Ui.El("bt-topbar__block", tkTop);
             Ui.Text("bt-caps", "ŞİRKET KASASI", UiWeight.Bold, cash);
@@ -118,6 +119,7 @@ namespace BusTycoon.Game
             Ui.Icon(UIIcon.Settings, "bt-icon", tkMenuButton);
 
             tkDayBar = Ui.El("bt-daybar", tkTop);
+            tkDayBar.usageHints = UsageHints.DynamicTransform; // her kare ilerler
             tkDayBar.pickingMode = PickingMode.Ignore;
 
             // ---- menü: masaüstünde solda dikey, telefonda altta yatay
@@ -144,6 +146,7 @@ namespace BusTycoon.Game
             for (int i = 0; i < 3; i++)
             {
                 VisualElement box = Ui.El("bt-toast", tkToasts);
+                box.usageHints = UsageHints.DynamicTransform | UsageHints.DynamicColor; // kayarak ve belirerek gelir
                 box.pickingMode = PickingMode.Ignore;
                 VisualElement icon = Ui.Icon(UIIcon.Info, "bt-toast__icon", box);
                 Label text = Ui.Text("bt-toast__text", "", UiWeight.Bold, box);
