@@ -113,6 +113,7 @@ namespace BusTycoon.Game
             session.Bankrupt += OnBankrupt;
 
             Fmt.Symbol = session.Economy.CurrencySymbol;
+            InitToolkit();
             BindMultiplayer();
             EnterMainMenu();
             OpenInviteIfAny();
@@ -349,6 +350,7 @@ namespace BusTycoon.Game
             if (session == null) return;
             float dt = Time.unscaledDeltaTime;
             WebTap.Pump();
+            UpdateToolkit();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
             if (TouchInput.BackPressed() && Time.frameCount != lastEscapeFrame)
@@ -491,14 +493,15 @@ namespace BusTycoon.Game
                     DrawMultiplayer();
                     break;
                 case Mode.Playing:
-                    DrawTopBar();
+                    if (!NewUi) DrawTopBar();
                     if (StationUi)
                     {
                         DrawStation();
                     }
                     else
                     {
-                        if (BottomBarVisible) DrawBottomBar();
+                        if (NewUi) { } // yeni arayüz: menü UI Toolkit'te
+                        else if (BottomBarVisible) DrawBottomBar();
                         else if (!compact) DrawSideBar();
                         DrawPanel();
                         if (!phone) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
@@ -506,7 +509,7 @@ namespace BusTycoon.Game
                         DrawGoalWidget();
                         DrawRaceWidget();
                     }
-                    DrawToasts();
+                    if (!NewUi) DrawToasts();
                     break;
             }
             GUI.enabled = previousEnabled;
@@ -932,7 +935,7 @@ namespace BusTycoon.Game
         {
             foreach (var rect in uiRects)
                 if (rect.Contains(guiPoint)) return true;
-            return false;
+            return toolkit != null && toolkit.IsOverUi(guiPoint);
         }
 
         Vector2 GuiToScreen(Vector2 gui) => new Vector2(gui.x, Screen.height - gui.y);
@@ -1146,6 +1149,8 @@ namespace BusTycoon.Game
                     if (sp.z <= 0f) continue;
                     var p = new Vector2(sp.x, Screen.height - sp.y - 2f * u);
                     if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
+                    // Üst çubuğun ve sol menünün altına düşen ad çizilmez (yeni arayüz IMGUI'nin altında çizilir)
+                    if (p.y - 24f * u < SafeTop + TopBarHeight || p.x < ContentLeft) continue;
 
                     bool bold = city.MapTier == 0 || important;
                     GUIStyle style = bold ? s.MapLabelBold : s.MapLabel;
