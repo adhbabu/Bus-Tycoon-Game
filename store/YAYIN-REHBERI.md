@@ -38,7 +38,7 @@ mağazada aynı/benzer adlı uygulama olup olmadığına bakın; App Store bireb
 
 ## 1. Unity'de hazırlık (her iki mağaza)
 
-1. Unity Hub ▸ **Add ▸ Add project from disk** ▸ depo klasörü (proje sürümü: Unity 6.3 LTS, 6000.3.27f1).
+1. Unity Hub ▸ **Add ▸ Add project from disk** ▸ depo klasörü (proje sürümü: Unity 6.6, 6000.6.7f1).
    Yerelde derleyecekseniz Installs ▸ bu sürüm ▸ **Add modules**: **Android Build Support** (OpenJDK + Android
    SDK & NDK Tools dahil) ve **iOS Build Support**. Derlemeyi bulutta yapacaksanız modül gerekmez
    ([BULUT-DERLEME.md](BULUT-DERLEME.md)).

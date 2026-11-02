@@ -485,14 +485,19 @@ alanları IMGUI'ninkilerle aynı karede bildirilir.
 **Tıklamanın haritaya sızmaması:** `UiHost.IsOverUi` noktanın altındaki öğeyi `panel.Pick` ile bulur. Kök ve şeffaf
 katmanlar tıklama almaz (`PickingMode.Ignore`).
 
-**Unity sürümü (önemli):** Unity 6000.3'ün UI Toolkit'i WebGL'de her karede bütün köşe ve indeks tamponlarını GPU'ya
-baştan yüklüyordu (`SendFullRange`); ekranda hiçbir şey değişmese bile oyun ekranında kare başına 2–5 MB. Proje bu yüzden
-6000.5'e geçti. 6000.5'te WebGL'de yalnız değişen aralıklar yükleniyor.
+**Unity sürümü (önemli): en az 6000.6.** Önceki iki sürümde WebGL'de iki ayrı sorun vardı:
+- **6000.3:** UI Toolkit her karede bütün köşe ve indeks tamponlarını GPU'ya baştan yüklüyordu (`SendFullRange`). Ekranda
+  hiçbir şey değişmese bile oyun ekranında kare başına 2–5 MB.
+- **6000.5:** Yalnız değişen aralıklar yükleniyordu, ama ara tampon hizalama payı hesaba katılmadan seçiliyordu. Büyük
+  panel değişimlerinde (Hat paneli → Galeri) `CopyBufferRanges: range reads out of bounds` hatası çıkıyordu; yazılımla
+  çizen tarayıcıda sekme çöktü.
 
-| Durum (SwiftShader) | Eski arayüz | Yeni arayüz |
+Proje bu yüzden 6000.6.7f1'de.
+
+| Durum (SwiftShader, 6000.6) | Eski arayüz | Yeni arayüz |
 |---|---|---|
-| Harita, duraklatılmış | 129 KB/kare | 108 KB/kare |
-| Filo açık | 151 KB/kare · 41 ms | 86 KB/kare · 3,9 ms |
+| Harita, duraklatılmış | 111 KB/kare | 106 KB/kare |
+| Filo açık | 151 KB/kare · 27 ms | 70 KB/kare · 4,4 ms |
 
 `?uidiag=1` çizimden önce kirli öğeleri konsola yazar. Durağan ekranda kirli öğe olmamalı; her kare hareket eden
 öğeler (gün çubuğu, bildirimler) `UsageHints.DynamicTransform` ile GPU'da taşınır.
