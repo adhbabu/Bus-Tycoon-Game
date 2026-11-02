@@ -1375,3 +1375,77 @@
 .bt-modal__scroll .unity-scroller__high-button {
     display: none;
 }
+
+/* Ana menü */
+.bt-menu-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.bt-menu {
+    position: absolute;
+    flex-direction: column;
+    padding: 22px 26px 16px 26px;
+    background-color: rgba(255, 255, 255, 0.97);
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.1);
+    border-radius: 22px;
+}
+
+.bt-menu.is-wide {
+    flex-direction: row;
+}
+
+.bt-menu__brand {
+    width: 300px;
+    margin-right: 18px;
+    flex-shrink: 0;
+}
+
+.bt-menu__buttons {
+    flex-grow: 1;
+}
+
+.bt-menu__mascot {
+    flex-shrink: 0;
+    margin-bottom: 6px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-menu__title {
+    font-size: 34px;
+    color: #FF8A00;
+    -unity-text-align: middle-center;
+}
+
+.bt-menu.is-wide .bt-menu__title {
+    font-size: 28px;
+    -unity-text-align: middle-left;
+}
+
+.bt-menu__subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin-bottom: 18px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.bt-menu.is-wide .bt-menu__subtitle {
+    -unity-text-align: middle-left;
+}
+
+.bt-menu__credits {
+    font-size: 11px;
+    color: #9AA0AD;
+    margin-top: 10px;
+    white-space: normal;
+}
+
+.bt-menu__help {
+    flex-grow: 1;
+    margin-bottom: 10px;
+}

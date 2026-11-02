@@ -485,7 +485,7 @@ namespace BusTycoon.Game
             switch (mode)
             {
                 case Mode.MainMenu:
-                    DrawMainMenu();
+                    if (!NewUi) DrawMainMenu();
                     break;
                 case Mode.NewGame:
                     DrawNewGame();

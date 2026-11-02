@@ -148,7 +148,8 @@ namespace BusTycoon.Game
                 tkToastViews.Add((box, icon, text));
             }
 
-            // ---- pencereler (ayrı katman: arkadaki her şeyin üstünde, tıklamayı tutar)
+            // ---- ana menü ve pencereler (ayrı katmanlar; pencere en üstte, tıklamayı tutar)
+            BuildToolkitMenuLayer();
             BuildToolkitModalLayer();
         }
 
@@ -186,6 +187,7 @@ namespace BusTycoon.Game
             toolkit.SetClass("compact", compact);
             toolkit.SetClass("compact-top", SlimTopBar);
             UpdateToolkitModal();
+            UpdateToolkitMenu();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
             tkCovered.Clear();
