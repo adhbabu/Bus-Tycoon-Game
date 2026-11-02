@@ -8,9 +8,10 @@ using UnityEngine.UIElements;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Yeni arayüz (UI Toolkit, <c>?arayuz=yeni</c>): şimdilik üst çubuk, menü (masaüstünde solda, telefonda altta) ve
-    /// bildirimler. Öğeler bir kez kurulur; her kare yalnız değişen değerler yazılır. IMGUI bu parçaları çizmez; kalan
-    /// paneller geçiş sürerken IMGUI'de kalır ve aynı yerleşimi (üst çubuk yüksekliği, menü genişliği) kullanır.
+    /// Yeni arayüz (UI Toolkit; varsayılan, <c>?arayuz=eski</c> eski arayüzü açar): üst çubuk, menü (masaüstünde solda,
+    /// telefonda altta), bildirimler, paneller, pencereler, menüler. Öğeler bir kez kurulur; her kare yalnız değişen
+    /// değerler yazılır. IMGUI yeni arayüzde yalnız harita üstü yazıları (şehir adları, kazanç yazıları) ve mini haritanın
+    /// içeriğini çizer; yerleşim ölçüleri (üst çubuk yüksekliği, menü genişliği, panel yeri) ortaktır.
     /// </summary>
     public sealed partial class GameUI
     {
