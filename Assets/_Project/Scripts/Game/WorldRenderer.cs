@@ -109,9 +109,9 @@ namespace BusTycoon.Game
         static readonly Color CityDestination = new Color(0.98f, 0.5f, 0.12f);
         static readonly Color BadgeHover = new Color(0.82f, 0.9f, 1f);
         /// <summary>Kenar çizgisinin başladığı oran (0..1): küçük değer kalın kenar.</summary>
-        const float BadgeRing = 0.66f, BadgeRingConnected = 0.52f;
+        const float BadgeRing = 0.72f, BadgeRingConnected = 0.6f;
         /// <summary>Rozetin yarıçapı (dünya birimi, referans yakınlıkta) nüfus kademesine göre: metropol … küçük şehir.</summary>
-        static readonly float[] BadgeRadii = { 0.44f, 0.36f, 0.29f, 0.23f };
+        static readonly float[] BadgeRadii = { 0.37f, 0.3f, 0.24f, 0.19f };
         const float BadgeLift = 0.1f;
 
         /// <summary>Hat renkleri (Mini Metro paleti gibi): her hat kendi rengini taşır; kârlılık arayüzde gösterilir.</summary>
@@ -1160,17 +1160,18 @@ namespace BusTycoon.Game
             }
             int speed = session.Clock != null ? session.Clock.Speed : 0;
             animationTime += Time.unscaledDeltaTime * speed;
-            // Uzaktan bakınca otobüsler büyür ki hatlarda gidişleri seçilsin.
-            float scale = Mathf.Clamp(zoomDistance / 36f, 0.55f, 1.9f);
+            // Otobüs hat çizgisinden geniş (çizginin üstünde seçilsin; Mini Metro trenleri gibi); boyu çizgiyle ölçeklenir.
+            float scale = ZoomScale;
             float turn = Mathf.Clamp01(Time.unscaledDeltaTime * 10f);
-            float length = 0.36f * scale, width = 0.17f * scale;
+            float width = 0.38f * scale, length = width * 2.2f;
 
             bool hadBuses = busSprites.Count > 0;
             busSprites.Clear();
             bool anySelected = selectedRouteId != null && routeVisuals.ContainsKey(selectedRouteId);
             foreach (var visual in routeVisuals.Values)
             {
-                Color fill = RouteColor(visual.Route);
+                Color fill = RouteColor(visual.Route) * 0.82f; // çizginin biraz koyusu
+                fill.a = 1f;
                 Color edge = Color.white;
                 if (anySelected && visual.Route.routeId != selectedRouteId) fill.a = edge.a = 0.45f;
                 foreach (var token in visual.Tokens)
@@ -1180,14 +1181,14 @@ namespace BusTycoon.Game
                     Evaluate(visual, LegProgress(returning ? cycle - 1f : cycle, returning), out Vector3 position, out Vector3 direction);
                     if (returning) direction = -direction;
 
-                    Vector3 side = direction.sqrMagnitude > 1e-8f ? Vector3.Cross(Vector3.up, direction).normalized * (0.07f * scale) : Vector3.zero;
+                    Vector3 side = direction.sqrMagnitude > 1e-8f ? Vector3.Cross(Vector3.up, direction).normalized * (0.05f * scale) : Vector3.zero;
                     token.Position = position + side + Vector3.up * 0.02f;
                     if (direction.sqrMagnitude > 1e-8f)
                     {
                         Quaternion current = Quaternion.LookRotation(token.Forward, Vector3.up);
                         token.Forward = Quaternion.Slerp(current, Quaternion.LookRotation(direction, Vector3.up), turn) * Vector3.forward;
                     }
-                    busSprites.AddCapsule(token.Position, token.Forward, length, width, fill, edge, 0.62f);
+                    busSprites.AddCapsule(token.Position, token.Forward, length, width, fill, edge, 0.68f);
                 }
             }
             if (busSprites.Count > 0 || hadBuses) busSprites.Apply(1f);
