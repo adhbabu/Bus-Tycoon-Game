@@ -45,6 +45,8 @@ namespace BusTycoon.Game
         public readonly GUIStyle Button, Primary, Danger, Ghost, Tab, TabActive, SpeedButton, SpeedButtonActive, RaceBadge, NavItem, NavItemActive, NavItemSelected, IconOnly;
         public readonly GUIStyle Field, Toggle, Slider, SliderThumb, VerticalScrollbar;
         public readonly GUIStyle MapLabel, MapLabelBold, MapLabelShadow, MapLabelBoldShadow;
+        /// <summary>Haritada uçuşan kazanç yazısı: beyaz taban (renk contentColor ile verilir), ortalı, kalın.</summary>
+        public readonly GUIStyle MapValue;
 
         public float Unit => u;
 
@@ -198,6 +200,8 @@ namespace BusTycoon.Game
             MapLabelShadow.normal.textColor = new Color(1f, 1f, 1f, 0.9f);
             MapLabelBoldShadow = new GUIStyle(MapLabelBold);
             MapLabelBoldShadow.normal.textColor = new Color(1f, 1f, 1f, 0.9f);
+            MapValue = MakeLabel(15, Weight.Bold, Color.white);
+            MapValue.alignment = TextAnchor.MiddleCenter;
         }
 
         /// <summary>Stiller yeniden kurulurken eski dokuları serbest bırakır.</summary>

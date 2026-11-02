@@ -117,6 +117,15 @@ namespace BusTycoon.Game
         }
 
         /// <summary>Repaint: yazı hızla yükselir, yavaşlar ve söner.</summary>
+        /// <summary>Arayüz renginin açık zemindeki (sade harita) okunur tonu.</summary>
+        static Color MapInk(Color color)
+        {
+            if (color.Equals(UIStyles.Green)) return new Color(0.07f, 0.55f, 0.27f);
+            if (color.Equals(UIStyles.Red)) return new Color(0.82f, 0.2f, 0.22f);
+            if (color.Equals(UIStyles.Gold) || color.Equals(UIStyles.Yellow) || color.Equals(UIStyles.Orange)) return new Color(0.8f, 0.45f, 0f);
+            return color * 0.75f + new Color(0f, 0f, 0f, 0.25f);
+        }
+
         void DrawFloatingLabels()
         {
             if (floatingLabels.Count == 0) return;
@@ -136,12 +145,18 @@ namespace BusTycoon.Game
                 float rise = (1f - (1f - t) * (1f - t)) * 34f * u;
                 float alpha = t < 0.12f ? t / 0.12f : 1f - Mathf.Clamp01((t - 0.55f) / 0.45f);
                 var rect = new Rect(sp.x - 90f * u, H - sp.y - 30f * u - rise, 180f * u, 24f * u);
+                if (NewUi && ToolkitCovers(rect.center)) continue; // yeni arayüzün panelinin altında
                 Color previous = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
-                GUI.Label(new Rect(rect.x + 1.5f * u, rect.y + 1.5f * u, rect.width, rect.height), label.Text, s.MapLabelBoldShadow);
+                // Açık renkli haritada: beyaz hale + koyu ton (gelir yeşil, gider kırmızı)
+                GUIStyle halo = s.MapLabelBoldShadow;
+                GUI.Label(new Rect(rect.x + 1.2f * u, rect.y, rect.width, rect.height), label.Text, halo);
+                GUI.Label(new Rect(rect.x - 1.2f * u, rect.y, rect.width, rect.height), label.Text, halo);
+                GUI.Label(new Rect(rect.x, rect.y + 1.2f * u, rect.width, rect.height), label.Text, halo);
+                GUI.Label(new Rect(rect.x, rect.y - 1.2f * u, rect.width, rect.height), label.Text, halo);
                 Color content = GUI.contentColor;
-                GUI.contentColor = label.Color;
-                GUI.Label(rect, label.Text, s.MapLabelBold);
+                GUI.contentColor = MapInk(label.Color);
+                GUI.Label(rect, label.Text, s.MapValue);
                 GUI.contentColor = content;
                 GUI.color = previous;
             }

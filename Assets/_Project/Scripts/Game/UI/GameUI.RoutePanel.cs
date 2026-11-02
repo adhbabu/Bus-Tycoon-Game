@@ -12,6 +12,9 @@ namespace BusTycoon.Game
         enum RouteTab { Price, Buses, History }
 
         static readonly Color32 ChartBackground = new Color32(22, 26, 50, 255);
+        // Yeni arayüz (açık renkli kartlar)
+        static readonly Color32 ChartBackgroundLight = new Color32(246, 247, 249, 255);
+        static readonly Color32 ChartZeroLight = new Color32(31, 36, 48, 70);
         static readonly Color32 ChartBand = new Color32(92, 222, 128, 46);
         static readonly Color32 ChartZero = new Color32(255, 255, 255, 60);
         static readonly Color32 ChartCurve = new Color32(235, 240, 248, 255);
@@ -20,6 +23,14 @@ namespace BusTycoon.Game
         static readonly Color32 ChartApplied = new Color32(115, 188, 255, 255);
         static readonly Color32 ChartPending = new Color32(255, 255, 255, 255);
         static readonly Color32 ChartPositive = new Color32(92, 222, 128, 230);
+        // Açık zeminli grafik renkleri (yeni arayüz)
+        static readonly Color32 ChartCurveLight = new Color32(31, 36, 48, 255);
+        static readonly Color32 ChartPendingLight = new Color32(255, 138, 0, 255);
+        static readonly Color32 ChartBestLight = new Color32(18, 161, 80, 255);
+        static readonly Color32 ChartAppliedLight = new Color32(47, 128, 237, 255);
+        static readonly Color32 ChartBandLight = new Color32(18, 161, 80, 40);
+        static readonly Color32 ChartPositiveLight = new Color32(18, 161, 80, 230);
+        static readonly Color32 ChartNegativeLight = new Color32(229, 72, 77, 230);
         static readonly Color32 ChartNegative = new Color32(246, 96, 96, 230);
 
         RouteState selectedRoute;
@@ -51,6 +62,13 @@ namespace BusTycoon.Game
         void EnsureRouteAnalysis()
         {
             if (!routeAnalysisDirty || Event.current.type != EventType.Layout) return;
+            EnsureRouteAnalysisNow();
+        }
+
+        /// <summary>Fiyat analizi ve tahmin (IMGUI dışında da çağrılabilir: yeni arayüz).</summary>
+        void EnsureRouteAnalysisNow()
+        {
+            if (!routeAnalysisDirty) return;
             routeAnalysisDirty = false;
 
             estimator = session.Routes.CreateEstimator(selectedRoute);
@@ -277,7 +295,8 @@ namespace BusTycoon.Game
         {
             chartRenderedPrice = pendingPrice;
             ChartTexture chart = priceChart;
-            chart.Clear(ChartBackground);
+            bool light = NewUi;
+            chart.Clear(light ? ChartBackgroundLight : ChartBackground);
             if (analysis.Curve.Count < 2) { chart.Apply(); return; }
 
             float minProfit = 0f, maxProfit = 1f;
@@ -300,22 +319,22 @@ namespace BusTycoon.Game
                 for (int i = 0; i < analysis.Curve.Count - 1; i++)
                 {
                     if (analysis.Curve[i].Profit < bandThreshold || analysis.Curve[i + 1].Profit < bandThreshold) continue;
-                    chart.FillRect(X(analysis.Curve[i].Price), 0, X(analysis.Curve[i + 1].Price) + 1, chart.Height, ChartBand);
+                    chart.FillRect(X(analysis.Curve[i].Price), 0, X(analysis.Curve[i + 1].Price) + 1, chart.Height, light ? ChartBandLight : ChartBand);
                 }
             }
 
-            chart.HorizontalLine(Y(0f), ChartZero, 1);
+            chart.HorizontalLine(Y(0f), light ? ChartZeroLight : ChartZero, 1);
 
             for (int i = 0; i < analysis.Curve.Count - 1; i++)
             {
                 PriceCurvePoint a = analysis.Curve[i], b = analysis.Curve[i + 1];
-                Color32 color = a.Profit < 0f && b.Profit < 0f ? ChartLossCurve : ChartCurve;
+                Color32 color = a.Profit < 0f && b.Profit < 0f ? (light ? ChartNegativeLight : ChartLossCurve) : (light ? ChartCurveLight : ChartCurve);
                 chart.Line(X(a.Price), Y(a.Profit), X(b.Price), Y(b.Profit), color, 3);
             }
 
-            chart.VerticalLine(X(analysis.EstimatedBestPrice), ChartBest, 2);
-            chart.VerticalLine(X(selectedRoute.ticketPrice), ChartApplied, 2);
-            chart.VerticalLine(X(pendingPrice), ChartPending, 3);
+            chart.VerticalLine(X(analysis.EstimatedBestPrice), light ? ChartBestLight : ChartBest, 2);
+            chart.VerticalLine(X(selectedRoute.ticketPrice), light ? ChartAppliedLight : ChartApplied, 2);
+            chart.VerticalLine(X(pendingPrice), light ? ChartPendingLight : ChartPending, 3);
             chart.Apply();
         }
 
@@ -441,7 +460,8 @@ namespace BusTycoon.Game
         {
             historyChartDirty = false;
             ChartTexture chart = historyChart;
-            chart.Clear(ChartBackground);
+            bool light = NewUi;
+            chart.Clear(light ? ChartBackgroundLight : ChartBackground);
             var history = selectedRoute.history;
             if (history.Count == 0) { chart.Apply(); return; }
 
@@ -456,9 +476,9 @@ namespace BusTycoon.Game
                 float x0 = (RouteState.HistoryLength - history.Count + i) * barWidth + 1f;
                 float y = (history[i].Profit - min) / range * (chart.Height - 1);
                 chart.FillRect(x0, Mathf.Min(zeroY, y), x0 + barWidth - 2f, Mathf.Max(zeroY, y) + 1f,
-                    history[i].Profit >= 0 ? ChartPositive : ChartNegative);
+                    history[i].Profit >= 0 ? (light ? ChartPositiveLight : ChartPositive) : (light ? ChartNegativeLight : ChartNegative));
             }
-            chart.HorizontalLine(zeroY, ChartZero, 1);
+            chart.HorizontalLine(zeroY, light ? ChartZeroLight : ChartZero, 1);
             chart.Apply();
         }
     }
