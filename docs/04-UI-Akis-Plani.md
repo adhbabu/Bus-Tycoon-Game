@@ -49,8 +49,9 @@ flowchart TD
 ```
 
 Kesik çizgi: ESC/Geri. `UIScreenId.None` = yalnızca harita + HUD.
-**Oynanabilir sürümde** bu akışın tamamı `BusTycoon.Game/UI/GameUI` (IMGUI) içinde uygulanmıştır — filo, finans,
-bölgeler, görevler, günlük ve yardım ekranları dahil. Hat çizgisine tıklama ekran uzayında yapılır (`WorldRenderer.TryPickRoute`).
+**Oynanabilir sürümde** bu akışın tamamı `BusTycoon.Game/UI/GameUI` içinde uygulanmıştır — filo, finans,
+bölgeler, görevler, günlük ve yardım ekranları dahil. Ekranlar UI Toolkit ile çizilir (4.15); akış mantığı (açık panel,
+pencere, ESC) eski IMGUI arayüzüyle ortaktır. Hat çizgisine tıklama ekran uzayında yapılır (`WorldRenderer.TryPickRoute`).
 `BusTycoon.Presentation` altındaki uGUI scriptleri aynı akışın prefab tabanlı alternatifidir.
 
 ---
@@ -250,10 +251,11 @@ para ödülü verir.
 * **Sayılar:** her yerde `UIFormat` (tr-TR): `$12.345`, kısaltma `$48,2 B` / `$1,3 Mn`, bilet `$22,50`, `%85`.
 * **Tipografi:** **Inter** (Medium gövde, Bold başlık/buton/rozet, ExtraBold kasa; `Tools/make_fonts.py`). Eş
   genişlikli rakamlar (`tnum`) karakter tablosuna işlenir → kaydırıcı oynarken sayılar titremez.
-* **Yönetim paneli görünümü (oynanabilir sürüm, `UIStyles`):** kömür grisi paneller (`#1e1e24`), ince açık kenar
-  çizgisi ve yumuşak gölge (`GUIStyle.overflow`); turuncu ana buton (`#ff9100`, siyah yazı), yarı saydam ikincil
-  butonlar (basınca hafifçe küçülür); parlak yeşil kasa (`#00e676`, hafif parıltı); renkli zeminli durum rozetleri
-  (Yolda / Garajda / Arızalı, İyi / Dikkat / Kritik); hap biçimli bildirimler (yeşil = başarı, kırmızı = hata, ikonlu).
+* **Yönetim paneli görünümü (yeni arayüz, `App.uss`):** sade haritayla uyumlu açık tema. Beyaz kartlar (köşe yarıçapı
+  14–22 px, ince kenar), koyu mürekkep yazı (`#1F2430`), turuncu ana düğme (`#FF8A00`) ve vurgu, yeşil kasa/kâr
+  (`#12A150`), kırmızı zarar (`#E5484D`). Renkli zeminli durum rozetleri (Yolda / Garajda / Arızalı, İyi / Dikkat /
+  Kritik), ince kaydırma çubuğu, uzun düğme yazıları satır kırar. Eski IMGUI arayüzü (`UIStyles`, kömür grisi
+  paneller) `?arayuz=eski` ile açılır.
 * **Gösterge paneli ve menü:** üstte küçük BÜYÜK HARF etiketli istatistik kutuları (ŞİRKET, ŞİRKET KASASI, TARİH,
   İTİBAR, HATLAR, FİLO); masaüstünde solda tam boy, telefonda altta ikonlu menü (ikon üstte, yazı altta; seçili
   öğe turuncu; sorunlu hat sayısı kırmızı rozet). İkonlar Twemoji atlasından (`UIIcons`).
@@ -440,3 +442,53 @@ Scene
 
 UI Toolkit tercih ederseniz yalnızca bu tablo değişir; tüm veriler (`RouteForecast`, `PricingAnalysis`,
 `RouteInsight`, `RouteQuote`) çerçeveden bağımsız saf C# yapılardır.
+
+## 4.15 Yeni arayüz (UI Toolkit)
+
+Eski arayüz IMGUI ile yazılmıştı: `OnGUI` her olayda (yerleşim, çizim, girdi) bütün arayüzü baştan kurup ölçüyordu.
+Bu, tarayıcıda kare başına binlerce denetim ve çöp üretimi demekti; ölçek yamaları da görünüm hatalarına yol açıyordu.
+Unity de oyun içi arayüz için IMGUI'yi önermiyor. Yeni arayüz UI Toolkit ile yazıldı ve varsayılandır.
+
+**Kurulum (sahne ya da asset gerekmez):**
+* `UiHost.Create`: `UIDocument` ve `PanelSettings` kodla oluşturulur. Tema `Resources/BusTycoon/UI/Theme.tss`
+  (varsayılan Unity teması), stiller `App.uss`.
+* Ölçek IMGUI'nin tasarım birimiyle (`u`) aynıdır (`ConstantPixelSize`, ölçek = `u`). Yerleşim ölçüleri iki arayüzde
+  ortaktır: `PanelRect`, `TopBarHeight`, `SideBarWidth`, `MinimapRect`, `ModalRect`.
+* Yazı tipi Inter (`Ui.Weight`: Medium / Bold / ExtraBold). İkonlar atlas sprite'larıdır (`UiSprites`, `UICityIcons`,
+  `UIBusArt`).
+
+**Kare başı maliyet kuralları:**
+* Öğeler bir kez kurulur. Her kare yalnız değişen değerler yazılır: `Ui.SetText`, `Ui.Show`, `Ui.Place`, `Ui.Fill`
+  değer aynıysa stile dokunmaz.
+* Paneller bir **imza** (ilgili durumun karması) değişince yeniden kurulur. Filo kartları kart başına imzayla yerinde
+  güncellenir. Fiyat kaydırıcısı sürüklenirken panel yeniden kurulmaz, yalnız sayılar değişir.
+* Yazı alanları yazarken yeniden kurulmaz; odak kaybolmaz.
+* Harita üstü yazılar (şehir adları, kazanç yazıları) ve mini haritanın içeriği IMGUI'de kalır. Yeni arayüz kartlarının
+  altına çizilmezler (`tkCovered`).
+
+**Dosyalar** (`Game/UI/GameUI.Toolkit*.cs`):
+
+| Parça | Dosya |
+|---|---|
+| Üst çubuk, menü (masaüstünde sol ray, telefonda alt sekmeler), bildirimler | `GameUI.Toolkit.cs` |
+| Sağ panel çerçevesi ve ortak parçalar; Görevler, Günlük, Yardım, Bölgeler, Finans, Hatlarım | `GameUI.ToolkitPanels.cs` |
+| Filo, Galeri, Hat paneli, Yeni Hat planlayıcı | `GameUI.ToolkitFleet/Dealership/Route/Planner.cs` |
+| Görev kartı, yakınlaştırma, mini harita çerçevesi, şehir ipucu | `GameUI.ToolkitWidgets.cs` |
+| Pencereler: duraklatma ve ayarlar, onay, iflas, zafer, yarış sonu | `GameUI.ToolkitModals.cs` |
+| Ana menü, Yeni Şirket Kur, durak ekranı, çok oyunculu | `GameUI.ToolkitMenu/NewGame/Station/Multiplayer.cs` |
+| Yazı girişi ve tarayıcı dokunuşları (WebTap) | `GameUI.ToolkitInput.cs` |
+
+**Dokunmatik yazı girişi:** telefon ve tablette Unity klavye açamaz. Yazı alanı bir dokunma kutusudur; dokununca
+tarayıcının yazı penceresi açılır (`WebTap`). Davet bağlantısını paylaşma da aynı yoldan yapılır. Yeni arayüzün dokunma
+alanları IMGUI'ninkilerle aynı karede bildirilir.
+
+**Tıklamanın haritaya sızmaması:** `UiHost.IsOverUi` noktanın altındaki öğeyi `panel.Pick` ile bulur. Kök ve şeffaf
+katmanlar tıklama almaz (`PickingMode.Ignore`).
+
+**USS sınırları:** `+`, `~` birleştiricileri ve `:first-child` desteklenmez. Geçersiz tek bir seçici bütün stil dosyasını
+geçersiz kılar. Bu yüzden her değişiklikten sonra stil dosyası denetlenir.
+
+**Test:** arayüz testi `yeniarayuz` modunda sahte UI Toolkit öğeleriyle çalışır. Masaüstü, telefon, iPhone (web) ve
+tablet profillerinde düğmeleri tıklar, metinleri ve görünürlüğü denetler. Çok oyunculu akışın tamamı da yeni arayüzde
+sınanır. Gerçek görünüm her PR'ın bulut derlemesinde ekran görüntüleriyle denetlenir.
+
