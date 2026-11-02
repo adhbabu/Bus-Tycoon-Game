@@ -460,7 +460,7 @@ namespace BusTycoon.Game
 
             uiRects.Clear();
             Event e = Event.current;
-            textFieldFocused = GUIUtility.keyboardControl != 0;
+            textFieldFocused = GUIUtility.keyboardControl != 0 || (toolkit != null && toolkit.TextInputFocused);
             bool repaint = e.type == EventType.Repaint;
             if (repaint)
             {
@@ -488,7 +488,7 @@ namespace BusTycoon.Game
                     if (!NewUi) DrawMainMenu();
                     break;
                 case Mode.NewGame:
-                    DrawNewGame();
+                    if (!ToolkitDrawsNewGame) DrawNewGame();
                     break;
                 case Mode.Multiplayer:
                     DrawMultiplayer();

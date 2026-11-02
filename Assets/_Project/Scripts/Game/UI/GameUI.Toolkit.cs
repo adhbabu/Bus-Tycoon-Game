@@ -151,6 +151,7 @@ namespace BusTycoon.Game
 
             // ---- ana menü ve pencereler (ayrı katmanlar; pencere en üstte, tıklamayı tutar)
             BuildToolkitMenuLayer();
+            BuildToolkitNewGameLayer();
             BuildToolkitModalLayer();
         }
 
@@ -183,15 +184,16 @@ namespace BusTycoon.Game
         void UpdateToolkit()
         {
             if (toolkit == null) return;
+            tkCovered.Clear();
             toolkit.SetScale(u);
             toolkit.SetClass("phone", phone);
             toolkit.SetClass("compact", compact);
             toolkit.SetClass("compact-top", SlimTopBar);
             UpdateToolkitModal();
             UpdateToolkitMenu();
+            UpdateToolkitNewGame();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
-            tkCovered.Clear();
             Ui.Show(tkHud, playing);
             if (!playing) return;
             tkHud.SetEnabled(modal == Modal.None); // pencere açıkken arkadaki düğmeler tıklanmaz

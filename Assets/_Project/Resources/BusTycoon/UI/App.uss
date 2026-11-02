@@ -1573,3 +1573,27 @@
     flex-shrink: 0;
     -unity-background-scale-mode: scale-to-fit;
 }
+
+/* Yeni oyun ve yazı alanı */
+.bt-newgame {
+    padding-bottom: 14px;
+}
+
+.bt-field {
+    margin: 0 4px 10px 0;
+}
+
+.bt-field .unity-base-text-field__input {
+    height: 40px;
+    padding: 0 12px;
+    border-width: 1px;
+    border-color: #DADDE3;
+    border-radius: 10px;
+    background-color: #FFFFFF;
+    color: #1F2430;
+    font-size: 15px;
+}
+
+.bt-field:focus .unity-base-text-field__input {
+    border-color: #FF8A00;
+}
