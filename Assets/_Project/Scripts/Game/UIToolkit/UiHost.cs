@@ -11,7 +11,7 @@ namespace BusTycoon.Game
     /// her kare yeniden kurulmaz, yalnız değişen değerler yazılır (IMGUI'de her olayda bütün arayüz baştan kuruluyordu).
     /// <para>Ölçek IMGUI ile aynı birimdir (<c>u</c>): masaüstünde ekran yüksekliği 1000 birim. Böylece geçiş sürerken
     /// yeni parçalar eskilerle aynı yeri kaplar.</para>
-    /// <para>Geçiş: <c>?arayuz=yeni</c> ile açılır; tamamlanınca varsayılan olacak.</para>
+    /// <para>Varsayılan arayüz budur. Eski arayüz (IMGUI) bir süre daha <c>?arayuz=eski</c> ile açılabilir.</para>
     /// </summary>
     public sealed class UiHost : MonoBehaviour
     {
@@ -22,13 +22,13 @@ namespace BusTycoon.Game
         PanelSettings settings;
         float appliedScale = -1f;
 
-        /// <summary>Yeni arayüz istendi mi (?arayuz=yeni).</summary>
+        /// <summary>Yeni arayüz açılsın mı: varsayılan evet; <c>?arayuz=eski</c> (ya da <c>-arayuz eski</c>) eski arayüzü açar.</summary>
         public static bool Requested
         {
             get
             {
                 string value = (LaunchOptions.Get("arayuz") ?? LaunchOptions.Get("ui") ?? string.Empty).Trim().ToLowerInvariant();
-                return value == "yeni" || value == "new" || value == "1";
+                return !(value == "eski" || value == "old" || value == "0");
             }
         }
 
@@ -46,6 +46,7 @@ namespace BusTycoon.Game
             host.Root = host.document.rootVisualElement;
             host.Root.pickingMode = PickingMode.Ignore;
             host.Root.AddToClassList("bt-root");
+            UiDiagnostics.Install(host.Root);
             var styles = Resources.Load<StyleSheet>(StylesResourcePath);
             if (styles != null) host.Root.styleSheets.Add(styles);
             else Debug.LogWarning($"[Bus Tycoon] Arayüz stilleri bulunamadı: Resources/{StylesResourcePath}.uss");

@@ -78,6 +78,7 @@ namespace BusTycoon.Game
                 var scroll = new ScrollView(ScrollViewMode.Vertical);
                 scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
                 scroll.AddToClassList("bt-menu__help");
+                scroll.AddToClassList("bt-thin-scroll");
                 tkMenuCard.Add(scroll);
                 BuildHelp(scroll.contentContainer);
                 ModalButton(tkMenuCard, "Geri", () => { showMenuHelp = false; tkMenuDirty = true; });
@@ -98,6 +99,7 @@ namespace BusTycoon.Game
             if (mascot != null)
             {
                 tkMenuMascot = Ui.El("bt-menu__mascot", parent);
+                tkMenuMascot.usageHints = UsageHints.DynamicTransform; // her kare zıplar
                 tkMenuMascot.style.height = mascotHeight;
                 tkMenuMascot.style.backgroundImage = new StyleBackground(mascot);
             }

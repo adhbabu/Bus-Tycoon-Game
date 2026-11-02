@@ -36,6 +36,12 @@ namespace BusTycoon.Game
         {
             Rect rect = MinimapRect;
             uiRects.Add(rect);
+            if (NewUi)
+            {
+                // Yeni arayüz: çerçeve ve başlık (küçült/büyüt) UI Toolkit'te; burada yalnız harita içeriği
+                if (!minimapCollapsed) DrawMinimapMap(rect);
+                return;
+            }
             GUI.Box(rect, GUIContent.none, s.Panel);
 
             // Başlık: ikon + HARİTA + küçült/büyüt
@@ -54,7 +60,11 @@ namespace BusTycoon.Game
                 if (minimapCollapsed) DrawRect(new Rect(toggle.center.x - u, toggle.center.y - 5f * u, 2f * u, 10f * u), mark);
             }
             if (minimapCollapsed) return;
+            DrawMinimapMap(rect);
+        }
 
+        void DrawMinimapMap(Rect rect)
+        {
             var map = new Rect(rect.x + MinimapPad, rect.y + MinimapHeader, MinimapMapWidth, MinimapMapHeight);
             HandleMinimapInput(map);
 
@@ -94,7 +104,7 @@ namespace BusTycoon.Game
             // İnce kenar çizgisi
             if (Event.current.type == EventType.Repaint)
             {
-                Color edge = new Color(1f, 1f, 1f, 0.12f);
+                Color edge = NewUi ? new Color(0.12f, 0.14f, 0.19f, 0.12f) : new Color(1f, 1f, 1f, 0.12f);
                 DrawRect(new Rect(map.x, map.y, map.width, u), edge);
                 DrawRect(new Rect(map.x, map.yMax - u, map.width, u), edge);
                 DrawRect(new Rect(map.x, map.y, u, map.height), edge);
@@ -151,7 +161,8 @@ namespace BusTycoon.Game
             screenCorners[3] = new Vector2(0f, Screen.height);
             for (int i = 0; i < 4; i++)
                 if (!mapCamera.TryGetGroundPoint(screenCorners[i], out viewCorners[i])) return;
-            Color color = new Color(1f, 1f, 1f, 0.85f);
+            // Açık (sade) haritada koyu mürekkep, eski koyu çerçevede beyaz
+            Color color = NewUi ? new Color(0.12f, 0.14f, 0.19f, 0.8f) : new Color(1f, 1f, 1f, 0.85f);
             for (int i = 0; i < 4; i++)
             {
                 // Döndürülmüş çizim IMGUI kırpmasından kaçabildiği için kenarlar mini haritaya elle kırpılır.

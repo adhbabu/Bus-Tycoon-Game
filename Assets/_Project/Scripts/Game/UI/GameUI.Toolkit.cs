@@ -8,9 +8,10 @@ using UnityEngine.UIElements;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Yeni arayüz (UI Toolkit, <c>?arayuz=yeni</c>): şimdilik üst çubuk, menü (masaüstünde solda, telefonda altta) ve
-    /// bildirimler. Öğeler bir kez kurulur; her kare yalnız değişen değerler yazılır. IMGUI bu parçaları çizmez; kalan
-    /// paneller geçiş sürerken IMGUI'de kalır ve aynı yerleşimi (üst çubuk yüksekliği, menü genişliği) kullanır.
+    /// Yeni arayüz (UI Toolkit; varsayılan, <c>?arayuz=eski</c> eski arayüzü açar): üst çubuk, menü (masaüstünde solda,
+    /// telefonda altta), bildirimler, paneller, pencereler, menüler. Öğeler bir kez kurulur; her kare yalnız değişen
+    /// değerler yazılır. IMGUI yeni arayüzde yalnız harita üstü yazıları (şehir adları, kazanç yazıları) ve mini haritanın
+    /// içeriğini çizer; yerleşim ölçüleri (üst çubuk yüksekliği, menü genişliği, panel yeri) ortaktır.
     /// </summary>
     public sealed partial class GameUI
     {
@@ -25,6 +26,7 @@ namespace BusTycoon.Game
         readonly List<(VisualElement Box, VisualElement Icon, Label Text)> tkToastViews = new List<(VisualElement, VisualElement, Label)>();
 
         double tkShownCash = double.NaN;
+        float tkCashTextTime;
         long tkCashValue = long.MinValue;
         int tkLevelValue = -1, tkDayValue = -1, tkSpeedValue = -1, tkReputationValue = int.MinValue, tkRoutesValue = -1, tkMaxRoutesValue = -1;
         int tkFleetValue = -1, tkIdleValue = -1, tkWarningValue = -1, tkDebtDays = int.MinValue;
@@ -71,6 +73,7 @@ namespace BusTycoon.Game
             VisualElement levelBar = Ui.El("bt-bar", company);
             levelBar.style.width = 170f;
             tkLevelFill = Ui.El("bt-bar__fill", levelBar);
+            tkLevelFill.usageHints = UsageHints.DynamicTransform; // ölçek değişince köşeler yeniden yüklenmesin (GPU'da)
 
             VisualElement cash = Ui.El("bt-topbar__block", tkTop);
             Ui.Text("bt-caps", "ŞİRKET KASASI", UiWeight.Bold, cash);
@@ -117,6 +120,7 @@ namespace BusTycoon.Game
             Ui.Icon(UIIcon.Settings, "bt-icon", tkMenuButton);
 
             tkDayBar = Ui.El("bt-daybar", tkTop);
+            tkDayBar.usageHints = UsageHints.DynamicTransform; // her kare ilerler
             tkDayBar.pickingMode = PickingMode.Ignore;
 
             // ---- menü: masaüstünde solda dikey, telefonda altta yatay
@@ -143,6 +147,7 @@ namespace BusTycoon.Game
             for (int i = 0; i < 3; i++)
             {
                 VisualElement box = Ui.El("bt-toast", tkToasts);
+                box.usageHints = UsageHints.DynamicTransform | UsageHints.DynamicColor; // kayarak ve belirerek gelir
                 box.pickingMode = PickingMode.Ignore;
                 VisualElement icon = Ui.Icon(UIIcon.Info, "bt-toast__icon", box);
                 Label text = Ui.Text("bt-toast__text", "", UiWeight.Bold, box);
@@ -154,6 +159,7 @@ namespace BusTycoon.Game
             BuildToolkitMenuLayer();
             BuildToolkitNewGameLayer();
             BuildToolkitMultiplayerLayer();
+            BuildToolkitTooltip();
             BuildToolkitModalLayer();
         }
 
@@ -196,6 +202,7 @@ namespace BusTycoon.Game
             UpdateToolkitMenu();
             UpdateToolkitNewGame();
             UpdateToolkitMultiplayer();
+            UpdateToolkitTooltip();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
             Ui.Show(tkHud, playing);
@@ -243,8 +250,11 @@ namespace BusTycoon.Game
             tkShownCash += (cash - tkShownCash) * (1.0 - Math.Exp(-Time.unscaledDeltaTime * 9.0));
             if (Math.Abs(cash - tkShownCash) < 1.0) tkShownCash = cash;
             long shown = (long)Math.Round(tkShownCash);
-            if (shown != tkCashValue)
+            // Sayaç yazısı en çok saniyede ~12 kez değişir: her değişen kare GPU'ya köşe yüklemesi demek (WebGL)
+            bool settled = Math.Abs(cash - tkShownCash) < 1.0;
+            if (shown != tkCashValue && (settled || Time.unscaledTime - tkCashTextTime >= 0.08f))
             {
+                tkCashTextTime = Time.unscaledTime;
                 tkCashValue = shown;
                 tkCash.text = Fmt.Money(shown);
                 Ui.Toggle(tkCash, "is-negative", shown < 0);

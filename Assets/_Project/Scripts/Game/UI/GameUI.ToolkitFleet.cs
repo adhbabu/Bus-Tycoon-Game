@@ -8,13 +8,25 @@ using UnityEngine.UIElements;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Yeni arayüzde Filo paneli. Filoda yüzü aşkın otobüs olabilir: kartlar her gün baştan kurulmaz. Her kartın
-    /// gösterdiği durumun özeti (hat, durum yüzdesi, arıza, açık/kapalı atama listesi, alınabilirlik) tutulur; gün
-    /// sonunda yalnız özeti değişen kart yeniden kurulur. Otobüs eklenip çıkınca yalnız o kart eklenir/silinir.
+    /// Yeni arayüzde Filo paneli. Filoda yüzü aşkın otobüs olabilir: kartlar her gün baştan kurulmaz.
+    /// Kartın yapısı (model, hat, arıza, açık atama listesi, takas modeli) bir imzada tutulur; yalnız bu değişince kart
+    /// yeniden kurulur. Her gün değişen sayılar (durum, km, doluluk, satış/revizyon/takas tutarları ve alınabilirlik)
+    /// kartın yerinde yazılır. Otobüs eklenip çıkınca yalnız o kart eklenir/silinir.
     /// </summary>
     public sealed partial class GameUI
     {
-        readonly Dictionary<string, (VisualElement Card, int Signature)> tkFleetCards = new Dictionary<string, (VisualElement, int)>();
+        /// <summary>Bir filo kartı: yapı imzası ve her gün yerinde güncellenen öğeler.</summary>
+        sealed class FleetCardView
+        {
+            public VisualElement Card;
+            public int Signature = int.MinValue;
+            public Label Condition, Km, Load, OutOfService;
+            public VisualElement ConditionFill;
+            public Button Repair, Overhaul, SecondaryOverhaul, Sell, Trade;
+            public BusModelData Upgrade;
+        }
+
+        readonly Dictionary<string, FleetCardView> tkFleetCards = new Dictionary<string, FleetCardView>();
         readonly List<string> tkFleetStale = new List<string>();
         VisualElement tkFleetList, tkFleetMaintenance;
         Label tkFleetEmpty;
@@ -70,15 +82,16 @@ namespace BusTycoon.Game
                 int signature = FleetCardSignature(bus);
                 if (!tkFleetCards.TryGetValue(bus.busId, out var entry))
                 {
-                    entry = (Ui.El("bt-item bt-bus", null), int.MinValue);
+                    entry = new FleetCardView { Card = Ui.El("bt-item bt-bus", null) };
+                    tkFleetCards[bus.busId] = entry;
                 }
                 if (entry.Signature != signature)
                 {
                     entry.Card.Clear();
-                    BuildFleetCard(entry.Card, bus);
+                    BuildFleetCard(entry, bus);
                     entry.Signature = signature;
                 }
-                tkFleetCards[bus.busId] = entry;
+                UpdateFleetCardValues(entry, bus);
                 if (entry.Card.parent != tkFleetList || tkFleetList.IndexOf(entry.Card) != index)
                     tkFleetList.Insert(index, entry.Card);
                 Ui.Show(entry.Card, visible);
@@ -86,24 +99,68 @@ namespace BusTycoon.Game
             }
         }
 
-        /// <summary>Kartın gösterdiği her şeyin özeti: değişmediyse kart yeniden kurulmaz.</summary>
+        /// <summary>Kartın yapısının özeti (her gün değişen sayılar hariç): değişmediyse kart yeniden kurulmaz.</summary>
         int FleetCardSignature(BusInstance bus)
         {
-            var fleet = session.Fleet;
             RouteState route = bus.IsAssigned ? session.Routes.GetRoute(bus.assignedRouteId) : null;
             int signature = bus.Model.Id.GetHashCode();
             signature = signature * 31 + (bus.assignedRouteId?.GetHashCode() ?? 0);
-            signature = signature * 31 + Mathf.RoundToInt(bus.condition * 100f);
-            signature = signature * 31 + (int)(bus.odometerKm / 100.0);
-            signature = signature * 31 + bus.outOfServiceDays;
+            signature = signature * 31 + (bus.IsAvailableToday ? 1 : 0);
+            signature = signature * 31 + (route != null && route.HasHistory ? 1 : 0);
             signature = signature * 31 + (expandedBusId == bus.busId ? 1 + session.Routes.Routes.Count : 0);
-            signature = signature * 31 + (session.Finance.CanAfford(fleet.GetExpressRepairCost(bus)) ? 1 : 0);
-            if (route != null && route.HasHistory)
-                signature = signature * 31 + Mathf.RoundToInt(route.LastReport.loadFactor * 100f) + (int)route.LastReport.passengers;
+            if (expandedBusId == bus.busId) // açık atama listesinde hatların otobüs sayıları yazılı
+                foreach (var candidate in session.Routes.Routes) signature = signature * 31 + session.Fleet.CountBusesOnRoute(candidate.routeId);
             BusModelData upgrade = BestUnlockedUpgrade(bus.Model);
-            if (upgrade != null)
-                signature = signature * 31 + upgrade.Id.GetHashCode() + (session.Finance.CanAfford(fleet.GetPurchasePrice(upgrade) - fleet.GetResaleValue(bus)) ? 1 : 0);
+            signature = signature * 31 + (upgrade != null ? upgrade.Id.GetHashCode() : 0);
             return signature;
+        }
+
+        /// <summary>Her gün değişen sayılar: yalnız metni ya da durumu değişen öğeye yazılır.</summary>
+        void UpdateFleetCardValues(FleetCardView view, BusInstance bus)
+        {
+            var fleet = session.Fleet;
+            RouteState route = bus.IsAssigned ? session.Routes.GetRoute(bus.assignedRouteId) : null;
+            Ui.SetText(view.Condition, $"Durum: {Fmt.Pct(bus.condition)}");
+            Ui.Fill(view.ConditionFill, bus.condition);
+            Ui.Toggle(view.ConditionFill, "bt-bar__fill--green", bus.condition > 0.6f);
+            Ui.Toggle(view.ConditionFill, "bt-bar__fill--yellow", bus.condition <= 0.6f && bus.condition > 0.35f);
+            Ui.Toggle(view.ConditionFill, "bt-bar__fill--red", bus.condition <= 0.35f);
+            Ui.SetText(view.Km, $"{Fmt.Num(bus.odometerKm)} km");
+            if (view.Load != null && route != null && route.HasHistory)
+                Ui.SetText(view.Load, $"Doluluk: {Fmt.Pct(route.LastReport.loadFactor)} · hat dün {Fmt.Num(route.LastReport.passengers)} yolcu");
+            if (view.OutOfService != null) Ui.SetText(view.OutOfService, $"{bus.outOfServiceDays} gün servis dışı");
+
+            if (view.Repair != null)
+            {
+                float repair = fleet.GetExpressRepairCost(bus);
+                Ui.SetText(view.Repair, $"Acil tamir ({Fmt.Compact(repair)})");
+                SetEnabled(view.Repair, session.Finance.CanAfford(repair));
+            }
+            float overhaul = fleet.GetOverhaulCost(bus);
+            bool canOverhaul = bus.condition < session.Economy.OverhaulTargetCondition - 0.01f;
+            if (view.Overhaul != null)
+            {
+                Ui.SetText(view.Overhaul, $"Revizyon ({Fmt.Compact(overhaul)})");
+                SetEnabled(view.Overhaul, canOverhaul);
+            }
+            if (view.SecondaryOverhaul != null)
+            {
+                Ui.SetText(view.SecondaryOverhaul, $"Revizyon {Fmt.Compact(overhaul)}");
+                SetEnabled(view.SecondaryOverhaul, canOverhaul);
+            }
+            float resale = fleet.GetResaleValue(bus);
+            Ui.SetText(view.Sell, $"Sat {Fmt.Compact(resale)}");
+            if (view.Trade != null)
+            {
+                float net = fleet.GetPurchasePrice(view.Upgrade) - resale;
+                Ui.SetText(view.Trade, $"Takasla yükselt: {view.Upgrade.DisplayName} (net {Fmt.Compact(net)})");
+                SetEnabled(view.Trade, session.Finance.CanAfford(net));
+            }
+        }
+
+        static void SetEnabled(VisualElement element, bool enabled)
+        {
+            if (element.enabledSelf != enabled) element.SetEnabled(enabled);
         }
 
         void BuildMaintenanceCard(VisualElement card)
@@ -132,9 +189,11 @@ namespace BusTycoon.Game
             run.AddToClassList("bt-btn--block");
         }
 
-        void BuildFleetCard(VisualElement card, BusInstance bus)
+        void BuildFleetCard(FleetCardView view, BusInstance bus)
         {
-            var fleet = session.Fleet;
+            VisualElement card = view.Card;
+            view.Load = view.OutOfService = null;
+            view.Repair = view.Overhaul = view.SecondaryOverhaul = view.Trade = null;
             RouteState route = bus.IsAssigned ? session.Routes.GetRoute(bus.assignedRouteId) : null;
             string busId = bus.busId;
             if (route != null) card.style.borderLeftColor = world.RouteIdentityColor(route.routeId);
@@ -151,38 +210,36 @@ namespace BusTycoon.Game
 
             Detail(card, UIIcon.Pin, route != null ? $"Hat: {RouteName(route)}" : "Hat: atanmadı (garajda sigorta ödüyor)");
             Detail(card, UIIcon.Seat, $"{bus.Model.DisplayName} · {SegmentName(bus.Model.Segment)} · {bus.Model.Seats} koltuk");
+            // Sayılar boş kurulur; UpdateFleetCardValues yazar (her gün yalnız onlar değişir)
             if (route != null && route.HasHistory)
-                Detail(card, UIIcon.People, $"Doluluk: {Fmt.Pct(route.LastReport.loadFactor)} · hat dün {Fmt.Num(route.LastReport.passengers)} yolcu");
+                view.Load = DetailLabel(Detail(card, UIIcon.People, string.Empty));
             VisualElement condition = Ui.El("bt-row bt-detail", card);
             Ui.Icon(UIIcon.Wrench, "bt-detail__icon", condition);
-            Ui.Text("bt-detail__text", $"Durum: {Fmt.Pct(bus.condition)}", UiWeight.Regular, condition);
+            view.Condition = Ui.Text("bt-detail__text", string.Empty, UiWeight.Regular, condition);
             VisualElement bar = Ui.El("bt-bar bt-bus__condition", condition);
-            VisualElement fill = Ui.El("bt-bar__fill", bar);
-            fill.AddToClassList(bus.condition > 0.6f ? "bt-bar__fill--green" : bus.condition > 0.35f ? "bt-bar__fill--yellow" : "bt-bar__fill--red");
-            Ui.Fill(fill, bus.condition);
+            view.ConditionFill = Ui.El("bt-bar__fill", bar);
             Ui.El("bt-grow", condition);
             Ui.Icon(UIIcon.Road, "bt-detail__icon", condition);
-            Ui.Text("bt-detail__text", $"{Fmt.Num(bus.odometerKm)} km", UiWeight.Regular, condition);
+            view.Km = Ui.Text("bt-detail__text", string.Empty, UiWeight.Regular, condition);
             if (!bus.IsAvailableToday)
             {
-                VisualElement warning = Detail(card, UIIcon.Warning, $"{bus.outOfServiceDays} gün servis dışı");
+                VisualElement warning = Detail(card, UIIcon.Warning, string.Empty);
                 warning.AddToClassList("is-warning-text");
+                view.OutOfService = DetailLabel(warning);
             }
 
-            // Ana düğmeler: hattaysa "Garaja çek" + "Hatta ata"; garajdaysa "Revizyon" + "Hatta ata" (turuncu)
+            // Ana düğmeler: hattaysa "Garaja çek" + "Hatta ata"; garajdaysa "Revizyon" + "Hatta ata" (turuncu).
+            // Tutarlar tıklama anında hesaplanır (yazılar her gün yerinde güncellenir).
             bool expanded = expandedBusId == busId;
-            float overhaul = fleet.GetOverhaulCost(bus);
-            bool canOverhaul = bus.condition < session.Economy.OverhaulTargetCondition - 0.01f;
             VisualElement main = Ui.El("bt-actions bt-actions--fill", card);
             if (!bus.IsAvailableToday)
             {
-                float repair = fleet.GetExpressRepairCost(bus);
-                ActionButton(main, $"Acil tamir ({Fmt.Compact(repair)})", () =>
+                view.Repair = ActionButton(main, string.Empty, () =>
                 {
                     var result = session.Fleet.TryExpressRepair(busId);
                     Toast(result.Message, result ? UIStyles.Green : UIStyles.Red);
                     RefreshFleet();
-                }, primary: true, enabled: session.Finance.CanAfford(repair));
+                }, primary: true);
             }
             else if (route != null)
             {
@@ -196,7 +253,7 @@ namespace BusTycoon.Game
             }
             else
             {
-                ActionButton(main, $"Revizyon ({Fmt.Compact(overhaul)})", () => { Overhaul(busId); RefreshFleet(); }, enabled: canOverhaul);
+                view.Overhaul = ActionButton(main, string.Empty, () => { Overhaul(busId); RefreshFleet(); });
             }
             ActionButton(main, expanded ? "Kapat" : "Hatta ata", () =>
             {
@@ -205,12 +262,12 @@ namespace BusTycoon.Game
             }, primary: !expanded && route == null);
 
             // İkincil eylemler
-            float resale = fleet.GetResaleValue(bus);
             VisualElement secondary = Ui.El("bt-actions bt-actions--fill", card);
-            if (route != null) ActionButton(secondary, $"Revizyon {Fmt.Compact(overhaul)}", () => { Overhaul(busId); RefreshFleet(); }, enabled: canOverhaul);
-            Button sell = ActionButton(secondary, $"Sat {Fmt.Compact(resale)}", () =>
+            if (route != null) view.SecondaryOverhaul = ActionButton(secondary, string.Empty, () => { Overhaul(busId); RefreshFleet(); });
+            Button sell = view.Sell = ActionButton(secondary, string.Empty, () =>
             {
                 string nickname = bus.nickname;
+                float resale = session.Fleet.GetResaleValue(bus);
                 AskConfirm("Otobüs satışı", $"{nickname} {Fmt.Money(resale)} karşılığında satılacak.", () =>
                 {
                     var result = session.Fleet.TrySell(busId);
@@ -219,13 +276,13 @@ namespace BusTycoon.Game
             });
             sell.AddToClassList("is-danger");
 
-            BusModelData upgrade = BestUnlockedUpgrade(bus.Model);
+            BusModelData upgrade = view.Upgrade = BestUnlockedUpgrade(bus.Model);
             if (upgrade != null)
             {
-                float net = fleet.GetPurchasePrice(upgrade) - resale;
-                Button trade = ActionButton(card, $"Takasla yükselt: {upgrade.DisplayName} (net {Fmt.Compact(net)})", () =>
+                Button trade = view.Trade = ActionButton(card, string.Empty, () =>
                 {
                     BusModelData target = upgrade;
+                    float net = session.Fleet.GetPurchasePrice(target) - session.Fleet.GetResaleValue(bus);
                     AskConfirm("Takasla yükselt",
                         $"{bus.nickname} satılıp yerine sıfır {target.DisplayName} alınacak ve aynı hatta atanacak. Net maliyet {Fmt.Money(net)}.",
                         () =>
@@ -234,7 +291,7 @@ namespace BusTycoon.Game
                             Toast(result.Message, result ? UIStyles.Green : UIStyles.Red);
                             goals.Evaluate();
                         });
-                }, enabled: session.Finance.CanAfford(net));
+                });
                 trade.AddToClassList("bt-btn--block");
             }
 
@@ -256,6 +313,13 @@ namespace BusTycoon.Game
                 choice.style.borderLeftColor = world.RouteIdentityColor(candidate.routeId);
             }
             if (session.Routes.Routes.Count == 0) Ui.Text("bt-item__text", "Önce bir hat açın (Yeni Hat).", UiWeight.Regular, card);
+        }
+
+        static Label DetailLabel(VisualElement detail)
+        {
+            foreach (VisualElement child in detail.Children())
+                if (child is Label label) return label;
+            return null;
         }
 
         static VisualElement Detail(VisualElement parent, UIIcon icon, string text)
