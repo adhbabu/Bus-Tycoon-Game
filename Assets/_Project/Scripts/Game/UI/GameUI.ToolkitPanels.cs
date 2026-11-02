@@ -17,7 +17,7 @@ namespace BusTycoon.Game
     {
         static readonly HashSet<Panel> ToolkitPanels = new HashSet<Panel>
         {
-            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet, Panel.Dealership, Panel.Route
+            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet, Panel.Dealership, Panel.Route, Panel.Planner
         };
 
         VisualElement tkSheet;
@@ -59,6 +59,11 @@ namespace BusTycoon.Game
             Ui.Place(tkSheet, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
 
             if (panel == Panel.Log) tkSheetDirty = true; // günlük gün içinde de dolar (imza ucuz)
+            if (panel == Panel.Planner)
+            {
+                TickToolkitPlanner();
+                tkSheetDirty = true; // haritadan şehir seçilince (imza ucuz)
+            }
             if (panel != tkBuiltPanel)
             {
                 tkSheet.RemoveFromClassList("is-open"); // açılış: sağdan kayarak gelir (stilde geçiş)
@@ -119,6 +124,7 @@ namespace BusTycoon.Game
                 }
                 case Panel.Dealership: return DealershipSignature();
                 case Panel.Route: return RouteSignature();
+                case Panel.Planner: return PlannerSignature();
                 default: return 0;
             }
         }
@@ -160,6 +166,9 @@ namespace BusTycoon.Game
                     break;
                 case Panel.Route:
                     BuildRoutePanel(body);
+                    break;
+                case Panel.Planner:
+                    BuildPlanner(body);
                     break;
             }
         }

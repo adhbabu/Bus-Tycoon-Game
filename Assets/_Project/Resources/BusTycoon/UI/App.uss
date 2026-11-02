@@ -1036,3 +1036,143 @@
 .bt-table__cell--last {
     -unity-text-align: middle-right;
 }
+
+/* Planlayıcı */
+.bt-step-title {
+    font-size: 14.5px;
+    margin: 2px 4px 10px 0;
+    white-space: normal;
+}
+
+.bt-endpoint {
+    margin: 0 4px 10px 0;
+    padding: 8px 4px 8px 10px;
+    border-radius: 12px;
+    background-color: #F7F8FA;
+}
+
+.bt-endpoint__dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    margin-right: 8px;
+    border-width: 3px;
+    border-color: #1F2430;
+    background-color: #FFFFFF;
+}
+
+.bt-endpoint--origin .bt-endpoint__dot {
+    background-color: #3B7FF2;
+}
+
+.bt-endpoint--destination .bt-endpoint__dot {
+    background-color: #FA8020;
+}
+
+.bt-endpoint__label {
+    font-size: 16px;
+}
+
+.bt-endpoint__flag {
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-model-caption {
+    margin: 4px 0 6px 2px;
+}
+
+.bt-model-picker {
+    align-items: center;
+}
+
+.bt-model-picker .bt-step {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+}
+
+.bt-model-picker .bt-bus__art {
+    margin-left: 8px;
+}
+
+.bt-suggestion {
+    flex-direction: row;
+    align-items: center;
+    height: 42px;
+    margin: 0 4px 6px 0;
+    padding: 0 12px;
+    border-width: 1px;
+    border-color: #E6E8EC;
+    border-radius: 12px;
+    background-color: #FFFFFF;
+    transition-property: background-color, border-color;
+    transition-duration: 0.12s;
+}
+
+.bt-suggestion:hover {
+    background-color: #FFF7EC;
+    border-color: #FFD9A8;
+}
+
+.bt-suggestion__flag {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-suggestion__city {
+    font-size: 14px;
+}
+
+.bt-suggestion__km {
+    font-size: 12.5px;
+    color: #8A90A0;
+    margin-right: 10px;
+}
+
+.bt-suggestion__profit {
+    font-size: 14px;
+}
+
+.is-blue {
+    color: #2F80ED;
+}
+
+.bt-check {
+    flex-direction: row;
+    align-items: center;
+    height: 36px;
+    margin: 6px 0 0 0;
+    padding: 0 4px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-check__box {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: #B8BDC8;
+    background-color: #FFFFFF;
+}
+
+.bt-check.is-on .bt-check__box {
+    background-color: #FF8A00;
+    border-color: #FF8A00;
+}
+
+.bt-check__label {
+    font-size: 13.5px;
+}
+
+.bt-btn--cta {
+    height: 48px;
+    margin: 12px 0 4px 0;
+    font-size: 15px;
+}
