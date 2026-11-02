@@ -751,3 +751,105 @@
 .bt-actions--start .bt-btn {
     margin: 0 8px 0 0;
 }
+
+/* Filo */
+.bt-tabs-inline {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 4px 12px 0;
+}
+
+.bt-tab {
+    height: 34px;
+    margin: 0 6px 0 0;
+    padding: 0 12px;
+    border-width: 0;
+    border-radius: 17px;
+    background-color: #F1F2F5;
+    color: #4B5262;
+    font-size: 13px;
+}
+
+.bt-tab.is-active {
+    background-color: #1F2430;
+    color: #FFFFFF;
+}
+
+.bt-btn--toggle {
+    min-width: 84px;
+    height: 38px;
+}
+
+.bt-btn--block {
+    margin: 10px 0 0 0;
+    white-space: normal;
+}
+
+.bt-btn--choice {
+    margin: 6px 0 0 0;
+    border-left-width: 5px;
+    -unity-text-align: middle-left;
+}
+
+.bt-btn.is-danger {
+    color: #C0262D;
+    border-color: #F3C4C6;
+}
+
+.bt-actions--fill .bt-btn {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin: 8px 0 0 0;
+}
+
+.bt-actions--fill .bt-btn + .bt-btn {
+    margin-left: 8px;
+}
+
+.bt-bus__art {
+    width: 60px;
+    height: 30px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-detail {
+    margin-top: 4px;
+}
+
+.bt-detail__icon {
+    width: 15px;
+    height: 15px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-detail__text {
+    font-size: 12.5px;
+    color: #5B6272;
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.is-warning-text .bt-detail__text {
+    color: #B45F00;
+}
+
+.bt-bus__condition {
+    width: 80px;
+    margin: 0 0 0 8px;
+}
+
+.bt-bar__fill--green {
+    background-color: #12A150;
+}
+
+.bt-bar__fill--yellow {
+    background-color: #F5B000;
+}
+
+.bt-bar__fill--red {
+    background-color: #E5484D;
+}

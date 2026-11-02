@@ -17,7 +17,7 @@ namespace BusTycoon.Game
     {
         static readonly HashSet<Panel> ToolkitPanels = new HashSet<Panel>
         {
-            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList
+            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet
         };
 
         VisualElement tkSheet;
@@ -73,6 +73,11 @@ namespace BusTycoon.Game
             }
             if (!tkSheetDirty) return;
             tkSheetDirty = false;
+            if (panel == Panel.Fleet && tkBuiltPanel == Panel.Fleet)
+            {
+                RefreshFleet(); // kartlar yerinde güncellenir (yalnız değişenler)
+                return;
+            }
             // Veri değişti dense de panelin gösterdiği şey değişmediyse yeniden kurulmaz (ör. Bölgeler her gün değişmez)
             int signature = SheetSignature();
             if (panel == tkBuiltPanel && signature == tkSheetSignature) return;
@@ -144,6 +149,9 @@ namespace BusTycoon.Game
                     break;
                 case Panel.RouteList:
                     BuildRouteList(body);
+                    break;
+                case Panel.Fleet:
+                    BuildFleet(body);
                     break;
             }
         }

@@ -33,13 +33,34 @@ namespace BusTycoon.Game
             }
         }
 
+        static int CellOf(BusModelData model)
+        {
+            int index = System.Array.IndexOf(ModelIds, model.Id);
+            if (index < 0) index = Mathf.Clamp(model.Tier switch { 0 => 0, 1 => 2, 2 => 4, 3 => 5, 4 => 6, _ => 7 }, 0, ModelIds.Length - 1);
+            return index;
+        }
+
+        static readonly System.Collections.Generic.Dictionary<int, Sprite> sprites = new System.Collections.Generic.Dictionary<int, Sprite>();
+
+        /// <summary>Yeni arayüz (UI Toolkit) için modelin çizimi (hücre başına bir Sprite, önbellekli); atlas yoksa null.</summary>
+        public static Sprite Sprite(BusModelData model)
+        {
+            Texture2D texture = Atlas;
+            if (texture == null || model == null) return null;
+            int index = CellOf(model);
+            if (sprites.TryGetValue(index, out Sprite sprite) && sprite != null) return sprite;
+            var rect = new Rect((index % Columns) * CellWidth, texture.height - ((index / Columns) + 1) * CellHeight, CellWidth, CellHeight);
+            sprite = UnityEngine.Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            sprites[index] = sprite;
+            return sprite;
+        }
+
         /// <summary>Modelin çizimi; bilinmeyen model segmentinin ilk çizimine düşer. <paramref name="faceLeft"/> yatay çevirir.</summary>
         public static void Draw(Rect rect, BusModelData model, bool faceLeft = false)
         {
             Texture2D texture = Atlas;
             if (texture == null || model == null || Event.current.type != EventType.Repaint) return;
-            int index = System.Array.IndexOf(ModelIds, model.Id);
-            if (index < 0) index = Mathf.Clamp(model.Tier switch { 0 => 0, 1 => 2, 2 => 4, 3 => 5, 4 => 6, _ => 7 }, 0, ModelIds.Length - 1);
+            int index = CellOf(model);
 
             float u = (index % Columns) * CellWidth / texture.width;
             float v = 1f - ((index / Columns) + 1) * CellHeight / texture.height;
