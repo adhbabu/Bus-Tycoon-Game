@@ -1338,6 +1338,12 @@
 
 .bt-tabs-inline {
     flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+/* Sekmeler alt satıra kayınca satırlar arasında boşluk */
+.bt-tabs-inline .bt-tab {
+    margin-bottom: 6px;
 }
 
 /* İnce kaydırma çubuğu (ok düğmeleri yok) */
@@ -1596,4 +1602,166 @@
 
 .bt-field:focus .unity-base-text-field__input {
     border-color: #FF8A00;
+}
+
+/* Dokunmatik yazı alanı: dokununca tarayıcının yazı penceresi açılır */
+.bt-field--tap {
+    height: 40px;
+    padding: 0 12px;
+    justify-content: center;
+    border-width: 1px;
+    border-color: #DADDE3;
+    border-radius: 10px;
+    background-color: #FFFFFF;
+}
+
+.bt-field__text {
+    font-size: 15px;
+    color: #1F2430;
+}
+
+.bt-field__text.is-placeholder {
+    color: #9AA0AD;
+}
+
+/* Çok oyunculu ekranı */
+.bt-mp__header {
+    margin-bottom: 10px;
+}
+
+.bt-mp__icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-mp__footer {
+    flex-shrink: 0;
+    margin-top: 10px;
+}
+
+.bt-mp__footer .bt-item__text {
+    margin-bottom: 8px;
+}
+
+.bt-mp__modes {
+    align-items: stretch;
+    margin: 0 4px 10px 0;
+}
+
+.bt-mode {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0 8px 0 0;
+    padding: 8px 12px;
+    border-width: 2px;
+    border-color: #E6E8EC;
+    border-radius: 12px;
+    background-color: #FFFFFF;
+}
+
+.bt-mode:hover {
+    background-color: #F7F8FA;
+}
+
+.bt-mode.is-active {
+    border-color: #FF8A00;
+    background-color: #FFF7EC;
+}
+
+.bt-mode__title {
+    font-size: 16px;
+}
+
+.bt-mode__text {
+    font-size: 12px;
+    color: #5B6272;
+    white-space: normal;
+}
+
+.bt-mp__join {
+    align-items: flex-start;
+    margin-right: 4px;
+}
+
+.bt-mp__join .bt-field {
+    margin-right: 0;
+}
+
+.bt-mp__join-button {
+    width: 110px;
+    height: 40px;
+    margin: 0 0 0 8px;
+}
+
+.bt-mp__status {
+    margin-top: 8px;
+}
+
+.bt-mp__code {
+    font-size: 34px;
+    letter-spacing: 4px;
+}
+
+.bt-mp__invite {
+    margin-right: 0;
+}
+
+.bt-mp__target {
+    margin: 10px 4px 6px 2px;
+}
+
+.bt-mp__player {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+}
+
+/* Yarış: canlı sıralama kartı */
+.bt-race-card {
+    position: absolute;
+    padding: 10px 14px 8px 14px;
+    background-color: rgba(255, 255, 255, 0.97);
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.1);
+    border-radius: 16px;
+}
+
+.bt-race-card .bt-row {
+    min-height: 20px;
+}
+
+.bt-race-card__header {
+    margin-bottom: 6px;
+}
+
+.bt-race-card__icon {
+    margin-right: 6px;
+}
+
+.bt-race-card__row {
+    height: 30px;
+    justify-content: center;
+}
+
+.bt-race-card__rank {
+    width: 22px;
+    font-size: 13px;
+}
+
+.bt-race-card__name {
+    font-size: 13.5px;
+    overflow: hidden;
+}
+
+.bt-race-card__cash {
+    font-size: 13.5px;
+    -unity-text-align: middle-right;
+}
+
+.bt-race-card__bar {
+    height: 4px;
+    margin: 2px 0 0 22px;
 }

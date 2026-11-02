@@ -6,16 +6,14 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Yeni arayüzde "Yeni Şirket Kur" ekranı (solda kart; arkada harita, merkez şehir haritadan da seçilir).
-    /// Şirket adı UI Toolkit yazı alanıyla girilir. Dokunmatik cihazlarda tarayıcının yazı penceresi (WebTap) IMGUI'ye
-    /// bağlı olduğundan bu ekran orada şimdilik eski arayüzde kalır.
+    /// Şirket adı bilgisayarda UI Toolkit yazı alanıyla, dokunmatik web'de tarayıcının yazı penceresiyle girilir (TkTextInput).
     /// </summary>
     public sealed partial class GameUI
     {
         VisualElement tkNewGame, tkNewGameCard;
-        TextField tkCompanyField;
         int tkNewGameSignature = int.MinValue;
 
-        bool ToolkitDrawsNewGame => NewUi && mode == Mode.NewGame && !mobile;
+        bool ToolkitDrawsNewGame => NewUi && mode == Mode.NewGame;
 
         void BuildToolkitNewGameLayer()
         {
@@ -56,11 +54,7 @@ namespace BusTycoon.Game
             VisualElement body = scroll.contentContainer;
 
             Ui.Text("bt-caps bt-modal__caption", "ŞİRKET ADI", UiWeight.Bold, body);
-            tkCompanyField = new TextField { maxLength = 28, value = companyName };
-            tkCompanyField.AddToClassList("bt-field");
-            Ui.Weight(tkCompanyField, UiWeight.Bold);
-            tkCompanyField.RegisterValueChangedCallback(evt => companyName = evt.newValue);
-            body.Add(tkCompanyField);
+            TkTextInput(body, "company", companyName, 28, "Şirket adı", value => companyName = value);
             Ui.Text("bt-item__text", "Haritadan merkez ofisinizin bulunacağı şehre tıklayın. O şehrin ülkesi ücretsiz açılır; diğer ülkeler sonradan lisansla açılır.", UiWeight.Regular, body);
 
             Ui.Text("bt-caps bt-modal__caption", "HIZLI SEÇİM", UiWeight.Bold, body);

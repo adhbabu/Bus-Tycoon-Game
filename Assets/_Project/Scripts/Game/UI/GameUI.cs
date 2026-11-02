@@ -491,7 +491,7 @@ namespace BusTycoon.Game
                     if (!ToolkitDrawsNewGame) DrawNewGame();
                     break;
                 case Mode.Multiplayer:
-                    DrawMultiplayer();
+                    if (!ToolkitDrawsMultiplayer) DrawMultiplayer();
                     break;
                 case Mode.Playing:
                     if (!NewUi) DrawTopBar();
@@ -508,7 +508,7 @@ namespace BusTycoon.Game
                         if (!phone && !NewUi) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
                         DrawMinimap();
                         if (!NewUi) DrawGoalWidget();
-                        DrawRaceWidget();
+                        if (!NewUi) DrawRaceWidget();
                     }
                     if (!NewUi) DrawToasts();
                     break;
@@ -526,6 +526,7 @@ namespace BusTycoon.Game
                 DrawFpsOverlay();
                 sliderRects.Clear();
                 sliderRects.AddRange(sliderRectsNext);
+                ReportToolkitTapZones();
                 WebTap.EndFrame();
             }
             if (!HandleStationInput(e)) HandleMapInput(e);

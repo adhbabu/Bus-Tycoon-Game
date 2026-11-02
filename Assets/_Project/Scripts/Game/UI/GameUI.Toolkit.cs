@@ -133,6 +133,7 @@ namespace BusTycoon.Game
 
             // ---- harita üstü parçalar ve sağ panel
             BuildToolkitWidgets();
+            BuildToolkitRace();
             BuildToolkitSheet();
             BuildToolkitStation();
 
@@ -152,6 +153,7 @@ namespace BusTycoon.Game
             // ---- ana menü ve pencereler (ayrı katmanlar; pencere en üstte, tıklamayı tutar)
             BuildToolkitMenuLayer();
             BuildToolkitNewGameLayer();
+            BuildToolkitMultiplayerLayer();
             BuildToolkitModalLayer();
         }
 
@@ -189,9 +191,11 @@ namespace BusTycoon.Game
             toolkit.SetClass("phone", phone);
             toolkit.SetClass("compact", compact);
             toolkit.SetClass("compact-top", SlimTopBar);
+            PumpToolkitTaps();
             UpdateToolkitModal();
             UpdateToolkitMenu();
             UpdateToolkitNewGame();
+            UpdateToolkitMultiplayer();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
             Ui.Show(tkHud, playing);
@@ -215,6 +219,7 @@ namespace BusTycoon.Game
             UpdateToolkitTopBar();
             UpdateToolkitNav();
             UpdateToolkitWidgets(k);
+            UpdateToolkitRace(k);
             UpdateToolkitStation(k);
             UpdateToolkitSheet(k);
             UpdateToolkitToasts(k);
