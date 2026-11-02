@@ -62,7 +62,8 @@ namespace BusTycoon.Game
             if (sprites.TryGetValue(city.DisplayName, out Sprite sprite)) return sprite;
             if (TryGetUv(city, out Texture2D texture, out Rect uv))
             {
-                var rect = new Rect(uv.x * texture.width, uv.y * texture.height, uv.width * texture.width, uv.height * texture.height);
+                var rect = Rect.MinMaxRect(Mathf.Max(0f, uv.xMin * texture.width), Mathf.Max(0f, uv.yMin * texture.height),
+                    Mathf.Min(texture.width, uv.xMax * texture.width), Mathf.Min(texture.height, uv.yMax * texture.height));
                 sprite = UnityEngine.Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
             }
             sprites[city.DisplayName] = sprite;
@@ -79,7 +80,11 @@ namespace BusTycoon.Game
             float pad = (Cell - Icon) / 2f;
             float x = (entry.cell % Columns) * Cell + pad;
             float yFromTop = (entry.cell / Columns) * Cell + pad;
-            uv = new Rect(x / atlas.width, 1f - (yFromTop + Icon) / atlas.height, Icon / atlas.width, Icon / atlas.height);
+            // Atlas 640×2240 üretilir; Unity en çok 2048 piksel içe aktarır (585×2048). UV'ler dokunun gerçek boyutuyla
+            // değil, üretildiği (mantıksal) boyutla hesaplanır: küçültülmüş dokuda da doğru hücre gelir.
+            float width = Columns * Cell;
+            float height = Mathf.Max(Cell, Mathf.Round(width * atlas.height / atlas.width / Cell) * Cell);
+            uv = new Rect(x / width, 1f - (yFromTop + Icon) / height, Icon / width, Icon / height);
             return true;
         }
     }
