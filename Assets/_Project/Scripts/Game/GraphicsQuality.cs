@@ -12,9 +12,9 @@ namespace BusTycoon.Game
     /// Görüntü kalitesi: cihaza göre otomatik (telefon → Orta, tablet ve bilgisayar → Yüksek, ekran kartı olmadan
     /// yazılımla çizen tarayıcı → Düşük) ya da menüden seçilir (PlayerPrefs; tarayıcıda da saklanır). Etkiledikleri:
     /// <list type="bullet">
-    /// <item>Harita gölgelendiricisi (BusTycoon/MapSurface): Orta'da canlı deniz ve yakın arazi dokusu, Yüksek'te bulut gölgeleri</item>
-    /// <item>Güneş gölgeleri: Yüksek yumuşak, Orta keskin, Düşük kapalı</item>
-    /// <item>Ufuk pusu (sis), anizotropik süzme, ekran kenarı karartması</item>
+    /// <item>Harita (düz, gölgesiz): Orta ve Yüksek'te kıyıda ince halka dalgaları (BusTycoon/MapSurface)</item>
+    /// <item>Durak içi sahnesinde güneş gölgeleri: Yüksek yumuşak, Orta ve Düşük keskin</item>
+    /// <item>Anizotropik süzme</item>
     /// <item>Web: Düşük'te tuval 1 CSS pikseli çözünürlükte çizilir (BusTycoonQuality.jslib) — en akıcı</item>
     /// </list>
     /// Kenar yumuşatma (4x MSAA) derlemede açılır (StoreBuild): WebGL'de çizim bağlamıyla birlikte sabitlenir.
@@ -25,9 +25,7 @@ namespace BusTycoon.Game
         const string PrefKey = "gfx_quality";
         const int Automatic = -1;
 
-        static readonly int DetailId = Shader.PropertyToID("_BT_Detail");
         static readonly int WavesId = Shader.PropertyToID("_BT_Waves");
-        static readonly int CloudsId = Shader.PropertyToID("_BT_Clouds");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] static extern void BusTycoon_ApplyQuality(int level, int stored);
@@ -40,11 +38,10 @@ namespace BusTycoon.Game
         public static QualityLevel Current { get; private set; } = QualityLevel.High;
         /// <summary>Oyuncu bir seviye seçmediyse (cihaza göre otomatik).</summary>
         public static bool IsAuto => !forced.HasValue && Stored == Automatic;
-        /// <summary>Haritadaki gölge kalitesi (durak içinden çıkınca da bu uygulanır).</summary>
-        public static ShadowQuality MapShadows => Current == QualityLevel.High ? ShadowQuality.All
-            : Current == QualityLevel.Medium ? ShadowQuality.HardOnly : ShadowQuality.Disable;
-        /// <summary>Ufuk pusu, ekran kenarı karartması gibi ucuz atmosfer efektleri (Düşük'te kapalı).</summary>
-        public static bool Atmosphere => Current != QualityLevel.Low;
+        /// <summary>Haritada gölge yok (düz harita); durak içinden çıkınca da bu uygulanır.</summary>
+        public static ShadowQuality MapShadows => ShadowQuality.Disable;
+        /// <summary>Durak içi sahnesinin gölgeleri (maket gölgesiz düz görünmesin diye Düşük'te de keskin gölge).</summary>
+        public static ShadowQuality StationShadows => Current == QualityLevel.High ? ShadowQuality.All : ShadowQuality.HardOnly;
         public static event Action Changed;
 
         static int Stored
@@ -119,18 +116,14 @@ namespace BusTycoon.Game
             QualityLevel level = forced ?? (stored >= 0 ? (QualityLevel)stored : Detect());
             Current = level;
 
-            Shader.SetGlobalFloat(DetailId, level >= QualityLevel.Medium ? 1f : 0f);
-            Shader.SetGlobalFloat(WavesId, level == QualityLevel.High ? 1f : level == QualityLevel.Medium ? 0.8f : 0f);
-            Shader.SetGlobalFloat(CloudsId, level == QualityLevel.High ? 1f : 0f);
+            Shader.SetGlobalFloat(WavesId, level == QualityLevel.Low ? 0f : 1f);
 
             QualitySettings.anisotropicFiltering = level == QualityLevel.Low ? AnisotropicFiltering.Enable : AnisotropicFiltering.ForceEnable;
             QualitySettings.shadows = MapShadows;
             QualitySettings.shadowResolution = level == QualityLevel.High ? ShadowResolution.High : ShadowResolution.Medium;
             // Tek gölge katmanı: katmanlı gölgede yerleşik hat her şeyi bir kez daha derinlik geçişinde çizer
             QualitySettings.shadowCascades = 1;
-            if (sun != null)
-                sun.shadows = level == QualityLevel.High ? LightShadows.Soft
-                    : level == QualityLevel.Medium ? LightShadows.Hard : LightShadows.None;
+            if (sun != null) sun.shadows = LightShadows.None; // harita gölgesiz
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Açılış seçeneğiyle zorlanan seviye tarayıcıya kaydedilmez (-2)

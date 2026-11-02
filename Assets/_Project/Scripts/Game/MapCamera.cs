@@ -8,11 +8,11 @@ namespace BusTycoon.Game
     /// çağırır. Böylece eski Input Manager / yeni Input System ayarından bağımsız çalışır.
     ///
     /// Hareket: hedefe yay benzeri (kritik sönümlü) geçiş; sürükleme bırakılınca harita hızıyla süzülür ve
-    /// yavaşlar; yakınlaştıkça kamera eğilir (uzakta haritaya tepeden, yakında ufka doğru) ve görüş açısı daralır.
+    /// yavaşlar; yakınlaştıkça kamera biraz eğilir (uzakta haritaya tepeden, yakında hafif eğik) ve görüş açısı daralır.
     /// </summary>
     public sealed class MapCamera : MonoBehaviour
     {
-        const float FarPitch = 62f, NearPitch = 42f;   // uzakta tepeden, yakında sinematik
+        const float FarPitch = 78f, NearPitch = 58f;   // düz harita: uzakta neredeyse tepeden, yakında hafif eğik
         const float FarFov = 40f, NearFov = 35f;
         const float MinDistance = 7f;
         const float MaxDistance = 140f;     // Avrupa haritasının tamamı görünür

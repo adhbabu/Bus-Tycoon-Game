@@ -188,14 +188,16 @@ namespace BusTycoon.Game
             thumb.border = new RectOffset(Px(3), Px(3), Px(3), Px(3));
             thumb.normal.background = thumb.hover.background = thumb.active.background = Rounded(new Color(1f, 1f, 1f, 0.24f), 3);
 
-            MapLabel = MakeLabel(13, Weight.Regular, Text);
+            // Şehir adları açık renkli düz haritada: koyu yazı, beyaz hale (gölge yerine)
+            var mapInk = new Color(0.13f, 0.15f, 0.19f);
+            MapLabel = MakeLabel(13, Weight.Regular, mapInk);
             MapLabel.alignment = TextAnchor.MiddleCenter;
-            MapLabelBold = MakeLabel(15, Weight.Bold, Text);
+            MapLabelBold = MakeLabel(15, Weight.Bold, mapInk);
             MapLabelBold.alignment = TextAnchor.MiddleCenter;
             MapLabelShadow = new GUIStyle(MapLabel);
-            MapLabelShadow.normal.textColor = new Color(0f, 0f, 0f, 0.85f);
+            MapLabelShadow.normal.textColor = new Color(1f, 1f, 1f, 0.9f);
             MapLabelBoldShadow = new GUIStyle(MapLabelBold);
-            MapLabelBoldShadow.normal.textColor = new Color(0f, 0f, 0f, 0.85f);
+            MapLabelBoldShadow.normal.textColor = new Color(1f, 1f, 1f, 0.9f);
         }
 
         /// <summary>Stiller yeniden kurulurken eski dokuları serbest bırakır.</summary>

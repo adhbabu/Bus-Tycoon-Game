@@ -471,7 +471,6 @@ namespace BusTycoon.Game
             HandleTouchScroll(e);
             bool pressEnded = e.type == EventType.MouseUp && e.button == 0; // kaydırma için kullanılmadıysa
 
-            if (repaint && GraphicsQuality.Atmosphere) DrawVignette();
             if (!InMenu && e.type == EventType.Repaint && !StationBusy)
             {
                 DrawCityLabels();
@@ -1143,9 +1142,9 @@ namespace BusTycoon.Game
                     if (important != (pass == 0)) continue;
                     if (city.MapTier > tierLimit && !important) continue;
 
-                    Vector3 sp = cam.WorldToScreenPoint(marker.Position + Vector3.up * (marker.Height * marker.Root.localScale.y + 0.25f));
+                    Vector3 sp = cam.WorldToScreenPoint(world.LabelAnchor(marker, cam));
                     if (sp.z <= 0f) continue;
-                    var p = new Vector2(sp.x, Screen.height - sp.y);
+                    var p = new Vector2(sp.x, Screen.height - sp.y - 2f * u);
                     if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
 
                     bool bold = city.MapTier == 0 || important;
@@ -1169,9 +1168,17 @@ namespace BusTycoon.Game
                         UICityIcons.Draw(new Rect(left, p.y - 24f * u + (22f * u - icon) * 0.5f, icon, icon), city);
                         GUI.color = tint;
                     }
-                    GUI.Label(new Rect(rect.x + u, rect.y + u, rect.width, rect.height), city.DisplayName, bold ? s.MapLabelBoldShadow : s.MapLabelShadow);
+                    // Beyaz hale: adın dört yanına kaydırılmış açık kopya (açık zeminde de, hatların üstünde de okunur)
+                    GUIStyle halo = bold ? s.MapLabelBoldShadow : s.MapLabelShadow;
+                    Color haloTint = GUI.contentColor;
+                    if (locked) GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
+                    GUI.Label(new Rect(rect.x + u, rect.y, rect.width, rect.height), city.DisplayName, halo);
+                    GUI.Label(new Rect(rect.x - u, rect.y, rect.width, rect.height), city.DisplayName, halo);
+                    GUI.Label(new Rect(rect.x, rect.y + u, rect.width, rect.height), city.DisplayName, halo);
+                    GUI.Label(new Rect(rect.x, rect.y - u, rect.width, rect.height), city.DisplayName, halo);
+                    GUI.contentColor = haloTint;
                     Color previous = GUI.contentColor;
-                    if (locked) GUI.contentColor = new Color(0.75f, 0.75f, 0.75f, 0.8f);
+                    if (locked) GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
                     GUI.Label(rect, city.DisplayName, style);
                     GUI.contentColor = previous;
                 }
