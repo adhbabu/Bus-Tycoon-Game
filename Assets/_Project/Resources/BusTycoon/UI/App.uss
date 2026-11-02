@@ -781,7 +781,10 @@
 }
 
 .bt-btn--block {
+    height: auto;
+    min-height: 36px;
     margin: 10px 0 0 0;
+    padding: 6px 14px;
     white-space: normal;
 }
 
@@ -1326,4 +1329,49 @@
 
 .bt-actions--fill .bt-modal__button {
     margin-top: 0;
+}
+
+.bt-nowrap {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.bt-tabs-inline {
+    flex-wrap: wrap;
+}
+
+/* İnce kaydırma çubuğu (ok düğmeleri yok) */
+.bt-sheet__scroll .unity-scroller--vertical {
+    width: 8px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-sheet__scroll .unity-scroller__low-button,
+.bt-sheet__scroll .unity-scroller__high-button {
+    display: none;
+}
+
+.bt-sheet__scroll .unity-base-slider__tracker {
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-sheet__scroll .unity-base-slider__dragger {
+    width: 6px;
+    left: 1px;
+    border-width: 0;
+    border-radius: 3px;
+    background-color: #D0D4DB;
+}
+
+.bt-modal__scroll .unity-scroller--vertical {
+    width: 8px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-modal__scroll .unity-scroller__low-button,
+.bt-modal__scroll .unity-scroller__high-button {
+    display: none;
 }

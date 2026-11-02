@@ -1152,6 +1152,7 @@ namespace BusTycoon.Game
                     if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
                     // Üst çubuğun ve sol menünün altına düşen ad çizilmez (yeni arayüz IMGUI'nin altında çizilir)
                     if (p.y - 24f * u < SafeTop + TopBarHeight || p.x < ContentLeft) continue;
+                    if (NewUi && ToolkitCovers(new Vector2(p.x, p.y - 12f * u))) continue; // panel / görev kartı altında
 
                     bool bold = city.MapTier == 0 || important;
                     GUIStyle style = bold ? s.MapLabelBold : s.MapLabel;

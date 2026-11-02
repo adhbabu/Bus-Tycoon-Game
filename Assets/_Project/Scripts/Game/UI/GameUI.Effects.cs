@@ -145,6 +145,7 @@ namespace BusTycoon.Game
                 float rise = (1f - (1f - t) * (1f - t)) * 34f * u;
                 float alpha = t < 0.12f ? t / 0.12f : 1f - Mathf.Clamp01((t - 0.55f) / 0.45f);
                 var rect = new Rect(sp.x - 90f * u, H - sp.y - 30f * u - rise, 180f * u, 24f * u);
+                if (NewUi && ToolkitCovers(rect.center)) continue; // yeni arayüzün panelinin altında
                 Color previous = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
                 // Açık renkli haritada: beyaz hale + koyu ton (gelir yeşil, gider kırmızı)

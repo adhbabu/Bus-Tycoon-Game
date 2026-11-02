@@ -46,6 +46,7 @@ namespace BusTycoon.Game
             if (showGoal)
             {
                 Ui.Place(tkGoal, left * k, (ContentBottom - height - Margin) * k, width * k, height * k);
+                tkCovered.Add(new Rect(left, ContentBottom - height - Margin, width, height));
                 Ui.Toggle(tkGoal, "is-chip", phone);
                 if (goal != tkGoalShown || goals.CompletedCount != tkGoalCount)
                 {
@@ -68,6 +69,7 @@ namespace BusTycoon.Game
                 float right = panel != Panel.None ? PanelRect.x : SafeRight;
                 float top = ContentBottom - 2f * size - 2f * Margin;
                 Ui.Place(tkZoom, (right - size - Margin) * k, top * k, size * k, (2f * size + 6f * u) * k);
+                tkCovered.Add(new Rect(right - size - Margin, top, size, 2f * size + 6f * u));
             }
         }
     }

@@ -32,6 +32,16 @@ namespace BusTycoon.Game
         DayNightCycle.Phase? tkPhase;
         Panel tkPanel = (Panel)(-1);
         bool tkNarrow;
+        /// <summary>Yeni arayüzün haritayı kapattığı yerler (piksel; panel, görev kartı, yakınlaştırma): şehir adları buraya çizilmez.</summary>
+        readonly List<Rect> tkCovered = new List<Rect>();
+
+        /// <summary>Nokta (IMGUI koordinatı) yeni arayüzün bir kartının altında mı (ucuz dikdörtgen denetimi).</summary>
+        bool ToolkitCovers(Vector2 guiPoint)
+        {
+            foreach (var rect in tkCovered)
+                if (rect.Contains(guiPoint)) return true;
+            return false;
+        }
 
         void InitToolkit()
         {
@@ -178,6 +188,7 @@ namespace BusTycoon.Game
             UpdateToolkitModal();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
+            tkCovered.Clear();
             Ui.Show(tkHud, playing);
             if (!playing) return;
             tkHud.SetEnabled(modal == Modal.None); // pencere açıkken arkadaki düğmeler tıklanmaz

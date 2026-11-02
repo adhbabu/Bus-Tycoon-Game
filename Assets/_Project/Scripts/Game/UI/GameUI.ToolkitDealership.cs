@@ -38,7 +38,7 @@ namespace BusTycoon.Game
 
             VisualElement tabs = Ui.El("bt-tabs-inline", body);
             Button fresh = Ui.Button("bt-tab", "Sıfır", () => { dealershipUsed = false; tkSheetDirty = true; }, tabs);
-            Button used = Ui.Button("bt-tab", "2. el (durum %60, ucuz ama yıpranmış)", () => { dealershipUsed = true; tkSheetDirty = true; }, tabs);
+            Button used = Ui.Button("bt-tab", "2. el (durum %60)", () => { dealershipUsed = true; tkSheetDirty = true; }, tabs);
             Ui.Toggle(fresh, "is-active", !dealershipUsed);
             Ui.Toggle(used, "is-active", dealershipUsed);
 
@@ -68,12 +68,12 @@ namespace BusTycoon.Game
             Detail(info, UIIcon.Seat, $"{model.Seats} koltuk · {model.AverageSpeedKmh:0} km/s");
             Detail(info, UIIcon.Road, $"Rahat menzil {Fmt.Km(model.ComfortableRangeKm)}");
 
-            VisualElement specs = Ui.El("bt-row bt-detail", card);
-            Ui.Icon(UIIcon.Star, "bt-detail__icon", specs);
-            Ui.Text("bt-detail__text", "Konfor", UiWeight.Regular, specs);
-            VisualElement bar = Ui.El("bt-bar bt-bus__condition", specs);
+            VisualElement comfort = Ui.El("bt-row bt-detail", card);
+            Ui.Icon(UIIcon.Star, "bt-detail__icon", comfort);
+            Ui.Text("bt-detail__text bt-nowrap", "Konfor", UiWeight.Regular, comfort);
+            VisualElement bar = Ui.El("bt-bar bt-bus__condition", comfort);
             Ui.Fill(Ui.El("bt-bar__fill bt-bar__fill--gold", bar), model.Comfort);
-            Ui.El("bt-grow", specs);
+            VisualElement specs = Ui.El("bt-row bt-detail", card);
             Ui.Icon(UIIcon.Ticket, "bt-detail__icon", specs);
             Ui.Text("bt-detail__text bt-spec", $"Bilet ×{model.FareMultiplier:0.00}", UiWeight.Regular, specs);
             Ui.Icon(UIIcon.Fuel, "bt-detail__icon", specs);

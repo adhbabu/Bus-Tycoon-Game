@@ -41,6 +41,7 @@ namespace BusTycoon.Game
             close.name = "close";
             tkSheetSubtitle = Ui.Text("bt-sheet__subtitle", "", UiWeight.Regular, tkSheet);
             tkSheetScroll = new ScrollView(ScrollViewMode.Vertical);
+            tkSheetScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden; // içerik yalnız dikeyde kayar
             tkSheetScroll.AddToClassList("bt-sheet__scroll");
             tkSheet.Add(tkSheetScroll);
             tkSheet.style.display = DisplayStyle.None;
@@ -57,6 +58,7 @@ namespace BusTycoon.Game
             }
             Rect rect = PanelRect;
             Ui.Place(tkSheet, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
+            tkCovered.Add(rect);
 
             if (panel == Panel.Log) tkSheetDirty = true; // günlük gün içinde de dolar (imza ucuz)
             if (panel == Panel.Planner)
