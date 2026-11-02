@@ -13,7 +13,7 @@ namespace BusTycoon.Game
     /// <item>Döşeme sayısı kaliteye göre: Yüksek 9, Orta 5, Düşük 0 (yalnız genel harita).</item>
     /// <item>Aynı anda en çok iki indirme. Tarayıcıda görüntü arka planda çözülür (WebImage); kare başına en çok bir
     /// döşeme ekran kartına yüklenir (takılma olmasın).</item>
-    /// <item>Döşeme, harita gölgelendiricisinin BT_TILE çeşidiyle çizilir: deniz, bulut, gölge, pus aynen sürer.</item>
+    /// <item>Döşeme, harita gölgelendiricisinin BT_TILE çeşidiyle çizilir (kıyı halkaları aynen sürer).</item>
     /// <item>Dizin ya da bir döşeme inemezse oyun genel haritayla devam eder (hata göstermez).</item>
     /// </list>
     /// </summary>
@@ -49,8 +49,7 @@ namespace BusTycoon.Game
             public string Name;
             public Rect Area;       // dünya XZ
             public float TexV;      // harita sınırında kırpılan döşemenin doku üst kenarı
-            public UnityWebRequest Request;
-            public int ImageId;     // tarayıcıda çözülüyor (WebImage)
+            public StreamingImage Load;  // iniyor / çözülüyor
             public Texture2D Texture;
             public Material Material;
             public GameObject Object;
@@ -62,7 +61,6 @@ namespace BusTycoon.Game
         WorldRenderer world;
         MapCamera mapCamera;
         Material template;
-        string root;
         UnityWebRequest indexRequest;
         readonly List<Tile> tiles = new List<Tile>();
         readonly List<Tile> candidates = new List<Tile>();
@@ -86,9 +84,7 @@ namespace BusTycoon.Game
             template = world.MapSurfaceMaterial;
             if (template == null) return; // harita gölgelendiricisi yok (yedek malzeme): döşeme de yok
 
-            root = Application.streamingAssetsPath ?? string.Empty;
-            if (!root.Contains("://")) root = "file://" + root;
-            indexRequest = UnityWebRequest.Get($"{root}/{Folder}/index.json");
+            indexRequest = UnityWebRequest.Get($"{StreamingImage.Root}/{Folder}/index.json");
             indexRequest.SendWebRequest();
         }
 
@@ -153,7 +149,8 @@ namespace BusTycoon.Game
             bool mapVisible = main != null && main.enabled;
             int max = MaxTilesFor(GraphicsQuality.Current);
             foreach (var tile in tiles) tile.Wanted = false;
-            if (!mapVisible || max == 0 || mapCamera.Distance > NearDistance) return;
+            // Genel harita inmeden döşeme yok (döşeme kenarda genel haritaya karışır)
+            if (!mapVisible || max == 0 || mapCamera.Distance > NearDistance || world.MapTexture == null) return;
 
             Rect view = VisibleGround(main);
             candidates.Clear();
@@ -168,21 +165,12 @@ namespace BusTycoon.Game
             }
 
             int loading = 0;
-            foreach (var tile in tiles) if (tile.Request != null || tile.ImageId != 0) loading++;
+            foreach (var tile in tiles) if (tile.Load != null) loading++;
             foreach (var tile in candidates)
             {
                 if (loading >= MaxConcurrentLoads) break;
-                if (!tile.Wanted || tile.Texture != null || tile.Request != null || tile.ImageId != 0) continue;
-                string url = $"{root}/{Folder}/{tile.Name}.jpg";
-                if (WebImage.Supported)
-                {
-                    tile.ImageId = WebImage.Begin(url); // tarayıcı arka planda indirip çözer
-                }
-                else
-                {
-                    tile.Request = UnityWebRequest.Get(url);
-                    tile.Request.SendWebRequest();
-                }
+                if (!tile.Wanted || tile.Texture != null || tile.Load != null) continue;
+                tile.Load = new StreamingImage($"{Folder}/{tile.Name}.jpg", "MapTile_" + tile.Name, 8);
                 loading++;
             }
         }
@@ -214,59 +202,18 @@ namespace BusTycoon.Game
 
         void PollLoads()
         {
-            bool decoded = false;
+            bool finished = false;
             foreach (var tile in tiles)
             {
-                if (tile.ImageId != 0)
-                {
-                    int state = WebImage.State(tile.ImageId);
-                    if (state == 0 || (state == 1 && decoded)) continue; // bekliyor / kare başına bir yükleme
-                    if (state == 1)
-                    {
-                        decoded = true;
-                        Texture2D texture = WebImage.Finish(tile.ImageId, "MapTile_" + tile.Name, 8);
-                        if (texture != null) CreateVisual(tile, texture);
-                        else tile.Failed = true;
-                    }
-                    else
-                    {
-                        tile.Failed = true; // bu döşeme yok/inemedi: genel harita yeter
-                    }
-                    tile.ImageId = 0;
-                    continue;
-                }
-
-                UnityWebRequest request = tile.Request;
-                if (request == null || !request.isDone) continue;
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    tile.Failed = true; // bu döşeme yok/inemedi: genel harita yeter
-                }
-                else
-                {
-                    if (decoded) continue; // kare başına bir çözme; kalan istek sonraki karede
-                    decoded = true;
-                    CreateVisualFromBytes(tile, request.downloadHandler.data);
-                }
-                request.Dispose();
-                tile.Request = null;
+                StreamingImage load = tile.Load;
+                if (load == null || load.Pending) continue;
+                if (finished) continue; // kare başına bir yükleme (takılma olmasın); kalan sonraki karede
+                finished = true;
+                load.Poll();
+                tile.Load = null;
+                if (load.Texture != null) CreateVisual(tile, load.Texture);
+                else tile.Failed = true; // bu döşeme yok/inemedi: genel harita yeter
             }
-        }
-
-        /// <summary>Eski yol (web dışı ya da ?eskidoku=1): görüntü ana iş parçacığında çözülür.</summary>
-        void CreateVisualFromBytes(Tile tile, byte[] bytes)
-        {
-            var texture = new Texture2D(2, 2, TextureFormat.RGB24, true) { name = "MapTile_" + tile.Name };
-            if (bytes == null || !texture.LoadImage(bytes, true))
-            {
-                Destroy(texture);
-                tile.Failed = true;
-                return;
-            }
-            texture.wrapMode = TextureWrapMode.Clamp;
-            texture.filterMode = FilterMode.Trilinear;
-            texture.anisoLevel = 8;
-            CreateVisual(tile, texture);
         }
 
         void CreateVisual(Tile tile, Texture2D texture)
@@ -303,7 +250,7 @@ namespace BusTycoon.Game
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = true;
+            renderer.receiveShadows = false;
             renderer.enabled = false;
             tile.Object = go;
             tile.Renderer = renderer;
@@ -346,16 +293,8 @@ namespace BusTycoon.Game
 
         void Release(Tile tile)
         {
-            if (tile.Request != null)
-            {
-                tile.Request.Dispose();
-                tile.Request = null;
-            }
-            if (tile.ImageId != 0)
-            {
-                WebImage.Cancel(tile.ImageId);
-                tile.ImageId = 0;
-            }
+            tile.Load?.Cancel();
+            tile.Load = null;
             if (tile.Object != null)
             {
                 var filter = tile.Object.GetComponent<MeshFilter>();

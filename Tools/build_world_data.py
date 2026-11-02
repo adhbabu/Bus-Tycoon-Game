@@ -10,7 +10,7 @@ Girdi (indirip tek klasöre koyun):
   Assets/_Project/Resources/BusTycoon/cities.csv   81 il (il nüfusu, il merkezi koordinatı) + komşu ülke şehirleri
                                                    + Avrupa Paketi şehirleri ("pack" sütunu: europe)
 
-Harita dokusu (map_jpg.bytes) ve karayolu ağı (roads.txt) Tools/build_map.py ile üretilir.
+Harita dokusu (StreamingAssets/Map/map.jpg) ve karayolu ağı (roads.txt) Tools/build_map.py ile üretilir.
 
 Kullanım:  python3 Tools/build_world_data.py <veri_klasörü>
 """

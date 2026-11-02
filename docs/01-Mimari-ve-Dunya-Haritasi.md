@@ -79,7 +79,7 @@ flowchart TB
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/      cities.csv (221 şehir) + map_jpg.bytes + map_outer_jpg.bytes + map_water_png.bytes + roads.txt + Fonts/ + UI/ (ikonlar,
+├─ Resources/BusTycoon/      cities.csv (221 şehir) + roads.txt + Shaders/ + Fonts/ + UI/ (ikonlar,
 │                            otobüs çizimleri, maskot) — oyun Play'de bunlardan kendini kurar
 ├─ Data/                      ← (opsiyonel) "Create Default Content" ile üretilen düzenlenebilir asset'ler
 │  ├─ Config/                 EconomyConfig, ProgressionConfig
@@ -211,16 +211,19 @@ flowchart LR
 * Var olan asset **güncellenir** (GUID korunur) → yeniden içe aktarmak sahne referanslarını kırmaz.
 * Oyunla gelen veri: `Assets/_Project/Resources/BusTycoon/cities.csv` — 81 il (GeoNames il merkezi koordinatı + il nüfusu)
   ve 12 komşu ülke şehri. `Tools/build_world_data.py` bu dosyayı üretir. `Tools/build_map.py` Natural Earth
-  1:10m verisinden `map_jpg.bytes` harita dokusunu (gölgeli kabartma, göller, nehirler, sınırlar) ve `roads.txt`
-  karayolu ağını üretir; sınırlar `DefaultContent.cs` içindeki `MinLongitude…MaxLatitude` ile aynı olmalıdır.
-* Dokular JPEG/PNG baytı olarak (`.bytes`) durur, açılışta `MapTextures` çözer (mipmap, anizotropik süzme). Unity'nin
-  doku içe aktarımı bunları web paketine sıkıştırmasız koyuyordu (~15 MB); baytlarla indirme ~13 MB küçüldü.
-* Harita yüzeyi `BusTycoon/MapSurface` gölgelendiricisiyle çizilir: deniz maskesine (`map_water_png.bytes`: R su,
-  G kıyı, B açık deniz) göre dalga parıltısı, güneş yansıması ve kıyı köpüğü; yakınlaşınca ince arazi dokusu; bulut
-  gölgeleri; durak ve otobüs gölgeleri; ufukta pus (doğrusal sis, kamera uzaklığına göre). Efektler görüntü kalitesine
-  bağlıdır (`GraphicsQuality`: Otomatik / Düşük / Orta / Yüksek; telefonda Orta, diğerlerinde Yüksek).
-* Harita "tak" diye bitmez: `build_map.py` ayrıca `map_outer_jpg.bytes` (boylam 1–65°, enlem 27–54°, 2048 px) üretir —
-  uzaklaştıkça bulanıklaşan, kararan ve koyu denize (kameranın arka plan rengi) karışan çevre. `WorldRenderer` bunu
+  1:10m verisinden sade harita dokusunu (`StreamingAssets/Map/map.jpg`: düz pastel ülkeler, açık mavi deniz, ince
+  sınırlar, göller, nehirler, çok hafif kabartma — Mini Metro / Mini Motorways dili; eski kabartmalı görünüm
+  `--style relief`) ve `roads.txt` karayolu ağını üretir; sınırlar `DefaultContent.cs` içindeki
+  `MinLongitude…MaxLatitude` ile aynı olmalıdır.
+* Harita dokuları StreamingAssets'te sıradan JPEG/PNG'dir: açılıştan sonra iner, tarayıcıda arka planda çözülür
+  (`StreamingImage` → `WebImage`, mipmap'i ekran kartı üretir). Unity veri paketine girmez; açılışta 4096 px çözme
+  takılması ve WebAssembly belleğinde ~48 MB kopya olmaz. Doku inene kadar harita deniz renginde görünür.
+* Harita yüzeyi `BusTycoon/MapSurface` gölgelendiricisiyle düz çizilir (ışık, gölge, sis yok); deniz maskesine
+  (`map_water.png`: R su, G kıyı, B açık deniz) göre kıyıda ağır ağır yayılan ince halkalar (Düşük kalitede kapalı).
+  Şehirler düz rozetler, otobüsler hat renginde kapsüller (`MapSprites`, `BusTycoon/MapSprite`: tek örgü, tek çizim);
+  her hat kendi rengini taşır (Mini Metro paleti).
+* Harita "tak" diye bitmez: `build_map.py` ayrıca `map_outer.jpg` (2048 px) üretir — uzaklaştıkça bulanıklaşan ve
+  denize (kameranın arka plan rengi) karışan çevre. `WorldRenderer` bunu
   haritanın biraz altına daha geniş bir düzlem olarak koyar; harita dokusunun dış %4'lük şeridi çevre dokusuna
   (ekran kartının büyüteceği hâliyle) karışır, yollar da kenarda silikleşir: dikiş görünmez.
 * `RoadNetwork` (Runtime/World) yol ağını okur; şehirleri en yakın yola bağlar ve A* ile güzergâh bulur. Hat

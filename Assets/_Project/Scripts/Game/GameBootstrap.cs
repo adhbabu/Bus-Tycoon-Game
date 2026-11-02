@@ -29,14 +29,6 @@ namespace BusTycoon.Game
             ConfigurePlatform();
             GameUI.ProfileOverride = GameUI.ParseProfile(LaunchOptions.Get("profil") ?? LaunchOptions.Get("profile"));
             GameContent content = DefaultContent.Build(csv.text);
-            // Harita dokuları JPEG/PNG baytından çözülür (MapTextures): web indirmesi ~13 MB küçük
-            Texture2D mapTexture = MapTextures.LoadMap();
-            Texture2D outerTexture = MapTextures.LoadOuter();
-            Texture2D waterMask = MapTextures.LoadWaterMask();
-            if (mapTexture != null)
-                Debug.Log($"[Bus Tycoon] Harita dokusu {mapTexture.width}x{mapTexture.height}, {mapTexture.mipmapCount} mip, " +
-                          $"deniz maskesi {(waterMask != null ? "var" : "yok")}");
-
             var root = new GameObject("Bus Tycoon");
 
             // Oturum: GameObject pasifken yapılandır ki Awake asset'leri hazır bulsun.
@@ -49,7 +41,8 @@ namespace BusTycoon.Game
 
             var world = new GameObject("World").AddComponent<WorldRenderer>();
             world.transform.SetParent(root.transform, false);
-            world.Init(session, content.Projection, mapTexture, outerTexture, LoadRoads(), waterMask);
+            // Harita dokuları StreamingAssets'ten açılıştan sonra iner (WorldRenderer; tarayıcıda arka planda çözülür)
+            world.Init(session, content.Projection, LoadRoads());
 
             Camera camera = SetupCamera(world.SeaColor);
             Light sun = SetupLighting();

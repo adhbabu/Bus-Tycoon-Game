@@ -164,7 +164,7 @@ namespace BusTycoon.Game
             if (sun != null) sun.enabled = false;
             stationLight.enabled = true;
             QualitySettings.shadowDistance = 150f;
-            if (QualitySettings.shadows == ShadowQuality.Disable) QualitySettings.shadows = ShadowQuality.HardOnly;
+            QualitySettings.shadows = GraphicsQuality.StationShadows;
 
             // Giriş: caddenin üstünden girişe bakış → salonun tepeden görünümü (kamera hep yolun ve arabaların üstünde)
             focusGoal = Scene.Focus;
@@ -194,9 +194,7 @@ namespace BusTycoon.Game
             Camera main = mapCamera.Camera;
             if (main != null) main.enabled = true;
             if (sun != null) sun.enabled = true;
-            // Haritanın gölge ayarı kaliteden gelir (içerideyken kalite değişmiş olabilir); gölge mesafesini
-            // WorldRenderer her kare ayarlar
-            QualitySettings.shadows = GraphicsQuality.MapShadows;
+            QualitySettings.shadows = GraphicsQuality.MapShadows; // düz harita gölgesiz
             if (City != null) mapCamera.FocusOn(WorldPosition(City), Mathf.Max(18f, savedMapDistance));
         }
 

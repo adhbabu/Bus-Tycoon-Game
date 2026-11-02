@@ -11,22 +11,25 @@ Girdi (indirip tek klasöre koyun; hepsi Natural Earth, kamu malı):
     ne_10m_roads.geojson                     karayolları ve feribot hatları
   https://naciscdn.org/naturalearth/10m/raster/SR_HR.zip → SR_HR.tif   gölgeli kabartma (dağlar)
 
-Çıktı (dokular JPEG/PNG baytı olarak .bytes uzantılı: Unity onları yeniden sıkıştırmadan pakete koyar, oyun açılışta
-çözer — web indirmesi ~13 MB küçülür. Dosyalar sıradan JPEG/PNG'dir; uzantıyı değiştirip açabilirsiniz):
-  Assets/_Project/Resources/BusTycoon/map_jpg.bytes        4096 px Mercator doku (sınırlar DefaultContent.MapBounds ile
-                                                           AYNI); kenarına doğru hafifçe bulanıklaşır
-  Assets/_Project/Resources/BusTycoon/map_outer_jpg.bytes  haritanın çevresi (DefaultContent.OuterMapBounds): düşük
-                                                           çözünürlük, uzaklaştıkça bulanıklaşır, kararır ve denize/sise
-                                                           karışır — harita "tak" diye bitmez, devam ediyormuş gibi görünür
-  Assets/_Project/Resources/BusTycoon/map_water_png.bytes  deniz maskesi (2048 px, MapSurface gölgelendiricisi):
-                                                           R = su (deniz + göl), G = kıyıya yakınlık (köpük), B = açık deniz
+Çıktı (dokular StreamingAssets'te sıradan JPEG/PNG: oyun açılıştan sonra indirir, tarayıcı arka planda çözer —
+Game/StreamingImage.cs; Unity veri paketine girmez, açılışı yavaşlatmaz):
+  Assets/StreamingAssets/Map/map.jpg          4096 px Mercator doku (sınırlar DefaultContent.MapBounds ile AYNI);
+                                              kenarına doğru çevre haritasına karışır
+  Assets/StreamingAssets/Map/map_outer.jpg    haritanın çevresi (DefaultContent.OuterMapBounds): düşük çözünürlük,
+                                              uzaklaştıkça bulanıklaşır ve denize karışır — harita "tak" diye bitmez
+  Assets/StreamingAssets/Map/map_water.png    deniz maskesi (2048 px, MapSurface gölgelendiricisi):
+                                              R = su (deniz + göl), G = kıyıya yakınlık (kıyı halkaları), B = açık deniz
   Assets/_Project/Resources/BusTycoon/roads.txt            yol ağı: düğümler + kenarlar (Runtime/World/RoadNetwork.cs okur)
   Assets/StreamingAssets/MapTiles/<sütun>_<satır>.jpg       yakın plan döşemeleri (--tiles): genel görünümün ~2,5 katı
                                                            çözünürlük; oyun yakınlaşınca kameranın çevresindekileri indirir
                                                            (Game/MapTiles.cs). Tamamen deniz olan döşeme üretilmez.
   Assets/StreamingAssets/MapTiles/index.json               döşeme dizini
 
+Görünüm (--style): flat (varsayılan) sade harita dili (Mini Metro / Mini Motorways gibi): ülkeler düz pastel renkte,
+komşular farklı renk; açık mavi deniz, ince sınırlar ve nehirler, çok hafif kabartma. relief: eski kabartmalı görünüm.
+
 Kullanım:  python3 Tools/build_map.py <veri_klasörü> [--preview önizleme.png] [--water-only] [--roads-only] [--tiles]
+           [--style flat|relief]
 Gereksinim: Pillow, numpy
 """
 import argparse
@@ -58,7 +61,8 @@ TILE_COLS = 10
 TILE_MARGIN = 64
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_DIR = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon")
+OUT_DIR = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon")      # roads.txt
+MAP_DIR = os.path.join(REPO, "Assets", "StreamingAssets", "Map")                    # harita dokuları
 TILES_DIR = os.path.join(REPO, "Assets", "StreamingAssets", "MapTiles")
 
 # Oynanabilir ülkeler (DefaultContent bölgeleri; Avrupa Paketi dahil) canlı, diğerleri soluk.
@@ -276,6 +280,137 @@ def render_map(data_dir, view, outer=False):
     return Image.composite(coast, image, coast_edge.point(lambda v: v * 150 // 255)).convert("RGB")
 
 
+# =============================================================================== sade (düz renkli) harita
+
+# Mini Motorways / Mini Metro dili: açık pastel kara, açık mavi deniz, ince sınırlar, çok hafif kabartma.
+FLAT_SEA = (150, 202, 222)
+FLAT_SEA_SHALLOW = (180, 221, 234)
+FLAT_LAKE = (165, 212, 230)
+FLAT_RIVER = (128, 186, 212, 170)
+FLAT_OTHER = (214, 210, 202)            # oynanamayan ülkeler
+FLAT_PALETTE = [(246, 239, 222), (234, 241, 222), (247, 230, 218), (229, 238, 233), (242, 232, 242), (239, 235, 214)]
+FLAT_BORDER = (160, 146, 126, 170)
+FLAT_COAST = (104, 160, 184, 200)
+FLAT_PROVINCE = (190, 178, 160, 60)
+FLAT_RELIEF = 0.14                      # kabartmanın etkisi (0 düz, 1 tam)
+
+
+@functools.lru_cache(maxsize=1)
+def country_colors(data_dir):
+    """Oynanabilir ülkelere pastel renk: komşu ülkeler farklı renk alır (açgözlü boyama, tek seferlik)."""
+    view = View((MIN_LON, MAX_LON), (MIN_LAT, MAX_LAT), 1400)
+    ids, index = {}, Image.new("I", (view.width, view.height), 0)
+    draw = ImageDraw.Draw(index)
+    for feature in load(data_dir, "ne_10m_admin_0_countries"):
+        iso3 = feature["properties"].get("ADM0_A3")
+        if iso3 not in PLAYABLE:
+            continue
+        number = ids.setdefault(iso3, len(ids) + 1)
+        for polygon in polygons(feature["geometry"]):
+            if view.near(polygon[0]):
+                draw.polygon([view.project(x, max(-85.0, min(85.0, y))) for x, y in polygon[0]], fill=number)
+    grid = np.asarray(index, dtype=np.int32)
+    pairs = set()
+    for a, b in ((grid[:, :-1], grid[:, 1:]), (grid[:-1, :], grid[1:, :]), (grid[:-2, :], grid[2:, :]), (grid[:, :-2], grid[:, 2:])):
+        mask = (a != b) & (a > 0) & (b > 0)
+        for x, y in set(zip(a[mask].tolist(), b[mask].tolist())):
+            pairs.add((min(x, y), max(x, y)))
+    neighbours = {n: set() for n in ids.values()}
+    for x, y in pairs:
+        neighbours[x].add(y)
+        neighbours[y].add(x)
+    by_number = {n: iso for iso, n in ids.items()}
+    colors = {}
+    for number in sorted(neighbours, key=lambda n: (-len(neighbours[n]), by_number[n])):
+        used = {colors[by_number[m]] for m in neighbours[number] if by_number[m] in colors}
+        choice = next((i for i in range(len(FLAT_PALETTE)) if i not in used), 0)
+        colors[by_number[number]] = choice
+    return {iso: FLAT_PALETTE[c] for iso, c in colors.items()}
+
+
+def render_flat(data_dir, view, outer=False):
+    """Sade harita: ülkeler düz pastel renkte, deniz açık mavi (kıyıda daha açık), ince ülke sınırları ve kıyı çizgisi,
+    çok hafif kabartma. Vektörler 2× çizilip küçültülür."""
+    width, height = view.width * SUPERSAMPLE, view.height * SUPERSAMPLE
+    size = (view.width, view.height)
+
+    def ring_points(ring):
+        return [view.project(x, max(-85.0, min(85.0, y)), SUPERSAMPLE) for x, y in ring]
+
+    palette = country_colors(data_dir)
+    countries = load(data_dir, "ne_10m_admin_0_countries")
+    land = Image.new("L", (width, height), 0)
+    fill = Image.new("RGB", (width, height), FLAT_OTHER)
+    land_draw, fill_draw = ImageDraw.Draw(land), ImageDraw.Draw(fill)
+    for feature in countries:
+        iso3 = feature["properties"].get("ADM0_A3")
+        color = palette.get(iso3, FLAT_OTHER)
+        for polygon in polygons(feature["geometry"]):
+            if not view.near(polygon[0]):
+                continue
+            ring = ring_points(polygon[0])
+            land_draw.polygon(ring, fill=255)
+            fill_draw.polygon(ring, fill=color)
+            for hole in polygon[1:]:
+                land_draw.polygon(ring_points(hole), fill=0)
+
+    grown = np.asarray(land.filter(ImageFilter.MaxFilter(3)), np.int16)
+    coast_edge = Image.fromarray(np.clip(grown - np.asarray(land, np.int16), 0, 255).astype(np.uint8)).resize(size, Image.BOX)
+    land = land.resize(size, Image.BOX)
+    fill = fill.resize(size, Image.BOX)
+
+    shade, _ = relief_layers(data_dir, view)
+    land_a = np.asarray(land, dtype=np.float32) / 255.0
+    terrain = np.asarray(fill, dtype=np.float32) * (1.0 + (shade[..., None] - 1.0) * FLAT_RELIEF)
+
+    near = np.asarray(land.filter(ImageFilter.GaussianBlur(10 * view.density)), dtype=np.float32) / 255.0
+    sea = np.empty_like(terrain)
+    for c in range(3):
+        sea[..., c] = FLAT_SEA[c] + (FLAT_SEA_SHALLOW[c] - FLAT_SEA[c]) * np.clip(near * 1.8, 0, 1) ** 1.2
+
+    image_a = sea + (terrain - sea) * land_a[..., None]
+    image = Image.fromarray(np.clip(image_a, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
+    del terrain, sea, image_a
+
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    for feature in load(data_dir, "ne_10m_lakes"):
+        for polygon in polygons(feature["geometry"]):
+            if view.near(polygon[0], 0.5):
+                draw.polygon(ring_points(polygon[0]), fill=FLAT_LAKE + (255,), outline=FLAT_COAST)
+    for feature in load(data_dir, "ne_10m_rivers_lake_centerlines"):
+        rank = feature["properties"].get("scalerank") or 10
+        if rank > 6:
+            continue
+        river_width = max(1, round((2.0 if rank <= 3 else 1.4) * SUPERSAMPLE * max(0.7, min(1.6, view.density * 1.6))))
+        for line in lines(feature["geometry"]):
+            if view.near(line, 0.5):
+                draw.line(ring_points(line), fill=FLAT_RIVER, width=river_width, joint="curve")
+    if not outer:
+        for feature in load(data_dir, "ne_10m_admin_1_states_provinces"):
+            if feature["properties"].get("adm0_a3") != "TUR":
+                continue
+            for polygon in polygons(feature["geometry"]):
+                draw.line(ring_points(polygon[0]), fill=FLAT_PROVINCE, width=SUPERSAMPLE, joint="curve")
+    border_width = max(SUPERSAMPLE, round(1.5 * SUPERSAMPLE * max(0.8, min(2.0, view.density * 2.0))))
+    for feature in countries:
+        for polygon in polygons(feature["geometry"]):
+            if view.near(polygon[0]):
+                draw.line(ring_points(polygon[0]), fill=FLAT_BORDER, width=border_width, joint="curve")
+    image = Image.alpha_composite(image, overlay.resize(size, Image.LANCZOS))
+    del overlay
+
+    coast = Image.new("RGBA", size, FLAT_COAST[:3] + (255,))
+    return Image.composite(coast, image, coast_edge.point(lambda v: v * FLAT_COAST[3] // 255)).convert("RGB")
+
+
+STYLE = "flat"                          # --style: flat (sade, varsayılan) ya da relief (eski kabartmalı görünüm)
+
+
+def render(data_dir, view, outer=False):
+    return render_flat(data_dir, view, outer) if STYLE == "flat" else render_map(data_dir, view, outer)
+
+
 def smoothstep(edge0, edge1, x):
     t = np.clip((x - edge0) / (edge1 - edge0), 0.0, 1.0)
     return t * t * (3 - 2 * t)
@@ -313,8 +448,8 @@ def soften_core_edges(core, outer):
 
 
 def finish_outer(image):
-    """Çevre haritası: çekirdekten uzaklaştıkça bulanıklık, hafif kararma ve renk solması; dış kenarda koyu
-    denize (kameranın arka plan rengi) karışır."""
+    """Çevre haritası: çekirdekten uzaklaştıkça bulanıklık, hafif kararma ve renk solması; dış kenarda denize
+    (kameranın arka plan rengi: sade haritada açık deniz, eski görünümde koyu deniz) karışır."""
     w, h = image.size
     x0, y0 = OUTER.project(MIN_LON, MAX_LAT)
     x1, y1 = OUTER.project(MAX_LON, MIN_LAT)
@@ -327,26 +462,28 @@ def finish_outer(image):
     result = blur_levels(image, [0, 1.5, 3.0, 5.0, 8.0], distance, lambda d: np.minimum(8.0, d * 0.045))
     luminance = result @ np.array([0.299, 0.587, 0.114], np.float32)
     fade = smoothstep(0, 0.22 * w, distance)
-    result = result + (luminance[..., None] - result) * (0.35 * fade)[..., None]   # renk solması
-    result *= (1.0 - 0.3 * fade)[..., None]                                      # kararma
+    flat = STYLE == "flat"
+    result = result + (luminance[..., None] - result) * ((0.25 if flat else 0.35) * fade)[..., None]   # renk solması
+    result *= (1.0 - (0.06 if flat else 0.3) * fade)[..., None]                                      # kararma
     fog = 1.0 - smoothstep(0, 0.11 * w, border)
-    result = result + (np.array(SEA_DEEP, np.float32) - result) * fog[..., None]
+    result = result + (np.array(FLAT_SEA if flat else SEA_DEEP, np.float32) - result) * fog[..., None]
     return Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), "RGB")
 
 
-MAP_FILE = "map_jpg.bytes"
-OUTER_FILE = "map_outer_jpg.bytes"
-WATER_FILE = "map_water_png.bytes"
+MAP_FILE = "map.jpg"
+OUTER_FILE = "map_outer.jpg"
+WATER_FILE = "map_water.png"
 
 
 def build_textures(data_dir):
-    outer = finish_outer(render_map(data_dir, OUTER, outer=True))
-    path = os.path.join(OUT_DIR, OUTER_FILE)
+    os.makedirs(MAP_DIR, exist_ok=True)
+    outer = finish_outer(render(data_dir, OUTER, outer=True))
+    path = os.path.join(MAP_DIR, OUTER_FILE)
     outer.save(path, "JPEG", quality=88, subsampling=0, optimize=True)
     print(f"{OUTER_FILE}: {outer.size[0]}×{outer.size[1]}, {os.path.getsize(path) // 1024} KB")
 
-    core = soften_core_edges(render_map(data_dir, CORE), outer)
-    path = os.path.join(OUT_DIR, MAP_FILE)
+    core = soften_core_edges(render(data_dir, CORE), outer)
+    path = os.path.join(MAP_DIR, MAP_FILE)
     core.save(path, "JPEG", quality=93, subsampling=0, optimize=True)
     print(f"{MAP_FILE}: {core.size[0]}×{core.size[1]}, {os.path.getsize(path) // 1024} KB")
     build_water_mask(data_dir)
@@ -386,19 +523,20 @@ def build_water_mask(data_dir):
     open_sea = (1.0 - np.clip(far * 3.0, 0, 1)) * water
     rgb = np.stack([water, shore, open_sea], axis=-1)
     image = Image.fromarray(np.clip(rgb * 255 + 0.5, 0, 255).astype(np.uint8), "RGB")
-    path = os.path.join(OUT_DIR, WATER_FILE)
+    os.makedirs(MAP_DIR, exist_ok=True)
+    path = os.path.join(MAP_DIR, WATER_FILE)
     image.save(path, "PNG", optimize=True)
     print(f"{WATER_FILE}: {image.size[0]}×{image.size[1]}, {os.path.getsize(path) // 1024} KB")
 
 
 def build_tiles(data_dir):
-    """Yakın plan döşemeleri: genel görünümle aynı çizim (render_map), daha yüksek çözünürlükte. Döşemeler Mercator
+    """Yakın plan döşemeleri: genel görünümle aynı çizim (render), daha yüksek çözünürlükte. Döşemeler Mercator
     uzayında karedir (dünya biriminde de kare); kuzeydeki son satır harita sınırını aşabilir (oyun kırpar).
     Kara oranı deniz maskesinden ölçülür: tamamen deniz olan döşemede genel görünüm yeterli."""
     lon_span = (MAX_LON - MIN_LON) / TILE_COLS
     merc_span = math.radians(lon_span)
     rows = math.ceil((Y_MAX - Y_MIN) / merc_span - 1e-9)
-    water = np.asarray(Image.open(os.path.join(OUT_DIR, WATER_FILE)), dtype=np.float32)[..., 0] / 255.0
+    water = np.asarray(Image.open(os.path.join(MAP_DIR, WATER_FILE)), dtype=np.float32)[..., 0] / 255.0
     wh, ww = water.shape
     os.makedirs(TILES_DIR, exist_ok=True)
     for name in os.listdir(TILES_DIR):
@@ -424,7 +562,7 @@ def build_tiles(data_dir):
                         (inverse_merc_y(y0 - margin_merc), inverse_merc_y(y1 + margin_merc)), TILE_PX + 2 * TILE_MARGIN)
             if view.height != TILE_PX + 2 * TILE_MARGIN:
                 raise SystemExit(f"döşeme kare değil: {view.width}×{view.height}")
-            image = render_map(data_dir, view).crop((TILE_MARGIN, TILE_MARGIN, TILE_MARGIN + TILE_PX, TILE_MARGIN + TILE_PX))
+            image = render(data_dir, view).crop((TILE_MARGIN, TILE_MARGIN, TILE_MARGIN + TILE_PX, TILE_MARGIN + TILE_PX))
             name = f"{col}_{row}"
             path = os.path.join(TILES_DIR, name + ".jpg")
             image.save(path, "JPEG", quality=88, subsampling=0, optimize=True)
@@ -833,7 +971,7 @@ def check_cities(nodes, edges):
 
 def preview(nodes, edges, out):
     """Hızlı kontrol için yol ağını harita üzerine çizer."""
-    image = Image.open(os.path.join(OUT_DIR, MAP_FILE)).convert("RGB")
+    image = Image.open(os.path.join(MAP_DIR, MAP_FILE)).convert("RGB")
     w, h = image.size
     draw = ImageDraw.Draw(image)
 
@@ -856,7 +994,10 @@ if __name__ == "__main__":
     parser.add_argument("--water-only", action="store_true", help="yalnızca deniz maskesini üret")
     parser.add_argument("--tiles", action="store_true", help="yakın plan döşemelerini de üret (birkaç dakika)")
     parser.add_argument("--tiles-only", action="store_true", help="yalnızca döşemeleri üret")
+    parser.add_argument("--style", choices=["flat", "relief"], default="flat",
+                        help="flat: sade düz renkli harita (varsayılan); relief: eski kabartmalı görünüm")
     args = parser.parse_args()
+    STYLE = args.style
 
     if args.water_only:
         build_water_mask(args.data_dir)
