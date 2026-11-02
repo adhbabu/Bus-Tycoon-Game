@@ -1176,3 +1176,76 @@
     margin: 12px 0 4px 0;
     font-size: 15px;
 }
+
+/* Görev kartı ve yakınlaştırma */
+.bt-goal {
+    position: absolute;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 12px 12px 10px 14px;
+    background-color: rgba(255, 255, 255, 0.97);
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.1);
+    border-radius: 16px;
+}
+
+.bt-goal.is-chip {
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 22px;
+}
+
+.bt-goal__icon {
+    width: 30px;
+    height: 30px;
+    margin: 2px 12px 0 0;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-goal.is-chip .bt-goal__icon {
+    width: 24px;
+    height: 24px;
+    margin: 0 10px 0 0;
+}
+
+.bt-goal__title {
+    font-size: 15px;
+    margin-top: 1px;
+}
+
+.bt-goal__hint {
+    font-size: 12.5px;
+    color: #5B6272;
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.bt-goal__all {
+    height: 28px;
+    margin: 0 0 0 8px;
+    flex-shrink: 0;
+}
+
+.bt-zoom {
+    position: absolute;
+    flex-direction: column;
+}
+
+.bt-zoom__button {
+    width: 100%;
+    flex-grow: 1;
+    margin: 0 0 6px 0;
+    padding: 0;
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.12);
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.97);
+    color: #1F2430;
+    font-size: 24px;
+    -unity-text-align: middle-center;
+}
+
+.bt-zoom__button:hover {
+    background-color: #F1F2F5;
+}

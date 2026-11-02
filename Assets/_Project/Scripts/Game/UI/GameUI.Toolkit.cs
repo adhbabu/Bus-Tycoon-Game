@@ -121,7 +121,8 @@ namespace BusTycoon.Game
             AddRailButton(UIIcon.Save, "Kaydet", () => SaveTo(SaveSlot));
             AddRailButton(UIIcon.Settings, "Menü", OpenPauseMenu);
 
-            // ---- sağ panel (taşınan paneller)
+            // ---- harita üstü parçalar ve sağ panel
+            BuildToolkitWidgets();
             BuildToolkitSheet();
 
             // ---- bildirimler
@@ -193,6 +194,7 @@ namespace BusTycoon.Game
 
             UpdateToolkitTopBar();
             UpdateToolkitNav();
+            UpdateToolkitWidgets(k);
             UpdateToolkitSheet(k);
             UpdateToolkitToasts(k);
         }

@@ -505,9 +505,9 @@ namespace BusTycoon.Game
                         else if (BottomBarVisible) DrawBottomBar();
                         else if (!compact) DrawSideBar();
                         DrawPanel();
-                        if (!phone) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
+                        if (!phone && !NewUi) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
                         DrawMinimap();
-                        DrawGoalWidget();
+                        if (!NewUi) DrawGoalWidget();
                         DrawRaceWidget();
                     }
                     if (!NewUi) DrawToasts();
