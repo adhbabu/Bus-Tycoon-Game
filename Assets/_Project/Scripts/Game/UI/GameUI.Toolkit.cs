@@ -26,6 +26,7 @@ namespace BusTycoon.Game
         readonly List<(VisualElement Box, VisualElement Icon, Label Text)> tkToastViews = new List<(VisualElement, VisualElement, Label)>();
 
         double tkShownCash = double.NaN;
+        float tkCashTextTime;
         long tkCashValue = long.MinValue;
         int tkLevelValue = -1, tkDayValue = -1, tkSpeedValue = -1, tkReputationValue = int.MinValue, tkRoutesValue = -1, tkMaxRoutesValue = -1;
         int tkFleetValue = -1, tkIdleValue = -1, tkWarningValue = -1, tkDebtDays = int.MinValue;
@@ -249,8 +250,11 @@ namespace BusTycoon.Game
             tkShownCash += (cash - tkShownCash) * (1.0 - Math.Exp(-Time.unscaledDeltaTime * 9.0));
             if (Math.Abs(cash - tkShownCash) < 1.0) tkShownCash = cash;
             long shown = (long)Math.Round(tkShownCash);
-            if (shown != tkCashValue)
+            // Sayaç yazısı en çok saniyede ~12 kez değişir: her değişen kare GPU'ya köşe yüklemesi demek (WebGL)
+            bool settled = Math.Abs(cash - tkShownCash) < 1.0;
+            if (shown != tkCashValue && (settled || Time.unscaledTime - tkCashTextTime >= 0.08f))
             {
+                tkCashTextTime = Time.unscaledTime;
                 tkCashValue = shown;
                 tkCash.text = Fmt.Money(shown);
                 Ui.Toggle(tkCash, "is-negative", shown < 0);

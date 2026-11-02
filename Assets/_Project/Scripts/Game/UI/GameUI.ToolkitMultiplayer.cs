@@ -302,7 +302,9 @@ namespace BusTycoon.Game
             {
                 signature = signature * 31 + Hash(player.Id);
                 signature = signature * 31 + Hash(player.Name);
-                signature = signature * 31 + (int)(player.Cash / 1000.0);
+                // Kartta görünen kasa (kısaltılmış) ve çubuğun yüzdesi: yalnız görünen değişince yeniden kurulur
+                signature = signature * 31 + Fmt.Compact(player.Cash).GetHashCode();
+                signature = signature * 31 + (int)(player.Cash / room.TargetCash * 100.0);
                 signature = signature * 31 + (player.Bankrupt ? 1 : 0) + (player.Connected ? 2 : 0);
             }
             if (signature == tkRaceSignature) return;
