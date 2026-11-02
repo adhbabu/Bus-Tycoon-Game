@@ -25,9 +25,9 @@ Oyun Play'e basınca kendini kodla kurar (`GameBootstrap`): kamera, ışık, ger
 hatlar, hareket eden otobüsler ve tüm arayüz.
 
 > **Not:** Bu depo Unity editörü olmayan bir ortamda geliştirildi. Kod, Unity API'lerini taklit eden bir test
-> katmanıyla derlendi; arayüz, 749 otomatik IMGUI tutarlılık kontrolü ve tam bir oyun akışı (menü → hat açma →
-> fiyat → filo → kaydet/yükle → zafer/iflas) ile sınandı. Yine de gerçek Unity'de ilk açılışta konsolda bir
-> uyarı/hata görürseniz mesajı paylaşın.
+> katmanıyla derlendi. Arayüz otomatik testlerle ve tam bir oyun akışıyla sınandı (menü → hat açma → fiyat → filo →
+> kaydet/yükle → zafer/iflas → çok oyunculu). Her PR bulutta WebGL olarak derlenir; ekran görüntüleriyle denetlenir.
+> Yine de gerçek Unity'de ilk açılışta konsolda bir uyarı/hata görürseniz mesajı paylaşın.
 
 ## Nasıl oynanır?
 
@@ -100,7 +100,7 @@ Q_ref = K × √(Nüfus_A × Nüfus_B) × f(mesafe) × turizm × itibar × olgun
 
 ```
 Assets/_Project/
-├─ Resources/BusTycoon/   cities.csv (221 şehir), roads.txt (karayolu ağı), Shaders/ (harita yüzeyi, yollar, şehir rozetleri, tabela yazısı)
+├─ Resources/BusTycoon/   cities.csv (221 şehir), roads.txt (karayolu ağı), Shaders/ (harita yüzeyi, yollar, şehir rozetleri, tabela yazısı), UI/ (App.uss stilleri, Theme.tss, ikon atlasları)
 ├─ Scripts/
 │  ├─ Runtime/            BusTycoon.Runtime — oyun kuralları (Unity'den bağımsız test edilebilir)
 │  │  ├─ Core/            GameSession, SimulationClock, CsvUtility, OpResult
@@ -118,7 +118,8 @@ Assets/_Project/
 │  │  ├─ MapCamera        kaydırma / yakınlaştırma / odaklanma
 │  │  ├─ GoalTracker      görev zinciri
 │  │  ├─ Stations/        haritadaki durak modelleri, durağın içi (StationScene/StationView), yolcular, araçlar, tabelalar
-│  │  └─ UI/              GameUI (IMGUI arayüzü: menü, HUD, planlayıcı, fiyat, filo, galeri, finans ...)
+│  │  ├─ UI/              GameUI: menü, HUD, planlayıcı, fiyat, filo, galeri, finans ... (GameUI.Toolkit*.cs yeni arayüz)
+│  │  └─ UIToolkit/       UiHost (UI Toolkit belgesi ve panel ayarları kodla), Ui (öğe yardımcıları)
 │  ├─ Presentation/       BusTycoon.Presentation — opsiyonel uGUI/TextMeshPro + prefab tabanlı arayüz iskeleti
 │  └─ Editor/             CSV şehir içe aktarıcı, "Create Default Content", mağaza/bulut derleme (StoreBuild)
 └─ Tests/EditMode/        38 NUnit testi (talep modeli, ekonomi sistemleri, duraklar, içerik)
@@ -140,10 +141,13 @@ Tools/webtest/             Web eklentilerinin (jslib) Unity'siz tarayıcı testl
 store/                     Mağaza metinleri, gizlilik politikası, görseller, YAYIN-REHBERI.md, BULUT-DERLEME.md
 ```
 
-**İki arayüz yolu:** Oynanabilir sürüm `BusTycoon.Game` içindeki IMGUI arayüzünü kullanır (sıfır kurulum).
-`BusTycoon.Presentation` ise sahne/prefab ile kurulacak daha cilalı bir uGUI arayüzünün scriptleridir; sahneye
-kendi `GameSession`'ınızı koyarsanız `GameBootstrap` devre dışı kalır ve o yolu kullanabilirsiniz.
-uGUI/TextMeshPro paketleri yoksa bu assembly derlenmez, oyunu etkilemez.
+**Arayüz:** Oynanabilir sürüm UI Toolkit ile kodla kurulan arayüzü kullanır (sıfır kurulum; stiller
+`Resources/BusTycoon/UI/App.uss`). Arayüz kalıcı bir öğe ağacıdır; her kare yeniden kurulmaz, yalnız değişen değerler
+yazılır. Eski IMGUI arayüzü bir süre daha `?arayuz=eski` (masaüstünde `-arayuz eski`) ile açılabilir. Ayrıntı:
+[docs/04 · 4.15](docs/04-UI-Akis-Plani.md#415-yeni-arayüz-ui-toolkit).
+`BusTycoon.Presentation` ise sahne/prefab ile kurulacak bir uGUI arayüzünün scriptleridir; sahneye kendi
+`GameSession`'ınızı koyarsanız `GameBootstrap` devre dışı kalır ve o yolu kullanabilirsiniz. uGUI/TextMeshPro
+paketleri yoksa bu assembly derlenmez, oyunu etkilemez.
 
 **Dengeyi değiştirmek:** Tüm katsayılar `DefaultContent.cs` (otobüsler, bölgeler) ve `EconomyConfig` /
 `ProgressionConfig` varsayılanlarındadır. Inspector'da düzenlemek için **Bus Tycoon ▸ Create Default Content**
