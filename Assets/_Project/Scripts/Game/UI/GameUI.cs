@@ -257,8 +257,11 @@ namespace BusTycoon.Game
         void OnModelUnlocked(BusModelData model) =>
             Toast($"Yeni otobüs açıldı: {model.DisplayName} — Galeri (G)", UIStyles.Blue);
 
-        void OnRegionUnlocked(RegionData region) =>
+        void OnRegionUnlocked(RegionData region)
+        {
+            suggestionsDirty = true; // yeni ülkenin şehirleri önerilere girsin
             Toast($"{region.DisplayName} işletme lisansı alındı. Yeni şehirler açıldı!", UIStyles.Green, Sfx.Success);
+        }
 
         // Bakım asistanı açıksa arıza kendiliğinden onarılır: yalnız günlüğe. Kapalıysa uyarı, ama sık değil.
         void OnBusBrokeDown(BusInstance bus) =>
@@ -284,6 +287,7 @@ namespace BusTycoon.Game
         void OnRouteSetChanged(RouteState _)
         {
             MarkDataDirty();
+            suggestionsDirty = true;
             RefreshRouteIndicators(announce: false);
         }
 
@@ -297,8 +301,9 @@ namespace BusTycoon.Game
             routeAnalysisDirty = true;
             historyChartDirty = true;
             financeChartDirty = true;
-            suggestionsDirty = true;
             quoteDirty = true;
+            routeListDirty = true;
+            // Öneriler her gün yeniden hesaplanmaz (pahalı): hat açılıp kapanınca ya da 30 günde bir yenilenir
         }
 
         /// <summary>Uyarı sayacı, bağlı şehirler ve yeni kritik hat bildirimleri.</summary>
@@ -331,6 +336,10 @@ namespace BusTycoon.Game
                     criticalRoutes.Remove(route.routeId);
                 }
             }
+
+            // Kapanan hatların kayıtları atılır
+            if (criticalRoutes.Count > session.Routes.Routes.Count)
+                criticalRoutes.RemoveWhere(id => session.Routes.GetRoute(id) == null);
         }
 
         // ------------------------------------------------------------------ kare döngüsü

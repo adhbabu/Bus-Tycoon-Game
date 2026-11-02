@@ -46,8 +46,7 @@ namespace BusTycoon.Game
         Camera stationCamera;
         Light stationLight;
         Transform stage;
-        float timer, savedMapDistance, savedShadowDistance, viewportShift;
-        ShadowQuality savedShadows;
+        float timer, savedMapDistance, viewportShift;
         bool swapped;
 
         // Kamera: odak çevresinde dönme (yaw), eğim (pitch), uzaklık
@@ -164,8 +163,6 @@ namespace BusTycoon.Game
             stationCamera.enabled = true;
             if (sun != null) sun.enabled = false;
             stationLight.enabled = true;
-            savedShadowDistance = QualitySettings.shadowDistance;
-            savedShadows = QualitySettings.shadows;
             QualitySettings.shadowDistance = 150f;
             if (QualitySettings.shadows == ShadowQuality.Disable) QualitySettings.shadows = ShadowQuality.HardOnly;
 
@@ -197,8 +194,9 @@ namespace BusTycoon.Game
             Camera main = mapCamera.Camera;
             if (main != null) main.enabled = true;
             if (sun != null) sun.enabled = true;
-            QualitySettings.shadowDistance = savedShadowDistance;
-            QualitySettings.shadows = savedShadows;
+            // Haritanın gölge ayarı kaliteden gelir (içerideyken kalite değişmiş olabilir); gölge mesafesini
+            // WorldRenderer her kare ayarlar
+            QualitySettings.shadows = GraphicsQuality.MapShadows;
             if (City != null) mapCamera.FocusOn(WorldPosition(City), Mathf.Max(18f, savedMapDistance));
         }
 

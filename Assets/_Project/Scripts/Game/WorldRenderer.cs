@@ -37,6 +37,8 @@ namespace BusTycoon.Game
             /// <summary>Üzerine gelince / seçilince hafifçe büyüme (1 = normal); yaylı: hızlanır, hafifçe taşar, oturur.</summary>
             public float Bump = 1f;
             public float BumpVelocity;
+            /// <summary>Son yazılan ölçek: durgun işaretçiye her kare yeniden yazılmaz.</summary>
+            public float AppliedScale = -1f;
         }
 
         sealed class RouteVisual
@@ -218,14 +220,24 @@ namespace BusTycoon.Game
             previewLine.gameObject.SetActive(false);
 
             session.SessionStarted += HandleSessionStarted;
-            session.DayCompleted += _ => { colorsDirty = true; tokensDirty = true; };
+            session.DayCompleted += OnDayCompleted;
             if (session.IsRunning) HandleSessionStarted();
         }
 
         void OnDestroy()
         {
-            if (session != null) session.SessionStarted -= HandleSessionStarted;
+            if (session != null)
+            {
+                session.SessionStarted -= HandleSessionStarted;
+                session.DayCompleted -= OnDayCompleted;
+            }
             Unbind();
+        }
+
+        void OnDayCompleted(DayReport _)
+        {
+            colorsDirty = true;
+            tokensDirty = true;
         }
 
         // ------------------------------------------------------------------ kurulum
@@ -812,6 +824,7 @@ namespace BusTycoon.Game
 
         void RebuildRoutes()
         {
+            routeVisualsVersion++; // yeni çizgilerin kalınlığı yazılsın
             previousRouteIds.Clear();
             foreach (var visual in routeVisuals.Values)
             {
@@ -959,7 +972,9 @@ namespace BusTycoon.Game
                 RenderSettings.fogStartDistance = zoomDistance * 0.9f;
                 RenderSettings.fogEndDistance = zoomDistance * 5.5f;
             }
-            QualitySettings.shadowDistance = Mathf.Clamp(zoomDistance * 2.4f, 24f, 170f);
+            // Gölge mesafesi kısa tutulur: uzaktan duraklar zaten küçük, gölge haritası küçük alana yoğunlaşır
+            float shadowDistance = Mathf.Clamp(zoomDistance * 1.6f, 20f, 90f);
+            if (Mathf.Abs(QualitySettings.shadowDistance - shadowDistance) > 0.5f) QualitySettings.shadowDistance = shadowDistance;
         }
 
         /// <summary>Durağı yaylanarak büyüt (yeni hat bağlandı).</summary>
@@ -1021,9 +1036,21 @@ namespace BusTycoon.Game
                 CityData city = marker.City;
                 float target = city == hovered || city == origin || city == destination ? 1.18f : 1f;
                 // Az sönümlü yay: seçilince hafifçe taşıp oturur
-                marker.BumpVelocity += ((target - marker.Bump) * 220f - marker.BumpVelocity * 15f) * dt;
-                marker.Bump = Mathf.Clamp(marker.Bump + marker.BumpVelocity * dt, 0.6f, 1.8f);
-                marker.Root.localScale = Vector3.one * (markerScale * marker.Bump);
+                bool resting = Mathf.Abs(target - marker.Bump) < 0.0005f && Mathf.Abs(marker.BumpVelocity) < 0.0005f;
+                if (resting)
+                {
+                    marker.Bump = target;
+                    marker.BumpVelocity = 0f;
+                }
+                else
+                {
+                    marker.BumpVelocity += ((target - marker.Bump) * 220f - marker.BumpVelocity * 15f) * dt;
+                    marker.Bump = Mathf.Clamp(marker.Bump + marker.BumpVelocity * dt, 0.6f, 1.8f);
+                }
+                float scale = markerScale * marker.Bump;
+                if (Mathf.Abs(scale - marker.AppliedScale) < 0.0005f) continue; // durgun: dokunma
+                marker.AppliedScale = scale;
+                marker.Root.localScale = Vector3.one * scale;
             }
         }
 
@@ -1071,12 +1098,26 @@ namespace BusTycoon.Game
             }
         }
 
+        float appliedLineScale = -1f;
+        string appliedLineSelection;
+        int appliedLineCount = -1;
+
+        /// <summary>Hat kalınlıkları yalnız yakınlaştırma, seçim ya da hat sayısı değişince yazılır.</summary>
         void UpdateLineWidths(float scale)
         {
+            if (Mathf.Abs(scale - appliedLineScale) < 0.002f && appliedLineSelection == selectedRouteId &&
+                appliedLineCount == routeVisuals.Count && routeVisualsVersion == appliedLineVersion)
+                return;
+            appliedLineScale = scale;
+            appliedLineSelection = selectedRouteId;
+            appliedLineCount = routeVisuals.Count;
+            appliedLineVersion = routeVisualsVersion;
             foreach (var visual in routeVisuals.Values)
                 visual.Line.widthMultiplier = (visual.Route.routeId == selectedRouteId ? 0.32f : 0.17f) * scale;
             previewLine.widthMultiplier = 0.2f * scale;
         }
+
+        int routeVisualsVersion, appliedLineVersion = -1;
 
         bool HasRoute(CityData city)
         {
@@ -1110,6 +1151,7 @@ namespace BusTycoon.Game
                     Destroy(visual.Tokens[last].Transform.gameObject);
                     visual.Tokens.RemoveAt(last);
                 }
+                int existing = visual.Tokens.Count;
                 while (visual.Tokens.Count < wanted) visual.Tokens.Add(CreateBus(busBuffer[visual.Tokens.Count].Model));
 
                 for (int i = 0; i < visual.Tokens.Count; i++)
@@ -1121,7 +1163,9 @@ namespace BusTycoon.Game
                         visual.Tokens[i].Filter.sharedMesh = BusModels.MeshFor(model);
                         visual.Tokens[i].Beam.transform.localPosition = new Vector3(0f, 0.004f, BusModels.Length(model) / 2f - 0.02f);
                     }
-                    visual.Tokens[i].Phase = i / (float)Mathf.Max(1, visual.Tokens.Count) * 2f;
+                    // Yalnız yeni otobüsler hatta eşit aralıkla yerleşir; var olanlar yerinde kalır (her gün sonunda
+                    // ya da arıza sonrası sıçramasınlar)
+                    if (i >= existing) visual.Tokens[i].Phase = i / (float)Mathf.Max(1, visual.Tokens.Count) * 2f;
                 }
             }
         }
@@ -1228,12 +1272,17 @@ namespace BusTycoon.Game
             foreach (var visual in routeVisuals.Values)
             {
                 Vector3[] points = visual.Points;
-                Vector2 previous = camera.WorldToScreenPoint(points[0]);
+                Vector3 first = camera.WorldToScreenPoint(points[0]);
+                Vector2 previous = first;
+                bool previousVisible = first.z > 0f;
                 for (int i = 1; i < points.Length; i++)
                 {
                     Vector3 sp = camera.WorldToScreenPoint(points[i]);
                     Vector2 current = sp;
-                    if (sp.z > 0f)
+                    bool visible = sp.z > 0f;
+                    bool segmentVisible = visible && previousVisible; // kameranın arkasındaki uç yanlış seçim yaptırmasın
+                    previousVisible = visible;
+                    if (segmentVisible)
                     {
                         float d = DistanceToSegment(screenPoint, previous, current);
                         if (d < best)

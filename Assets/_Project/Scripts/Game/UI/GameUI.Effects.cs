@@ -76,7 +76,8 @@ namespace BusTycoon.Game
         // ------------------------------------------------------------------ kare süresi göstergesi (?fps=1)
 
         int showFps = -1;
-        float fpsAverage, fpsWorst, fpsWindowWorst, fpsWindowStart;
+        float fpsAverage, fpsWorst, fpsWindowWorst, fpsWindowStart, fpsLogTime;
+        int fpsHitches;
         int fpsFrame = -1;
         string fpsText = string.Empty;
 
@@ -132,6 +133,7 @@ namespace BusTycoon.Game
                 float dt = Mathf.Max(Time.unscaledDeltaTime, 1e-4f);
                 fpsAverage = fpsAverage <= 0f ? dt : Mathf.Lerp(fpsAverage, dt, 0.05f);
                 fpsWindowWorst = Mathf.Max(fpsWindowWorst, dt);
+                if (dt > 0.05f && Time.frameCount > 60) fpsHitches++; // 50 ms'yi aşan kare: gözle görülen takılma
                 if (Time.unscaledTime - fpsWindowStart > 1f)
                 {
                     fpsWorst = fpsWindowWorst;
@@ -139,7 +141,13 @@ namespace BusTycoon.Game
                     fpsWindowStart = Time.unscaledTime;
                 }
                 if (Time.frameCount % 15 == 0)
-                    fpsText = $"{1f / fpsAverage:0} FPS · {fpsAverage * 1000f:0.0} ms · en kötü {fpsWorst * 1000f:0} ms";
+                    fpsText = $"{1f / fpsAverage:0} FPS · {fpsAverage * 1000f:0.0} ms · en kötü {fpsWorst * 1000f:0} ms · takılma {fpsHitches}";
+                // Ölçüm betikleri için 10 saniyede bir konsola (Playwright okur)
+                if (Time.unscaledTime - fpsLogTime > 10f)
+                {
+                    fpsLogTime = Time.unscaledTime;
+                    Debug.Log($"[FPS] ortalama {fpsAverage * 1000f:0.0} ms, son saniyenin en kötüsü {fpsWorst * 1000f:0} ms, takılma (>50 ms) {fpsHitches}");
+                }
             }
             var rect = new Rect(SafeLeft + 8f * u, H - SafeBottom - 26f * u, 320f * u, 20f * u);
             GUI.Label(new Rect(rect.x + u, rect.y + u, rect.width, rect.height), fpsText, s.StatLabel);

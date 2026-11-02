@@ -22,6 +22,14 @@ namespace BusTycoon.Game
         BusModelData suggestionsModel;
         readonly List<BusModelData> plannerModels = new List<BusModelData>();
         readonly List<(CityData city, RouteQuote quote)> suggestions = new List<(CityData, RouteQuote)>();
+        // Öneriler kare kare hesaplanır: her şehir için tam ekonomi teklifi (~65 hesap) pahalıdır; 221 şehri tek karede
+        // hesaplamak 20–80 ms takılma demekti. Sonuçlar 30 oyun günü ya da hat/bölge değişene kadar geçerli kalır.
+        const int SuggestionQuotesPerFrame = 8;
+        const int SuggestionRefreshDays = 30;
+        readonly List<CityData> suggestionQueue = new List<CityData>();
+        readonly List<(CityData city, RouteQuote quote)> suggestionWork = new List<(CityData, RouteQuote)>();
+        int suggestionCursor, suggestionsDay = int.MinValue;
+        bool suggestionsComputing;
 
         void OpenPlannerNow(CityData origin)
         {
@@ -81,25 +89,50 @@ namespace BusTycoon.Game
             if (plannerQuoteValid) plannerQuote = session.Routes.QuoteRoute(plannerOrigin, plannerDestination, PlannerModel);
         }
 
-        void RecomputeSuggestions()
+        /// <summary>Önerileri baştan başlatır: ucuz elemeler hemen, pahalı teklifler sonraki karelerde.</summary>
+        void StartSuggestions()
         {
             suggestionsDirty = false;
-            suggestions.Clear();
+            bool sameContext = suggestionsOrigin == plannerOrigin && suggestionsModel == PlannerModel;
+            if (!sameContext) suggestions.Clear(); // aynı kalkışta eski öneriler yenileri gelene kadar görünür
             suggestionsOrigin = plannerOrigin;
             suggestionsModel = PlannerModel;
-            if (plannerOrigin == null || PlannerModel == null) return;
+            suggestionsDay = session.State != null ? session.State.currentDay : 0;
+            suggestionQueue.Clear();
+            suggestionWork.Clear();
+            suggestionCursor = 0;
+            suggestionsComputing = false;
+            if (plannerOrigin == null || PlannerModel == null || plannerOrigin.Region == null) return;
             if (!session.Progression.IsRegionUnlocked(plannerOrigin.Region)) return;
 
             foreach (var city in session.World.Cities)
             {
-                if (city == plannerOrigin || !session.Progression.IsRegionUnlocked(city.Region)) continue;
+                if (city == plannerOrigin || city.Region == null || !session.Progression.IsRegionUnlocked(city.Region)) continue;
                 if (!session.World.CanConnect(plannerOrigin, city, out _)) continue;
                 if (session.Routes.FindRoute(plannerOrigin, city) != null) continue;
-                suggestions.Add((city, session.Routes.QuoteRoute(plannerOrigin, city, PlannerModel)));
+                suggestionQueue.Add(city);
             }
+            suggestionsComputing = suggestionQueue.Count > 0;
+            if (!suggestionsComputing) suggestions.Clear();
+        }
 
-            suggestions.Sort((x, y) => y.quote.Forecast.Profit.CompareTo(x.quote.Forecast.Profit));
-            if (suggestions.Count > SuggestionCount) suggestions.RemoveRange(SuggestionCount, suggestions.Count - SuggestionCount);
+        /// <summary>Bu karenin payı kadar teklif hesaplar; bitince en kârlı hedefleri yayınlar.</summary>
+        void ContinueSuggestions()
+        {
+            if (!suggestionsComputing) return;
+            int end = Mathf.Min(suggestionQueue.Count, suggestionCursor + SuggestionQuotesPerFrame);
+            for (; suggestionCursor < end; suggestionCursor++)
+            {
+                CityData city = suggestionQueue[suggestionCursor];
+                suggestionWork.Add((city, session.Routes.QuoteRoute(plannerOrigin, city, PlannerModel)));
+            }
+            if (suggestionCursor < suggestionQueue.Count) return;
+
+            suggestionWork.Sort((x, y) => y.quote.Forecast.Profit.CompareTo(x.quote.Forecast.Profit));
+            suggestions.Clear();
+            for (int i = 0; i < suggestionWork.Count && i < SuggestionCount; i++) suggestions.Add(suggestionWork[i]);
+            suggestionWork.Clear();
+            suggestionsComputing = false;
         }
 
         void DrawPlanner()
@@ -193,15 +226,19 @@ namespace BusTycoon.Game
         void DrawSuggestions()
         {
             GUILayout.Label("2) Haritada VARIŞ şehrine tıklayın veya önerilerden seçin:", s.Bold);
-            if (suggestionsDirty || suggestionsOrigin != plannerOrigin || suggestionsModel != PlannerModel)
+            // Hesaplama yalnızca Layout geçişinde yapılır ki aynı karede Repaint ile tutarlı olsun.
+            if (Event.current.type == EventType.Layout)
             {
-                // Hesaplama yalnızca Layout geçişinde yapılır ki aynı karede Repaint ile tutarlı olsun.
-                if (Event.current.type == EventType.Layout) RecomputeSuggestions();
+                bool stale = session.State != null && session.State.currentDay - suggestionsDay >= SuggestionRefreshDays;
+                if (suggestionsDirty || stale || suggestionsOrigin != plannerOrigin || suggestionsModel != PlannerModel)
+                    StartSuggestions();
+                ContinueSuggestions();
             }
 
             if (suggestions.Count == 0)
             {
-                GUILayout.Label("Uygun hedef bulunamadı (hat limiti, bölge lisansı veya mesafe).", s.WrapDim);
+                GUILayout.Label(suggestionsComputing ? "Öneriler hesaplanıyor…"
+                    : "Uygun hedef bulunamadı (hat limiti, bölge lisansı veya mesafe).", s.WrapDim);
                 return;
             }
 

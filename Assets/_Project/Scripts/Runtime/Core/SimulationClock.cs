@@ -70,8 +70,9 @@ namespace BusTycoon.Core
 
             accumulator += deltaSeconds * Speed;
 
-            // Uzun bir takılmadan (alt-tab, yükleme) sonra tek karede onlarca gün simüle etmeyelim.
-            const int maxDaysPerTick = 4;
+            // Kare başına en çok bir gün: gün sonu işleri (ekonomi, kayıt, arayüz) aynı karede üst üste binmesin;
+            // bir takılma bir sonrakini doğurmasın. Uzun bir takılmadan sonra birikenler atılır.
+            const int maxDaysPerTick = 1;
             int processed = 0;
             while (accumulator >= secondsPerDay && processed < maxDaysPerTick && CanAdvance)
             {
@@ -79,8 +80,8 @@ namespace BusTycoon.Core
                 processed++;
                 AdvanceOneDay();
             }
-            // Yarışta kurucunun gerisinde kalan katılımcı yetişsin
-            if (DayLimit.HasValue && DayLimit.Value - CurrentDay >= 2) AdvanceOneDay();
+            // Yarışta kurucunun gerisinde kalan katılımcı yetişsin (bu karede gün işlenmediyse: kare başına bir gün)
+            if (processed == 0 && DayLimit.HasValue && DayLimit.Value - CurrentDay >= 2) AdvanceOneDay();
 
             if (accumulator >= secondsPerDay) accumulator = CanAdvance ? 0f : secondsPerDay; // sınırda gün dolu bekler
         }

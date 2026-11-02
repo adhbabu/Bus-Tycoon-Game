@@ -159,10 +159,11 @@ namespace BusTycoon.Game
             return seen.Count;
         }
 
+        /// <summary>Dünün işletme kârı: görev ödülü ve otobüs satışı sayılmaz (kâr görevleri zincirleme tamamlanmasın).</summary>
         static double LastNet(GameSession s)
         {
             var history = s.State.financeHistory;
-            return history.Count == 0 ? 0 : history[history.Count - 1].Net;
+            return history.Count == 0 ? 0 : history[history.Count - 1].OperatingNet;
         }
 
         static bool HasTier(GameSession s, int tier)

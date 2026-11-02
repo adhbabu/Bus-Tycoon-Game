@@ -47,10 +47,20 @@ namespace BusTycoon.Game
         public static float InsetTop { get { Refresh(); return top; } }
         public static float InsetBottom { get { Refresh(); return bottom; } }
 
+        static int width, height;
+
+        /// <summary>
+        /// Tarayıcı ölçüleri yalnız ekran boyu değişince (döndürme, pencere) ya da iki saniyede bir okunur: her okuma
+        /// tarayıcıya stil/yerleşim hesaplatabilir (getBoundingClientRect, getComputedStyle).
+        /// </summary>
         static void Refresh()
         {
-            if (frame == Time.frameCount || frame == int.MaxValue) return;
+            if (frame == int.MaxValue) return;
+            bool resized = Screen.width != width || Screen.height != height;
+            if (!resized && frame >= 0 && Time.frameCount - frame < 120) return;
             frame = Time.frameCount;
+            width = Screen.width;
+            height = Screen.height;
 #if UNITY_WEBGL && !UNITY_EDITOR
             scale = BusTycoon_CanvasScale();
             left = BusTycoon_SafeInset(0);

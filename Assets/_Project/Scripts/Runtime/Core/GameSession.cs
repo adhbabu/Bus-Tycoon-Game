@@ -47,6 +47,10 @@ namespace BusTycoon.Core
         [SerializeField] int randomSeed;
         [SerializeField] string autosaveSlot = "autosave";
         [SerializeField, Min(0)] int autosaveEveryDays = 7;
+        /// <summary>İki otomatik kayıt arasındaki en kısa gerçek süre (sn).</summary>
+        public const float AutosaveMinSeconds = 60f;
+        int lastAutosaveDay;
+        float lastAutosaveTime = float.NegativeInfinity;
 
         public static GameSession Instance { get; private set; }
 
@@ -242,13 +246,22 @@ namespace BusTycoon.Core
             lastReport = report;
             DayCompleted?.Invoke(report);
 
-            if (autosaveEveryDays > 0 && (day + 1) % autosaveEveryDays == 0 && !IsBankrupt) SaveGame(autosaveSlot);
-
             if (Finance.DaysInDebt >= progressionConfig.BankruptcyGraceDays && !IsBankrupt)
             {
                 IsBankrupt = true;
                 Clock.SetSpeed(0);
                 Bankrupt?.Invoke();
+            }
+
+            // Otomatik kayıt: en az autosaveEveryDays oyun günü VE en az AutosaveMinSeconds gerçek saniye arayla.
+            // Kayıt bütün durumu JSON'a çevirip diske (tarayıcıda IndexedDB) yazar; hızlı oyunda birkaç saniyede bir
+            // yapılırsa düzenli takılmaya yol açıyordu. İflasla biten gün kaydedilmez.
+            if (autosaveEveryDays > 0 && !IsBankrupt && day + 1 - lastAutosaveDay >= autosaveEveryDays &&
+                Time.realtimeSinceStartup - lastAutosaveTime >= AutosaveMinSeconds)
+            {
+                lastAutosaveDay = day + 1;
+                lastAutosaveTime = Time.realtimeSinceStartup;
+                SaveGame(autosaveSlot);
             }
         }
 
