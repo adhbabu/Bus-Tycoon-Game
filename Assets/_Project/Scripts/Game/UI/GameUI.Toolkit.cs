@@ -137,6 +137,9 @@ namespace BusTycoon.Game
                 box.style.display = DisplayStyle.None;
                 tkToastViews.Add((box, icon, text));
             }
+
+            // ---- pencereler (ayrı katman: arkadaki her şeyin üstünde, tıklamayı tutar)
+            BuildToolkitModalLayer();
         }
 
         void AddNavButton(VisualElement parent, NavEntry entry)
@@ -172,6 +175,7 @@ namespace BusTycoon.Game
             toolkit.SetClass("phone", phone);
             toolkit.SetClass("compact", compact);
             toolkit.SetClass("compact-top", SlimTopBar);
+            UpdateToolkitModal();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
             Ui.Show(tkHud, playing);

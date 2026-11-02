@@ -1249,3 +1249,80 @@
 .bt-zoom__button:hover {
     background-color: #F1F2F5;
 }
+
+/* Pencereler */
+.bt-modal-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 20, 35, 0.45);
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.18s;
+}
+
+.bt-modal-layer.is-open {
+    opacity: 1;
+}
+
+.bt-modal {
+    position: absolute;
+    padding: 22px 22px 16px 22px;
+    background-color: #FFFFFF;
+    border-radius: 20px;
+    translate: 0px 14px;
+    transition-property: translate;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out-cubic;
+}
+
+.bt-modal-layer.is-open .bt-modal {
+    translate: 0px 0px;
+}
+
+.bt-modal__scroll {
+    flex-grow: 1;
+}
+
+.bt-modal__scroll .unity-scroll-view__content-container {
+    min-height: 100%;
+}
+
+.bt-modal__title {
+    font-size: 24px;
+    margin-bottom: 12px;
+    white-space: normal;
+}
+
+.bt-modal__text {
+    font-size: 14.5px;
+    color: #3F4554;
+    white-space: normal;
+    margin-bottom: 12px;
+}
+
+.bt-modal__button {
+    height: 42px;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.bt-modal__button--main {
+    height: 48px;
+    font-size: 15px;
+}
+
+.bt-modal__caption {
+    margin: 10px 0 6px 2px;
+}
+
+.bt-modal__spacer {
+    flex-grow: 1;
+    min-height: 12px;
+}
+
+.bt-actions--fill .bt-modal__button {
+    margin-top: 0;
+}

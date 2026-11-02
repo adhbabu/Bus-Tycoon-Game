@@ -393,6 +393,7 @@ namespace BusTycoon.Game
             confirmText = text;
             confirmAction = onConfirm;
             modal = Modal.Confirm;
+            tkModalDirty = true; // yeni arayüz: açık onay penceresi de yenilensin
         }
 
         void DrawModal()

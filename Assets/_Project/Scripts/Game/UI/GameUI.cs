@@ -516,7 +516,7 @@ namespace BusTycoon.Game
             GUI.enabled = previousEnabled;
 
             DrawStationFade();
-            if (modal != Modal.None) DrawModal();
+            if (modal != Modal.None && !ToolkitDrawsModal) DrawModal();
             if (pressEnded && e.type == EventType.Used) GameAudio.Play(Sfx.Click); // bir düğme/anahtar basışı aldı
 
             UpdateHover(e);
