@@ -73,7 +73,7 @@ namespace BusTycoon.Game
             // Görev kartı: masaüstünde mini haritanın sağında; telefonda tek satır; dar ekranda panelle çakışırsa gizli
             GoalTracker.Goal goal = goals.Current;
             bool showGoal = onMap && goal != null && !(compact && panel != Panel.None);
-            float height = (phone ? 44f : 108f) * u;
+            float height = (phone ? 44f : 120f) * u; // ipucu iki satıra sarabilir
             float left = MinimapRect.xMax + Margin;
             float width = phone ? Mathf.Min(460f * u, SafeRight - Margin - left) : 400f * u;
             if (phone && width < 200f * u) showGoal = false;

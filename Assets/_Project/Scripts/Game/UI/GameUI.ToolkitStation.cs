@@ -86,6 +86,7 @@ namespace BusTycoon.Game
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             scroll.AddToClassList("bt-station__scroll");
+            scroll.AddToClassList("bt-thin-scroll");
             tkStationCard.Add(scroll);
             VisualElement body = scroll.contentContainer;
 

@@ -25,6 +25,7 @@ namespace BusTycoon.Game
             tkModalBox = Ui.El("bt-modal", tkModalLayer);
             tkModalScroll = new ScrollView(ScrollViewMode.Vertical);
             tkModalScroll.AddToClassList("bt-modal__scroll");
+            tkModalScroll.AddToClassList("bt-thin-scroll");
             tkModalBox.Add(tkModalScroll);
             tkModalLayer.style.display = DisplayStyle.None;
         }
