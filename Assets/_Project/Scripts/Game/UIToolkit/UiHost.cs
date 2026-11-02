@@ -65,7 +65,7 @@ namespace BusTycoon.Game
             // Deney (?uix=vb4096 vb.): köşe tamponu sayfa boyu
             string experiments = LaunchOptions.Get("uix") ?? string.Empty;
             foreach (string item in experiments.Split(','))
-                if (item.StartsWith("vb") && int.TryParse(item.Substring(2), out int budget)) settings.vertexBudget = budget;
+                if (item.StartsWith("vb") && uint.TryParse(item.Substring(2), out uint budget)) settings.vertexBudget = budget;
             document = gameObject.AddComponent<UIDocument>();
             document.panelSettings = settings;
         }
