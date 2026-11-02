@@ -62,10 +62,6 @@ namespace BusTycoon.Game
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
             settings.scale = 1f;
             settings.sortingOrder = 10;
-            // Deney (?uix=vb4096 vb.): köşe tamponu sayfa boyu
-            string experiments = LaunchOptions.Get("uix") ?? string.Empty;
-            foreach (string item in experiments.Split(','))
-                if (item.StartsWith("vb") && uint.TryParse(item.Substring(2), out uint budget)) settings.vertexBudget = budget;
             document = gameObject.AddComponent<UIDocument>();
             document.panelSettings = settings;
         }

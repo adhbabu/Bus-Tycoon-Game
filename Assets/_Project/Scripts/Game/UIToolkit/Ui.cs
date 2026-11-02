@@ -26,34 +26,10 @@ namespace BusTycoon.Game
             }
         }
 
-        static readonly System.Collections.Generic.Dictionary<Font, UnityEngine.TextCore.Text.FontAsset> fontAssets =
-            new System.Collections.Generic.Dictionary<Font, UnityEngine.TextCore.Text.FontAsset>();
-        static int ownFontAssets = -1;
-
-        /// <summary>Deney (<c>?uix=fontasset</c>): yazı tipi IMGUI ile paylaşılmayan, arayüze ait SDF FontAsset olarak verilir.</summary>
-        static bool OwnFontAssets => ownFontAssets >= 0 ? ownFontAssets == 1 : (ownFontAssets = Experiment("fontasset") ? 1 : 0) == 1;
-
-        /// <summary>Ölçüm deneyleri: <c>?uix=a,b</c>.</summary>
-        public static bool Experiment(string name)
-        {
-            string value = LaunchOptions.Get("uix");
-            return !string.IsNullOrEmpty(value) && Array.IndexOf(value.Split(','), name) >= 0;
-        }
-
         public static void Weight(VisualElement element, UiWeight weight)
         {
             Font font = FontFor(weight);
-            if (font == null) return;
-            if (OwnFontAssets)
-            {
-                if (!fontAssets.TryGetValue(font, out var asset)) fontAssets[font] = asset = UnityEngine.TextCore.Text.FontAsset.CreateFontAsset(font);
-                if (asset != null)
-                {
-                    element.style.unityFontDefinition = FontDefinition.FromSDFFont(asset);
-                    return;
-                }
-            }
-            element.style.unityFontDefinition = FontDefinition.FromFont(font);
+            if (font != null) element.style.unityFontDefinition = FontDefinition.FromFont(font);
         }
 
         public static void AddClasses(VisualElement element, string classes)

@@ -10,7 +10,7 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Yeni arayüz tanılaması (<c>?uidiag=1</c>; yalnız ölçüm içindir). UI Toolkit, çizimden hemen önce kirli
-    /// (yeniden çizilecek) öğeleri işler. WebGL'de kirli öğe olan her karede GPU'ya büyük bir ara tampon yüklenir.
+    /// (yeniden çizilecek) öğeleri işler ve WebGL'de yalnız onların köşe aralıklarını GPU'ya yükler (Unity 6000.5+).
     /// Bu sınıf, PlayerLoop'ta çizimden hemen önce ağacı dolaşır ve kirli öğeleri sayar. İki saniyede bir konsola
     /// en sık kirlenen öğeleri yazar (sınıfları, yazısı, kirlilik türü). İç alanlara yansımayla erişilir; erişilemezse
     /// bunu bir kez yazar.

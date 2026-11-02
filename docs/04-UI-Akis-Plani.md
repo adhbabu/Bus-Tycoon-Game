@@ -485,6 +485,18 @@ alanları IMGUI'ninkilerle aynı karede bildirilir.
 **Tıklamanın haritaya sızmaması:** `UiHost.IsOverUi` noktanın altındaki öğeyi `panel.Pick` ile bulur. Kök ve şeffaf
 katmanlar tıklama almaz (`PickingMode.Ignore`).
 
+**Unity sürümü (önemli):** Unity 6000.3'ün UI Toolkit'i WebGL'de her karede bütün köşe ve indeks tamponlarını GPU'ya
+baştan yüklüyordu (`SendFullRange`); ekranda hiçbir şey değişmese bile oyun ekranında kare başına 2–5 MB. Proje bu yüzden
+6000.5'e geçti. 6000.5'te WebGL'de yalnız değişen aralıklar yükleniyor.
+
+| Durum (SwiftShader) | Eski arayüz | Yeni arayüz |
+|---|---|---|
+| Harita, duraklatılmış | 129 KB/kare | 108 KB/kare |
+| Filo açık | 151 KB/kare · 41 ms | 86 KB/kare · 3,9 ms |
+
+`?uidiag=1` çizimden önce kirli öğeleri konsola yazar. Durağan ekranda kirli öğe olmamalı; her kare hareket eden
+öğeler (gün çubuğu, bildirimler) `UsageHints.DynamicTransform` ile GPU'da taşınır.
+
 **USS sınırları:** `+`, `~` birleştiricileri ve `:first-child` desteklenmez. Geçersiz tek bir seçici bütün stil dosyasını
 geçersiz kılar. Bu yüzden her değişiklikten sonra stil dosyası denetlenir.
 
