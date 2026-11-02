@@ -702,3 +702,52 @@
     border-radius: 10px;
     -unity-background-scale-mode: stretch-to-fill;
 }
+
+/* Hatlarım */
+.bt-btn--wide {
+    margin: 0 4px 12px 0;
+    height: 40px;
+}
+
+.bt-route {
+    border-left-width: 5px;
+}
+
+.bt-route__profit {
+    font-size: 15px;
+    margin-left: 8px;
+}
+
+.bt-route__stats {
+    margin-top: 6px;
+}
+
+.bt-route__detail {
+    font-size: 12.5px;
+    color: #5B6272;
+}
+
+.bt-route__load {
+    width: 70px;
+    margin: 0 0 0 8px;
+}
+
+.bt-bar__fill--blue {
+    background-color: #2F80ED;
+}
+
+.is-danger-text {
+    color: #C0262D;
+}
+
+.is-warning-text {
+    color: #B45F00;
+}
+
+.is-success-text {
+    color: #0F7A3D;
+}
+
+.bt-actions--start .bt-btn {
+    margin: 0 8px 0 0;
+}

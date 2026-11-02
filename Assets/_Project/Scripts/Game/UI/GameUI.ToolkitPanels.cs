@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BusTycoon.Data;
 using BusTycoon.Economy;
+using BusTycoon.Routes;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -16,7 +17,7 @@ namespace BusTycoon.Game
     {
         static readonly HashSet<Panel> ToolkitPanels = new HashSet<Panel>
         {
-            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance
+            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList
         };
 
         VisualElement tkSheet;
@@ -103,6 +104,14 @@ namespace BusTycoon.Game
                     return signature;
                 }
                 case Panel.Finance: return session.State.currentDay * 7 + session.State.recentTransactions.Count;
+                case Panel.RouteList:
+                {
+                    int signature = session.State.currentDay * 7 + session.Fleet.Buses.Count;
+                    foreach (var route in session.Routes.Routes)
+                        signature = signature * 31 + route.routeId.GetHashCode() + Mathf.RoundToInt(route.ticketPrice * 10f) +
+                                    session.Fleet.CountBusesOnRoute(route.routeId) * 7;
+                    return signature;
+                }
                 default: return 0;
             }
         }
@@ -132,6 +141,9 @@ namespace BusTycoon.Game
                 case Panel.Finance:
                     SheetHeader("Finans", null);
                     BuildFinance(body);
+                    break;
+                case Panel.RouteList:
+                    BuildRouteList(body);
                     break;
             }
         }
@@ -164,6 +176,64 @@ namespace BusTycoon.Game
             Button button = Ui.Button(primary ? "bt-btn is-primary" : "bt-btn", text, action, parent);
             button.SetEnabled(enabled);
             return button;
+        }
+
+        // ------------------------------------------------------------------ Hatlarım
+
+        static string InsightClass(InsightSeverity severity) => severity switch
+        {
+            InsightSeverity.Critical => "is-danger",
+            InsightSeverity.Warning => "is-warning",
+            _ => "is-success"
+        };
+
+        void BuildRouteList(VisualElement body)
+        {
+            var routes = session.Routes;
+            var fleet = session.Fleet;
+            double total = 0;
+            foreach (var route in routes.Routes) total += route.LastReport.Profit;
+            SheetHeader("Hatlarım", $"{routes.Routes.Count} / {session.Progression.MaxRoutes} hat · dün toplam {Fmt.Signed(total)}");
+
+            Button create = ActionButton(body, "+ Yeni hat aç", () => OpenPlannerNow(null), primary: true);
+            create.AddToClassList("bt-btn--wide");
+            if (routes.Routes.Count == 0)
+            {
+                Ui.Text("bt-item__text", "Henüz hattınız yok. 'Yeni hat aç' ile ya da bir durağa girip 'Buradan hat aç' ile başlayın.", UiWeight.Regular, body);
+                return;
+            }
+
+            EnsureRouteList();
+            foreach (var route in sortedRoutes)
+            {
+                int buses = fleet.CountBusesOnRoute(route.routeId);
+                if (!routeInsightCache.TryGetValue(route.routeId, out RouteInsight insight))
+                    insight = RouteAdvisor.GetTopInsight(route, buses);
+                RouteDayReport last = route.LastReport;
+
+                VisualElement card = Ui.El("bt-item bt-route", body);
+                card.style.borderLeftColor = world.RouteIdentityColor(route.routeId); // haritadaki hat rengi
+                VisualElement header = Ui.El("bt-row", card);
+                Ui.Text("bt-item__title bt-grow", RouteName(route), UiWeight.Bold, header);
+                Ui.Text("bt-pill " + InsightClass(insight.Severity), InsightTag(insight.Severity), UiWeight.Bold, header);
+                Label profit = Ui.Text("bt-route__profit", route.HasHistory ? $"{Fmt.Signed(last.Profit)}/gün" : "—", UiWeight.Black, header);
+                profit.AddToClassList(Tone(last.Profit));
+
+                VisualElement stats = Ui.El("bt-row bt-route__stats", card);
+                Ui.Text("bt-route__detail bt-grow", $"{buses} otobüs · {Fmt.Price(route.ticketPrice)} · {Fmt.Num(last.passengers)} yolcu", UiWeight.Regular, stats);
+                Ui.Text("bt-route__detail", Fmt.Pct(last.loadFactor), UiWeight.Bold, stats);
+                VisualElement bar = Ui.El("bt-bar bt-route__load", stats);
+                Ui.Fill(Ui.El("bt-bar__fill bt-bar__fill--blue", bar), last.loadFactor);
+
+                Label message = Ui.Text("bt-item__text", insight.Message, UiWeight.Regular, card);
+                message.AddToClassList(InsightClass(insight.Severity) + "-text");
+
+                VisualElement actions = Ui.El("bt-actions bt-actions--start", card);
+                RouteState target = route;
+                ActionButton(actions, "Fiyat", () => OpenRoutePanelNow(target, RouteTab.Price));
+                ActionButton(actions, "Otobüsler", () => OpenRoutePanelNow(target, RouteTab.Buses));
+                ActionButton(actions, "Geçmiş", () => OpenRoutePanelNow(target, RouteTab.History));
+            }
         }
 
         // ------------------------------------------------------------------ Bölgeler
