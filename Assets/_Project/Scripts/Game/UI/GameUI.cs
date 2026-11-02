@@ -460,7 +460,7 @@ namespace BusTycoon.Game
 
             uiRects.Clear();
             Event e = Event.current;
-            textFieldFocused = GUIUtility.keyboardControl != 0;
+            textFieldFocused = GUIUtility.keyboardControl != 0 || (toolkit != null && toolkit.TextInputFocused);
             bool repaint = e.type == EventType.Repaint;
             if (repaint)
             {
@@ -485,19 +485,19 @@ namespace BusTycoon.Game
             switch (mode)
             {
                 case Mode.MainMenu:
-                    DrawMainMenu();
+                    if (!NewUi) DrawMainMenu();
                     break;
                 case Mode.NewGame:
-                    DrawNewGame();
+                    if (!ToolkitDrawsNewGame) DrawNewGame();
                     break;
                 case Mode.Multiplayer:
-                    DrawMultiplayer();
+                    if (!ToolkitDrawsMultiplayer) DrawMultiplayer();
                     break;
                 case Mode.Playing:
                     if (!NewUi) DrawTopBar();
                     if (StationUi)
                     {
-                        DrawStation();
+                        if (!NewUi) DrawStation(); // yeni arayüzde durak ekranı UI Toolkit'te
                     }
                     else
                     {
@@ -508,7 +508,7 @@ namespace BusTycoon.Game
                         if (!phone && !NewUi) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
                         DrawMinimap();
                         if (!NewUi) DrawGoalWidget();
-                        DrawRaceWidget();
+                        if (!NewUi) DrawRaceWidget();
                     }
                     if (!NewUi) DrawToasts();
                     break;
@@ -526,6 +526,7 @@ namespace BusTycoon.Game
                 DrawFpsOverlay();
                 sliderRects.Clear();
                 sliderRects.AddRange(sliderRectsNext);
+                ReportToolkitTapZones();
                 WebTap.EndFrame();
             }
             if (!HandleStationInput(e)) HandleMapInput(e);

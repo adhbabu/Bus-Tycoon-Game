@@ -133,7 +133,9 @@ namespace BusTycoon.Game
 
             // ---- harita üstü parçalar ve sağ panel
             BuildToolkitWidgets();
+            BuildToolkitRace();
             BuildToolkitSheet();
+            BuildToolkitStation();
 
             // ---- bildirimler
             tkToasts = Ui.El("bt-toasts", tkHud);
@@ -148,7 +150,10 @@ namespace BusTycoon.Game
                 tkToastViews.Add((box, icon, text));
             }
 
-            // ---- pencereler (ayrı katman: arkadaki her şeyin üstünde, tıklamayı tutar)
+            // ---- ana menü ve pencereler (ayrı katmanlar; pencere en üstte, tıklamayı tutar)
+            BuildToolkitMenuLayer();
+            BuildToolkitNewGameLayer();
+            BuildToolkitMultiplayerLayer();
             BuildToolkitModalLayer();
         }
 
@@ -181,14 +186,18 @@ namespace BusTycoon.Game
         void UpdateToolkit()
         {
             if (toolkit == null) return;
+            tkCovered.Clear();
             toolkit.SetScale(u);
             toolkit.SetClass("phone", phone);
             toolkit.SetClass("compact", compact);
             toolkit.SetClass("compact-top", SlimTopBar);
+            PumpToolkitTaps();
             UpdateToolkitModal();
+            UpdateToolkitMenu();
+            UpdateToolkitNewGame();
+            UpdateToolkitMultiplayer();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
-            tkCovered.Clear();
             Ui.Show(tkHud, playing);
             if (!playing) return;
             tkHud.SetEnabled(modal == Modal.None); // pencere açıkken arkadaki düğmeler tıklanmaz
@@ -210,6 +219,8 @@ namespace BusTycoon.Game
             UpdateToolkitTopBar();
             UpdateToolkitNav();
             UpdateToolkitWidgets(k);
+            UpdateToolkitRace(k);
+            UpdateToolkitStation(k);
             UpdateToolkitSheet(k);
             UpdateToolkitToasts(k);
         }

@@ -79,6 +79,18 @@ namespace BusTycoon.Game
             if (Root != null && Root.ClassListContains(className) != on) Root.EnableInClassList(className, on);
         }
 
+        /// <summary>Yeni arayüzde bir yazı alanı odakta mı (klavye haritayı kaydırmasın).</summary>
+        public bool TextInputFocused
+        {
+            get
+            {
+                // Odak yazı alanının içindeki giriş öğesinde olabilir: üst öğelere bakılır
+                for (var element = Root?.panel?.focusController?.focusedElement as VisualElement; element != null; element = element.parent)
+                    if (element is TextField) return true;
+                return false;
+            }
+        }
+
         /// <summary>IMGUI koordinatındaki nokta (sol üst köşe başlangıç) yeni arayüzün tıklanabilir bir öğesinin üstünde mi.</summary>
         public bool IsOverUi(Vector2 guiPoint)
         {

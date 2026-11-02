@@ -7,7 +7,7 @@ namespace BusTycoon.Game
     /// <summary>
     /// Yeni arayüzde pencereler (oyun sırasında): duraklatma menüsü ve ayarlar, onay, iflas, zafer. Arka plan kararır ve
     /// tıklamayı tutar; kutu ortada belirir. İçerik pencere değişince ya da bir ayar değişince kurulur.
-    /// Çok oyunculu maç sonu penceresi menülerle birlikte taşınacak (şimdilik IMGUI).
+    /// Çok oyunculu yarış sonu penceresi GameUI.ToolkitMultiplayer'da.
     /// </summary>
     public sealed partial class GameUI
     {
@@ -17,7 +17,7 @@ namespace BusTycoon.Game
         bool tkModalDirty;
         int tkModalOpenFrame = -1;
 
-        bool ToolkitDrawsModal => NewUi && mode == Mode.Playing && modal != Modal.None && modal != Modal.MatchEnd;
+        bool ToolkitDrawsModal => NewUi && mode == Mode.Playing && modal != Modal.None;
 
         void BuildToolkitModalLayer()
         {
@@ -64,6 +64,7 @@ namespace BusTycoon.Game
                 case Modal.GameOver: BuildGameOverModal(body); break;
                 case Modal.Victory: BuildVictoryModal(body); break;
                 case Modal.Confirm: BuildConfirmModal(body); break;
+                case Modal.MatchEnd: BuildMatchEndModal(body); break;
             }
         }
 
