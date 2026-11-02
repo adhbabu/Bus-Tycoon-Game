@@ -13,7 +13,7 @@ talep esnekliğine göre ayarlar, eski bir minibüsle başlayıp VIP ve çift ka
 
 1. **Unity Hub**'ı kurun ve bu depoyu bilgisayarınıza indirin (GitHub ▸ **Code ▸ Download ZIP** ya da `git clone`).
 2. Unity Hub → **Add ▸ Add project from disk** → depo klasörünü seçin. Hub, projenin sürümünü
-   (**Unity 6.3 LTS — 6000.3.27f1**) kurmayı önerir; kabul edin (daha yeni bir Unity 6 sürümü de olur).
+   (**Unity 6.6 — 6000.6.7f1**) kurmayı önerir; kabul edin. Web sürümü için en az 6000.6 gerekir (bkz. docs/04 · 4.15).
    İlk açılışta Unity paketleri indirip scriptleri derler (birkaç dakika).
 3. Açılan sahnede **Play ▶** tuşuna basın.
 
@@ -124,7 +124,7 @@ Assets/_Project/
 │  └─ Editor/             CSV şehir içe aktarıcı, "Create Default Content", mağaza/bulut derleme (StoreBuild)
 └─ Tests/EditMode/        38 NUnit testi (talep modeli, ekonomi sistemleri, duraklar, içerik)
 Packages/manifest.json     Unity paketleri (Input System, Test Framework, gerekli modüller)
-ProjectSettings/           Unity sürümü (6000.3.27f1); diğer ayarları Unity ilk açılışta üretir
+ProjectSettings/           Unity sürümü (6000.6.7f1); diğer ayarları Unity ilk açılışta üretir
 .github/workflows/         Bulutta Android, iOS (TestFlight), web sitesi + web oyunu, mağaza ekran görüntüleri
 Assets/WebGLTemplates/     Web sürümünün sayfa şablonu (tam ekran, yükleme çubuğu, telefonu yan çevir uyarısı)
 site/                      Web sitesinin giriş sayfası (Tools/build_site.py ile üretilir)

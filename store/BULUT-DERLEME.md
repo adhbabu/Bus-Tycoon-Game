@@ -74,7 +74,7 @@ Play Console üzerinden anahtar sıfırlama talebi açmanız gerekir; iki yerde 
 
 **Yol B — Komut satırıyla:** Unity'nin içindeki Java aracıyla (PowerShell):
 ```powershell
-& "C:\Program Files\Unity\Hub\Editor\6000.3.27f1\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\bin\keytool.exe" `
+& "C:\Program Files\Unity\Hub\Editor\6000.6.7f1\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\bin\keytool.exe" `
   -genkeypair -v -keystore upload.keystore -alias upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 
