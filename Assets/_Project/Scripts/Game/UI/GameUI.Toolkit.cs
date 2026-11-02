@@ -134,6 +134,7 @@ namespace BusTycoon.Game
             // ---- harita üstü parçalar ve sağ panel
             BuildToolkitWidgets();
             BuildToolkitSheet();
+            BuildToolkitStation();
 
             // ---- bildirimler
             tkToasts = Ui.El("bt-toasts", tkHud);
@@ -212,6 +213,7 @@ namespace BusTycoon.Game
             UpdateToolkitTopBar();
             UpdateToolkitNav();
             UpdateToolkitWidgets(k);
+            UpdateToolkitStation(k);
             UpdateToolkitSheet(k);
             UpdateToolkitToasts(k);
         }
