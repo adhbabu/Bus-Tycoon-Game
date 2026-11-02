@@ -853,3 +853,54 @@
 .bt-bar__fill--red {
     background-color: #E5484D;
 }
+
+/* Galeri */
+.bt-note {
+    background-color: #EAF2FD;
+    border-color: #CFE0FA;
+}
+
+.bt-next {
+    margin: 0 4px 10px 2px;
+    white-space: normal;
+}
+
+.bt-model__art {
+    width: 112px;
+    height: 56px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-model.is-locked .bt-model__art {
+    opacity: 0.4;
+}
+
+.bt-model.is-locked .bt-model__name {
+    color: #8A90A0;
+}
+
+.bt-model__name {
+    font-size: 17px;
+    color: #1F2430;
+}
+
+.bt-model__price {
+    font-size: 19px;
+    color: #1F2430;
+}
+
+.bt-spec {
+    margin-right: 10px;
+}
+
+.bt-owned {
+    font-size: 12.5px;
+    color: #0F7A3D;
+    margin-top: 4px;
+}
+
+.bt-bar__fill--gold {
+    background-color: #F5B000;
+}

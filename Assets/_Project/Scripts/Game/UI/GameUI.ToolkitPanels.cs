@@ -17,7 +17,7 @@ namespace BusTycoon.Game
     {
         static readonly HashSet<Panel> ToolkitPanels = new HashSet<Panel>
         {
-            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet
+            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet, Panel.Dealership
         };
 
         VisualElement tkSheet;
@@ -117,6 +117,7 @@ namespace BusTycoon.Game
                                     session.Fleet.CountBusesOnRoute(route.routeId) * 7;
                     return signature;
                 }
+                case Panel.Dealership: return DealershipSignature();
                 default: return 0;
             }
         }
@@ -152,6 +153,9 @@ namespace BusTycoon.Game
                     break;
                 case Panel.Fleet:
                     BuildFleet(body);
+                    break;
+                case Panel.Dealership:
+                    BuildDealership(body);
                     break;
             }
         }
