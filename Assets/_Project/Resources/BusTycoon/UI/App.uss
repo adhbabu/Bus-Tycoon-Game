@@ -1765,3 +1765,92 @@
     height: 4px;
     margin: 2px 0 0 22px;
 }
+
+/* Mini harita çerçevesi (harita içeriğini IMGUI çizer) */
+.bt-minimap {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.97);
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.1);
+    border-radius: 14px;
+}
+
+.bt-minimap__header {
+    padding: 0 8px 0 10px;
+    flex-shrink: 0;
+}
+
+.bt-minimap__icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.bt-minimap__toggle {
+    width: 30px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 6px;
+    background-color: #F1F2F5;
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-minimap__mark {
+    position: absolute;
+    width: 10px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: #4B5262;
+}
+
+.bt-minimap__mark--vertical {
+    width: 2px;
+    height: 10px;
+}
+
+.bt-minimap__toggle:hover {
+    background-color: #E6E8EC;
+}
+
+/* Şehir ipucu (fare şehrin üstündeyken) */
+.bt-tooltip {
+    position: absolute;
+    padding: 9px 12px 9px 10px;
+    background-color: rgba(255, 255, 255, 0.98);
+    border-width: 1px;
+    border-color: rgba(31, 36, 48, 0.14);
+    border-radius: 12px;
+}
+
+.bt-tooltip__row {
+    align-items: flex-start;
+}
+
+.bt-tooltip__city-icon {
+    width: 34px;
+    height: 34px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-tooltip__title {
+    font-size: 15px;
+    margin-bottom: 1px;
+}
+
+.bt-tooltip__line {
+    font-size: 12.5px;
+    white-space: normal;
+}
+
+.bt-tooltip__flag {
+    width: 22px;
+    height: 22px;
+    margin-left: 8px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}

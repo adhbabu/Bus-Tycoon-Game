@@ -70,7 +70,7 @@ namespace BusTycoon.Game
         bool textFieldFocused;
 
         bool pointerOnMap, dragging;
-        Vector2 lastMouseGui;
+        Vector2 lastMouseGui, hoverMouseGui;
         int pointerButton;
         Vector2 pointerDownPos, lastPointerPos;
         CityData hoveredCity;
@@ -522,7 +522,7 @@ namespace BusTycoon.Game
             UpdateHover(e);
             if (repaint)
             {
-                DrawTooltip();
+                if (!NewUi) DrawTooltip(); // yeni arayüzde ipucu UI Toolkit'te
                 DrawFpsOverlay();
                 sliderRects.Clear();
                 sliderRects.AddRange(sliderRectsNext);
@@ -947,6 +947,7 @@ namespace BusTycoon.Game
         {
             if (e.type != EventType.Repaint) return;
             hoveredCity = null;
+            hoverMouseGui = e.mousePosition;
             if (InMenu || modal != Modal.None || dragging || mobile || StationBusy) return; // dokunmatikte hover yok
             if (IsOverUI(e.mousePosition)) return;
             world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), PickRadius, out hoveredCity);
