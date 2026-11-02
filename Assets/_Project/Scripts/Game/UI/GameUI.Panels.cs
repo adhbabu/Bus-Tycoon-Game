@@ -636,7 +636,7 @@ namespace BusTycoon.Game
         {
             financeChartDirty = false;
             ChartTexture chart = financeChart;
-            chart.Clear(ChartBackground);
+            chart.Clear(NewUi ? ChartBackgroundLight : ChartBackground);
             var history = session.State.financeHistory;
             const int days = 60;
             int start = Mathf.Max(0, history.Count - days);
@@ -658,7 +658,7 @@ namespace BusTycoon.Game
                 chart.FillRect(x0 + 1f, Mathf.Min(zeroY, y), x0 + barWidth - 1f, Mathf.Max(zeroY, y) + 1f,
                     history[i].Net >= 0 ? ChartPositive : ChartNegative);
             }
-            chart.HorizontalLine(zeroY, ChartZero, 1);
+            chart.HorizontalLine(zeroY, NewUi ? ChartZeroLight : ChartZero, 1);
             chart.Apply();
         }
 

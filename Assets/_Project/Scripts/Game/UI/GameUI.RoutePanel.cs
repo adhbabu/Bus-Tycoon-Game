@@ -12,6 +12,9 @@ namespace BusTycoon.Game
         enum RouteTab { Price, Buses, History }
 
         static readonly Color32 ChartBackground = new Color32(22, 26, 50, 255);
+        // Yeni arayüz (açık renkli kartlar)
+        static readonly Color32 ChartBackgroundLight = new Color32(246, 247, 249, 255);
+        static readonly Color32 ChartZeroLight = new Color32(31, 36, 48, 70);
         static readonly Color32 ChartBand = new Color32(92, 222, 128, 46);
         static readonly Color32 ChartZero = new Color32(255, 255, 255, 60);
         static readonly Color32 ChartCurve = new Color32(235, 240, 248, 255);

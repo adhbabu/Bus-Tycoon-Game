@@ -550,3 +550,155 @@
     white-space: normal;
     margin: 4px 4px 12px 0;
 }
+
+/* Bölüm başlığı, anahtar–değer, çip, düğme */
+.bt-section {
+    font-size: 15px;
+    margin: 6px 0 8px 2px;
+}
+
+.bt-kv {
+    flex-direction: row;
+    align-items: center;
+    min-height: 26px;
+}
+
+.bt-kv__icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-kv__key {
+    flex-grow: 1;
+    flex-shrink: 1;
+    color: #5B6272;
+    font-size: 13.5px;
+    white-space: normal;
+}
+
+.bt-kv__value {
+    font-size: 14px;
+    color: #1F2430;
+    -unity-text-align: middle-right;
+    flex-shrink: 0;
+}
+
+.is-up {
+    color: #12A150;
+}
+
+.is-down {
+    color: #E5484D;
+}
+
+.is-gold {
+    color: #B7791F;
+}
+
+.bt-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.bt-chip {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 8px;
+    margin: 0 6px 6px 0;
+    border-radius: 8px;
+    background-color: #FFFFFF;
+    border-width: 1px;
+    border-color: #E6E8EC;
+}
+
+.bt-chip__icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 5px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-chip__text {
+    font-size: 12px;
+    color: #4B5262;
+}
+
+.bt-actions {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.bt-actions__note {
+    font-size: 12px;
+    color: #5B6272;
+    white-space: normal;
+}
+
+.bt-btn {
+    height: 34px;
+    margin: 0 0 0 8px;
+    padding: 0 14px;
+    border-width: 1px;
+    border-color: #DADDE3;
+    border-radius: 10px;
+    background-color: #FFFFFF;
+    color: #1F2430;
+    font-size: 13px;
+    -unity-text-align: middle-center;
+    transition-property: background-color;
+    transition-duration: 0.12s;
+}
+
+.bt-btn:hover {
+    background-color: #F1F2F5;
+}
+
+.bt-btn.is-primary {
+    background-color: #FF8A00;
+    border-color: #FF8A00;
+    color: #FFFFFF;
+}
+
+.bt-btn.is-primary:hover {
+    background-color: #F07F00;
+}
+
+.bt-btn:disabled {
+    opacity: 0.45;
+}
+
+.phone .bt-btn {
+    height: 42px;
+}
+
+.bt-flag {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-pack {
+    margin: 8px 4px 12px 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background-color: #FFF7EC;
+}
+
+.bt-pack__title {
+    font-size: 16px;
+    color: #B45F00;
+}
+
+.bt-chart {
+    height: 120px;
+    margin: 0 4px 12px 0;
+    border-radius: 10px;
+    -unity-background-scale-mode: stretch-to-fill;
+}
