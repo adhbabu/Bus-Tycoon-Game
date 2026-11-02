@@ -656,7 +656,7 @@ namespace BusTycoon.Game
                 float x0 = (days - (history.Count - start) + (i - start)) * barWidth;
                 float y = (float)(history[i].Net - min) / range * (chart.Height - 1);
                 chart.FillRect(x0 + 1f, Mathf.Min(zeroY, y), x0 + barWidth - 1f, Mathf.Max(zeroY, y) + 1f,
-                    history[i].Net >= 0 ? ChartPositive : ChartNegative);
+                    history[i].Net >= 0 ? (NewUi ? ChartPositiveLight : ChartPositive) : (NewUi ? ChartNegativeLight : ChartNegative));
             }
             chart.HorizontalLine(zeroY, NewUi ? ChartZeroLight : ChartZero, 1);
             chart.Apply();

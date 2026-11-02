@@ -904,3 +904,135 @@
 .bt-bar__fill--gold {
     background-color: #F5B000;
 }
+
+/* Hat paneli */
+.bt-advice__text {
+    margin: 0 8px;
+}
+
+.bt-chart--price {
+    height: 150px;
+    margin-bottom: 4px;
+}
+
+.bt-legend {
+    margin: 0 4px 6px 0;
+}
+
+.bt-legend__text {
+    font-size: 11.5px;
+    color: #8A90A0;
+}
+
+.bt-legend__center {
+    -unity-text-align: middle-center;
+}
+
+.bt-slider {
+    margin: 4px 6px 4px 2px;
+    height: 30px;
+}
+
+.bt-slider .unity-base-slider__tracker {
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 3px;
+    background-color: #E4E6EB;
+    border-width: 0;
+}
+
+.bt-slider .unity-base-slider__dragger {
+    width: 22px;
+    height: 22px;
+    margin-top: -11px;
+    border-radius: 11px;
+    background-color: #FF8A00;
+    border-width: 2px;
+    border-color: #FFFFFF;
+}
+
+.phone .bt-slider .unity-base-slider__dragger {
+    width: 30px;
+    height: 30px;
+    margin-top: -15px;
+    border-radius: 15px;
+}
+
+.bt-stepper {
+    margin: 4px 4px 2px 0;
+}
+
+.bt-stepper__center {
+    align-items: center;
+}
+
+.bt-step {
+    width: 46px;
+    height: 42px;
+    margin: 0;
+    padding: 0;
+    border-width: 1px;
+    border-color: #DADDE3;
+    border-radius: 12px;
+    background-color: #FFFFFF;
+    font-size: 22px;
+    color: #1F2430;
+    -unity-text-align: middle-center;
+}
+
+.bt-price {
+    font-size: 28px;
+    color: #1F2430;
+}
+
+.bt-zone {
+    font-size: 15px;
+    margin: 6px 4px 10px 2px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.bt-dim {
+    color: #8A90A0;
+}
+
+.bt-btn--ghost {
+    margin: 12px 0 0 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    color: #2F80ED;
+}
+
+.bt-bus-row {
+    align-items: center;
+}
+
+.bt-status {
+    margin-left: 8px;
+}
+
+/* Tablo (hat geçmişi) */
+.bt-table__head .bt-table__cell {
+    color: #8A90A0;
+    font-size: 11.5px;
+}
+
+.bt-table__row {
+    border-top-width: 1px;
+    border-color: #EEF0F3;
+}
+
+.bt-table__cell {
+    flex-grow: 1;
+    flex-basis: 0;
+    font-size: 12.5px;
+    padding: 4px 0;
+}
+
+.bt-table__cell--day {
+    flex-grow: 0.6;
+}
+
+.bt-table__cell--last {
+    -unity-text-align: middle-right;
+}
