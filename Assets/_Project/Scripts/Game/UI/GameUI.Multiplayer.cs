@@ -24,6 +24,13 @@ namespace BusTycoon.Game
 
         Rect MultiplayerRect => CenteredBox(580f, 700f);
 
+        /// <summary>
+        /// Çok oyunculu yalnız web sürümünde (tarayıcı bağlantısı) çalışır; mobil uygulamada menüde gösterilmez
+        /// (mağaza incelemesi çalışmayan özelliği hata sayar). Testler kendi bağlantısını verince açılır.
+        /// </summary>
+        bool MultiplayerAvailable =>
+            Multiplayer != null && (WebRoomTransport.IsSupported || MultiplayerDirector.TransportFactory != MultiplayerDirector.WebFactory);
+
         void BindMultiplayer()
         {
             if (Multiplayer == null) return;
@@ -46,7 +53,7 @@ namespace BusTycoon.Game
             if (inviteConsumed) return;
             inviteConsumed = true;
             string code = MultiplayerDirector.InviteCode;
-            if (string.IsNullOrEmpty(code) || Multiplayer == null) return;
+            if (string.IsNullOrEmpty(code) || !MultiplayerAvailable) return;
             mpCode = code;
             OpenMultiplayer();
         }

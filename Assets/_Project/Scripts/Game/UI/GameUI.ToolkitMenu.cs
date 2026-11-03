@@ -112,7 +112,7 @@ namespace BusTycoon.Game
             bool running = session.IsRunning && !session.IsBankrupt;
             if (running) ModalButton(parent, $"Oyuna Dön  ({session.State.companyName})", ResumeFromMenu, "is-primary bt-modal__button--main");
             ModalButton(parent, "Yeni Oyun", BeginNewGame, running ? null : "is-primary bt-modal__button--main");
-            ModalButton(parent, "Çok Oyunculu  (Blitz · Normal)", OpenMultiplayer);
+            if (MultiplayerAvailable) ModalButton(parent, "Çok Oyunculu  (Blitz · Normal)", OpenMultiplayer);
             string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
             ModalButton(parent, continueText, () => LoadSlot(latestSaveSlot), enabled: latestSaveSlot != null);
             ModalButton(parent, "Nasıl Oynanır?", () => { showMenuHelp = true; tkMenuDirty = true; });

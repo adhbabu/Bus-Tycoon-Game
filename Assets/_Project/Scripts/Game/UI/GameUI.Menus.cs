@@ -142,7 +142,7 @@ namespace BusTycoon.Game
             if (GUILayout.Button("Yeni Oyun", session.IsRunning ? s.Button : s.Primary, Ht(50f)))
                 Defer(BeginNewGame);
 
-            if (GUILayout.Button("Çok Oyunculu  (Blitz · Normal)", s.Button, Ht(46f)))
+            if (MultiplayerAvailable && GUILayout.Button("Çok Oyunculu  (Blitz · Normal)", s.Button, Ht(46f)))
                 Defer(OpenMultiplayer);
 
             string continueText = latestSaveLabel != null ? $"Kayıttan Devam Et  ({latestSaveLabel})" : "Kayıttan Devam Et";
