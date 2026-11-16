@@ -89,3 +89,47 @@ Dosya adı = satır kodu (örn. G11.mp3). Bir bölüm tek dosya olarak gelirse s
 | B6 | Penaltı mı, frikik mi? |  |
 | B7 | Tribünde mi, ekran başında mı? |  |
 | B8 | Seçimlerini yorumlara yaz! |  |
+
+## Gol mü, değil mi? (golmu) — görseller MG1–MG5
+
+ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
+
+| Kod | Metin |
+|---|---|
+| M1 | [excited] Gol mü, değil mi? Hakem sensin! [short pause] Dört pozisyon, üç saniye. |
+| M2 | Birinci pozisyon. Taç atışı, top kimseye değmeden rakip kaleye giriyor. |
+| M3 | [playfully] Gol değil! Taçtan doğrudan gol olmaz. Oyun kale vuruşuyla devam eder. |
+| M4 | İkinci pozisyon. Korner atışı, top kimseye değmeden ağlarda. |
+| M5 | [excited] Gol! [short pause] Buna olimpik gol denir. |
+| M6 | Üçüncü pozisyon. Kaleci kale vuruşunu kullanıyor, top bütün sahayı geçip rakip kaleye giriyor. |
+| M7 | [excited] Gol! Kale vuruşundan doğrudan rakip kaleye atılan gol geçerli. |
+| M8 | Son pozisyon. Şut hakeme çarpıyor ve top ağlara gidiyor. |
+| M9 | [gasps] Gol değil! Top hakeme çarpıp kaleye girerse, oyun hakem topuyla yeniden başlar. |
+| M10 | [cheerfully] Kaç tanesini bildin? Yorumlara yaz! |
+
+## Derbi günü taraftar tipleri (taraftar) — görseller TG1–TG6
+
+ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
+
+| Kod | Metin |
+|---|---|
+| T1 | [excited] Derbi günü beş taraftar tipi! [short pause] Sen hangisisin? |
+| T2 | Bir numara: penaltıya bakamayan. [laughs] Gözler kapalı, kulaklar tribünde. |
+| T3 | İki numara: uğurlu formacı. O forma yıkanmaz, [playfully] çünkü uğuru gider! |
+| T4 | Üç numara: istatistik profesörü. [curious] Topa sahip olma yüzde altmış iki... ama skor sıfır sıfır. |
+| T5 | Dört numara: hakeme bağıran. [yelling] Hakem, bu ne düdük ya! |
+| T6 | Beş numara: çay çekirdek ustası. [warmly] Maç biter, çekirdek bitmez. |
+| T7 | [cheerfully] Sen hangisisin? Numaranı yorumlara yaz, o arkadaşını da etiketle! |
+
+## Futbol 100 yıl sonra (gelecek) — görseller FG1–FG5
+
+ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
+
+| Kod | Metin |
+|---|---|
+| F1 | [curious] Yüz yıl sonra futbol nasıl oynanacak? [short pause] Dört tahmin. |
+| F2 | Bir: robot hakem. Tartışma yok, itiraz yok. [laughs] Peki taraftar kime kızacak? |
+| F3 | İki: Ay'da maç. Yerçekimi az, kafa vuruşu için metrelerce zıplıyorsun. |
+| F4 | Üç: hologram taraftarlar. Stadyum dolu, [short pause] ama yarısı ışıktan. |
+| F5 | Dört: akıllı top. Ofsaytı kendisi söylüyor. |
+| F6 | [cheerfully] Sence hangisi gerçek olur? Yorumlara yaz! |
