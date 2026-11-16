@@ -38,12 +38,27 @@
   .tag { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
   .scroll { max-height: 420px; overflow: auto; }
   code { background: #0b1119; padding: 2px 6px; border-radius: 6px; }
+  #login { grid-column: 1/-1; border-color: var(--acc); }
+  #login[hidden] { display: none; }
+  #login form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  #login .err { color: var(--bad); font-weight: 700; margin: 8px 0 0; }
   .rules { font-size: 14px; white-space: pre-wrap; background: #0b1119; border-radius: 10px; padding: 10px; border: 1px solid var(--line); }
 </style>
 </head>
 <body>
 <main>
   <h1>⚽ Canlı Futbol — Yönetim <span id="st" class="status">bağlanıyor…</span> <a href="/" target="_blank">Yayın ekranını aç ↗</a></h1>
+
+  <section id="login" hidden>
+    <h2>Yönetim şifresi</h2>
+    <form id="loginForm" autocomplete="on">
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Şifreni yaz" aria-label="Yönetim şifresi">
+      <button type="button" id="pwShow">Göster</button>
+      <button type="submit" class="go">Giriş</button>
+    </form>
+    <p class="muted">Şifre, Render'da <b>ADMIN_KEY</b> olarak yazdığın değer (Render → servis → Environment → ADMIN_KEY satırındaki göz simgesi). Büyük-küçük harf önemli.</p>
+    <p class="err" id="pwErr" hidden>Şifre yanlış, tekrar dene.</p>
+  </section>
 
   <section>
     <h2>TikTok bağlantısı</h2>
@@ -201,19 +216,38 @@ $('#players').onclick = (e) => {
 let adminKey = new URLSearchParams(location.search).get('key') || '';
 try { adminKey = adminKey || localStorage.getItem('futbolAdminKey') || ''; } catch {}
 let authFailed = false;
+function showLogin(wrong) {
+  $('#login').hidden = false;
+  $('#pwErr').hidden = !wrong;
+  $('#st').className = 'status error';
+  $('#st').textContent = 'Şifre gerekli';
+  setTimeout(() => $('#pw').focus(), 50);
+}
+$('#loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  adminKey = $('#pw').value.trim();
+  if (!adminKey) return;
+  $('#login').hidden = true;
+  authFailed = false;
+  $('#st').className = 'status connecting';
+  $('#st').textContent = 'bağlanıyor…';
+  connect();
+});
+$('#pwShow').addEventListener('click', () => {
+  const t = $('#pw').type === 'password';
+  $('#pw').type = t ? 'text' : 'password';
+  $('#pwShow').textContent = t ? 'Gizle' : 'Göster';
+});
 function connect() {
+  const tried = adminKey;
   ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/?role=admin&key=${encodeURIComponent(adminKey)}`);
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
     if (m.type === 'auth' && !m.ok) {
       authFailed = true;
+      try { localStorage.removeItem('futbolAdminKey'); } catch {}
       ws.close();
-      const k = prompt('Yönetim şifresi (ADMIN_KEY):', '');
-      if (k !== null) {
-        adminKey = k.trim();
-        try { localStorage.setItem('futbolAdminKey', adminKey); } catch {}
-        authFailed = false;
-      }
+      showLogin(!!tried);
       return;
     }
     if (m.type === 'state' && !authFailed) {
@@ -222,8 +256,8 @@ function connect() {
     }
   };
   ws.onclose = () => {
+    if (authFailed) return;
     $('#st').className = 'status error';
-    if (authFailed) { $('#st').textContent = 'Şifre gerekli: sayfayı yenile'; return; }
     $('#st').textContent = 'Sunucu kapalı';
     setTimeout(connect, 1500);
   };
