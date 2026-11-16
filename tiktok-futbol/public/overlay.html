@@ -836,13 +836,22 @@ function render(st) {
 }
 
 // ---------- bağlantı ----------
+let loadedBuild = null;
+let newBuild = false;
 function connect() {
   const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/`);
   ws.onopen = () => { $('#conn').textContent = ''; };
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
-    if (m.type === 'state') render(m.state);
-    else if (m.type === 'event') onEvent(m.event);
+    if (m.build) {
+      if (loadedBuild && m.build !== loadedBuild) newBuild = true;
+      loadedBuild = loadedBuild || m.build;
+    }
+    if (m.type === 'state') {
+      render(m.state);
+      // sunucuda yeni sürüm var: maç oynanmıyorken sayfa kendini yeniler (yeni sesler/özellikler gelsin)
+      if (newBuild && m.state?.match?.status !== 'running') location.reload();
+    } else if (m.type === 'event') onEvent(m.event);
   };
   ws.onclose = () => { $('#conn').textContent = 'sunucu bekleniyor…'; setTimeout(connect, 1500); };
 }

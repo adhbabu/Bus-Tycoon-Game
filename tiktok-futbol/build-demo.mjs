@@ -110,11 +110,17 @@ window.FUTBOL_LOCAL = {
   },
 };`;
 
+// spiker ses paketi (public/sesler/*.mp3): demo yayınlanırken bu dosyalar sesler/ altında sayfanın yanına konur
+const SESLER = fs.existsSync(path.join(ROOT, 'public/sesler'))
+  ? fs.readdirSync(path.join(ROOT, 'public/sesler')).filter((f) => f.endsWith('.mp3')).map((f) => f.slice(0, -4)).sort()
+  : [];
+
 const html = `<title>Canlı Futbol Demo</title>
 ${fonts}
 <style>${css}${demoCss}</style>
 ${body.trim()}
 ${demoBar}
+<script>window.FUTBOL_SESLER = ${JSON.stringify(SESLER)};</script>
 <script>${read('public/fx.js')}</script>
 <script>${read('public/spiker.js')}</script>
 <script>${gameJs}</script>
@@ -125,4 +131,4 @@ ${demoBar}
 
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, html);
-console.log(`Demo yazıldı: ${out} (${(html.length / 1024).toFixed(0)} KB)`);
+console.log(`Demo yazıldı: ${out} (${(html.length / 1024).toFixed(0)} KB) · ses paketi: ${SESLER.length} kayıt (sesler/ klasörüyle birlikte yayınla)`);

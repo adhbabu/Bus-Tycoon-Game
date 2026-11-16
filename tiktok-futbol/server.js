@@ -275,8 +275,10 @@ function send(ws, msg) {
   if (ws.readyState === 1) ws.send(JSON.stringify(msg));
 }
 
+// Yeni sürüm yayına girince açık yayın ekranları kendini yeniler (eski sayfa yeni sesleri bilmez)
+const BUILD = String(env.RENDER_GIT_COMMIT || Date.now());
 function stateMsg(admin) {
-  return { type: 'state', state: game.snapshot({ admin }), tiktok: tiktokStatus, demo: !!demoTimer };
+  return { type: 'state', state: game.snapshot({ admin }), tiktok: tiktokStatus, demo: !!demoTimer, build: BUILD };
 }
 
 let pending = null;

@@ -25,6 +25,12 @@ window.FX = (() => {
     if (ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
+    try {
+      // iPhone: yan taraftaki sessiz anahtarı açıkken de ses çıksın (iOS 17+)
+      if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    } catch {
+      /* desteklenmiyor */
+    }
     ctx = new AC();
     master = ctx.createGain();
     master.gain.value = level ? volume : 0;
@@ -46,7 +52,7 @@ window.FX = (() => {
     if (level === 0 || (level === 1 && kind === 'minor')) return false;
     init();
     if (!ctx) return false;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (ctx.state !== 'running') ctx.resume().catch(() => {}); // iPhone'da 'interrupted' da olabilir
     return ctx.state === 'running';
   }
 
@@ -316,7 +322,7 @@ window.FX = (() => {
     // ses hemen istenir, sıra gelince çalınır
     const clip = fetch(url || 'tts?s=' + style + '&t=' + encodeURIComponent(text.slice(0, 260)))
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('tts ' + r.status))))
-      .then((buf) => ctx.decodeAudioData(buf));
+      .then((buf) => new Promise((res, rej) => ctx.decodeAudioData(buf, res, rej)));
     chain = chain
       .then(() => clip)
       .then(
@@ -347,13 +353,18 @@ window.FX = (() => {
     return true;
   }
   // ---------- kayıtlı spiker sesleri (ses paketi) ----------
-  let clips = new Set();
-  fetch('sesler/list')
-    .then((r) => (r.ok ? r.json() : []))
-    .then((a) => {
-      clips = new Set(a);
-    })
-    .catch(() => {});
+  let clips = new Set(window.FUTBOL_SESLER || []);
+  if (!window.FUTBOL_SESLER)
+    fetch('sesler/list', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((a) => {
+        clips = new Set(a);
+        if (clips.size && ttsWanted && ctx && ctx.state === 'running') setTtsState('ok');
+        listeners.forEach((f) => f(ttsState));
+      })
+      .catch(() => {});
+  // kayıtlı ses ya da sunucu sesi varsa spiker Web Audio ile konuşur (cihazın konuşma motoru gerekmez)
+  const webVoice = () => ttsWanted && (serverVoice || clips.size > 0);
   const hasClip = (c) => clips.has(c);
   const packActive = () => clips.size > 0;
   // kayıtlı klibi çalar (sıraya girer); çalmaya başladıysa true döner
@@ -426,19 +437,41 @@ window.FX = (() => {
   // Spiker gerçekten konuşmaya başlayana kadar her dokunuşta yeniden denenir.
   // iPhone yalnızca parmak kalkınca (touchend/click) gelen dokunuşu sayar ve konuşma
   // o dokunuşun içinde, öncesinde cancel() çağrılmadan başlatılmalıdır.
+  let silentEl = null;
+  function keepIosAudio() {
+    if (silentEl || navigator.audioSession || !('ontouchend' in document)) return;
+    try {
+      const n = 4000;
+      const b = new ArrayBuffer(44 + n * 2);
+      const v = new DataView(b);
+      const w = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+      w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+      v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true);
+      v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+      silentEl = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' })));
+      silentEl.loop = true;
+      silentEl.setAttribute('playsinline', '');
+      silentEl.play().catch(() => {});
+    } catch {
+      /* yok say */
+    }
+  }
   let unlockTries = 0;
   let unlockTimer = null;
   let greeted = false;
   function unlock() {
     init();
     const p = ctx ? ctx.resume().catch(() => {}) : Promise.resolve();
-    if (serverVoice && ttsWanted && level > 0) {
+    keepIosAudio();
+    if (webVoice() && level > 0) {
       return p.then(() => {
         if (ctx.state !== 'running') return;
         setTtsState('ok');
         if (!greeted) {
           greeted = true;
-          speak('Merhaba! Canlı Maç Oyna yayınına hoş geldiniz. Takımını seç, maça hazır ol!');
+          // ses paketi varken karşılama da kayıtlı sesle (robot sesine düşmesin)
+          if (packActive()) playClip('G19');
+          else speak('Merhaba! Canlı Maç Oyna yayınına hoş geldiniz. Takımını seç, maça hazır ol!');
         }
       });
     }
@@ -476,7 +509,7 @@ window.FX = (() => {
     document.body.appendChild(btn);
     let gaveUp = false;
     const needAudio = () => ctx && ctx.state !== 'running';
-    const needTts = () => ttsWanted && level > 0 && (serverVoice || ttsOn) && ttsState !== 'ok';
+    const needTts = () => ttsWanted && level > 0 && (webVoice() || ttsOn) && ttsState !== 'ok';
     const check = () => {
       if (level === 0 || (!needAudio() && !needTts())) {
         btn.style.display = 'none';
