@@ -12,7 +12,8 @@ window.Spiker = (() => {
   let getCountdown = () => 0;
   let lastBig = 0;
   let lastLineEnd = Date.now() - gapMs + 4000;
-  let busyToken = 0;
+  let speaking = false;
+  let tokenSeq = 0;
   let lastGreet = 0;
   const recent = [];
   const viewers = [];
@@ -179,26 +180,31 @@ window.Spiker = (() => {
     box?.classList.remove('on');
   }
 
-  function say(line) {
-    const token = ++busyToken;
+  function say(line, { urgent = false } = {}) {
+    const token = ++tokenSeq;
+    speaking = true;
     show(line.text, line.team, line.faces);
     const done = () => {
-      if (token !== busyToken) return;
-      busyToken++;
+      if (token !== tokenSeq) return;
+      speaking = false;
       lastLineEnd = Date.now();
-      setTimeout(hide, 600);
+      setTimeout(() => {
+        if (!speaking) hide();
+      }, 600);
     };
-    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.04 });
+    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.06, urgent });
     // ses yoksa (OBS, ?tts=0) altyazı okunabilecek kadar ekranda kalır
-    setTimeout(done, started ? 15000 : Math.min(9000, 1800 + line.text.length * 60));
+    setTimeout(done, started ? 20000 : Math.min(9000, 1800 + line.text.length * 60));
   }
 
   function loop() {
     if (!enabled) return;
     setInterval(() => {
       const now = Date.now();
-      if (busyToken % 2 === 1) return; // konuşuyor
-      if (now - lastLineEnd < gapMs) return;
+      if (speaking) return;
+      const inMatch = getState()?.match?.status === 'running';
+      // maç sırasında spiker pozisyonları anlatır; araya giren duyurular daha seyrek olur
+      if (now - lastLineEnd < (inMatch ? gapMs * 1.6 : gapMs)) return;
       if (now - lastBig < 4000) return; // gol/kaptan duyurusunun üstüne konuşma
       if (FX.isSpeaking()) return;
       const st = getState();
@@ -209,6 +215,15 @@ window.Spiker = (() => {
   }
 
   return {
+    // Maç anlatımı ve önemli anlar: altyazıyla birlikte hemen (urgent) ya da sıraya alınarak okunur.
+    // soft: spiker zaten konuşuyorsa atlanır.
+    commentate(text, opts = {}) {
+      const o = typeof opts === 'boolean' ? { urgent: opts } : opts;
+      if (!text) return;
+      if (o.soft && (speaking || FX.isSpeaking())) return;
+      lastLineEnd = Date.now();
+      say({ text, team: o.team ?? null }, { urgent: !!o.urgent });
+    },
     start(opts) {
       getState = opts.getState;
       getCountdown = opts.getCountdown ?? (() => 0);

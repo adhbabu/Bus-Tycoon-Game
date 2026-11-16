@@ -14,3 +14,5 @@ services:
         sync: false
       - key: ADMIN_KEY
         sync: false
+      - key: OPENAI_API_KEY   # isteğe bağlı: doğal spiker sesi
+        sync: false

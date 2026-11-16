@@ -31,6 +31,7 @@ function freshMatch() {
     boost: { A: 0, B: 0 }, // son ataktan beri gelen hediye jetonu
     lastAttack: { A: -99, B: -99 },
     scorers: {},
+    pending: [],
     events: [],
     result: null,
   };
@@ -472,33 +473,65 @@ export class Game {
     return items[items.length - 1];
   }
 
-  // strong = atak barı dolunca yapılan büyük atak; değilse oyun içi rastgele pozisyon
-  attack(key, bonus, strong) {
+  // Atak iki adımda oynanır: spiker önce pozisyonu anlatır (bu dakika), sonuç bir sonraki dakikada gelir.
+  // strong = atak barı dolunca yapılan büyük atak; değilse oyun içi sıradan pozisyon.
+  startAttack(key, bonus, strong) {
     const m = this.match;
     const opp = this.other(key);
     const att = this.lineup(key).starters.filter((s) => s.player);
     if (!att.length) return;
     const sa = this.strength(key);
     const sd = this.strength(opp);
-    const gk = this.lineup(opp).starters.find((s) => s.pos.key === 'GK')?.player;
+    const gk = this.lineup(opp).starters.find((s) => s.pos.key === 'GK')?.player ?? null;
 
     const share = sa / (sa + sd);
     let p = strong ? 0.14 + 0.16 * share + Math.min(0.22, 0.035 * log2p(bonus)) : 0.06 + 0.1 * share;
-    if (gk) p -= Math.min(0.08, 0.012 * log2p(gk.coins));
-    else p += 0.1;
+    if (gk && !gk.bot) p -= Math.min(0.08, 0.012 * log2p(gk.coins));
+    else if (!gk) p += 0.1;
     p = Math.min(0.7, Math.max(0.04, p));
 
     const weight = (s) => (s.pos.attack ?? 1) * (1 + log2p(s.player.coins));
     const shooter = this.pickWeighted(att, weight);
-    const sp = shooter.player;
+    const others = att.filter((s) => s !== shooter);
+    const assist = others.length && this.rng() < (strong ? 0.8 : 0.5) ? this.pickWeighted(others, weight) : null;
+
+    const team = this.team(key).name;
+    const S = label(shooter.player);
+    const A = assist ? label(assist.player) : null;
+    const lead = assist ?? shooter;
+    // Ekran sağ/sol: A takımı ters yöne hücum eder
+    const x = key === 'A' ? 1 - lead.pos.x : lead.pos.x;
+    const side = x < 0.38 ? 'sol kanattan' : x > 0.62 ? 'sağ kanattan' : 'ortadan';
+    const calls = strong
+      ? [
+          `${team} atakta! Top ${A ?? S} ayağında, ${side} ilerliyor...`,
+          `Hızlı hücum ${team}! ${A ? `${A} pasını verdi, ${S} topla buluştu...` : `${S} rakibini çalımla geçti...`}`,
+          `${team} baskıyı artırıyor! ${A ? `${A} ortaladı, ${S} topun altında...` : `${S} ceza sahasına giriyor...`}`,
+          `Tehlikeli geliyor ${team}! ${A ? `${A} ceza sahasına doğru, ${S} boşta...` : `${S} kaleye doğru...`}`,
+        ]
+      : [`${team} orta sahada topu kaptı... ${S} şansını deniyor...`, `${S} uzaktan bir şey denemek istiyor...`];
+    const call = calls[Math.floor(this.rng() * calls.length)];
+    m.pending.push({ key, p, strong, shooter: shooter.player, assist: assist?.player ?? null, gk });
+    this.emit({ type: 'attack', team: key, strong, call, text: `${m.minute}' ⚡ ${team} atakta!` });
+  }
+
+  resolveAttack(pa) {
+    const m = this.match;
+    const { key, p, strong, shooter: sp, assist, gk } = pa;
     const teamName = this.team(key).name;
+    const pickOne = (arr) => arr[Math.floor(this.rng() * arr.length)];
 
     if (this.rng() < p) {
       m.score[key] += 1;
       m.scorers[sp.id] = (m.scorers[sp.id] ?? 0) + 1;
-      const others = att.filter((s) => s !== shooter);
-      const assist = others.length && this.rng() < 0.6 ? this.pickWeighted(others, weight).player : null;
       const text = `GOOOL! ${label(sp)}${assist ? ` (asist: ${label(assist)})` : ''}`;
+      const sc = `${this.team('A').name} ${m.score.A}, ${this.team('B').name} ${m.score.B}`;
+      const call = pickOne([
+        `GOOOOOOL! ${label(sp)} topu ağlara gönderdi! ${sc}!`,
+        `Ve GOOOOOL! Muhteşem bitiriş, ${label(sp)}! ${sc}!`,
+        `GOL, GOL, GOL! ${teamName} sevince boğuldu! Golü atan ${label(sp)}!`,
+        `Ağlar havalandı! GOOOOL! ${label(sp)} affetmedi! ${sc}!`,
+      ]);
       this.logEvent({ type: 'goal', team: key, text });
       this.emit({
         type: 'goal',
@@ -510,24 +543,40 @@ export class Game {
         assist: assist ? label(assist) : null,
         minute: m.minute,
         score: { ...m.score },
+        call,
         text: `${m.minute}' GOOOL! ${label(sp)} — ${teamName}`,
       });
     } else if (strong || this.rng() < 0.5) {
       const r = this.rng();
       let text;
-      if (gk && r < 0.4) text = `🧤 ${label(gk)} kurtardı! (${label(sp)} şutu)`;
-      else if (r < 0.6) text = `😱 ${label(sp)} direkten döndü!`;
-      else if (r < 0.8) text = `${label(sp)} şutunu auta gönderdi`;
-      else text = `${label(sp)} ofsayta yakalandı`;
+      let call;
+      if (gk && r < 0.4) {
+        text = `🧤 ${label(gk)} kurtardı! (${label(sp)} şutu)`;
+        call = pickOne([`Şut! Ama kaleci ${label(gk)} geçit vermiyor, müthiş kurtarış!`, `Vurdu... ${label(gk)} uçtu, topu kornere çeldi!`]);
+      } else if (r < 0.6) {
+        text = `😱 ${label(sp)} direkten döndü!`;
+        call = 'Şuuut... ve direk! Top direkten döndü, inanılmaz!';
+      } else if (r < 0.8) {
+        text = `${label(sp)} şutunu auta gönderdi`;
+        call = pickOne([`Vurdu... az farkla dışarı! ${label(sp)} ellerini başına koydu.`, 'Şut... üstten auta! Tribünler nefesini tuttu.']);
+      } else {
+        text = `${label(sp)} ofsayta yakalandı`;
+        call = 'Yan hakem bayrağı kaldırdı, ofsayt! Atak sonuçsuz.';
+      }
       this.logEvent({ type: 'chance', team: key, text });
-      this.emit({ type: 'chance', team: key, text: `${m.minute}' ${text}` });
+      this.emit({ type: 'chance', team: key, strong, call, text: `${m.minute}' ${text}` });
     }
+  }
+
+  resolvePending() {
+    for (const pa of this.match.pending.splice(0)) this.resolveAttack(pa);
   }
 
   tick() {
     const m = this.match;
     if (m.status !== 'running') return;
     m.minute += 1;
+    this.resolvePending(); // geçen dakika başlayan atakların sonucu
 
     const mc = this.cfg.match ?? {};
     const sa = this.strength('A');
@@ -539,8 +588,7 @@ export class Game {
       // takım kendi kendine de yavaşça baskı kurar; hediyeler barı çok daha hızlı doldurur
       m.meter[k] = Math.min(100, m.meter[k] + (mc.passiveFill ?? 1.5) * (1 + 2 * share[k]));
       if (m.meter[k] >= 100 && m.minute - m.lastAttack[k] >= (mc.attackCooldown ?? 8)) {
-        this.emit({ type: 'attack', team: k, text: `${m.minute}' ⚡ ${this.team(k).name} atağa kalktı!` });
-        this.attack(k, m.boost[k], true);
+        this.startAttack(k, m.boost[k], true);
         m.meter[k] = 0;
         m.boost[k] = 0;
         m.lastAttack[k] = m.minute;
@@ -548,7 +596,7 @@ export class Game {
       }
     }
     if (!attacked && this.rng() < (mc.randomAttackChance ?? 0.12)) {
-      this.attack(this.rng() < share.A ? 'A' : 'B', 0, false);
+      this.startAttack(this.rng() < share.A ? 'A' : 'B', 0, false);
     }
 
     if (m.minute === 45) {
@@ -566,6 +614,7 @@ export class Game {
 
   finish() {
     const m = this.match;
+    this.resolvePending();
     m.status = 'finished';
     const { A, B } = m.score;
     const winner = A === B ? null : A > B ? 'A' : 'B';

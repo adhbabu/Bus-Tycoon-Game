@@ -51,6 +51,93 @@ setInterval(() => {
   fs.writeFile(STATE_FILE, JSON.stringify(game), (e) => e && console.error('Kayıt hatası:', e.message));
 }, 3000);
 
+// ---------- doğal spiker sesi (isteğe bağlı yapay zeka sesi) ----------
+// OPENAI_API_KEY ya da ELEVENLABS_API_KEY tanımlıysa spiker cümleleri sunucuda seslendirilir.
+// Tanımlı değilse yayın ekranı cihazın kendi sesini kullanır.
+const TTS_INSTRUCTIONS =
+  env.TTS_INSTRUCTIONS ||
+  'Heyecanlı, tecrübeli bir Türk futbol spikeri gibi konuş. Doğal İstanbul Türkçesi, hızlı ve enerjik tempo. ' +
+    'Pozisyon anlatırken gerilimi artır, gol anlarında sesini yükselt ve "Gol" kelimesini uzatarak coşkuyla bağır. ' +
+    'Kurtarış ve direkte hayıflan, duyurularda samimi ve davetkâr ol.';
+
+async function openaiTTS(text) {
+  const r = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.OPENAI_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts',
+      voice: env.OPENAI_TTS_VOICE || 'ash',
+      input: text,
+      instructions: TTS_INSTRUCTIONS,
+      response_format: 'mp3',
+    }),
+  });
+  if (!r.ok) throw new Error(`OpenAI ses hatası ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  return Buffer.from(await r.arrayBuffer());
+}
+
+async function elevenTTS(text) {
+  const voice = env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB';
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
+    method: 'POST',
+    headers: { 'xi-api-key': env.ELEVENLABS_API_KEY, 'content-type': 'application/json', accept: 'audio/mpeg' },
+    body: JSON.stringify({
+      text,
+      model_id: env.ELEVENLABS_MODEL || 'eleven_multilingual_v2',
+      voice_settings: { stability: 0.3, similarity_boost: 0.8, style: 0.7, use_speaker_boost: true },
+    }),
+  });
+  if (!r.ok) throw new Error(`ElevenLabs ses hatası ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  return Buffer.from(await r.arrayBuffer());
+}
+
+// Geliştirme için: gerçek servis olmadan sesin akışını denemek (kısa bir bip sesi üretir)
+function mockTTS(text) {
+  const rate = 16000;
+  const secs = Math.min(4, 0.4 + text.length / 40);
+  const n = Math.floor(rate * secs);
+  const buf = Buffer.alloc(44 + n * 2);
+  buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVEfmt ', 8);
+  buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22);
+  buf.writeUInt32LE(rate, 24); buf.writeUInt32LE(rate * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34);
+  buf.write('data', 36); buf.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) buf.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / rate) * 6000), 44 + i * 2);
+  return Promise.resolve(buf);
+}
+
+const TTS = env.OPENAI_API_KEY
+  ? { name: 'openai', make: openaiTTS, type: 'audio/mpeg' }
+  : env.ELEVENLABS_API_KEY
+    ? { name: 'elevenlabs', make: elevenTTS, type: 'audio/mpeg' }
+    : env.TTS_MOCK
+      ? { name: 'mock', make: mockTTS, type: 'audio/wav' }
+      : null;
+if (TTS) console.log(`🎙 Spiker sesi: ${TTS.name}`);
+
+// Aynı cümle tekrar seslendirilmez; saatlik karakter sınırı maliyeti korur.
+const ttsCache = new Map();
+let ttsHour = { start: Date.now(), used: 0 };
+const TTS_HOURLY = Number(env.TTS_MAX_CHARS_PER_HOUR || 30000);
+function getTTS(text) {
+  if (ttsCache.has(text)) {
+    const v = ttsCache.get(text);
+    ttsCache.delete(text);
+    ttsCache.set(text, v);
+    return v;
+  }
+  if (Date.now() - ttsHour.start > 3600e3) ttsHour = { start: Date.now(), used: 0 };
+  if (ttsHour.used + text.length > TTS_HOURLY) return Promise.reject(new Error('saatlik ses sınırı doldu'));
+  ttsHour.used += text.length;
+  const p = TTS.make(text);
+  ttsCache.set(text, p);
+  p.catch((e) => {
+    ttsCache.delete(text);
+    console.error('Spiker sesi üretilemedi:', e.message);
+  });
+  if (ttsCache.size > 400) ttsCache.delete(ttsCache.keys().next().value);
+  return p;
+}
+
 // ---------- statik dosyalar ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
@@ -60,6 +147,23 @@ const server = http.createServer((req, res) => {
   if (p === '/admin') p = '/admin.html';
   if (p === '/health') {
     res.writeHead(200, { 'content-type': 'text/plain' }).end('ok');
+    return;
+  }
+  if (p === '/tts/status') {
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify({ provider: TTS?.name ?? null }));
+    return;
+  }
+  if (p === '/tts') {
+    const text = (url.searchParams.get('t') || '').trim().slice(0, 260);
+    // yalnızca bu sitenin kendi sayfası ses isteyebilir (başkası kredini harcamasın)
+    const site = req.headers['sec-fetch-site'];
+    if (!TTS || !text || (site && site !== 'same-origin')) {
+      res.writeHead(TTS ? 400 : 404).end();
+      return;
+    }
+    getTTS(text)
+      .then((buf) => res.writeHead(200, { 'content-type': TTS.type, 'cache-control': 'private, max-age=3600' }).end(buf))
+      .catch(() => res.writeHead(503).end());
     return;
   }
   const file = path.normalize(path.join(PUBLIC, p));

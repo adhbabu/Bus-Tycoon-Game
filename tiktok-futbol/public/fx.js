@@ -6,7 +6,10 @@
 window.FX = (() => {
   const params = new URLSearchParams(location.search);
   const hasTTS = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
-  const ttsOn = params.get('tts') !== '0' && hasTTS;
+  const ttsWanted = params.get('tts') !== '0';
+  const ttsOn = ttsWanted && hasTTS;
+  // Sunucuda yapay zeka sesi (OpenAI / ElevenLabs) tanımlıysa spiker onu kullanır; yoksa cihazın sesi.
+  let serverVoice = false;
   const volume = Math.min(1.5, Math.max(0, Number(params.get('vol') ?? 0.55)));
   // 2 = tam, 1 = az (yalnızca önemli sesler), 0 = kapalı
   let level = params.get('ses') === '0' ? 0 : params.get('ses') === 'az' ? 1 : 2;
@@ -16,6 +19,7 @@ window.FX = (() => {
   let noiseBuf = null;
   let crowd = null;
   let crowdLevel = 0;
+  let voiceGain = null;
 
   function init() {
     if (ctx) return;
@@ -29,6 +33,9 @@ window.FX = (() => {
     comp.ratio.value = 4;
     master.connect(comp);
     comp.connect(ctx.destination);
+    voiceGain = ctx.createGain();
+    voiceGain.gain.value = 1.8; // spiker efektlerden önde duyulsun
+    voiceGain.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -265,8 +272,83 @@ window.FX = (() => {
 
   // Konuşmayı başlatır; başladıysa true döner. onend konuşma bitince (ya da kesilince/takılınca) çağrılır.
   // iPhone'da konuşma bazen "bitti" sinyali vermeden takılır; bu yüzden her cümlenin bir süre sınırı var.
+  // ---------- sunucudaki yapay zeka sesi ----------
+  let chain = Promise.resolve();
+  let voiceGen = 0;
+  let currentSrc = null;
+  function duck(on) {
+    if (crowd && ctx) crowd.g.gain.linearRampToValueAtTime((level < 2 ? 0 : crowdLevel) * (on ? 0.35 : 1), ctx.currentTime + 0.3);
+  }
+  function stopVoice() {
+    voiceGen++;
+    chain = Promise.resolve();
+    if (currentSrc) {
+      try {
+        currentSrc.stop();
+      } catch {
+        /* zaten durdu */
+      }
+      currentSrc = null;
+    }
+    current = 0;
+  }
+  function speakServer(text, { urgent = false, onend = null } = {}) {
+    if (urgent) stopVoice();
+    else if (current >= 2) return false;
+    current++;
+    const gen = voiceGen;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      current = Math.max(0, current - 1);
+      duck(false);
+      if (onend) onend();
+    };
+    // ses hemen istenir, sıra gelince çalınır
+    const clip = fetch('tts?t=' + encodeURIComponent(text.slice(0, 260)))
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('tts ' + r.status))))
+      .then((buf) => ctx.decodeAudioData(buf));
+    chain = chain
+      .then(() => clip)
+      .then(
+        (buf) =>
+          new Promise((res) => {
+            if (gen !== voiceGen || level === 0) {
+              finish();
+              return res();
+            }
+            const s = ctx.createBufferSource();
+            s.buffer = buf;
+            s.connect(voiceGain);
+            currentSrc = s;
+            duck(true);
+            setTtsState('ok');
+            s.onended = () => {
+              if (currentSrc === s) currentSrc = null;
+              finish();
+              res();
+            };
+            s.start();
+          }),
+      )
+      .catch(() => finish());
+    setTimeout(finish, 25000 + text.length * 80);
+    return true;
+  }
+  fetch('tts/status')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      if (!j?.provider || !ttsWanted) return;
+      serverVoice = true;
+      if (ctx && ctx.state === 'running') setTtsState('ok');
+      else if (ttsState === 'broken') setTtsState('unknown');
+    })
+    .catch(() => {});
+
   const alive = new Set(); // Chrome konuşma nesnesini erken silerse "bitti" sinyali gelmez; referans tutulur
   function speak(text, { urgent = false, onend = null, rate = 1.02 } = {}) {
+    if (serverVoice && ttsWanted && level > 0 && ctx && text) return speakServer(text, { urgent, onend });
     if (!ttsOn || level === 0 || !text) return false;
     if (!speechSynthesis.speaking && !speechSynthesis.pending) current = 0; // takılı sayaç temizlenir
     let cancelled = false;
@@ -309,7 +391,7 @@ window.FX = (() => {
     return true;
   }
   const say = (text, urgent = false) => speak(text, { urgent });
-  const isSpeaking = () => ttsOn && level > 0 && (speechSynthesis.speaking || current > 0);
+  const isSpeaking = () => level > 0 && (current > 0 || (ttsOn && speechSynthesis.speaking));
 
   // Tarayıcılar sese ancak ilk dokunuştan sonra izin verir (OBS'te sorun yok).
   // iPhone'da sesli anons da ilk dokunuşta, dokunuşun içinde başlatılmalı.
@@ -318,9 +400,20 @@ window.FX = (() => {
   // o dokunuşun içinde, öncesinde cancel() çağrılmadan başlatılmalıdır.
   let unlockTries = 0;
   let unlockTimer = null;
+  let greeted = false;
   function unlock() {
     init();
     const p = ctx ? ctx.resume().catch(() => {}) : Promise.resolve();
+    if (serverVoice && ttsWanted && level > 0) {
+      return p.then(() => {
+        if (ctx.state !== 'running') return;
+        setTtsState('ok');
+        if (!greeted) {
+          greeted = true;
+          speak('Merhaba! Canlı Maç Oyna yayınına hoş geldiniz. Takımını seç, maça hazır ol!');
+        }
+      });
+    }
     if (ttsOn && level > 0 && ttsState !== 'ok') {
       unlockTries++;
       const u = new SpeechSynthesisUtterance(unlockTries === 1 ? 'Merhaba! Canlı Maç Oyna yayınına hoş geldiniz.' : 'Spiker hazır.');
@@ -355,7 +448,7 @@ window.FX = (() => {
     document.body.appendChild(btn);
     let gaveUp = false;
     const needAudio = () => ctx && ctx.state !== 'running';
-    const needTts = () => ttsOn && level > 0 && ttsState !== 'ok';
+    const needTts = () => ttsWanted && level > 0 && (serverVoice || ttsOn) && ttsState !== 'ok';
     const check = () => {
       if (level === 0 || (!needAudio() && !needTts())) {
         btn.style.display = 'none';
@@ -394,8 +487,9 @@ window.FX = (() => {
 
   function setLevel(n) {
     level = n;
-    if (n === 0 && hasTTS) {
-      speechSynthesis.cancel();
+    if (n === 0) {
+      stopVoice();
+      if (hasTTS) speechSynthesis.cancel();
       current = 0;
     }
     if (n > 0) unlock();
@@ -465,7 +559,8 @@ window.FX = (() => {
   }
 
   return {
-    ttsAvailable: () => ttsOn && level > 0,
+    ttsAvailable: () => ttsWanted && level > 0 && (serverVoice || ttsOn),
+    voiceSource: () => (serverVoice ? 'sunucu' : ttsOn ? 'cihaz' : 'yok'),
     ttsStatus: () => ttsState,
     onTtsStatus: (f) => listeners.push(f),
     getLevel: () => level,

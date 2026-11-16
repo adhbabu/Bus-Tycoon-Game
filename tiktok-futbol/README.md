@@ -111,6 +111,23 @@ Oyun sunucusu iPhone'da çalışamaz. Bu yüzden onu ücretsiz bir bulut sunucus
 - **Kadro kaydı:** Ücretsiz planda sunucu yeniden başlarsa kadro sıfırlanır.
 - **TikTok'a bağlanamazsa:** Bulut sunucularından bağlantı bazen sınırlanır. <https://www.eulerstream.com> adresinden ücretsiz anahtar al, Render'da `SIGN_API_KEY` ortam değişkeni olarak ekle.
 
+### Doğal spiker sesi (yapay zeka sesi)
+
+Telefonun ve tarayıcının kendi sesi robotik duyulur. Gerçek bir maç spikeri gibi coşkulu bir ses için spiker cümleleri sunucuda bir yapay zeka ses servisiyle seslendirilir. Bir anahtar eklemen yeterli; eklemezsen cihazın kendi sesi kullanılır.
+
+**OpenAI (önerilen, ucuz):** Yaklaşık **dakikada 1,5 sent** (≈ 1 saatlik yayın 0,5–1 dolar).
+1. <https://platform.openai.com> → hesap aç → **Billing** → 5 dolar yükle.
+2. **API keys** → **Create new secret key** → anahtarı kopyala. **Anahtarı kimseyle, sohbette de paylaşma.**
+3. Render → servisin → **Environment** → **Add Environment Variable**:
+   `OPENAI_API_KEY` = kopyaladığın anahtar → **Save Changes**. Sunucu yeniden başlar.
+4. Yayın ekranını yenile ve bir kez dokun; spiker yeni sesle konuşur.
+
+İsteğe bağlı ayarlar: `OPENAI_TTS_VOICE` (varsayılan `ash`; `onyx`, `verse`, `ballad` da denenebilir), `TTS_INSTRUCTIONS` (konuşma tarzı), `TTS_MAX_CHARS_PER_HOUR` (saatlik karakter sınırı, varsayılan 30000).
+
+**ElevenLabs (alternatif):** `ELEVENLABS_API_KEY` ekle; istersen `ELEVENLABS_VOICE_ID` ile ses seç.
+
+Aynı cümleler bir kez seslendirilip saklanır; saatlik sınır dolarsa spiker o saat için cihaz sesine döner.
+
 ### Ekran ayarları (adresin sonuna eklenir)
 
 | Ayar | Örnek | Ne yapar |
