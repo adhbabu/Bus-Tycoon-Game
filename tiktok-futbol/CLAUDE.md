@@ -13,6 +13,8 @@ Kullanıcı bir videoya, oyuna ya da başka bir içeriğe **ses / seslendirme ek
 - Satırlar kodlanır (G = oyun spikeri, P/Q/K/B = videolar) ve `seslendirme/METINLER.md`'ye eklenir.
 - Oyunun spiker sesleri `public/sesler/<KOD>.mp3` içindedir; yayın ekranı `/sesler/list` ile hangilerinin olduğunu öğrenir. Ses paketi varken kaydı olmayan cümleler yalnızca altyazıda görünür (tek tip ses).
 - Azure/Gemini/cihaz sesi yalnızca ElevenLabs'e erişim yoksa yedek olarak kullanılır; bunu kullanıcıya söyle.
+- Ses paketi değişince demo da güncellenir: `node build-demo.mjs <scratchpad>/canli-futbol-demo.html`, sonra "Canlı Futbol Demo" (https://claude.ai/artifact/UGJGZnL66p55qE9gV7rV55) `files` ile `sesler/Gxx.mp3` dosyalarıyla birlikte yeniden yayınlanır. Demo, iPhone'daki Claude uygulamasında cihaz sesi çalışmadığı için yalnızca bu kayıtlarla konuşur.
+- Render'daki yayın ekranı yeni sürümü (sunucunun `build` kimliği) görünce maç oynanmıyorken kendini yeniler.
 
 ## Görsel standardı (kullanıcının isteği)
 
