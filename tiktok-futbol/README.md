@@ -71,9 +71,15 @@ Açılınca iki adres verir:
 
 ### Yol A: TikTok LIVE Studio (bilgisayardan yayın, en kolayı)
 
+> Sunucun Render'daysa `localhost` yerine Render adresini kullan (ör. `https://bus-tycoon-game-1.onrender.com/`); bilgisayara bir şey kurman gerekmez. Ücretsiz sunucu uykudaysa ilk açılış 1 dakika sürebilir, yayından önce aç.
+
 1. TikTok LIVE Studio'yu indir, hesabınla giriş yap, yayın yönünü **Dikey** seç.
-2. Chrome'da `http://localhost:3000/` adresini aç ve sayfaya **bir kez tıkla** (tarayıcı sese ancak tıklamadan sonra izin verir).
-3. LIVE Studio → **Kaynak ekle → Pencere yakalama (Window Capture)** → Chrome penceresini seç, sahneye sığdır.
+2. Oyunu dikey, çerçevesiz bir pencerede aç:
+   - Windows: **Win + R** → `chrome --app=https://bus-tycoon-game-1.onrender.com/ --window-size=608,1080` → Enter
+   - Mac: Terminal → `open -na "Google Chrome" --args --app=https://bus-tycoon-game-1.onrender.com/ --window-size=608,1080`
+
+   Pencereye **bir kez tıkla** (tarayıcı sese ancak tıklamadan sonra izin verir).
+3. LIVE Studio → **Kaynak ekle → Pencere yakalama (Window Capture)** → oyun penceresini seç, sahneyi dolduracak şekilde büyüt. Görüntü siyah çıkarsa Chrome → Ayarlar → Sistem → **"Kullanılabilir olduğunda grafik hızlandırmayı kullan"** seçeneğini kapat, Chrome'u yeniden aç.
 4. Sesin yayına gitmesi için LIVE Studio'da **Masaüstü sesi / Sistem sesi** kaynağının açık olduğundan emin ol.
 5. **Canlı yayını başlat.** Yönetim panelinde durum **"Yayına bağlı"** olur. Program, yayın başladıktan sonra en geç 30 saniye içinde kendiliğinden bağlanır.
 
