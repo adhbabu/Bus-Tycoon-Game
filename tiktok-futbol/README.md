@@ -113,20 +113,26 @@ Oyun sunucusu iPhone'da çalışamaz. Bu yüzden onu ücretsiz bir bulut sunucus
 
 ### Doğal spiker sesi (yapay zeka sesi)
 
-Telefonun ve tarayıcının kendi sesi robotik duyulur. Gerçek bir maç spikeri gibi coşkulu bir ses için spiker cümleleri sunucuda bir yapay zeka ses servisiyle seslendirilir. Bir anahtar eklemen yeterli; eklemezsen cihazın kendi sesi kullanılır.
+Telefonun ve tarayıcının kendi sesi robotik duyulur. Doğal bir spiker için cümleler sunucuda bir yapay zeka ses servisiyle seslendirilir. Bir anahtar eklemen yeterli; eklemezsen cihazın kendi sesi kullanılır.
 
-**OpenAI (önerilen, ucuz):** Yaklaşık **dakikada 1,5 sent** (≈ 1 saatlik yayın 0,5–1 dolar).
-1. <https://platform.openai.com> → hesap aç → **Billing** → 5 dolar yükle.
-2. **API keys** → **Create new secret key** → anahtarı kopyala. **Anahtarı kimseyle, sohbette de paylaşma.**
-3. Render → servisin → **Environment** → **Add Environment Variable**:
-   `OPENAI_API_KEY` = kopyaladığın anahtar → **Save Changes**. Sunucu yeniden başlar.
-4. Yayın ekranını yenile ve bir kez dokun; spiker yeni sesle konuşur.
+**Microsoft Azure: ücretsiz, doğal Türkçe erkek sesi "Ahmet" (önerilen)**
+Ücretsiz F0 katmanı ayda 500 bin karakter verir (yaklaşık 10 saat konuşma). Kota dolunca ses durur, **para çekilmez**.
+1. <https://azure.microsoft.com/free> → ücretsiz hesap aç. Kayıtta kimlik doğrulaması için kart istenebilir; F0 katmanında ücret alınmaz. Öğrenciysen **Azure for Students** kart istemez.
+2. <https://portal.azure.com> → **Kaynak oluştur** → "Speech" (Konuşma hizmeti) ara → **Oluştur**.
+   - Bölge (Region): **West Europe** · Fiyat katmanı (Pricing tier): **Free F0**
+3. Kaynak açılınca **Keys and Endpoint** → **KEY 1**'i kopyala. **Anahtarı kimseyle, sohbette de paylaşma.**
+4. Render → servisin → **Environment** → iki değişken ekle → **Save Changes**:
+   - `AZURE_SPEECH_KEY` = kopyaladığın anahtar
+   - `AZURE_SPEECH_REGION` = `westeurope`
+5. Yayın ekranını yenile, bir kez dokun; spiker Ahmet'in sesiyle konuşur.
 
-İsteğe bağlı ayarlar: `OPENAI_TTS_VOICE` (varsayılan `ash`; `onyx`, `verse`, `ballad` da denenebilir), `TTS_INSTRUCTIONS` (konuşma tarzı), `TTS_MAX_CHARS_PER_HOUR` (saatlik karakter sınırı, varsayılan 30000).
+İsteğe bağlı: `AZURE_VOICE` (başka ses), `AZURE_RATE` (hız, varsayılan `+12%`), `AZURE_PITCH` (ton, varsayılan `-2%`; daha kalın ses için `-6%`).
 
-**ElevenLabs (alternatif):** `ELEVENLABS_API_KEY` ekle; istersen `ELEVENLABS_VOICE_ID` ile ses seç.
+**Parasız en doğal seçenek: kendi sesin.** Mobil Oyun yayını mikrofonunu da yayınlar. Robot sesi kapatmak için yayın adresinin sonuna `?tts=0` ekle; spikerin yazdıkları altyazı olarak görünmeye devam eder, sen anlatırsın.
 
-Aynı cümleler bir kez seslendirilip saklanır; saatlik sınır dolarsa spiker o saat için cihaz sesine döner.
+**Ücretli alternatifler:** `OPENAI_API_KEY` (dakikada ~1,5 sent, "heyecanlı spiker" tarzı) ya da `ELEVENLABS_API_KEY`.
+
+Aynı cümleler bir kez seslendirilip saklanır; saatlik sınır (`TTS_MAX_CHARS_PER_HOUR`, varsayılan 30000) dolarsa spiker o saat için cihaz sesine döner.
 
 ### Ekran ayarları (adresin sonuna eklenir)
 

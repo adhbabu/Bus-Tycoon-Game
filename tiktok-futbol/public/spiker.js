@@ -20,11 +20,18 @@ window.Spiker = (() => {
 
   const fmt = (n) => Number(n || 0).toLocaleString('tr-TR');
   const sn = (t) => t.name; // takım adı
+  // Sesli okunacak metin: emoji/simgeler atılır; "FENERBAHÇE", "GOOOL" gibi tamamen büyük harfli
+  // kelimeler normal yazıma çevrilir (ses motorları bunları harf harf okuyabiliyor).
+  const titleWord = (w) =>
+    /^\p{Lu}{3,}[!?.,…:;]*$/u.test(w) ? w.charAt(0) + w.slice(1).toLocaleLowerCase('tr') : w;
   const toSay = (s) =>
     s
       .replace(/\p{Extended_Pictographic}|️|‍/gu, '')
-      .replace(/[_.@#*|~^=+<>[\]{}]+/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replace(/[_@#*|~^=+<>[\]{}]+/g, ' ')
+      .replace(/\.{3,}|…/g, ', ')
+      .split(/\s+/)
+      .map(titleWord)
+      .join(' ')
       .trim();
   const time = (sec) => {
     const m = Math.floor(sec / 60);

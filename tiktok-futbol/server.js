@@ -52,13 +52,38 @@ setInterval(() => {
 }, 3000);
 
 // ---------- doğal spiker sesi (isteğe bağlı yapay zeka sesi) ----------
-// OPENAI_API_KEY ya da ELEVENLABS_API_KEY tanımlıysa spiker cümleleri sunucuda seslendirilir.
+// AZURE_SPEECH_KEY (ücretsiz katman), OPENAI_API_KEY ya da ELEVENLABS_API_KEY tanımlıysa spiker cümleleri sunucuda seslendirilir.
 // Tanımlı değilse yayın ekranı cihazın kendi sesini kullanır.
 const TTS_INSTRUCTIONS =
   env.TTS_INSTRUCTIONS ||
   'Heyecanlı, tecrübeli bir Türk futbol spikeri gibi konuş. Doğal İstanbul Türkçesi, hızlı ve enerjik tempo. ' +
     'Pozisyon anlatırken gerilimi artır, gol anlarında sesini yükselt ve "Gol" kelimesini uzatarak coşkuyla bağır. ' +
     'Kurtarış ve direkte hayıflan, duyurularda samimi ve davetkâr ol.';
+
+// Microsoft Azure Konuşma hizmeti: ücretsiz F0 katmanında ayda 500 bin karakter, kota dolunca ücret çıkmaz.
+// Varsayılan ses: tr-TR-AhmetNeural (doğal Türkçe erkek sesi).
+const xmlEscape = (s) => s.replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);
+async function azureTTS(text) {
+  const region = env.AZURE_SPEECH_REGION || 'westeurope';
+  const voice = env.AZURE_VOICE || 'tr-TR-AhmetNeural';
+  const rate = env.AZURE_RATE || '+12%';
+  const pitch = env.AZURE_PITCH || '-2%';
+  const ssml =
+    `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR">` +
+    `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${xmlEscape(text)}</prosody></voice></speak>`;
+  const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+    method: 'POST',
+    headers: {
+      'Ocp-Apim-Subscription-Key': env.AZURE_SPEECH_KEY,
+      'Content-Type': 'application/ssml+xml',
+      'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3',
+      'User-Agent': 'canli-mac-oyna',
+    },
+    body: ssml,
+  });
+  if (!r.ok) throw new Error(`Azure ses hatası ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  return Buffer.from(await r.arrayBuffer());
+}
 
 async function openaiTTS(text) {
   const r = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -105,7 +130,9 @@ function mockTTS(text) {
   return Promise.resolve(buf);
 }
 
-const TTS = env.OPENAI_API_KEY
+const TTS = env.AZURE_SPEECH_KEY
+  ? { name: 'azure', make: azureTTS, type: 'audio/mpeg' }
+  : env.OPENAI_API_KEY
   ? { name: 'openai', make: openaiTTS, type: 'audio/mpeg' }
   : env.ELEVENLABS_API_KEY
     ? { name: 'elevenlabs', make: elevenTTS, type: 'audio/mpeg' }

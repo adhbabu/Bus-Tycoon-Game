@@ -14,5 +14,7 @@ services:
         sync: false
       - key: ADMIN_KEY
         sync: false
-      - key: OPENAI_API_KEY   # isteğe bağlı: doğal spiker sesi
+      - key: AZURE_SPEECH_KEY   # isteğe bağlı: ücretsiz doğal spiker sesi (Azure F0)
         sync: false
+      - key: AZURE_SPEECH_REGION
+        value: westeurope
