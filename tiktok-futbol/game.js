@@ -12,11 +12,13 @@ export const norm = (s) =>
 const log2p = (n) => Math.log2(1 + Math.max(0, n));
 const MAX_FEED = 30;
 const BOT_NAMES = [
-  'roketriza_bot', 'calimcengiz_bot', 'duvardogan_bot', 'simsek.sukru_bot', 'firtinafikret_bot', 'kafakemal_bot',
-  'demirbilek_bot', 'topcuturgut_bot', 'ustaufuk_bot', 'celikcemil_bot', 'prespertev_bot',
-  'kartalkenan_bot', 'yildirimyasar_bot', 'fuzeferit_bot', 'kayakadir_bot', 'tuneltarik_bot', 'ruzgarrasim_bot',
-  'golmakinesi_bot', 'sihirbazselim_bot', 'kalebekcisi_bot', 'okgibioguz_bot', 'bombabulent_bot',
+  'Roket Rıza', 'Çalım Cengiz', 'Duvar Doğan', 'Şimşek Şükrü', 'Fırtına Fikret', 'Kafa Kemal',
+  'Demir Bilek', 'Topçu Turgut', 'Usta Ufuk', 'Çelik Cemil', 'Pres Pertev',
+  'Kartal Kenan', 'Yıldırım Yaşar', 'Füze Ferit', 'Kaya Kadir', 'Tünel Tarık', 'Rüzgâr Rasim',
+  'Golcü Gürol', 'Sihirbaz Selim', 'Bekçi Kâzım', 'Ok Gibi Oğuz', 'Bomba Bülent',
 ];
+// Sanal oyuncunun adı duyurularda "(sanal)" ekiyle geçer; gerçek kişi sanılmasın.
+const label = (p) => (p?.bot ? `${p.name} (sanal)` : p?.name);
 const MAX_EVENTS = 40;
 
 function freshMatch() {
@@ -125,11 +127,12 @@ export class Game {
     return { starters, bench: players.filter((p) => !used.has(p.id)), captainId };
   }
 
-  // Botların adı TikTok kullanıcı adı biçimindedir ama hep "_bot" ile biter; 🤖 simgesi ve
-  // BOT rozetiyle gösterilirler ki izleyiciler onları gerçek kişi sanmasın.
+  // Sanal oyuncular futbol lakaplarıyla, avatarda forma numarası ve "SANAL" rozetiyle gösterilir;
+  // izleyiciler onları gerçek kişi sanmaz. Hediye atmaz, kaptan olamaz, MVP seçilmezler.
   bot(key, pos) {
     const i = this.positions.indexOf(pos) + (key === 'A' ? 0 : this.positions.length);
-    return { id: `bot-${key}-${pos.key}`, name: BOT_NAMES[i % BOT_NAMES.length], avatar: '', coins: 0, bot: true };
+    const num = { GK: 1, RB: 2, LB: 3, LCB: 4, RCB: 5, CDM: 6, RW: 7, CM: 8, ST: 9, CAM: 10, LW: 11 }[pos.key] ?? '';
+    return { id: `bot-${key}-${pos.key}`, name: BOT_NAMES[i % BOT_NAMES.length], num, avatar: '', coins: 0, bot: true };
   }
 
   realStarters(key) {
@@ -495,27 +498,27 @@ export class Game {
       m.scorers[sp.id] = (m.scorers[sp.id] ?? 0) + 1;
       const others = att.filter((s) => s !== shooter);
       const assist = others.length && this.rng() < 0.6 ? this.pickWeighted(others, weight).player : null;
-      const text = `GOOOL! ${sp.name}${assist ? ` (asist: ${assist.name})` : ''}`;
+      const text = `GOOOL! ${label(sp)}${assist ? ` (asist: ${label(assist)})` : ''}`;
       this.logEvent({ type: 'goal', team: key, text });
       this.emit({
         type: 'goal',
         big: true,
         team: key,
         id: sp.id,
-        name: sp.name,
+        name: label(sp),
         avatar: sp.avatar,
-        assist: assist?.name ?? null,
+        assist: assist ? label(assist) : null,
         minute: m.minute,
         score: { ...m.score },
-        text: `${m.minute}' GOOOL! ${sp.name} — ${teamName}`,
+        text: `${m.minute}' GOOOL! ${label(sp)} — ${teamName}`,
       });
     } else if (strong || this.rng() < 0.5) {
       const r = this.rng();
       let text;
-      if (gk && r < 0.4) text = `🧤 ${gk.name} kurtardı! (${sp.name} şutu)`;
-      else if (r < 0.6) text = `😱 ${sp.name} direkten döndü!`;
-      else if (r < 0.8) text = `${sp.name} şutunu auta gönderdi`;
-      else text = `${sp.name} ofsayta yakalandı`;
+      if (gk && r < 0.4) text = `🧤 ${label(gk)} kurtardı! (${label(sp)} şutu)`;
+      else if (r < 0.6) text = `😱 ${label(sp)} direkten döndü!`;
+      else if (r < 0.8) text = `${label(sp)} şutunu auta gönderdi`;
+      else text = `${label(sp)} ofsayta yakalandı`;
       this.logEvent({ type: 'chance', team: key, text });
       this.emit({ type: 'chance', team: key, text: `${m.minute}' ${text}` });
     }
@@ -590,7 +593,7 @@ export class Game {
 
   // ---------- ekrana gönderilen durum ----------
   pub(p) {
-    return { id: p.id, name: p.name, avatar: p.avatar, coins: p.coins, goals: this.match.scorers[p.id] ?? 0, bot: !!p.bot };
+    return { id: p.id, name: p.name, avatar: p.avatar, coins: p.coins, goals: this.match.scorers[p.id] ?? 0, bot: !!p.bot, num: p.num };
   }
 
   snapshot({ admin = false } = {}) {

@@ -54,8 +54,8 @@ window.Spiker = (() => {
         const e = empty(t);
         const c = cap(t);
         if (bots(t) > 0) {
-          add('bos' + t.key, 3, `🤖 ${sn(t)} takımında ${bots(t)} mevkide bot oynuyor. Bir hediye at, botun yerini sen al!`, t.key);
-          add('eksik' + t.key, 1.5, `${sn(t)} botlarla mı sahaya çıkacak? Gerçek oyuncular nerede?`, t.key);
+          add('bos' + t.key, 3, `${sn(t)} takımında ${bots(t)} mevkide sanal oyuncu var. Bir hediye at, yerini sen al!`, t.key);
+          add('eksik' + t.key, 1.5, `${sn(t)} sanal oyuncularla mı sahaya çıkacak? Gerçek taraftarlar nerede?`, t.key);
         } else if (e > 0) {
           add('bos' + t.key, 3, `${sn(t)} takımında ${e} forma boş! Tek bir hediyeyle sahaya çıkabilirsin.`, t.key);
           add('eksik' + t.key, 1.5, `${sn(t)} eksik kadroyla mı çıkacak? ${e} oyuncu daha lazım!`, t.key);
@@ -89,7 +89,7 @@ window.Spiker = (() => {
         if (v >= 50 && v < 100) add('bar' + t.key, v / 20, `⚡ ${sn(t)} atak barı yüzde ${v}! Biraz daha destek, atak geliyor!`, t.key);
         const st9 = t.starters.find((s) => s.pos.key === 'ST')?.player;
         if (st9 && !st9.bot) add('forvet' + t.key, 1.5, `${sn(t)} santrforu ${st9.name} gol kokluyor! Atak barını doldurun!`, t.key);
-        if (bots(t) > 0) add('macbot' + t.key, 1.5, `🤖 ${sn(t)} sahada ${bots(t)} botla oynuyor. Hediye at, botu kenara al, oyuna sen gir!`, t.key);
+        if (bots(t) > 0) add('macbot' + t.key, 1.5, `${sn(t)} sahada ${bots(t)} sanal oyuncuyla oynuyor. Hediye at, sanal oyuncunun yerine sen gir!`, t.key);
         const c = cap(t);
         if (c) add('mackaptan' + t.key, 1, `👑 ${sn(t)} kaptanı ${c.name} sahada. Tahtı almak isteyen var mı?`, t.key);
       }

@@ -178,3 +178,18 @@ test('botlar boş mevkileri doldurur, kaptan olmaz, gerçek oyuncuya yer açar',
   assert.equal(g.match.status, 'finished');
   if (g.match.result.mvp) assert.ok(!g.match.result.mvp.id.startsWith('bot-'));
 });
+
+test('sanal oyuncular: adında "bot" geçmez, gollerde "(sanal)" yazar', () => {
+  const cfg = structuredClone(config);
+  cfg.bots = { enabled: true };
+  const g = new Game(cfg, null, seeded(9));
+  const names = [];
+  for (const k of ['A', 'B']) for (const s of g.lineup(k).starters) names.push(s.player.name);
+  assert.ok(names.every((n) => !/bot/i.test(n)));
+  const goals = [];
+  g.onEvent = (e) => e.type === 'goal' && goals.push(e);
+  g.handleGift({ id: 'tek', name: 'Tek', coins: 1 });
+  g.startMatch();
+  while (g.match.status === 'running') g.tick();
+  for (const e of goals) if (e.id.startsWith('bot-')) assert.ok(e.name.endsWith('(sanal)'));
+});

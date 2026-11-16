@@ -196,10 +196,10 @@
   .rl { margin-top: 3px; font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px #000; white-space: nowrap; }
   .rl b { color: var(--gold); }
 
-  .pl.bot .av { background: #4a5566; filter: saturate(.5); }
-  .pl.bot .av .ini { font-size: 38px; }
+  .pl.bot .av { background: color-mix(in srgb, var(--c) 70%, #000); }
+  .pl.bot .av .ini { font-size: 36px; color: var(--c2, #fff); }
   .pl.bot .av::after {
-    content: 'BOT'; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%);
+    content: 'SANAL'; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%);
     font: 800 12px Inter, sans-serif; letter-spacing: 1px; color: #fff; background: #1b222c;
     border: 2px solid #8a96a8; border-radius: 6px; padding: 0 5px; line-height: 16px;
   }
@@ -501,7 +501,7 @@ function renderPitch(teams) {
       el.dataset.team = t.key;
       if (s.player?.bot) {
         setAvatar(el, '', '');
-        el.querySelector('.ini').textContent = '🤖';
+        el.querySelector('.ini').textContent = String(s.player.num ?? '');
         el.querySelector('.nm').textContent = s.player.name;
         el.querySelector('.rl').innerHTML = `${esc(s.pos.name.toLocaleUpperCase('tr'))} · <b>YERİNİ AL!</b>`;
         const g = el.querySelector('.goals');
