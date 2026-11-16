@@ -12,10 +12,10 @@ export const norm = (s) =>
 const log2p = (n) => Math.log2(1 + Math.max(0, n));
 const MAX_FEED = 30;
 const BOT_NAMES = [
-  'Roket Rıza', 'Çalım Cengiz', 'Duvar Doğan', 'Şimşek Şükrü', 'Fırtına Fikret', 'Kafa Kemal',
-  'Demir Bilek Dursun', 'Topçu Turgut', 'Usta Ufuk', 'Çelik Cemil', 'Pres Pertev',
-  'Kartal Kenan', 'Yıldırım Yaşar', 'Füze Ferit', 'Kaya Kadir', 'Tünel Tarık', 'Rüzgâr Rasim',
-  'Gol Makinesi Gürol', 'Sihirbaz Selim', 'Kale Bekçisi Kâzım', 'Ok Gibi Oğuz', 'Bomba Bülent',
+  'roketriza_bot', 'calimcengiz_bot', 'duvardogan_bot', 'simsek.sukru_bot', 'firtinafikret_bot', 'kafakemal_bot',
+  'demirbilek_bot', 'topcuturgut_bot', 'ustaufuk_bot', 'celikcemil_bot', 'prespertev_bot',
+  'kartalkenan_bot', 'yildirimyasar_bot', 'fuzeferit_bot', 'kayakadir_bot', 'tuneltarik_bot', 'ruzgarrasim_bot',
+  'golmakinesi_bot', 'sihirbazselim_bot', 'kalebekcisi_bot', 'okgibioguz_bot', 'bombabulent_bot',
 ];
 const MAX_EVENTS = 40;
 
@@ -125,8 +125,8 @@ export class Game {
     return { starters, bench: players.filter((p) => !used.has(p.id)), captainId };
   }
 
-  // Botlara eğlenceli, uydurma futbol lakapları verilir; 🤖 simgesi ve BOT etiketiyle
-  // gösterilirler ki izleyiciler onları gerçek kişi sanmasın.
+  // Botların adı TikTok kullanıcı adı biçimindedir ama hep "_bot" ile biter; 🤖 simgesi ve
+  // BOT rozetiyle gösterilirler ki izleyiciler onları gerçek kişi sanmasın.
   bot(key, pos) {
     const i = this.positions.indexOf(pos) + (key === 'A' ? 0 : this.positions.length);
     return { id: `bot-${key}-${pos.key}`, name: BOT_NAMES[i % BOT_NAMES.length], avatar: '', coins: 0, bot: true };
