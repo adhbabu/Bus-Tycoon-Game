@@ -784,18 +784,19 @@ function onEvent(ev) {
   const gold = '#ffc531';
   switch (ev.type) {
     case 'goal':
-      FX.goal(); FX.shake();
+      FX.boom(); FX.goal(); FX.shake();
       FX.confetti([colors[ev.team], '#ffffff', gold], 220);
       Spiker.commentate(ev.call || `Gol! Gol! Gol! ${n}!`, { team: ev.team, urgent: true, style: 'goal' });
       break;
     case 'captain':
+      FX.boom();
       FX.fanfare();
       FX.confetti([gold, '#ffffff', colors[ev.team]], 90, 540, ev.team === 'A' ? 640 : 1440);
       Spiker.commentate(ev.prevName ? `👑 Taht değişti! Yeni kaptan ${ev.name}!` : `👑 ${ev.name} kaptan oldu!`, { team: ev.team });
       break;
     case 'promote': FX.promote(); break;
     case 'mega':
-      FX.mega(); FX.confetti([gold, '#ffffff', colors[ev.team]], 160);
+      FX.boom(); FX.mega(); FX.confetti([gold, '#ffffff', colors[ev.team]], 160);
       Spiker.commentate(`${ev.name}, ${ev.giftName} için çok teşekkürler!`, { team: ev.team });
       break;
     case 'join': break;

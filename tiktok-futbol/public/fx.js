@@ -180,6 +180,14 @@ window.FX = (() => {
     roar(2.4, 0.35, true);
   }
 
+  // BOOM: gol, kaptan değişimi ve büyük hediyede derin bas vuruşu
+  function boom() {
+    if (!gate('boom', 1200) || !ok('major')) return;
+    tone({ type: 'sine', f: 150, f2: 36, dur: 1.2, gain: 0.6, attack: 0.004 });
+    tone({ type: 'triangle', f: 75, f2: 30, dur: 1.0, gain: 0.32, attack: 0.004 });
+    noise({ dur: 0.45, gain: 0.4, type: 'lowpass', f: 1200, f2: 120, attack: 0.002 });
+  }
+
   function ooh() {
     if (!gate('ooh', 7000) || !ok('minor')) return;
     noise({ dur: 1.2, gain: 0.22, f: 520, f2: 260, q: 2, attack: 0.18 });
@@ -320,6 +328,8 @@ window.FX = (() => {
             }
             const s = ctx.createBufferSource();
             s.buffer = buf;
+            // gol anlatımı daha yüksek sesle
+            voiceGain.gain.setValueAtTime(style === 'goal' ? 2.8 : 1.8, ctx.currentTime);
             s.connect(voiceGain);
             currentSrc = s;
             duck(true);
@@ -569,7 +579,7 @@ window.FX = (() => {
     say,
     isSpeaking,
     setupUnlock,
-    coin, whistle, roar, goal, fanfare, mega, ooh, charge, promote, sad, tick, setCrowd,
+    coin, whistle, roar, goal, fanfare, mega, ooh, boom, charge, promote, sad, tick, setCrowd,
     cleanName, confetti, shake,
   };
 })();

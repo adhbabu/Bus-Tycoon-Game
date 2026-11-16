@@ -74,16 +74,39 @@ const AZURE_VOICES = [
 ];
 // Cümlenin türüne göre tonlama: gol anında coşku, atakta gerilim, duyuruda sakinlik
 const AZURE_STYLE = {
-  goal: { rate: '+20%', pitch: '+8%', volume: 'loud' },
+  goal: { rate: '+22%', pitch: '+12%', volume: 'x-loud' },
   call: { rate: '+15%', pitch: '+3%', volume: 'medium' },
   chance: { rate: '+12%', pitch: '+4%', volume: 'medium' },
   info: { rate: env.AZURE_RATE || '+8%', pitch: env.AZURE_PITCH || '-2%', volume: 'medium' },
 };
+// "Gol" kelimesi spiker gibi uzatılıp bağırılarak okunur: yavaş, tiz ve en yüksek sesle.
+// (Ses motorları "Gooooool" yazısını kısaltıp düz "gol" diye okuyor.)
+function prosodyWithGoals(text, st) {
+  const re = /(?<![\p{L}])(go+l+)(?![\p{L}])/giu;
+  const norm = (t) => (t.trim() ? `<prosody rate="${st.rate}" pitch="${st.pitch}" volume="${st.volume}">${xmlEscape(t)}</prosody>` : xmlEscape(t));
+  let out = '';
+  let last = 0;
+  let m;
+  while ((m = re.exec(text))) {
+    out += norm(text.slice(last, m.index));
+    const long = m[1].length > 3;
+    out += long
+      ? `<prosody rate="-60%" pitch="+35%" volume="x-loud">Gooool</prosody><break time="120ms"/>`
+      : `<prosody rate="-25%" pitch="+28%" volume="x-loud">Gol</prosody>`;
+    last = m.index + m[1].length;
+  }
+  return out + norm(text.slice(last));
+}
+
 async function azureTTS(text, { style = 'info', voice: wanted } = {}) {
   const region = env.AZURE_SPEECH_REGION || 'westeurope';
   const voice = AZURE_VOICES.includes(wanted) ? wanted : env.AZURE_VOICE || 'tr-TR-AhmetNeural';
   const st = AZURE_STYLE[style] || AZURE_STYLE.info;
-  const pros = `<prosody rate="${st.rate}" pitch="${st.pitch}" volume="${st.volume}">${xmlEscape(text)}</prosody>`;
+  // "Gol" yalnızca gol anı cümlelerinde uzatılıp bağırılır
+  const pros =
+    style === 'goal'
+      ? prosodyWithGoals(text, st)
+      : `<prosody rate="${st.rate}" pitch="${st.pitch}" volume="${st.volume}">${xmlEscape(text)}</prosody>`;
   // çok dilli seslere Türkçe konuşmaları söylenir
   const body = /Multilingual/.test(voice) ? `<lang xml:lang="tr-TR">${pros}</lang>` : pros;
   const ssml =
