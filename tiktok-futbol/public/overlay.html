@@ -21,10 +21,11 @@
     --dim: rgba(255,255,255,.72);
     --panel: rgba(8, 14, 24, .78);
     --line: rgba(255,255,255,.85);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; }
-  body { position: fixed; inset: 0; }
+  #wrap { position: fixed; inset: 0; overflow: hidden; }
   body {
     background: radial-gradient(ellipse at 50% 30%, #13304a 0%, #070d17 70%);
     font-family: Inter, system-ui, sans-serif;
@@ -227,6 +228,27 @@
   #final .s { font-family: Oswald, sans-serif; font-size: 96px; font-weight: 700; }
   #final .m { font-size: 30px; font-weight: 800; margin-top: 8px; }
 
+  /* ---------- spiker altyazısı ---------- */
+  #spiker {
+    position: absolute; left: 20px; right: 20px; top: 200px; z-index: 18;
+    display: flex; align-items: center; gap: 18px; padding: 16px 22px;
+    border-radius: 20px; background: rgba(6,10,18,.94); border: 3px solid var(--c, var(--gold));
+    box-shadow: 0 14px 40px rgba(0,0,0,.6), 0 0 26px color-mix(in srgb, var(--c, var(--gold)) 45%, transparent);
+    opacity: 0; transform: translateY(-14px); transition: opacity .3s, transform .3s; pointer-events: none;
+  }
+  #spiker.on { opacity: 1; transform: none; }
+  #spiker .sp-ic {
+    flex: none; width: 74px; height: 74px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff3, transparent 60%), var(--c, var(--gold));
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  #spiker .sp-ic i { width: 7px; height: 16px; border-radius: 4px; background: #fff; animation: wave .9s ease-in-out infinite; }
+  #spiker .sp-ic i:nth-child(2) { animation-delay: -.3s; } #spiker .sp-ic i:nth-child(3) { animation-delay: -.6s; }
+  #spiker .sp-ic i:nth-child(4) { animation-delay: -.15s; }
+  #spiker .sp-l { font-family: Oswald, sans-serif; font-size: 18px; letter-spacing: 2px; color: var(--gold); }
+  #spiker .sp-t { font-size: 30px; font-weight: 800; line-height: 1.22; }
+  @keyframes wave { 0%,100%{height:14px} 50%{height:44px} }
+
   #conn { position: absolute; right: 24px; bottom: 6px; font-size: 14px; color: rgba(255,255,255,.4); }
 
   @keyframes pulse { 0%{transform:scale(1)} 35%{transform:scale(1.28)} 100%{transform:scale(1)} }
@@ -255,6 +277,7 @@
 </style>
 </head>
 <body>
+<div id="wrap">
 <div id="stage">
   <div id="header">
     <div class="tm A" id="tmA" style="--c: var(--A)">
@@ -294,11 +317,14 @@
   </div>
 
   <div id="final"><div class="h"></div><div class="s"></div><div class="m"></div></div>
+  <div id="spiker"><div class="sp-ic"><i></i><i></i><i></i><i></i></div><div><div class="sp-l">🎙 SPİKER</div><div class="sp-t"></div></div></div>
   <div id="toast"><div class="big">GOOOL!</div><div class="tav"></div><div class="tt"></div></div>
   <div id="conn"></div>
 </div>
+</div>
 
 <script src="fx.js"></script>
+<script src="spiker.js"></script>
 <script>
 const PITCH_W = 1040, PITCH_H = 1300;
 const AV_HALF = 38;
@@ -312,8 +338,9 @@ if (params.get('bg')) document.body.classList.add('bg-' + params.get('bg'));
 const stage = $('#stage');
 function fit() {
   // body sabit ve taşmasız; telefonda tarayıcı sayfayı 1080px sanıp yakınlaştırmasın
-  const W = document.body.clientWidth || innerWidth;
-  const H = document.body.clientHeight || innerHeight;
+  const wrap = document.getElementById('wrap');
+  const W = wrap.clientWidth || innerWidth;
+  const H = wrap.clientHeight || innerHeight;
   const s = Math.min(W / 1080, H / 1920);
   stage.style.transform = `translate(${(W - 1080 * s) / 2}px, ${Math.max(0, (H - 1920 * s) / 2)}px) scale(${s})`;
 }
@@ -587,6 +614,8 @@ function pulse(id, coins) {
 }
 
 function onEvent(ev) {
+  Spiker.onEvent(ev);
+  if (ev.type === 'viewer') return;
   if (ev.type === 'gift') {
     setTimeout(() => pulse(ev.id, ev.coins), 120);
     FX.coin(ev.coins);
@@ -662,8 +691,18 @@ function connect() {
   };
   ws.onclose = () => { $('#conn').textContent = 'sunucu bekleniyor…'; setTimeout(connect, 1500); };
 }
-connect();
+// Sunucusuz demo (tek dosya) FUTBOL_LOCAL tanımlar; normalde sunucuya bağlanılır.
+if (window.FUTBOL_LOCAL) window.FUTBOL_LOCAL.start({ render, onEvent });
+else connect();
 FX.setupUnlock();
+Spiker.start({
+  getState: () => state,
+  getCountdown: () => {
+    const m = state?.match;
+    if (!autoEndsAt || !state?.auto?.enabled || state.auto.phase !== 'lobby' || m?.status === 'running') return 0;
+    return Math.max(0, Math.ceil((autoEndsAt - Date.now()) / 1000));
+  },
+});
 </script>
 </body>
 </html>

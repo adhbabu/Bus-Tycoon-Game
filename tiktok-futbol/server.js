@@ -149,6 +149,7 @@ const tiktok = new TikTokSource({
     game.handleGift(g);
   },
   onChat: (c) => game.handleChat(c),
+  onMember: (u) => viewerJoined(u.name),
   onStatus: (s) => {
     tiktokStatus = s;
     if (s.state === 'connected' && demoTimer) setDemo(false);
@@ -156,6 +157,17 @@ const tiktok = new TikTokSource({
     broadcastState();
   },
 });
+
+// ---------- yeni izleyiciler (spiker adıyla karşılar) ----------
+// Kalabalık yayında ekranı boğmasın diye 10 saniyede en fazla 5 isim iletilir.
+let viewerWindow = [];
+function viewerJoined(name) {
+  const now = Date.now();
+  viewerWindow = viewerWindow.filter((t) => now - t < 10000);
+  if (!name || viewerWindow.length >= 5) return;
+  viewerWindow.push(now);
+  game.onEvent({ type: 'viewer', name: String(name).slice(0, 30), ts: now });
+}
 
 // ---------- demo / test ----------
 const FAKE_NAMES = ['Ahmet', 'Elif', 'Mert', 'Zeynep', 'Can', 'Ayşe', 'Burak', 'Selin', 'Emre', 'Deniz', 'Kerem', 'Ece', 'Onur', 'Merve', 'Arda', 'Buse', 'Yusuf', 'İrem', 'Kaan', 'Derya', 'Efe', 'Sude', 'Barış', 'Nehir', 'Umut', 'Ceren', 'Tolga', 'Melis', 'Serkan', 'Gizem'];
@@ -188,9 +200,12 @@ function fakeGift(coins) {
   game.handleGift({ ...u, giftName: g.giftName, count, coins: g.coins * count });
 }
 
+let demoViewerTimer = null;
 function setDemo(on) {
   clearInterval(demoTimer);
+  clearInterval(demoViewerTimer);
   demoTimer = on ? setInterval(() => fakeGift(), 900) : null;
+  demoViewerTimer = on ? setInterval(() => viewerJoined(fakeUser(30 + Math.floor(Math.random() * 40)).name), 7000) : null;
   broadcastState();
 }
 

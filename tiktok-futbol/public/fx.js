@@ -260,10 +260,19 @@ window.FX = (() => {
   }
 
   // ---------- Türkçe sesli anons ----------
+  // En doğal Türkçe sesi seç: Edge'deki "Emel Online (Natural)", iPhone'daki "Gelişmiş/Premium" sesler önce gelir.
+  // Belirli bir ses için adresin sonuna ?sesadi=Emel gibi ekle.
   let voice = null;
+  const wantedVoice = (params.get('sesadi') || '').toLocaleLowerCase('tr');
   function pickVoice() {
-    const vs = speechSynthesis.getVoices();
-    voice = vs.find((v) => /^tr/i.test(v.lang)) || null;
+    const vs = speechSynthesis.getVoices().filter((v) => /^tr/i.test(v.lang));
+    const score = (v) =>
+      (wantedVoice && v.name.toLocaleLowerCase('tr').includes(wantedVoice) ? 100 : 0) +
+      (/natural|neural|online/i.test(v.name) ? 8 : 0) +
+      (/premium|enhanced|geli[sş]mi[sş]/i.test(v.name) ? 6 : 0) +
+      (/google/i.test(v.name) ? 3 : 0) +
+      (v.localService ? 0 : 1);
+    voice = vs.sort((a, b) => score(b) - score(a))[0] || null;
   }
   if (ttsOn) {
     pickVoice();
@@ -276,23 +285,31 @@ window.FX = (() => {
       .trim()
       .slice(0, 22) || 'biri';
   let queued = 0;
-  function say(text, urgent = false) {
-    if (!ttsOn) return;
+  // Konuşmayı başlatır; başladıysa true döner. onend konuşma bitince (ya da kesilince) çağrılır.
+  function speak(text, { urgent = false, onend = null, rate = 1.08 } = {}) {
+    if (!ttsOn || !text) return false;
     if (urgent) {
       speechSynthesis.cancel();
       queued = 0;
-    } else if (queued >= 2) return;
+    } else if (queued >= 2) return false;
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'tr-TR';
     if (voice) u.voice = voice;
-    u.rate = 1.08;
+    u.rate = rate;
     u.pitch = 1.05;
     queued++;
+    let done = false;
     u.onend = u.onerror = () => {
+      if (done) return;
+      done = true;
       queued = Math.max(0, queued - 1);
+      if (onend) onend();
     };
     speechSynthesis.speak(u);
+    return true;
   }
+  const say = (text, urgent = false) => speak(text, { urgent });
+  const isSpeaking = () => ttsOn && (speechSynthesis.speaking || queued > 0);
 
   // ---------- konfeti ----------
   let canvas = null;
@@ -354,5 +371,5 @@ window.FX = (() => {
     el.classList.add('shake');
   }
 
-  return { setupUnlock, coin, whistle, roar, goal, fanfare, mega, ooh, charge, promote, sad, tick, setCrowd, say, cleanName, confetti, shake };
+  return { ttsOn, speak, isSpeaking, setupUnlock, coin, whistle, roar, goal, fanfare, mega, ooh, charge, promote, sad, tick, setCrowd, say, cleanName, confetti, shake };
 })();

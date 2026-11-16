@@ -60,10 +60,11 @@ export class GiftTracker {
 }
 
 export class TikTokSource {
-  constructor({ signApiKey, onGift, onChat, onStatus }) {
+  constructor({ signApiKey, onGift, onChat, onMember, onStatus }) {
     this.signApiKey = signApiKey;
     this.onGift = onGift;
     this.onChat = onChat;
+    this.onMember = onMember;
     this.onStatus = onStatus;
     this.conn = null;
     this.username = '';
@@ -118,6 +119,10 @@ export class TikTokSource {
     conn.on(WebcastEvent.CHAT, (d) => {
       const u = normalizeUser(d);
       if (u.id) this.onChat({ ...u, text: d.comment ?? '' });
+    });
+    conn.on(WebcastEvent.MEMBER, (d) => {
+      const u = normalizeUser(d);
+      if (u.id && this.onMember) this.onMember(u);
     });
     conn.on(WebcastEvent.STREAM_END, () => {
       this.status('offline', 'Yayın sona erdi. Yayın tekrar başlayınca otomatik bağlanılacak.');

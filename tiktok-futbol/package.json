@@ -11,6 +11,7 @@
   "scripts": {
     "start": "node server.js",
     "demo": "node server.js --demo --fresh",
+    "build:demo": "node build-demo.mjs",
     "test": "node --test"
   },
   "dependencies": {
