@@ -11,6 +11,12 @@ export const norm = (s) =>
 
 const log2p = (n) => Math.log2(1 + Math.max(0, n));
 const MAX_FEED = 30;
+const BOT_NAMES = [
+  'Roket Rıza', 'Çalım Cengiz', 'Duvar Doğan', 'Şimşek Şükrü', 'Fırtına Fikret', 'Kafa Kemal',
+  'Demir Bilek Dursun', 'Topçu Turgut', 'Usta Ufuk', 'Çelik Cemil', 'Pres Pertev',
+  'Kartal Kenan', 'Yıldırım Yaşar', 'Füze Ferit', 'Kaya Kadir', 'Tünel Tarık', 'Rüzgâr Rasim',
+  'Gol Makinesi Gürol', 'Sihirbaz Selim', 'Kale Bekçisi Kâzım', 'Ok Gibi Oğuz', 'Bomba Bülent',
+];
 const MAX_EVENTS = 40;
 
 function freshMatch() {
@@ -37,6 +43,7 @@ export class Game {
       key: t.key,
       name: t.name,
       color: t.color,
+      color2: t.color2 || '#ffffff',
       keywords: t.keywords.map(norm),
     }));
     this.players = new Map();
@@ -118,9 +125,11 @@ export class Game {
     return { starters, bench: players.filter((p) => !used.has(p.id)), captainId };
   }
 
+  // Botlara eğlenceli, uydurma futbol lakapları verilir; 🤖 simgesi ve BOT etiketiyle
+  // gösterilirler ki izleyiciler onları gerçek kişi sanmasın.
   bot(key, pos) {
-    const num = { GK: 1, RB: 2, LB: 3, LCB: 4, RCB: 5, CDM: 6, RW: 7, CM: 8, ST: 9, CAM: 10, LW: 11 }[pos.key] ?? '';
-    return { id: `bot-${key}-${pos.key}`, name: `Bot ${num}`, avatar: '', coins: 0, bot: true };
+    const i = this.positions.indexOf(pos) + (key === 'A' ? 0 : this.positions.length);
+    return { id: `bot-${key}-${pos.key}`, name: BOT_NAMES[i % BOT_NAMES.length], avatar: '', coins: 0, bot: true };
   }
 
   realStarters(key) {
@@ -594,6 +603,7 @@ export class Game {
         key: t.key,
         name: t.name,
         color: t.color,
+        color2: t.color2,
         keyword: t.keywords[0],
         totalCoins: all.reduce((a, p) => a + p.coins, 0),
         playerCount: all.length,

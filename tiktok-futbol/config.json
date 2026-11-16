@@ -18,8 +18,8 @@
   },
 
   "teams": [
-    { "key": "A", "name": "KIRMIZI ŞİMŞEKLER", "color": "#e53935", "keywords": ["1", "kırmızı", "kirmizi"] },
-    { "key": "B", "name": "MAVİ KARTALLAR",   "color": "#1e88e5", "keywords": ["2", "mavi"] }
+    { "key": "A", "name": "FENERBAHÇE",  "color": "#0b2a6f", "color2": "#ffe600", "keywords": ["1", "fb", "fener", "fenerbahçe", "fenerbahce"] },
+    { "key": "B", "name": "GALATASARAY", "color": "#b0102e", "color2": "#fdb913", "keywords": ["2", "gs", "cimbom", "gala", "galatasaray"] }
   ],
 
   "positions": [

@@ -37,8 +37,8 @@ const demoCss = `
     border: 1px solid #3a5174; border-radius: 9px; padding: 7px 8px; cursor: pointer;
   }
   #demobar button:focus-visible { outline: 2px solid #ffc531; outline-offset: 2px; }
-  #demobar .a { background: #e53935; border-color: #e53935; }
-  #demobar .b { background: #1e88e5; border-color: #1e88e5; }
+  #demobar .a { background: ${config.teams[0].color}; border-color: ${config.teams[0].color2 || config.teams[0].color}; color: ${config.teams[0].color2 || '#fff'}; }
+  #demobar .b { background: ${config.teams[1].color}; border-color: ${config.teams[1].color2 || config.teams[1].color}; color: ${config.teams[1].color2 || '#fff'}; }
   #demobar .hint { flex-basis: 100%; text-align: center; font: 700 12px Inter, sans-serif; color: #ffc531; padding: 2px 4px; }
   #demobar .tag { font: 800 11px Inter, sans-serif; color: #ffc531; align-self: center; padding: 0 4px; letter-spacing: 1px; }
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -47,8 +47,8 @@ const demoCss = `
 const demoBar = `
 <div id="demobar" role="group" aria-label="Demo kontrolleri">
   <span class="tag">SEN</span>
-  <button id="dA" class="a" type="button" aria-label="Yorum: 1 (Kırmızı)">1</button>
-  <button id="dB" class="b" type="button" aria-label="Yorum: 2 (Mavi)">2</button>
+  <button id="dA" class="a" type="button" aria-label="Yorum: 1 (${config.teams[0].name})">1</button>
+  <button id="dB" class="b" type="button" aria-label="Yorum: 2 (${config.teams[1].name})">2</button>
   <button id="dG1" type="button" aria-label="Gül at, 1 jeton">🌹 1</button>
   <button id="dG20" type="button" aria-label="Parfüm at, 20 jeton">💐 20</button>
   <button id="dG299" type="button" aria-label="Aslan at, 299 jeton">🦁 299</button>

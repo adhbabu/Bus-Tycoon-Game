@@ -18,7 +18,7 @@ test('en çok jeton atan kaptan ve santrfor olur, geçilince yer değişir', () 
   const events = [];
   g.onEvent = (e) => events.push(e);
   g.handleChat({ id: 'ali', text: '1' });
-  g.handleChat({ id: 'veli', text: 'Kırmızı!' });
+  g.handleChat({ id: 'veli', text: 'Fener!' });
   g.handleGift({ id: 'ali', name: 'Ali', coins: 10 });
   g.handleGift({ id: 'veli', name: 'Veli', coins: 5 });
 
@@ -79,6 +79,7 @@ test('Türkçe anahtar kelime normalize edilir', () => {
   assert.equal(norm('KIRMIZI'), 'kirmizi');
   assert.equal(norm('Kırmızı'), 'kirmizi');
   assert.equal(norm('MAVİ'), 'mavi');
+  assert.equal(norm('FENERBAHÇE'), 'fenerbahce');
 });
 
 test('maç 90+ dakikada biter ve sonuç üretir', () => {

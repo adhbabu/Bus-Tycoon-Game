@@ -85,6 +85,10 @@
   .tm.B .ml { align-self: flex-end; }
   .live .tm .ml { display: block; }
   .live .tm .tc { display: none; }
+  /* ikinci renk: takımın şeridi ve ismi (sarı-lacivert, sarı-kırmızı) */
+  .tm::before { content: ''; position: absolute; top: 0; bottom: 0; width: 12px; background: var(--c2); }
+  .tm.A::before { left: 0; } .tm.B::before { right: 0; }
+  .tm .tn { color: var(--c2, #fff); }
   .tm .tn {
     font-family: Oswald, Impact, sans-serif; font-weight: 700; font-size: 38px; line-height: 1.05;
     letter-spacing: .5px; text-transform: uppercase; text-shadow: 0 2px 6px rgba(0,0,0,.35);
@@ -128,7 +132,8 @@
     min-width: 40px; height: 40px; border-radius: 10px; padding: 0 8px;
     font-family: Oswald, sans-serif; font-size: 28px; font-weight: 700; margin-right: 6px;
   }
-  #howto .k.A { background: var(--A); } #howto .k.B { background: var(--B); }
+  #howto .k.A { background: var(--A); color: var(--A2); box-shadow: inset 0 0 0 3px var(--A2); }
+  #howto .k.B { background: var(--B); color: var(--B2); box-shadow: inset 0 0 0 3px var(--B2); }
   #howto .gold { color: var(--gold); }
 
   /* ---------- yedekler ---------- */
@@ -137,7 +142,7 @@
     display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700;
     color: var(--dim); white-space: nowrap; overflow: hidden;
   }
-  .bench .lbl { color: #fff; background: var(--c); border-radius: 8px; padding: 3px 10px; flex: none; }
+  .bench .lbl { color: var(--c2, #fff); background: var(--c); box-shadow: inset 0 0 0 2px var(--c2, transparent); border-radius: 8px; padding: 3px 10px; flex: none; }
   .bench .b { background: rgba(255,255,255,.08); border-radius: 8px; padding: 3px 9px; }
   #benchA { top: 418px; }
   #benchB { top: 1768px; }
@@ -164,7 +169,7 @@
   .pl.leave { opacity: 0; }
   .av {
     position: relative; width: 76px; height: 76px; border-radius: 50%;
-    background: var(--c); border: 4px solid #fff;
+    background: var(--c); border: 4px solid var(--c2, #fff);
     box-shadow: 0 0 0 4px var(--c), 0 8px 18px rgba(0,0,0,.5);
     display: flex; align-items: center; justify-content: center;
   }
@@ -193,6 +198,11 @@
 
   .pl.bot .av { background: #4a5566; filter: saturate(.5); }
   .pl.bot .av .ini { font-size: 38px; }
+  .pl.bot .av::after {
+    content: 'BOT'; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%);
+    font: 800 12px Inter, sans-serif; letter-spacing: 1px; color: #fff; background: #1b222c;
+    border: 2px solid #8a96a8; border-radius: 6px; padding: 0 5px; line-height: 16px;
+  }
   .pl.bot .nm { background: rgba(0,0,0,.45); color: #d5dbe3; }
   .pl.bot .rl { color: #e8edf3; }
   .pl.empty .av {
@@ -216,7 +226,8 @@
   .col h3 { font-family: Oswald, sans-serif; font-size: 20px; letter-spacing: 1.5px; color: var(--gold); margin-bottom: 6px; }
   .row {
     display: flex; align-items: center; gap: 10px; height: 38px; font-size: 18px; font-weight: 700;
-    border-left: 5px solid var(--c); padding-left: 9px; margin-bottom: 4px; white-space: nowrap; overflow: hidden;
+    border-left: 6px solid var(--c); border-image: linear-gradient(var(--c2, var(--c)) 50%, var(--c) 50%) 1;
+    padding-left: 9px; margin-bottom: 4px; white-space: nowrap; overflow: hidden;
   }
   .row.new { animation: slideIn .35s ease; }
   .row img, .row .dot { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: none; background: var(--c); }
@@ -228,7 +239,7 @@
     position: absolute; left: 60px; right: 60px; top: 1022px; min-height: 150px;
     border-radius: 26px; padding: 22px 28px;
     background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 45%, #000));
-    border: 4px solid #fff; box-shadow: 0 25px 60px rgba(0,0,0,.6);
+    border: 4px solid var(--c2, #fff); box-shadow: 0 25px 60px rgba(0,0,0,.6);
     display: flex; align-items: center; gap: 22px;
     opacity: 0; transform: scale(.6); transition: opacity .25s, transform .35s cubic-bezier(.2,1.4,.4,1);
     pointer-events: none; z-index: 20;
@@ -326,17 +337,17 @@
     <span class="live">CANLI</span>
   </div>
   <div id="header">
-    <div class="tm A" id="tmA" style="--c: var(--A)">
+    <div class="tm A" id="tmA" style="--c: var(--A); --c2: var(--A2)">
       <div class="tn"></div><div class="ti"></div><div class="tc"></div><div class="ml"></div><div class="meter"><i></i></div>
     </div>
     <div id="board"><div id="score">0 - 0</div><div id="clock">MAÇ ÖNCESİ</div></div>
-    <div class="tm B" id="tmB" style="--c: var(--B)">
+    <div class="tm B" id="tmB" style="--c: var(--B); --c2: var(--B2)">
       <div class="tn"></div><div class="ti"></div><div class="tc"></div><div class="ml"></div><div class="meter"><i></i></div>
     </div>
   </div>
 
   <div id="howto"></div>
-  <div class="bench" id="benchA" style="--c: var(--A)"></div>
+  <div class="bench" id="benchA" style="--c: var(--A); --c2: var(--A2)"></div>
 
   <div id="pitch">
     <div class="half-tint" style="top:0; background: linear-gradient(180deg, var(--A), transparent)"></div>
@@ -356,7 +367,7 @@
     <div id="welcome"></div>
   </div>
 
-  <div class="bench" id="benchB" style="--c: var(--B)"></div>
+  <div class="bench" id="benchB" style="--c: var(--B); --c2: var(--B2)"></div>
 
   <div id="bottom">
     <div class="col"><h3>🎁 SON HEDİYELER</h3><div id="feed"></div></div>
@@ -397,6 +408,7 @@ fit();
 
 let state = null;
 const colors = { A: '#e53935', B: '#1e88e5' };
+const colors2 = { A: '#ffffff', B: '#ffffff' };
 
 // ---------- klasik siyah-beyaz futbol topu (SVG, koddan üretilir) ----------
 function classicBall(id, R = 100) {
@@ -480,6 +492,7 @@ function renderPitch(teams) {
       const el = cards.get(key) || makeCard(key);
       el.classList.remove('leave');
       el.style.setProperty('--c', t.color);
+      el.style.setProperty('--c2', t.color2 || '#fff');
       const [x, y] = slotXY(t.key, s.pos);
       el.style.transform = `translate(${x - 88}px, ${y - AV_HALF}px)`;
       el.classList.toggle('empty', !s.player);
@@ -489,7 +502,7 @@ function renderPitch(teams) {
       if (s.player?.bot) {
         setAvatar(el, '', '');
         el.querySelector('.ini').textContent = '🤖';
-        el.querySelector('.nm').textContent = s.player.name.toLocaleUpperCase('tr');
+        el.querySelector('.nm').textContent = s.player.name;
         el.querySelector('.rl').innerHTML = `${esc(s.pos.name.toLocaleUpperCase('tr'))} · <b>YERİNİ AL!</b>`;
         const g = el.querySelector('.goals');
         g.textContent = s.player.goals ? '⚽' + (s.player.goals > 1 ? s.player.goals : '') : '';
@@ -525,6 +538,8 @@ function renderHeader(st) {
   for (const t of st.teams) {
     colors[t.key] = t.color;
     document.documentElement.style.setProperty('--' + t.key, t.color);
+    colors2[t.key] = t.color2 || '#ffffff';
+    document.documentElement.style.setProperty('--' + t.key + '2', colors2[t.key]);
     const el = $('#tm' + t.key);
     el.querySelector('.tn').textContent = t.name;
     el.querySelector('.ti').innerHTML = `<span>🪙 ${fmt(t.totalCoins)}</span><span>👥 ${t.starterCount}/11</span>`;
@@ -629,7 +644,7 @@ function renderFeed(st) {
   const old = new Set(feedKeys);
   feedKeys = keys;
   $('#feed').innerHTML = items.map((f, i) => `
-    <div class="row ${old.has(keys[i]) ? '' : 'new'}" style="--c:${colors[f.team]}">
+    <div class="row ${old.has(keys[i]) ? '' : 'new'}" style="--c:${colors[f.team]};--c2:${colors2[f.team]}">
       ${f.avatar ? `<img src="${esc(f.avatar)}" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'dot'}))">` : '<span class="dot"></span>'}
       <span class="t">${esc(f.name)} · ${esc(f.giftName)}${f.count > 1 ? ' x' + f.count : ''}</span>
       <span class="c">+${fmt(f.coins)}🪙</span>
@@ -688,7 +703,7 @@ function addRecent(ev) {
   recent.push(ev);
   if (recent.length > 4) recent.shift();
   $('#events').innerHTML = recent.slice().reverse().map((e, i) => `
-    <div class="row ${i === 0 ? 'new' : ''}" style="--c:${colors[e.team] || '#888'}"><span class="t">${esc(e.text)}</span></div>`).join('');
+    <div class="row ${i === 0 ? 'new' : ''}" style="--c:${colors[e.team] || '#888'};--c2:${colors2[e.team] || colors[e.team] || '#888'}"><span class="t">${esc(e.text)}</span></div>`).join('');
 }
 
 // ---------- duyuru kuyruğu ----------
@@ -716,6 +731,7 @@ function nextToast() {
   if (!ev) { showing = false; return; }
   showing = true;
   el.style.setProperty('--c', colors[ev.team] || '#7b5cff');
+  el.style.setProperty('--c2', colors2[ev.team] || '#ffffff');
   el.classList.toggle('goal', ev.type === 'goal');
   const av = el.querySelector('.tav');
   av.style.display = ev.avatar ? 'block' : 'none';
