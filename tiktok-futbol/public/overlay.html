@@ -11,7 +11,7 @@
 <title>Canlı Futbol</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Oswald:wght@500;700&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --A: #e53935;
@@ -40,9 +40,27 @@
     transform-origin: 0 0;
   }
 
+  /* ---------- logo: el yazısı + klasik top ---------- */
+  #bgball { position: absolute; left: 50%; top: -620px; width: 1500px; height: 1500px; margin-left: -750px; opacity: .085; pointer-events: none; }
+  #logo { position: absolute; left: 20px; right: 20px; top: 6px; height: 146px; display: flex; align-items: center; gap: 18px; }
+  #logo .ball { flex: none; width: 128px; height: 128px; filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); animation: spin 16s linear infinite; }
+  #logo .lt { position: relative; flex: 1; min-width: 0; transform: rotate(-4deg); transform-origin: left center; }
+  #logo .lt b {
+    display: block; font-family: 'Kaushan Script', 'Brush Script MT', cursive; font-weight: 400; font-size: 98px; line-height: 1.05;
+    color: #fff; white-space: nowrap; text-shadow: 0 5px 0 rgba(0,0,0,.35), 0 0 30px rgba(255,197,49,.35);
+  }
+  #logo .lt svg { position: absolute; left: 6px; bottom: -14px; width: 600px; height: 30px; overflow: visible; }
+  #logo .live {
+    flex: none; align-self: center; font-family: Oswald, sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 2px;
+    background: #e53935; color: #fff; border-radius: 10px; padding: 6px 14px; box-shadow: 0 6px 16px rgba(229,57,53,.45);
+  }
+  #logo .live::before { content: ''; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #fff; margin-right: 9px; vertical-align: 3px; animation: blink 1s infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #logo .ball { animation: none; } }
+
   /* ---------- skor tabelası ---------- */
   #header {
-    position: absolute; left: 20px; right: 20px; top: 18px; height: 176px;
+    position: absolute; left: 20px; right: 20px; top: 160px; height: 176px;
     display: grid; grid-template-columns: 1fr 230px 1fr; gap: 12px;
   }
   .tm {
@@ -100,7 +118,7 @@
 
   /* ---------- nasıl katılırım ---------- */
   #howto {
-    position: absolute; left: 20px; right: 20px; top: 204px; height: 64px;
+    position: absolute; left: 20px; right: 20px; top: 346px; height: 64px;
     border-radius: 16px; background: var(--panel); border: 2px solid rgba(255,197,49,.55);
     display: flex; align-items: center; justify-content: center; gap: 12px;
     font-size: 25px; font-weight: 700; white-space: nowrap; overflow: hidden;
@@ -121,12 +139,12 @@
   }
   .bench .lbl { color: #fff; background: var(--c); border-radius: 8px; padding: 3px 10px; flex: none; }
   .bench .b { background: rgba(255,255,255,.08); border-radius: 8px; padding: 3px 9px; }
-  #benchA { top: 276px; }
-  #benchB { top: 1626px; }
+  #benchA { top: 418px; }
+  #benchB { top: 1768px; }
 
   /* ---------- saha ---------- */
   #pitch {
-    position: absolute; left: 20px; top: 318px; width: 1040px; height: 1300px;
+    position: absolute; left: 20px; top: 460px; width: 1040px; height: 1300px;
     border-radius: 18px; overflow: hidden;
     background:
       repeating-linear-gradient(180deg, #2f8f3a 0 108.33px, #2a8234 108.33px 216.66px);
@@ -187,10 +205,10 @@
 
   /* ---------- alt bölüm ---------- */
   #bottom {
-    position: absolute; left: 20px; right: 20px; top: 1670px; height: 232px;
+    position: absolute; left: 20px; right: 20px; top: 1812px; height: 100px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
   }
-  .col { background: var(--panel); border-radius: 18px; padding: 12px 14px; overflow: hidden; }
+  .col { background: var(--panel); border-radius: 18px; padding: 10px 14px; overflow: hidden; }
   .col h3 { font-family: Oswald, sans-serif; font-size: 20px; letter-spacing: 1.5px; color: var(--gold); margin-bottom: 6px; }
   .row {
     display: flex; align-items: center; gap: 10px; height: 38px; font-size: 18px; font-weight: 700;
@@ -203,7 +221,7 @@
 
   /* ---------- duyurular ---------- */
   #toast {
-    position: absolute; left: 60px; right: 60px; top: 880px; min-height: 150px;
+    position: absolute; left: 60px; right: 60px; top: 1022px; min-height: 150px;
     border-radius: 26px; padding: 22px 28px;
     background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 45%, #000));
     border: 4px solid #fff; box-shadow: 0 25px 60px rgba(0,0,0,.6);
@@ -214,12 +232,12 @@
   #toast.show { opacity: 1; transform: scale(1); }
   #toast .tav { width: 104px; height: 104px; border-radius: 50%; border: 4px solid #fff; background: rgba(0,0,0,.3) center/cover; flex: none; display: none; }
   #toast .tt { font-family: Oswald, sans-serif; font-weight: 700; font-size: 46px; line-height: 1.1; text-shadow: 0 3px 8px rgba(0,0,0,.4); }
-  #toast.goal { top: 720px; flex-direction: column; text-align: center; padding: 30px; }
+  #toast.goal { top: 862px; flex-direction: column; text-align: center; padding: 30px; }
   #toast.goal .big { display: block; }
   #toast .big { display: none; font-family: Oswald, Impact, sans-serif; font-weight: 700; font-size: 150px; line-height: .95; letter-spacing: 4px; color: #fff; text-shadow: 0 6px 0 rgba(0,0,0,.35); animation: shake .5s ease 2; }
 
   #final {
-    position: absolute; left: 70px; right: 70px; top: 760px; padding: 30px; z-index: 15;
+    position: absolute; left: 70px; right: 70px; top: 902px; padding: 30px; z-index: 15;
     border-radius: 28px; background: rgba(6,10,18,.92); border: 4px solid var(--gold);
     text-align: center; display: none; box-shadow: 0 25px 60px rgba(0,0,0,.6);
   }
@@ -230,7 +248,7 @@
 
   /* ---------- spiker altyazısı ---------- */
   #spiker {
-    position: absolute; left: 20px; right: 20px; top: 200px; z-index: 18;
+    position: absolute; left: 20px; right: 20px; top: 342px; z-index: 18;
     display: flex; align-items: center; gap: 18px; padding: 16px 22px;
     border-radius: 20px; background: rgba(6,10,18,.94); border: 3px solid var(--c, var(--gold));
     box-shadow: 0 14px 40px rgba(0,0,0,.6), 0 0 26px color-mix(in srgb, var(--c, var(--gold)) 45%, transparent);
@@ -279,6 +297,14 @@
 <body>
 <div id="wrap">
 <div id="stage">
+  <div id="bgball" aria-hidden="true"></div>
+  <div id="logo">
+    <div class="ball" id="logoBall" aria-hidden="true"></div>
+    <div class="lt"><b>Canlı Maç Oyna</b>
+      <svg viewBox="0 0 600 30" aria-hidden="true"><path d="M4 22 C 160 4, 380 2, 596 14" fill="none" stroke="#ffc531" stroke-width="7" stroke-linecap="round"/></svg>
+    </div>
+    <span class="live">CANLI</span>
+  </div>
   <div id="header">
     <div class="tm A" id="tmA" style="--c: var(--A)">
       <div class="tn"></div><div class="ti"></div><div class="tc"></div><div class="ml"></div><div class="meter"><i></i></div>
@@ -350,6 +376,47 @@ fit();
 
 let state = null;
 const colors = { A: '#e53935', B: '#1e88e5' };
+
+// ---------- klasik siyah-beyaz futbol topu (SVG, koddan üretilir) ----------
+function classicBall(id, R = 100) {
+  const d = Math.PI / 180, c = R;
+  const at = (x, y, r, a) => [x + r * Math.cos(a), y + r * Math.sin(a)];
+  const pent = (x, y, r, rot) => [0, 1, 2, 3, 4].map((j) => at(x, y, r, rot + j * 72 * d));
+  const pts = (a) => a.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+  const mid = pent(c, c, 0.3 * R, -90 * d);
+  const Q = [0, 1, 2, 3, 4].map((i) => at(c, c, 0.56 * R, (-90 + 72 * i) * d));
+  const outer = [0, 1, 2, 3, 4].map((i) => {
+    const a = (-54 + 72 * i) * d;
+    const [x, y] = at(c, c, 0.88 * R, a);
+    return pent(x, y, 0.32 * R, a);
+  });
+  let ln = '';
+  const L = (p, q) => { ln += `<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}"/>`; };
+  mid.forEach((p, i) => L(p, Q[i]));
+  const all = outer.flat();
+  const dist = (u, v) => Math.hypot(u[0] - v[0], u[1] - v[1]);
+  Q.forEach((q) => all.slice().sort((u, v) => dist(u, q) - dist(v, q)).slice(0, 2).forEach((v) => L(q, v)));
+  outer.forEach((pg) => [pg[1], pg[4]].forEach((v) => {
+    const a = Math.atan2(v[1] - c, v[0] - c);
+    L(v, at(c, c, R * 1.2, a));
+  }));
+  return `<svg viewBox="0 0 ${2 * R} ${2 * R}" width="100%" height="100%">
+    <defs>
+      <clipPath id="${id}c"><circle cx="${c}" cy="${c}" r="${R - 1}"/></clipPath>
+      <radialGradient id="${id}s" cx="36%" cy="30%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".65" stop-color="#000" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
+    </defs>
+    <g clip-path="url(#${id}c)">
+      <circle cx="${c}" cy="${c}" r="${R}" fill="#f7f7f2"/>
+      <g stroke="#8d949c" stroke-width="${(R * 0.03).toFixed(1)}" stroke-linecap="round">${ln}</g>
+      <polygon points="${pts(mid)}" fill="#14161a"/>
+      ${outer.map((pg) => `<polygon points="${pts(pg)}" fill="#14161a"/>`).join('')}
+      <circle cx="${c}" cy="${c}" r="${R}" fill="url(#${id}s)"/>
+    </g>
+    <circle cx="${c}" cy="${c}" r="${R - 1}" fill="none" stroke="#0b0d10" stroke-width="${(R * 0.03).toFixed(1)}"/>
+  </svg>`;
+}
+document.getElementById('logoBall').innerHTML = classicBall('lb');
+document.getElementById('bgball').innerHTML = classicBall('bb');
 
 // ---------- oyuncu kartları ----------
 const cards = new Map();
@@ -640,7 +707,7 @@ function onEvent(ev) {
       break;
     case 'captain':
       FX.fanfare();
-      FX.confetti([gold, '#ffffff', colors[ev.team]], 90, 540, ev.team === 'A' ? 500 : 1300);
+      FX.confetti([gold, '#ffffff', colors[ev.team]], 90, 540, ev.team === 'A' ? 640 : 1440);
       FX.say(ev.prevName ? `Taht değişti! Yeni kaptan ${n}!` : `${n} kaptan oldu!`);
       break;
     case 'promote': FX.promote(); break;

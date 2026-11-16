@@ -5,7 +5,7 @@
   "host": "127.0.0.1",
 
   "allowTeamSwitch": true,
-  "announceTopN": 5,
+  "announceTopN": 3,
   "bigGift": 99,
 
   "auto": {
@@ -22,7 +22,7 @@
 
   "positions": [
     { "key": "ST",  "name": "Santrfor",  "short": "FOR", "x": 0.50, "y": 0.90, "attack": 5,    "minCoins": 0 },
-    { "key": "CAM", "name": "10 Numara", "short": "10",  "x": 0.50, "y": 0.67, "attack": 3,    "minCoins": 0 },
+    { "key": "CAM", "name": "10 Numara", "short": "10",  "x": 0.50, "y": 0.655, "attack": 3,    "minCoins": 0 },
     { "key": "GK",  "name": "Kaleci",    "short": "KL",  "x": 0.50, "y": 0.07, "attack": 0.02, "minCoins": 0 },
     { "key": "LW",  "name": "Sol Kanat", "short": "SLK", "x": 0.15, "y": 0.72, "attack": 2.5,  "minCoins": 0 },
     { "key": "RW",  "name": "Sağ Kanat", "short": "SĞK", "x": 0.85, "y": 0.72, "attack": 2.5,  "minCoins": 0 },

@@ -315,7 +315,7 @@ window.FX = (() => {
   let canvas = null;
   let c2d = null;
   let parts = [];
-  function confetti(colors = ['#ffc531', '#ffffff', '#e53935', '#1e88e5'], n = 170, x = 540, y = 900) {
+  function confetti(colors = ['#ffc531', '#ffffff', '#e53935', '#1e88e5'], n = 170, x = 540, y = 1040) {
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.width = 1080;

@@ -32,8 +32,8 @@ const demoCss = `
     padding: 6px; border-radius: 14px; background: rgba(6,10,18,.88); border: 1px solid rgba(255,255,255,.18);
   }
   #demobar button {
-    font: 800 13px Inter, system-ui, sans-serif; color: #fff; background: #22324a;
-    border: 1px solid #3a5174; border-radius: 10px; padding: 8px 10px; cursor: pointer;
+    font: 800 12px Inter, system-ui, sans-serif; color: #fff; background: #22324a; white-space: nowrap;
+    border: 1px solid #3a5174; border-radius: 9px; padding: 7px 8px; cursor: pointer;
   }
   #demobar button:focus-visible { outline: 2px solid #ffc531; outline-offset: 2px; }
   #demobar .a { background: #e53935; border-color: #e53935; }
@@ -44,12 +44,12 @@ const demoCss = `
 
 const demoBar = `
 <div id="demobar" role="group" aria-label="Demo kontrolleri">
-  <span class="tag">DEMO · SEN:</span>
-  <button id="dA" class="a" type="button">1 yaz</button>
-  <button id="dB" class="b" type="button">2 yaz</button>
-  <button id="dG1" type="button">🌹 Gül 1</button>
-  <button id="dG20" type="button">💐 Parfüm 20</button>
-  <button id="dG299" type="button">🦁 Aslan 299</button>
+  <span class="tag">SEN</span>
+  <button id="dA" class="a" type="button" aria-label="Yorum: 1 (Kırmızı)">1</button>
+  <button id="dB" class="b" type="button" aria-label="Yorum: 2 (Mavi)">2</button>
+  <button id="dG1" type="button" aria-label="Gül at, 1 jeton">🌹 1</button>
+  <button id="dG20" type="button" aria-label="Parfüm at, 20 jeton">💐 20</button>
+  <button id="dG299" type="button" aria-label="Aslan at, 299 jeton">🦁 299</button>
 </div>`;
 
 const engine = `

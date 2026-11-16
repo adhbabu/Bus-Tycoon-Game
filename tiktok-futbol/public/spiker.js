@@ -194,7 +194,8 @@ window.Spiker = (() => {
       loop();
     },
     onEvent(ev) {
-      if (ev.big) lastBig = Date.now();
+      // önemli anların üstüne konuşma (sıradan mevki değişimleri spikeri susturmaz)
+      if (ev.big && ['goal', 'captain', 'end', 'kickoff', 'mega', 'countdown', 'lobby', 'half'].includes(ev.type)) lastBig = Date.now();
       if (ev.type === 'viewer' && ev.name) {
         viewers.push(ev.name);
         if (viewers.length > 10) viewers.shift();
