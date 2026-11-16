@@ -14,6 +14,7 @@ const fonts = overlay.match(/<link href="https:\/\/fonts\.googleapis\.com[^>]*>/
 const body = overlay.match(/<body>([\s\S]*?)<script src="fx\.js"><\/script>/)[1];
 const mainScript = overlay.match(/<script src="spiker\.js"><\/script>\s*<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
 const gameJs = read('game.js').replace(/^export /gm, '');
+const avatarJs = read('demo-avatar.js').replace(/^export /gm, '');
 
 const config = JSON.parse(read('config.json'));
 config.auto = { ...config.auto, enabled: true, lobbySeconds: 35, breakSeconds: 14 };
@@ -38,6 +39,7 @@ const demoCss = `
   #demobar button:focus-visible { outline: 2px solid #ffc531; outline-offset: 2px; }
   #demobar .a { background: #e53935; border-color: #e53935; }
   #demobar .b { background: #1e88e5; border-color: #1e88e5; }
+  #demobar .hint { flex-basis: 100%; text-align: center; font: 700 12px Inter, sans-serif; color: #ffc531; padding: 2px 4px; }
   #demobar .tag { font: 800 11px Inter, sans-serif; color: #ffc531; align-self: center; padding: 0 4px; letter-spacing: 1px; }
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 `;
@@ -50,6 +52,8 @@ const demoBar = `
   <button id="dG1" type="button" aria-label="Gül at, 1 jeton">🌹 1</button>
   <button id="dG20" type="button" aria-label="Parfüm at, 20 jeton">💐 20</button>
   <button id="dG299" type="button" aria-label="Aslan at, 299 jeton">🦁 299</button>
+  <button id="dSnd" type="button">🔊</button>
+  <span id="dHint" class="hint" hidden>🎙 Spiker sesi bu uygulamada çalışmıyor: linki Safari'de aç. Altyazılar yine görünür.</span>
 </div>`;
 
 const engine = `
@@ -74,21 +78,32 @@ window.FUTBOL_LOCAL = {
       const g = GIFTS.find((x) => (r -= x[2]) <= 0) || GIFTS[0];
       const i = Math.floor(Math.random() * 30);
       const n = 1 + Math.floor(Math.random() * 3);
-      game.handleGift({ id: 'demo_' + i, name: NAMES[i], giftName: g[0], count: n, coins: g[1] * n });
+      game.handleGift({ id: 'demo_' + i, name: NAMES[i], avatar: fakeAvatar(i), giftName: g[0], count: n, coins: g[1] * n });
     }
-    setInterval(fake, 1300);
+    setInterval(fake, 1800);
     setInterval(() => {
       const i = 30 + Math.floor(Math.random() * 40);
-      onEvent({ type: 'viewer', name: NAMES[i % 30] + i, ts: Date.now() });
-    }, 8000);
+      onEvent({ type: 'viewer', name: NAMES[i % 30] + i, avatar: fakeAvatar(i), ts: Date.now() });
+    }, 7000);
 
-    const me = { id: 'sen', name: 'Sen' };
+    const me = { id: 'sen', name: 'Sen', avatar: fakeAvatar(99) };
     const gift = (name, coins) => game.handleGift({ ...me, giftName: name, count: 1, coins });
     document.getElementById('dA').onclick = () => game.handleChat({ ...me, text: '1' });
     document.getElementById('dB').onclick = () => game.handleChat({ ...me, text: '2' });
     document.getElementById('dG1').onclick = () => gift('Gül', 1);
     document.getElementById('dG20').onclick = () => gift('Parfüm', 20);
     document.getElementById('dG299').onclick = () => gift('Aslan', 299);
+
+    // ses düğmesi: tam → az → kapalı
+    const snd = document.getElementById('dSnd');
+    const icons = ['🔇', '🔉', '🔊'];
+    const names = ['Ses kapalı', 'Ses az', 'Ses açık'];
+    const paint = () => { const l = FX.getLevel(); snd.textContent = icons[l]; snd.setAttribute('aria-label', names[l]); };
+    snd.onclick = () => { FX.setLevel((FX.getLevel() + 2) % 3); paint(); };
+    paint();
+    // cihaz konuşamıyorsa bunu açıkça söyle
+    const hint = document.getElementById('dHint');
+    FX.onTtsStatus((s) => { hint.hidden = s !== 'broken'; });
 
     for (let k = 0; k < 9; k++) fake();
     render(game.snapshot());
@@ -103,6 +118,7 @@ ${demoBar}
 <script>${read('public/fx.js')}</script>
 <script>${read('public/spiker.js')}</script>
 <script>${gameJs}</script>
+<script>${avatarJs}</script>
 <script>${engine}</script>
 <script>${mainScript}</script>
 `;

@@ -6,7 +6,7 @@
 window.Spiker = (() => {
   const params = new URLSearchParams(location.search);
   const enabled = params.get('spiker') !== '0';
-  const gapMs = Math.max(3, Number(params.get('sik') ?? 8)) * 1000;
+  const gapMs = Math.max(3, Number(params.get('sik') ?? 10)) * 1000;
 
   let getState = () => null;
   let getCountdown = () => 0;
@@ -129,13 +129,14 @@ window.Spiker = (() => {
 
   function nextLine(st, now) {
     if (viewers.length && now - lastGreet > 14000) {
-      const names = viewers.splice(0);
+      const people = viewers.splice(0);
       lastGreet = now;
-      const shown = names.slice(-3);
-      const more = names.length - shown.length;
+      const shown = people.slice(-3);
+      const more = people.length - shown.length;
       return {
         key: 'selam',
-        text: `👋 Hoş geldin ${shown.join(', ')}${more > 0 ? ` ve ${more} kişi daha` : ''}! Yorumlara 1 ya da 2 yaz, takımını seç!`,
+        faces: shown,
+        text: `👋 Hoş geldin ${shown.map((p) => p.name).join(', ')}${more > 0 ? ` ve ${more} kişi daha` : ''}! Yorumlara 1 ya da 2 yaz, takımını seç!`,
       };
     }
     const list = candidates(st);
@@ -148,9 +149,24 @@ window.Spiker = (() => {
 
   // ---------- altyazı ----------
   const box = document.getElementById('spiker');
-  function show(text, team) {
+  const bars = '<i></i><i></i><i></i><i></i>';
+  function show(text, team, faces) {
     if (!box) return;
     box.querySelector('.sp-t').textContent = text;
+    // karşılamada konuşan dalga yerine gelenlerin profil fotoğrafları görünür
+    const ic = box.querySelector('.sp-ic');
+    if (faces?.length) {
+      ic.className = 'sp-ic faces';
+      ic.innerHTML = '';
+      for (const p of faces) {
+        const s = document.createElement('span');
+        if (p.avatar) s.style.backgroundImage = `url("${p.avatar}")`;
+        ic.appendChild(s);
+      }
+    } else if (ic.classList.contains('faces')) {
+      ic.className = 'sp-ic';
+      ic.innerHTML = bars;
+    }
     box.style.setProperty('--c', team === 'A' ? 'var(--A)' : team === 'B' ? 'var(--B)' : 'var(--gold)');
     box.classList.add('on');
   }
@@ -160,14 +176,14 @@ window.Spiker = (() => {
 
   function say(line) {
     const token = ++busyToken;
-    show(line.text, line.team);
+    show(line.text, line.team, line.faces);
     const done = () => {
       if (token !== busyToken) return;
       busyToken++;
       lastLineEnd = Date.now();
       setTimeout(hide, 600);
     };
-    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.12 });
+    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.04 });
     // ses yoksa (OBS, ?tts=0) altyazı okunabilecek kadar ekranda kalır
     setTimeout(done, started ? 15000 : Math.min(9000, 1800 + line.text.length * 60));
   }
@@ -197,7 +213,7 @@ window.Spiker = (() => {
       // önemli anların üstüne konuşma (sıradan mevki değişimleri spikeri susturmaz)
       if (ev.big && ['goal', 'captain', 'end', 'kickoff', 'mega', 'countdown', 'lobby', 'half'].includes(ev.type)) lastBig = Date.now();
       if (ev.type === 'viewer' && ev.name) {
-        viewers.push(ev.name);
+        viewers.push({ name: ev.name, avatar: ev.avatar || '' });
         if (viewers.length > 10) viewers.shift();
       }
     },

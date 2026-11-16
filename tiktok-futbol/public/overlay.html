@@ -275,6 +275,22 @@
   @keyframes bump { 0%{transform:scale(1)} 40%{transform:scale(1.5); color: var(--gold)} 100%{transform:scale(1)} }
   #pitch.shake { animation: pshake .6s ease; }
   @keyframes pshake { 0%,100%{transform:none} 15%{transform:translate(-14px,6px) rotate(-.6deg)} 30%{transform:translate(12px,-8px) rotate(.6deg)} 45%{transform:translate(-10px,4px)} 60%{transform:translate(8px,-4px)} 80%{transform:translate(-4px,2px)} }
+  /* yayına yeni gelenler: profil fotoğrafı + ad */
+  #welcome { position: absolute; left: 16px; top: 16px; z-index: 5; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .wc {
+    display: flex; align-items: center; gap: 12px; padding: 6px 18px 6px 6px; border-radius: 999px;
+    background: rgba(6,10,18,.86); border: 2px solid rgba(255,255,255,.35); box-shadow: 0 8px 20px rgba(0,0,0,.45);
+    font-size: 23px; font-weight: 800; white-space: nowrap; max-width: 560px;
+    animation: wcIn .45s cubic-bezier(.2,1.3,.4,1);
+  }
+  .wc.out { opacity: 0; transform: translateX(-30px); transition: opacity .4s, transform .4s; }
+  .wc .wa { flex: none; width: 58px; height: 58px; border-radius: 50%; border: 3px solid var(--gold); background: #2a3a52 center/cover; display: flex; align-items: center; justify-content: center; font-family: Oswald, sans-serif; font-size: 26px; }
+  .wc .wn { overflow: hidden; text-overflow: ellipsis; }
+  .wc small { display: block; font-size: 16px; color: var(--gold); font-weight: 700; }
+  @keyframes wcIn { from { opacity: 0; transform: translateX(-40px) scale(.9); } to { opacity: 1; transform: none; } }
+  #spiker .sp-ic.faces { background: none; gap: 0; width: auto; height: auto; border-radius: 0; }
+  #spiker .sp-ic.faces span { width: 74px; height: 74px; border-radius: 50%; border: 3px solid var(--c, var(--gold)); background: #2a3a52 center/cover; margin-left: -22px; box-shadow: 0 4px 10px rgba(0,0,0,.5); }
+  #spiker .sp-ic.faces span:first-child { margin-left: 0; }
   #hype {
     position: absolute; right: 16px; top: 16px; z-index: 5; display: none;
     font-family: Oswald, sans-serif; font-weight: 700; font-size: 30px; letter-spacing: 1px;
@@ -333,6 +349,7 @@
     <div class="ln" style="left: 420px; bottom: 184px; width: 200px; height: 60px; border-bottom: 0; border-radius: 100px 100px 0 0"></div>
     <div id="players"></div>
     <div id="hype"></div>
+    <div id="welcome"></div>
   </div>
 
   <div class="bench" id="benchB" style="--c: var(--B)"></div>
@@ -577,8 +594,9 @@ function updateHype() {
 setInterval(updateHype, 1000);
 function crowdBase() {
   const st = state?.match?.status;
-  const base = st === 'running' ? 0.06 : st === 'finished' ? 0.03 : 0.015;
-  return base + hypeLvl * 0.025;
+  // maç dışında tribün sessiz; maçta kısık uğultu
+  if (st !== 'running') return 0;
+  return 0.03 + hypeLvl * 0.012;
 }
 
 function renderBench(st) {
@@ -618,6 +636,37 @@ function renderFinal(st) {
   el.querySelector('.s').textContent = `${m.score.A} - ${m.score.B}`;
   el.querySelector('.m').textContent = m.result.mvp ? `⭐ Maçın yıldızı: ${m.result.mvp.name}` : '';
   el.classList.add('on');
+}
+
+// ---------- yayına yeni gelenler ----------
+const wcQueue = [];
+let wcBusy = 0;
+function welcome(ev) {
+  wcQueue.push(ev);
+  if (wcQueue.length > 4) wcQueue.shift();
+  pumpWelcome();
+}
+function pumpWelcome() {
+  const box = $('#welcome');
+  while (wcBusy < 2 && wcQueue.length) {
+    const ev = wcQueue.shift();
+    wcBusy++;
+    const el = document.createElement('div');
+    el.className = 'wc';
+    const ini = esc((ev.name || '?').trim().charAt(0).toLocaleUpperCase('tr'));
+    el.innerHTML = `<span class="wa">${ini}</span><span class="wn">${esc(ev.name)}<small>yayına geldi 👋</small></span>`;
+    if (ev.avatar) {
+      const img = new Image();
+      img.referrerPolicy = 'no-referrer';
+      img.onload = () => { const wa = el.querySelector('.wa'); wa.textContent = ''; wa.style.backgroundImage = `url("${ev.avatar}")`; };
+      img.src = ev.avatar;
+    }
+    box.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => { el.remove(); wcBusy--; pumpWelcome(); }, 420);
+    }, 3800);
+  }
 }
 
 // ---------- olay listesi ----------
@@ -682,7 +731,7 @@ function pulse(id, coins) {
 
 function onEvent(ev) {
   Spiker.onEvent(ev);
-  if (ev.type === 'viewer') return;
+  if (ev.type === 'viewer') { welcome(ev); return; }
   if (ev.type === 'gift') {
     setTimeout(() => pulse(ev.id, ev.coins), 120);
     FX.coin(ev.coins);
@@ -715,7 +764,7 @@ function onEvent(ev) {
       FX.mega(); FX.confetti([gold, '#ffffff', colors[ev.team]], 160);
       FX.say(`${n}, ${FX.cleanName(ev.giftName)} için teşekkürler!`);
       break;
-    case 'join': FX.say(`${n}, ${short(teamOf(ev.team)?.name || '')} takımında!`); break;
+    case 'join': break;
     case 'bench': FX.sad(); break;
     case 'chance': FX.ooh(); break;
     case 'kickoff': FX.whistle(1, true); FX.roar(2.5, 0.4); FX.say('Maç başladı! Hediye at, atak barını doldur!'); break;

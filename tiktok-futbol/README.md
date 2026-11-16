@@ -29,6 +29,8 @@ Yönetim panelinde yayına sabitleyebileceğin hazır kural metni var.
 - **Hype göstergesi:** 10 saniyede gelen hediyeler arttıkça 🔥 HYPE → x2 → ÇILGINLIK x3 olur; tribün sesi yükselir, saha parlar.
 - **Büyük hediye efekti:** 99 jeton ve üstü hediyede ekran patlaması ve isimle teşekkür.
 - **Sesli anons (Türkçe):** "Ahmet kaptan oldu!", "Gol! Gol! Gol! Elif!", "Maça on saniye!"
+- **Spiker:** Durmadan konuşan sanal anlatıcı. Oyunun gerçek durumundan cümle kurar (boş mevkiler, kaptanın jetonu, skor, atak barı, geri sayım), yeni gelenleri adıyla karşılar ve yorum, beğeni, paylaşım ve hediyeye davet eder. Söylediği her şey altyazı olarak da görünür.
+- **Yeni gelenler:** Yayına giren izleyiciler profil fotoğrafı ve adıyla sahanın köşesinde belirir.
 - **Otomatik pilot:** Kadro kurma (3 dk geri sayım) → maç (3 dk) → maç sonu → yeni maç. Sürekli döner.
 - **Sesler dosyasız:** Düdük, gol kornası, tribün uğultusu, jeton sesi, fanfar tarayıcıda üretilir.
 - **Kayıt:** Kadro ve jetonlar `data/state.json` dosyasına kaydedilir. Program kapanıp açılsa da kaybolmaz.
@@ -114,8 +116,11 @@ Oyun sunucusu iPhone'da çalışamaz. Bu yüzden onu ücretsiz bir bulut sunucus
 | Ayar | Örnek | Ne yapar |
 |---|---|---|
 | `?ses=0` | `localhost:3000/?ses=0` | Tüm sesleri kapatır |
-| `?tts=0` | `localhost:3000/?tts=0` | Yalnızca sesli anonsu kapatır |
-| `?vol=0.5` | | Ses düzeyi (0–1.5) |
+| `?ses=az` | | Sadece önemli sesler (gol, düdük, kaptan) ve spiker; jeton/tribün sesi yok |
+| `?tts=0` | `localhost:3000/?tts=0` | Spiker ve sesli anonsu kapatır (altyazılar kalır) |
+| `?spiker=0` | | Spikeri tamamen kapatır |
+| `?sik=15` | | Spikerin iki cümlesi arası bekleme (sn, varsayılan 10) |
+| `?vol=0.4` | | Ses düzeyi (0–1.5, varsayılan 0.55) |
 | `?bg=green` | | Yeşil arka plan (chroma key için) |
 | `?bg=transparent` | | Şeffaf arka plan (OBS) |
 

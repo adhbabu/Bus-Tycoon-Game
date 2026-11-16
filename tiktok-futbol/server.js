@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { Game } from './game.js';
 import { TikTokSource } from './tiktok.js';
+import { fakeAvatar } from './demo-avatar.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
@@ -149,7 +150,7 @@ const tiktok = new TikTokSource({
     game.handleGift(g);
   },
   onChat: (c) => game.handleChat(c),
-  onMember: (u) => viewerJoined(u.name),
+  onMember: (u) => viewerJoined(u),
   onStatus: (s) => {
     tiktokStatus = s;
     if (s.state === 'connected' && demoTimer) setDemo(false);
@@ -161,12 +162,12 @@ const tiktok = new TikTokSource({
 // ---------- yeni izleyiciler (spiker adıyla karşılar) ----------
 // Kalabalık yayında ekranı boğmasın diye 10 saniyede en fazla 5 isim iletilir.
 let viewerWindow = [];
-function viewerJoined(name) {
+function viewerJoined(u) {
   const now = Date.now();
   viewerWindow = viewerWindow.filter((t) => now - t < 10000);
-  if (!name || viewerWindow.length >= 5) return;
+  if (!u?.name || viewerWindow.length >= 5) return;
   viewerWindow.push(now);
-  game.onEvent({ type: 'viewer', name: String(name).slice(0, 30), ts: now });
+  game.onEvent({ type: 'viewer', name: String(u.name).slice(0, 30), avatar: u.avatar || '', ts: now });
 }
 
 // ---------- demo / test ----------
@@ -184,7 +185,7 @@ const FAKE_GIFTS = [
 
 function fakeUser(i = Math.floor(Math.random() * FAKE_NAMES.length)) {
   const name = FAKE_NAMES[i % FAKE_NAMES.length];
-  return { id: `demo_${i}`, name: `${name}${i >= FAKE_NAMES.length ? i : ''}` };
+  return { id: `demo_${i}`, name: `${name}${i >= FAKE_NAMES.length ? i : ''}`, avatar: fakeAvatar(i) };
 }
 
 function fakeGift(coins) {
@@ -205,7 +206,7 @@ function setDemo(on) {
   clearInterval(demoTimer);
   clearInterval(demoViewerTimer);
   demoTimer = on ? setInterval(() => fakeGift(), 900) : null;
-  demoViewerTimer = on ? setInterval(() => viewerJoined(fakeUser(30 + Math.floor(Math.random() * 40)).name), 7000) : null;
+  demoViewerTimer = on ? setInterval(() => viewerJoined(fakeUser(30 + Math.floor(Math.random() * 40))), 7000) : null;
   broadcastState();
 }
 

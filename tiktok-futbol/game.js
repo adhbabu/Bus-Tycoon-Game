@@ -188,7 +188,7 @@ export class Game {
       });
     }
     if (joined) {
-      this.emit({ type: 'join', team: p.team, id: p.id, text: `${p.name} ${this.team(p.team).name} takımına katıldı!` });
+      this.emit({ type: 'join', team: p.team, id: p.id, avatar: p.avatar, text: `${p.name} ${this.team(p.team).name} takımına katıldı!` });
     }
     if (this.match.status === 'running') {
       const m = this.match;

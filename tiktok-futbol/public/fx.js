@@ -1,11 +1,15 @@
 // Ses ve görsel efektler.
 // Tüm sesler Web Audio ile anında üretilir (ses dosyası gerekmez).
-// Adres çubuğu ayarları:  ?ses=0 (sessiz)  ?tts=0 (sesli anons kapalı)  ?vol=0.5 (ses düzeyi)
+// Adres çubuğu ayarları:
+//   ?ses=0   tüm sesler kapalı        ?ses=az  sadece önemli anlar (gol, düdük, kaptan) + spiker
+//   ?tts=0   sesli anons/spiker kapalı ?vol=0.4 ses düzeyi (0-1.5)   ?sesadi=Emel  Türkçe ses seçimi
 window.FX = (() => {
   const params = new URLSearchParams(location.search);
-  const soundOn = params.get('ses') !== '0';
-  const ttsOn = params.get('tts') !== '0' && 'speechSynthesis' in window;
-  const volume = Math.min(1.5, Math.max(0, Number(params.get('vol') ?? 0.8)));
+  const hasTTS = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  const ttsOn = params.get('tts') !== '0' && hasTTS;
+  const volume = Math.min(1.5, Math.max(0, Number(params.get('vol') ?? 0.55)));
+  // 2 = tam, 1 = az (yalnızca önemli sesler), 0 = kapalı
+  let level = params.get('ses') === '0' ? 0 : params.get('ses') === 'az' ? 1 : 2;
 
   let ctx = null;
   let master = null;
@@ -14,15 +18,15 @@ window.FX = (() => {
   let crowdLevel = 0;
 
   function init() {
-    if (ctx || !soundOn) return;
+    if (ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = volume;
+    master.gain.value = level ? volume : 0;
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14;
-    comp.ratio.value = 6;
+    comp.threshold.value = -18;
+    comp.ratio.value = 4;
     master.connect(comp);
     comp.connect(ctx.destination);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
@@ -30,47 +34,26 @@ window.FX = (() => {
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   }
 
-  function ok() {
+  // kind: 'minor' (jeton, tribün, ooh...) ya da 'major' (gol, düdük, kaptan)
+  function ok(kind = 'minor') {
+    if (level === 0 || (level === 1 && kind === 'minor')) return false;
     init();
     if (!ctx) return false;
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     return ctx.state === 'running';
   }
 
-  // Tarayıcı ilk tıklamadan önce sese izin vermeyebilir (OBS'te sorun yok).
-  function setupUnlock() {
-    if (!soundOn) return;
-    init();
-    if (!ctx) return;
-    const btn = document.createElement('button');
-    btn.textContent = '🔊 Sesi açmak için tıkla';
-    btn.style.cssText =
-      'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;font:800 22px Inter,sans-serif;' +
-      'padding:18px 28px;border-radius:16px;border:3px solid #fff;background:#ffc531;color:#2a1e00;cursor:pointer;display:none';
-    document.body.appendChild(btn);
-    const check = () => {
-      btn.style.display = ctx.state === 'running' ? 'none' : 'block';
-    };
-    // iPhone'da sesli anons da ilk dokunuşta açılır
-    let spoke = false;
-    const unlock = () => {
-      if (ttsOn && !spoke) {
-        spoke = true;
-        const u = new SpeechSynthesisUtterance('Ses açık');
-        u.lang = 'tr-TR';
-        if (voice) u.voice = voice;
-        speechSynthesis.speak(u);
-      }
-      return ctx.resume().then(check);
-    };
-    btn.onclick = unlock;
-    document.addEventListener('pointerdown', unlock, { once: true });
-    ctx.onstatechange = check;
-    setTimeout(check, 600);
+  // Aynı ses art arda çalıp kulak tırmalamasın
+  const lastPlay = {};
+  function gate(name, ms) {
+    const now = performance.now();
+    if (now - (lastPlay[name] ?? -1e9) < ms) return false;
+    lastPlay[name] = now;
+    return true;
   }
 
   // ---------- temel sentez parçaları ----------
-  function tone({ type = 'sine', f = 440, f2 = null, t = 0, dur = 0.2, gain = 0.3, attack = 0.006, dest = master, lp = null }) {
+  function tone({ type = 'sine', f = 440, f2 = null, t = 0, dur = 0.2, gain = 0.3, attack = 0.008, lp = null }) {
     const start = ctx.currentTime + t;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
@@ -89,7 +72,7 @@ window.FX = (() => {
       node = fl;
     }
     node.connect(g);
-    g.connect(dest);
+    g.connect(master);
     o.start(start);
     o.stop(start + dur + 0.05);
     return o;
@@ -116,41 +99,36 @@ window.FX = (() => {
     s.stop(start + dur + 0.1);
   }
 
-  // ---------- oyun sesleri ----------
-  let lastCoin = 0;
+  // ---------- oyun sesleri (yumuşak tonlar) ----------
   function coin(coins = 1) {
-    if (!ok()) return;
-    const now = performance.now();
-    if (now - lastCoin < 70) return; // hediye yağmurunda kulak tırmalamasın
-    lastCoin = now;
-    const tier = coins >= 100 ? 3 : coins >= 30 ? 2 : coins >= 5 ? 1 : 0;
-    const scale = [988, 1319, 1568, 1976, 2349, 2637];
-    const n = tier + 2;
-    for (let i = 0; i < n; i++) {
-      tone({ type: 'square', f: scale[i], t: i * 0.065, dur: 0.16 + (i === n - 1 ? 0.25 : 0), gain: 0.07, lp: 4000 });
-      tone({ type: 'sine', f: scale[i] * 2, t: i * 0.065, dur: 0.12, gain: 0.03 });
-    }
+    // küçük hediyeler en fazla 1,5 sn'de bir, büyükler daha sık duyulur
+    if (!gate('coin', coins >= 30 ? 400 : 1500) || !ok('minor')) return;
+    const notes = coins >= 100 ? [1047, 1319, 1568, 2093] : coins >= 20 ? [1047, 1319, 1568] : coins >= 5 ? [1175, 1568] : [1319];
+    notes.forEach((f, i) => {
+      tone({ type: 'sine', f, t: i * 0.08, dur: 0.35, gain: 0.07 });
+      tone({ type: 'triangle', f: f / 2, t: i * 0.08, dur: 0.25, gain: 0.025 });
+    });
   }
 
   function whistle(blasts = 1, long = false) {
-    if (!ok()) return;
+    if (!ok('major')) return;
     let t = 0;
     for (let i = 0; i < blasts; i++) {
-      const dur = long && i === blasts - 1 ? 1.1 : 0.32;
+      const dur = long && i === blasts - 1 ? 0.9 : 0.28;
       const start = ctx.currentTime + t;
       const o = ctx.createOscillator();
       const lfo = ctx.createOscillator();
       const lfoG = ctx.createGain();
       const g = ctx.createGain();
       o.type = 'sine';
-      o.frequency.value = 2850;
-      lfo.frequency.value = 38;
-      lfoG.gain.value = 170;
+      o.frequency.value = 2600;
+      lfo.frequency.value = 30;
+      lfoG.gain.value = 120;
       lfo.connect(lfoG);
       lfoG.connect(o.frequency);
       g.gain.setValueAtTime(0.0001, start);
-      g.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
-      g.gain.setValueAtTime(0.22, start + dur - 0.05);
+      g.gain.exponentialRampToValueAtTime(0.12, start + 0.03);
+      g.gain.setValueAtTime(0.12, start + dur - 0.06);
       g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
       o.connect(g);
       g.connect(master);
@@ -158,110 +136,99 @@ window.FX = (() => {
       lfo.start(start);
       o.stop(start + dur + 0.05);
       lfo.stop(start + dur + 0.05);
-      noise({ t, dur, gain: 0.05, type: 'highpass', f: 3500, attack: 0.02 });
-      t += dur + 0.12;
+      t += dur + 0.14;
     }
   }
 
-  function roar(dur = 3.5, gain = 0.55) {
-    if (!ok()) return;
-    noise({ dur, gain, f: 900, q: 0.5, attack: 0.25 });
-    noise({ dur: dur * 0.9, gain: gain * 0.6, f: 2200, q: 0.7, attack: 0.3 });
-    noise({ dur: dur * 0.8, gain: gain * 0.5, type: 'lowpass', f: 400, attack: 0.2 });
+  // tribün coşkusu: alçak, sıcak bir uğultu (tıslama yok)
+  function roar(dur = 3, gain = 0.4, force = false) {
+    if (!force && !gate('roar', 9000)) return;
+    if (!ok(force ? 'major' : 'minor')) return;
+    noise({ dur, gain, type: 'lowpass', f: 520, q: 0.3, attack: 0.35 });
+    noise({ dur: dur * 0.85, gain: gain * 0.45, f: 750, q: 0.6, attack: 0.4 });
   }
 
   function goal() {
-    if (!ok()) return;
-    const chord = [233, 294, 349, 466];
-    for (const [t, d] of [[0, 0.75], [0.85, 1.6]]) {
-      for (const f of chord) tone({ type: 'sawtooth', f, t, dur: d, gain: 0.09, attack: 0.03, lp: 1400 });
+    if (!ok('major')) return;
+    const chord = [262, 330, 392];
+    for (const [t, d] of [[0, 0.6], [0.7, 1.3]]) {
+      for (const f of chord) tone({ type: 'triangle', f, t, dur: d, gain: 0.08, attack: 0.04, lp: 1200 });
     }
-    roar(4.2, 0.7);
+    roar(3.8, 0.55, true);
   }
 
   function fanfare() {
-    if (!ok()) return;
-    const notes = [[523, 0, 0.14], [659, 0.13, 0.14], [784, 0.26, 0.14], [1047, 0.39, 0.6]];
+    if (!gate('fanfare', 2500) || !ok('major')) return;
+    const notes = [[523, 0, 0.16], [659, 0.15, 0.16], [784, 0.3, 0.16], [1047, 0.45, 0.6]];
     for (const [f, t, d] of notes) {
-      tone({ type: 'square', f, t, dur: d, gain: 0.08, lp: 2600 });
-      tone({ type: 'triangle', f: f / 2, t, dur: d, gain: 0.12 });
+      tone({ type: 'triangle', f, t, dur: d, gain: 0.09 });
+      tone({ type: 'sine', f: f * 2, t, dur: d * 0.8, gain: 0.025 });
     }
-    noise({ t: 0.39, dur: 1.2, gain: 0.18, f: 1200, q: 0.6, attack: 0.15 });
   }
 
   function mega() {
-    if (!ok()) return;
-    tone({ type: 'sawtooth', f: 180, f2: 1400, dur: 0.7, gain: 0.08, attack: 0.05, lp: 3000 });
-    for (const f of [523, 659, 784, 1047]) tone({ type: 'triangle', f, t: 0.7, dur: 1.3, gain: 0.1, attack: 0.02 });
-    for (let i = 0; i < 6; i++) tone({ type: 'sine', f: 1568 + i * 220, t: 0.75 + i * 0.05, dur: 0.25, gain: 0.04 });
-    roar(2.8, 0.45);
+    if (!gate('mega', 3000) || !ok('major')) return;
+    tone({ type: 'triangle', f: 330, f2: 990, dur: 0.6, gain: 0.07, attack: 0.05, lp: 2000 });
+    for (const f of [523, 659, 784, 1047]) tone({ type: 'sine', f, t: 0.6, dur: 1.2, gain: 0.06, attack: 0.02 });
+    roar(2.4, 0.35, true);
   }
 
   function ooh() {
-    if (!ok()) return;
-    noise({ dur: 1.3, gain: 0.35, f: 650, f2: 280, q: 2.5, attack: 0.15 });
+    if (!gate('ooh', 7000) || !ok('minor')) return;
+    noise({ dur: 1.2, gain: 0.22, f: 520, f2: 260, q: 2, attack: 0.18 });
   }
 
   function charge() {
-    if (!ok()) return;
-    tone({ type: 'sawtooth', f: 220, f2: 880, dur: 0.45, gain: 0.07, lp: 2000 });
-    tone({ type: 'square', f: 880, t: 0.45, dur: 0.18, gain: 0.06, lp: 3000 });
+    if (!gate('charge', 3000) || !ok('minor')) return;
+    tone({ type: 'sine', f: 330, f2: 990, dur: 0.45, gain: 0.06 });
   }
 
   function promote() {
-    if (!ok()) return;
-    tone({ type: 'triangle', f: 784, dur: 0.12, gain: 0.12 });
-    tone({ type: 'triangle', f: 1175, t: 0.1, dur: 0.25, gain: 0.12 });
+    if (!gate('promote', 5000) || !ok('minor')) return;
+    tone({ type: 'sine', f: 784, dur: 0.18, gain: 0.07 });
+    tone({ type: 'sine', f: 1175, t: 0.12, dur: 0.3, gain: 0.07 });
   }
 
   function sad() {
-    if (!ok()) return;
-    [392, 370, 349, 311].forEach((f, i) =>
-      tone({ type: 'triangle', f, t: i * 0.28, dur: i === 3 ? 0.7 : 0.26, gain: 0.1, lp: 1500 }),
-    );
+    if (!gate('sad', 20000) || !ok('minor')) return;
+    [392, 370, 349].forEach((f, i) => tone({ type: 'sine', f, t: i * 0.26, dur: i === 2 ? 0.55 : 0.24, gain: 0.06 }));
   }
 
   function tick(final = false) {
-    if (!ok()) return;
-    tone({ type: 'square', f: final ? 1760 : 1100, dur: final ? 0.4 : 0.06, gain: 0.08, lp: 3500 });
+    if (!ok('minor')) return;
+    tone({ type: 'sine', f: final ? 1320 : 990, dur: final ? 0.3 : 0.07, gain: 0.06 });
   }
 
-  // ---------- tribün uğultusu (maç boyunca) ----------
-  function setCrowd(level) {
-    crowdLevel = level;
-    if (!ok()) return;
+  // ---------- tribün uğultusu (yalnızca maç sırasında, kısık) ----------
+  function setCrowd(lvl) {
+    crowdLevel = lvl;
+    if (!crowd && !ok('minor')) return;
     if (!crowd) {
       const s = ctx.createBufferSource();
       s.buffer = noiseBuf;
       s.loop = true;
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass';
-      bp.frequency.value = 700;
-      bp.Q.value = 0.6;
       const lp = ctx.createBiquadFilter();
       lp.type = 'lowpass';
-      lp.frequency.value = 1800;
+      lp.frequency.value = 480;
+      lp.Q.value = 0.2;
       const g = ctx.createGain();
       g.gain.value = 0;
-      s.connect(bp);
-      bp.connect(lp);
+      s.connect(lp);
       lp.connect(g);
       g.connect(master);
       s.start();
-      crowd = { g, bp };
+      crowd = { g, lp };
       setInterval(() => {
-        if (!crowd) return;
-        const target = crowdLevel * (0.8 + Math.random() * 0.4);
-        crowd.g.gain.linearRampToValueAtTime(target, ctx.currentTime + 1.5);
-        crowd.bp.frequency.linearRampToValueAtTime(600 + Math.random() * 300, ctx.currentTime + 1.5);
-      }, 1500);
+        const target = (level < 2 ? 0 : crowdLevel) * (0.85 + Math.random() * 0.3);
+        crowd.g.gain.linearRampToValueAtTime(target, ctx.currentTime + 2);
+        crowd.lp.frequency.linearRampToValueAtTime(420 + Math.random() * 160, ctx.currentTime + 2);
+      }, 2000);
     }
-    crowd.g.gain.linearRampToValueAtTime(level, ctx.currentTime + 1);
+    crowd.g.gain.linearRampToValueAtTime(level < 2 ? 0 : lvl, ctx.currentTime + 1);
   }
 
   // ---------- Türkçe sesli anons ----------
   // En doğal Türkçe sesi seç: Edge'deki "Emel Online (Natural)", iPhone'daki "Gelişmiş/Premium" sesler önce gelir.
-  // Belirli bir ses için adresin sonuna ?sesadi=Emel gibi ekle.
   let voice = null;
   const wantedVoice = (params.get('sesadi') || '').toLocaleLowerCase('tr');
   function pickVoice() {
@@ -274,48 +241,121 @@ window.FX = (() => {
       (v.localService ? 0 : 1);
     voice = vs.sort((a, b) => score(b) - score(a))[0] || null;
   }
-  if (ttsOn) {
+  if (hasTTS) {
     pickVoice();
     speechSynthesis.onvoiceschanged = pickVoice;
   }
+
   const cleanName = (n) =>
     String(n || '')
       .replace(/[^\p{L}\p{N} ]+/gu, ' ')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 22) || 'biri';
-  let queued = 0;
-  // Konuşmayı başlatır; başladıysa true döner. onend konuşma bitince (ya da kesilince) çağrılır.
-  function speak(text, { urgent = false, onend = null, rate = 1.08 } = {}) {
-    if (!ttsOn || !text) return false;
+
+  // 'unknown' | 'ok' | 'broken': cihaz gerçekten konuşabiliyor mu?
+  let ttsState = ttsOn ? 'unknown' : 'broken';
+  let current = 0; // sırada/çalan konuşma sayısı
+  const listeners = [];
+  const setTtsState = (s) => {
+    if (ttsState === s) return;
+    ttsState = s;
+    listeners.forEach((f) => f(s));
+  };
+
+  // Konuşmayı başlatır; başladıysa true döner. onend konuşma bitince (ya da kesilince/takılınca) çağrılır.
+  // iPhone'da konuşma bazen "bitti" sinyali vermeden takılır; bu yüzden her cümlenin bir süre sınırı var.
+  function speak(text, { urgent = false, onend = null, rate = 1.02 } = {}) {
+    if (!ttsOn || level === 0 || !text) return false;
+    if (!speechSynthesis.speaking && !speechSynthesis.pending) current = 0; // takılı sayaç temizlenir
     if (urgent) {
       speechSynthesis.cancel();
-      queued = 0;
-    } else if (queued >= 2) return false;
+      current = 0;
+    } else if (current >= 2) return false;
+    try {
+      speechSynthesis.resume(); // iOS bazen "duraklatılmış" durumda kalır
+    } catch {
+      /* yok say */
+    }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'tr-TR';
     if (voice) u.voice = voice;
     u.rate = rate;
-    u.pitch = 1.05;
-    queued++;
+    u.pitch = 1;
+    current++;
     let done = false;
-    u.onend = u.onerror = () => {
+    let watchdog = null;
+    const finish = () => {
       if (done) return;
       done = true;
-      queued = Math.max(0, queued - 1);
+      current = Math.max(0, current - 1);
+      clearTimeout(watchdog);
       if (onend) onend();
     };
+    u.onstart = () => setTtsState('ok');
+    u.onend = finish;
+    u.onerror = finish;
+    watchdog = setTimeout(finish, 2500 + text.length * 110);
     speechSynthesis.speak(u);
     return true;
   }
   const say = (text, urgent = false) => speak(text, { urgent });
-  const isSpeaking = () => ttsOn && (speechSynthesis.speaking || queued > 0);
+  const isSpeaking = () => ttsOn && level > 0 && (speechSynthesis.speaking || current > 0);
+
+  // Tarayıcılar sese ancak ilk dokunuştan sonra izin verir (OBS'te sorun yok).
+  // iPhone'da sesli anons da ilk dokunuşta, dokunuşun içinde başlatılmalı.
+  let unlocked = false;
+  function unlock() {
+    init();
+    const p = ctx ? ctx.resume() : Promise.resolve();
+    if (!unlocked && ttsOn && level > 0) {
+      unlocked = true;
+      speak('Merhaba! Canlı Maç Oyna yayınına hoş geldiniz.', { urgent: true });
+      // 4 saniyede hiç konuşmaya başlamadıysa bu tarayıcı konuşamıyor demektir
+      setTimeout(() => {
+        if (ttsState === 'unknown') setTtsState('broken');
+      }, 4000);
+    }
+    return p;
+  }
+
+  function setupUnlock() {
+    if (level === 0) return;
+    init();
+    if (!ctx) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '🔊 Sesi açmak için dokun';
+    btn.style.cssText =
+      'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;font:800 20px Inter,sans-serif;' +
+      'padding:16px 24px;border-radius:16px;border:3px solid #fff;background:#ffc531;color:#2a1e00;cursor:pointer;display:none';
+    document.body.appendChild(btn);
+    const check = () => {
+      btn.style.display = ctx.state === 'running' || level === 0 ? 'none' : 'block';
+    };
+    btn.onclick = () => unlock().then(check);
+    document.addEventListener('pointerdown', () => unlock().then(check), { once: true });
+    ctx.onstatechange = check;
+    setTimeout(check, 600);
+  }
+
+  function setLevel(n) {
+    level = n;
+    if (n === 0 && hasTTS) {
+      speechSynthesis.cancel();
+      current = 0;
+    }
+    if (n > 0) unlock();
+    if (master) master.gain.value = n ? volume : 0;
+    if (crowd) crowd.g.gain.value = n < 2 ? 0 : crowdLevel;
+  }
 
   // ---------- konfeti ----------
   let canvas = null;
   let c2d = null;
   let parts = [];
   function confetti(colors = ['#ffc531', '#ffffff', '#e53935', '#1e88e5'], n = 170, x = 540, y = 1040) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.width = 1080;
@@ -371,5 +411,17 @@ window.FX = (() => {
     el.classList.add('shake');
   }
 
-  return { ttsOn, speak, isSpeaking, setupUnlock, coin, whistle, roar, goal, fanfare, mega, ooh, charge, promote, sad, tick, setCrowd, say, cleanName, confetti, shake };
+  return {
+    ttsAvailable: () => ttsOn && level > 0,
+    ttsStatus: () => ttsState,
+    onTtsStatus: (f) => listeners.push(f),
+    getLevel: () => level,
+    setLevel,
+    speak,
+    say,
+    isSpeaking,
+    setupUnlock,
+    coin, whistle, roar, goal, fanfare, mega, ooh, charge, promote, sad, tick, setCrowd,
+    cleanName, confetti, shake,
+  };
 })();
