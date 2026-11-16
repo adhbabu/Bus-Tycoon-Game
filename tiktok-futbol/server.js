@@ -63,14 +63,32 @@ const TTS_INSTRUCTIONS =
 // Microsoft Azure Konuşma hizmeti: ücretsiz F0 katmanında ayda 500 bin karakter, kota dolunca ücret çıkmaz.
 // Varsayılan ses: tr-TR-AhmetNeural (doğal Türkçe erkek sesi).
 const xmlEscape = (s) => s.replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);
-async function azureTTS(text) {
+// Denenebilecek sesler (yalnızca bunlar istenebilir). Çok dilli sesler Türkçeyi doğal tonlamayla okur.
+const AZURE_VOICES = [
+  'tr-TR-AhmetNeural',
+  'en-US-AndrewMultilingualNeural',
+  'en-US-BrianMultilingualNeural',
+  'de-DE-FlorianMultilingualNeural',
+  'fr-FR-RemyMultilingualNeural',
+  'it-IT-GiuseppeMultilingualNeural',
+];
+// Cümlenin türüne göre tonlama: gol anında coşku, atakta gerilim, duyuruda sakinlik
+const AZURE_STYLE = {
+  goal: { rate: '+20%', pitch: '+8%', volume: 'loud' },
+  call: { rate: '+15%', pitch: '+3%', volume: 'medium' },
+  chance: { rate: '+12%', pitch: '+4%', volume: 'medium' },
+  info: { rate: env.AZURE_RATE || '+8%', pitch: env.AZURE_PITCH || '-2%', volume: 'medium' },
+};
+async function azureTTS(text, { style = 'info', voice: wanted } = {}) {
   const region = env.AZURE_SPEECH_REGION || 'westeurope';
-  const voice = env.AZURE_VOICE || 'tr-TR-AhmetNeural';
-  const rate = env.AZURE_RATE || '+12%';
-  const pitch = env.AZURE_PITCH || '-2%';
+  const voice = AZURE_VOICES.includes(wanted) ? wanted : env.AZURE_VOICE || 'tr-TR-AhmetNeural';
+  const st = AZURE_STYLE[style] || AZURE_STYLE.info;
+  const pros = `<prosody rate="${st.rate}" pitch="${st.pitch}" volume="${st.volume}">${xmlEscape(text)}</prosody>`;
+  // çok dilli seslere Türkçe konuşmaları söylenir
+  const body = /Multilingual/.test(voice) ? `<lang xml:lang="tr-TR">${pros}</lang>` : pros;
   const ssml =
     `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR">` +
-    `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${xmlEscape(text)}</prosody></voice></speak>`;
+    `<voice name="${voice}">${body}</voice></speak>`;
   const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: 'POST',
     headers: {
@@ -145,20 +163,21 @@ if (TTS) console.log(`🎙 Spiker sesi: ${TTS.name}`);
 const ttsCache = new Map();
 let ttsHour = { start: Date.now(), used: 0 };
 const TTS_HOURLY = Number(env.TTS_MAX_CHARS_PER_HOUR || 30000);
-function getTTS(text) {
-  if (ttsCache.has(text)) {
-    const v = ttsCache.get(text);
-    ttsCache.delete(text);
-    ttsCache.set(text, v);
+function getTTS(text, opts = {}) {
+  const key = `${opts.voice || ''}|${opts.style || ''}|${text}`;
+  if (ttsCache.has(key)) {
+    const v = ttsCache.get(key);
+    ttsCache.delete(key);
+    ttsCache.set(key, v);
     return v;
   }
   if (Date.now() - ttsHour.start > 3600e3) ttsHour = { start: Date.now(), used: 0 };
   if (ttsHour.used + text.length > TTS_HOURLY) return Promise.reject(new Error('saatlik ses sınırı doldu'));
   ttsHour.used += text.length;
-  const p = TTS.make(text);
-  ttsCache.set(text, p);
+  const p = TTS.make(text, opts);
+  ttsCache.set(key, p);
   p.catch((e) => {
-    ttsCache.delete(text);
+    ttsCache.delete(key);
     console.error('Spiker sesi üretilemedi:', e.message);
   });
   if (ttsCache.size > 400) ttsCache.delete(ttsCache.keys().next().value);
@@ -188,7 +207,9 @@ const server = http.createServer((req, res) => {
       res.writeHead(TTS ? 400 : 404).end();
       return;
     }
-    getTTS(text)
+    const style = ['goal', 'call', 'chance', 'info'].includes(url.searchParams.get('s')) ? url.searchParams.get('s') : 'info';
+    const voice = url.searchParams.get('v') || undefined;
+    getTTS(text, { style, voice })
       .then((buf) => res.writeHead(200, { 'content-type': TTS.type, 'cache-control': 'private, max-age=3600' }).end(buf))
       .catch(() => res.writeHead(503).end());
     return;

@@ -187,7 +187,7 @@ window.Spiker = (() => {
     box?.classList.remove('on');
   }
 
-  function say(line, { urgent = false } = {}) {
+  function say(line, { urgent = false, style = 'info' } = {}) {
     const token = ++tokenSeq;
     speaking = true;
     show(line.text, line.team, line.faces);
@@ -199,7 +199,7 @@ window.Spiker = (() => {
         if (!speaking) hide();
       }, 600);
     };
-    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.06, urgent });
+    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.06, urgent, style });
     // ses yoksa (OBS, ?tts=0) altyazı okunabilecek kadar ekranda kalır
     setTimeout(done, started ? 20000 : Math.min(9000, 1800 + line.text.length * 60));
   }
@@ -229,7 +229,7 @@ window.Spiker = (() => {
       if (!text) return;
       if (o.soft && (speaking || FX.isSpeaking())) return;
       lastLineEnd = Date.now();
-      say({ text, team: o.team ?? null }, { urgent: !!o.urgent });
+      say({ text, team: o.team ?? null }, { urgent: !!o.urgent, style: o.style || 'info' });
     },
     start(opts) {
       getState = opts.getState;

@@ -292,7 +292,7 @@ window.FX = (() => {
     }
     current = 0;
   }
-  function speakServer(text, { urgent = false, onend = null } = {}) {
+  function speakServer(text, { urgent = false, onend = null, style = 'info' } = {}) {
     if (urgent) stopVoice();
     else if (current >= 2) return false;
     current++;
@@ -306,7 +306,7 @@ window.FX = (() => {
       if (onend) onend();
     };
     // ses hemen istenir, sıra gelince çalınır
-    const clip = fetch('tts?t=' + encodeURIComponent(text.slice(0, 260)))
+    const clip = fetch('tts?s=' + style + '&t=' + encodeURIComponent(text.slice(0, 260)))
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('tts ' + r.status))))
       .then((buf) => ctx.decodeAudioData(buf));
     chain = chain
@@ -347,8 +347,8 @@ window.FX = (() => {
     .catch(() => {});
 
   const alive = new Set(); // Chrome konuşma nesnesini erken silerse "bitti" sinyali gelmez; referans tutulur
-  function speak(text, { urgent = false, onend = null, rate = 1.02 } = {}) {
-    if (serverVoice && ttsWanted && level > 0 && ctx && text) return speakServer(text, { urgent, onend });
+  function speak(text, { urgent = false, onend = null, rate = 1.02, style = 'info' } = {}) {
+    if (serverVoice && ttsWanted && level > 0 && ctx && text) return speakServer(text, { urgent, onend, style });
     if (!ttsOn || level === 0 || !text) return false;
     if (!speechSynthesis.speaking && !speechSynthesis.pending) current = 0; // takılı sayaç temizlenir
     let cancelled = false;
