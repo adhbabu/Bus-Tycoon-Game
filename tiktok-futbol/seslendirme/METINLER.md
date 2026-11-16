@@ -133,3 +133,46 @@ ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
 | F4 | Üç: hologram taraftarlar. Stadyum dolu, [short pause] ama yarısı ışıktan. |
 | F5 | Dört: akıllı top. Ofsaytı kendisi söylüyor. |
 | F6 | [cheerfully] Sence hangisi gerçek olur? Yorumlara yaz! |
+
+## Doğru mu, yanlış mı? (dogru) — görseller DG1–DG5
+
+ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
+
+| Kod | Metin |
+|---|---|
+| D1 | [excited] Doğru mu, yanlış mı? Futbol özel! [short pause] Dört bilgi, üç saniye. |
+| D2 | Birinci bilgi. Bir futbol maçı yüz kırk dokuza sıfır bitti. |
+| D3 | [gasps] Doğru! İki bin iki yılında Madagaskar'da bir takım, hakem kararlarını protesto etmek için kendi kalesine tam yüz kırk dokuz gol attı. |
+| D4 | İkinci bilgi. Kaleci, topu elinde istediği kadar tutabilir. |
+| D5 | [playfully] Yanlış! En fazla sekiz saniye. Fazla tutarsa rakip takım korner kullanır. |
+| D6 | Üçüncü bilgi. Bir takım sahada yedi oyuncudan aza düşerse, maç devam edemez. |
+| D7 | [excited] Doğru! Kurallara göre yedi oyuncunun altına düşen takımla maç oynanamaz. |
+| D8 | Son bilgi. Bir futbol topu yarım kilodan ağırdır. |
+| D9 | [cheerfully] Yanlış! Resmi maç topu dört yüz on ile dört yüz elli gram arasındadır. |
+| D10 | [cheerfully] Kaç tanesini bildin? Yorumlara yaz! |
+
+## Mahalle maçı vs Profesyonel maç (mahalle) — görseller HG1–HG8
+
+ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
+
+| Kod | Metin |
+|---|---|
+| H1 | [excited] Mahalle maçı ve profesyonel maç: aradaki farklar! [short pause] Sen hangisinde büyüdün? |
+| H2 | Kale. Profesyonelde ağlı kale. Mahallede... [laughs] iki taş ve bir okul çantası. |
+| H3 | Top kaçınca. Profesyonelde top toplayıcı hemen yenisini verir. Mahallede, [whispers] top teyzenin bahçesine düştüyse... maç bitmiştir. |
+| H4 | Hakem. Profesyonelde VAR var. Mahallede hakem yok, [playfully] herkes hakem! |
+| H5 | Maç ne zaman biter? Profesyonelde doksan dakika. Mahallede, [excited] anne balkondan seslenince! [laughs] Son gelen gol kazanır! |
+| H6 | [cheerfully] Sen en çok hangisini yaşadın? Yorumlara yaz, mahalle arkadaşını etiketle! |
+
+## Doğduğun aya göre mevkin (aylar) — görseller AG1–AG4
+
+ElevenLabs v4 etiketleriyle; sesler `seslendirme/video-sesleri/`.
+
+| Kod | Metin |
+|---|---|
+| A1 | [excited] Doğduğun aya göre futbolda hangi mevkidesin? [short pause] Hemen bul! |
+| A2 | Ocak, şubat, mart: kalecisin! [warmly] Sakin, soğukkanlı, son ana kadar pes etmezsin. |
+| A3 | Nisan, mayıs, haziran: forvetsin! [excited] Golün kokusunu herkesten önce alırsın. |
+| A4 | Temmuz, ağustos, eylül: orta sahasın. Oyunun beyni sensin, [playfully] herkes topu sana verir. |
+| A5 | Ekim, kasım, aralık: stopersin. [laughs] Senden top geçer, adam geçmez! |
+| A6 | [cheerfully] Hangi aydasın? Mevkini yorumlara yaz, arkadaşını etiketle! |
