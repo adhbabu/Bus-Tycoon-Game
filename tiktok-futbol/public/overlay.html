@@ -775,7 +775,7 @@ function onEvent(ev) {
       FX.roar(2.2, 0.28);
     }
     // spiker pozisyonu anlatır; sonuç (gol/kurtarış) bir sonraki dakikada gelir
-    if (ev.call) Spiker.commentate(ev.call, { team: ev.team, soft: !ev.strong, style: 'call' });
+    if (ev.call) Spiker.commentate(ev.call, { team: ev.team, soft: !ev.strong, style: 'call', clip: ev.strong ? (ev.team === 'A' ? ['G07', 'G08'] : ['G09', 'G10']) : null });
     return;
   }
   if (['join', 'switch', 'sub', 'bench', 'chance', 'mega', 'goal'].includes(ev.type)) addRecent(ev);
@@ -786,39 +786,40 @@ function onEvent(ev) {
     case 'goal':
       FX.boom(); FX.goal(); FX.shake();
       FX.confetti([colors[ev.team], '#ffffff', gold], 220);
-      Spiker.commentate(ev.call || `Gol! Gol! Gol! ${n}!`, { team: ev.team, urgent: true, style: 'goal' });
+      Spiker.commentate(ev.call || `Gol! Gol! Gol! ${n}!`, { team: ev.team, urgent: true, style: 'goal', clip: ev.team === 'A' ? ['G11', 'G12'] : ['G13', 'G14'] });
       break;
     case 'captain':
       FX.boom();
       FX.fanfare();
       FX.confetti([gold, '#ffffff', colors[ev.team]], 90, 540, ev.team === 'A' ? 640 : 1440);
-      Spiker.commentate(ev.prevName ? `👑 Taht değişti! Yeni kaptan ${ev.name}!` : `👑 ${ev.name} kaptan oldu!`, { team: ev.team });
+      Spiker.commentate(ev.prevName ? `👑 Taht değişti! Yeni kaptan ${ev.name}!` : `👑 ${ev.name} kaptan oldu!`, { team: ev.team, clip: ev.prevName ? 'G29' : 'G28' });
       break;
     case 'promote': FX.promote(); break;
     case 'mega':
       FX.boom(); FX.mega(); FX.confetti([gold, '#ffffff', colors[ev.team]], 160);
-      Spiker.commentate(`${ev.name}, ${ev.giftName} için çok teşekkürler!`, { team: ev.team });
+      Spiker.commentate(`${ev.name}, ${ev.giftName} için çok teşekkürler!`, { team: ev.team, clip: 'G30' });
       break;
     case 'join': break;
     case 'bench': FX.sad(); break;
     case 'chance':
       FX.ooh();
-      if (ev.call) Spiker.commentate(ev.call, { team: ev.team, soft: !ev.strong, style: 'chance' });
+      if (ev.call) Spiker.commentate(ev.call, { team: ev.team, soft: !ev.strong, style: 'chance', clip: { save: 'G15', post: 'G16', wide: 'G17', offside: 'G18' }[ev.kind] || null });
       break;
-    case 'kickoff': FX.whistle(1, true); FX.roar(2.5, 0.4, true); Spiker.commentate('Hakemin düdüğüyle maç başladı! Hediye at, takımının atak barını doldur!', true); break;
+    case 'kickoff': FX.whistle(1, true); FX.roar(2.5, 0.4, true); Spiker.commentate('Hakemin düdüğüyle maç başladı! Hediye at, takımının atak barını doldur!', { urgent: true, clip: 'G01' }); break;
     case 'resume': FX.whistle(1); break;
     case 'pause': FX.whistle(2); break;
-    case 'half': FX.whistle(2, true); Spiker.commentate(`İlk yarı sona erdi. Skor ${ev.text.replace(/[^0-9 -]/g, '').trim()}.`, true); break;
+    case 'half': FX.whistle(2, true); Spiker.commentate(`İlk yarı sona erdi. Skor ${ev.text.replace(/[^0-9 -]/g, '').trim()}.`, { urgent: true, clip: 'G02' }); break;
     case 'end': {
       FX.whistle(3, true); FX.roar(4.5, 0.6);
       FX.confetti([gold, '#ffffff', colors[ev.team] || gold], 280);
       const w = teamOf(ev.team);
-      Spiker.commentate(w ? `Ve hakem maçı bitiriyor! Kazanan ${w.name}!` : 'Ve hakem maçı bitiriyor! Kazanan yok, berabere!', { team: ev.team, urgent: true });
+      Spiker.commentate(w ? `Ve hakem maçı bitiriyor! Kazanan ${w.name}!` : 'Ve hakem maçı bitiriyor! Kazanan yok, berabere!', { team: ev.team, urgent: true, clip: ev.team === 'A' ? 'G04' : ev.team === 'B' ? 'G05' : 'G06' });
       break;
     }
-    case 'lobby': case 'reset': FX.promote(); Spiker.commentate('Yeni maç! Kadrolar kuruluyor. Hediye at, takımına gir!'); break;
+    case 'lobby': case 'reset': FX.promote(); Spiker.commentate('Yeni maç! Kadrolar kuruluyor. Hediye at, takımına gir!', { clip: 'G25' }); break;
+    case 'info': if (ev.kind === 'extra') Spiker.commentate(ev.text, { urgent: true, clip: 'G03' }); break;
     case 'countdown':
-      Spiker.commentate(ev.seconds >= 60 ? '⏳ Maça bir dakika kaldı! Son şans, hediye at, ilk on bire gir!' : '⏳ Maça on saniye!', true);
+      Spiker.commentate(ev.seconds >= 60 ? '⏳ Maça bir dakika kaldı! Son şans, hediye at, ilk on bire gir!' : '⏳ Maça on saniye!', { urgent: true, clip: ev.seconds >= 60 ? 'G26' : 'G27' });
       break;
     default: break;
   }

@@ -211,7 +211,7 @@ function getTTS(text, opts = {}) {
 }
 
 // ---------- statik dosyalar ----------
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
+const MIME = { '.mp3': 'audio/mpeg', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
   let p = decodeURIComponent(url.pathname);
@@ -219,6 +219,17 @@ const server = http.createServer((req, res) => {
   if (p === '/admin') p = '/admin.html';
   if (p === '/health') {
     res.writeHead(200, { 'content-type': 'text/plain' }).end('ok');
+    return;
+  }
+  // kayıtlı spiker sesleri (public/sesler/G01.mp3 ...): yayın ekranı hangilerinin olduğunu buradan öğrenir
+  if (p === '/sesler/list') {
+    let codes = [];
+    try {
+      codes = fs.readdirSync(path.join(PUBLIC, 'sesler')).filter((f) => f.endsWith('.mp3')).map((f) => f.slice(0, -4));
+    } catch {
+      /* klasör yok */
+    }
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(codes));
     return;
   }
   if (p === '/tts/status') {

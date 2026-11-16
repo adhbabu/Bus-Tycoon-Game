@@ -46,7 +46,8 @@ window.Spiker = (() => {
     const [A, B] = st.teams;
     const m = st.match;
     const out = [];
-    const add = (key, w, text, team = null) => out.push({ key, w, text, team });
+    // clip: bu cümlenin kayıtlı ses karşılığı (ses paketi), ya da yok
+    const add = (key, w, text, team = null, clip = null) => out.push({ key, w, text, team, clip });
     const cap = (t) => t.starters.find((s) => s.captain)?.player ?? null;
     const empty = (t) => t.starters.filter((s) => !s.player || s.player.bot).length;
     const bots = (t) => t.starters.filter((s) => s.player?.bot).length;
@@ -62,7 +63,7 @@ window.Spiker = (() => {
         const e = empty(t);
         const c = cap(t);
         if (bots(t) > 0) {
-          add('bos' + t.key, 3, `${sn(t)} takımında ${bots(t)} mevkide sanal oyuncu var. Bir hediye at, yerini sen al!`, t.key);
+          add('bos' + t.key, 3, `${sn(t)} takımında ${bots(t)} mevkide sanal oyuncu var. Bir hediye at, yerini sen al!`, t.key, 'G22');
           add('eksik' + t.key, 1.5, `${sn(t)} sanal oyuncularla mı sahaya çıkacak? Gerçek taraftarlar nerede?`, t.key);
         } else if (e > 0) {
           add('bos' + t.key, 3, `${sn(t)} takımında ${e} forma boş! Tek bir hediyeyle sahaya çıkabilirsin.`, t.key);
@@ -71,7 +72,7 @@ window.Spiker = (() => {
         if (c) {
           add('kaptan' + t.key, 3, `👑 ${sn(t)} kaptanı ${c.name}, ${fmt(c.coins)} jetonla tahtta. ${fmt(c.coins + 1)} jeton atan kaptanlığı alır!`, t.key);
         } else {
-          add('kaptanyok' + t.key, 4, `👑 ${sn(t)} takımının henüz kaptanı yok! İlk hediyeyi atan kaptan ve santrfor olur!`, t.key);
+          add('kaptanyok' + t.key, 4, `👑 ${sn(t)} takımının henüz kaptanı yok! İlk hediyeyi atan kaptan ve santrfor olur!`, t.key, 'G21');
         }
         if (e === 0) {
           const min = Math.min(...t.starters.map((s) => s.player.coins));
@@ -86,15 +87,15 @@ window.Spiker = (() => {
       }
       const sec = getCountdown();
       if (sec > 0) add('sayac', sec <= 60 ? 5 : 2.5, `⏳ Maçın başlamasına ${time(sec)} var! Kadroda yerini şimdi al.`);
-      add('yorum', 3, `💬 Yorumlara ${A.keyword} yaz ${sn(A)}, ${B.keyword} yaz ${sn(B)}. Takımını seç!`);
-      add('kural', 1.5, 'Kural basit: hediye at, takıma gir. En çok destek veren kaptan olur, sahada en önemli yeri alır!');
+      add('yorum', 3, `💬 Yorumlara ${A.keyword} yaz ${sn(A)}, ${B.keyword} yaz ${sn(B)}. Takımını seç!`, null, 'G20');
+      add('kural', 1.5, 'Kural basit: hediye at, takıma gir. En çok destek veren kaptan olur, sahada en önemli yeri alır!', null, 'G21');
     }
 
     if (phase === 'match') {
       const min = m.minute;
       for (const t of [A, B]) {
         const v = m.meter?.[t.key] ?? 0;
-        if (v >= 50 && v < 100) add('bar' + t.key, v / 20, `⚡ ${sn(t)} atak barı yüzde ${v}! Biraz daha destek, atak geliyor!`, t.key);
+        if (v >= 50 && v < 100) add('bar' + t.key, v / 20, `⚡ ${sn(t)} atak barı yüzde ${v}! Biraz daha destek, atak geliyor!`, t.key, 'G32');
         const st9 = t.starters.find((s) => s.pos.key === 'ST')?.player;
         if (st9 && !st9.bot) add('forvet' + t.key, 1.5, `${sn(t)} santrforu ${st9.name} gol kokluyor! Atak barını doldurun!`, t.key);
         if (bots(t) > 0) add('macbot' + t.key, 1.5, `${sn(t)} sahada ${bots(t)} sanal oyuncuyla oynuyor. Hediye at, sanal oyuncunun yerine sen gir!`, t.key);
@@ -106,9 +107,9 @@ window.Spiker = (() => {
         const [lead, trail] = a > b ? [A, B] : [B, A];
         add('skor', 3, `Dakika ${min}. ${sn(lead)} ${Math.max(a, b)}-${Math.min(a, b)} önde! ${sn(trail)} taraftarları, takımınızı geri getirin!`, trail.key);
       } else {
-        add('esit', 3, `Dakika ${min}, skor ${a}-${b}. Bu maçı taraftarlar kazanacak!`);
+        add('esit', 3, `Dakika ${min}, skor ${a}-${b}. Bu maçı taraftarlar kazanacak!`, null, 'G33');
       }
-      if (min >= 75) add('son', 4, 'Son dakikalara giriyoruz! Her hediye bir gol şansı!');
+      if (min >= 75) add('son', 4, 'Son dakikalara giriyoruz! Her hediye bir gol şansı!', null, 'G31');
     }
 
     if (phase === 'break') {
@@ -121,8 +122,8 @@ window.Spiker = (() => {
     }
 
     // her zaman: ücretsiz katılım çağrıları ve teşekkür
-    add('paylas', 1.2, '📣 Arkadaşlarını çağır, yayını paylaş! Kalabalık ne kadar büyükse maç o kadar büyük!');
-    add('begeni', 1.2, '❤️ Ekrana dokun, beğenileri yağdır, stadyum ısınsın!');
+    add('paylas', 1.2, '📣 Arkadaşlarını çağır, yayını paylaş! Kalabalık ne kadar büyükse maç o kadar büyük!', null, 'G23');
+    add('begeni', 1.2, '❤️ Ekrana dokun, beğenileri yağdır, stadyum ısınsın!', null, 'G24');
     const top = [...A.starters, ...B.starters, ...A.bench, ...B.bench]
       .map((s) => s.player ?? s)
       .filter((p) => p && p.coins)
@@ -148,11 +149,17 @@ window.Spiker = (() => {
       const more = people.length - shown.length;
       return {
         key: 'selam',
+        clip: 'G19',
         faces: shown,
         text: `👋 Hoş geldin ${shown.map((p) => p.name).join(', ')}${more > 0 ? ` ve ${more} kişi daha` : ''}! Yorumlara 1 ya da 2 yaz, takımını seç!`,
       };
     }
-    const list = candidates(st);
+    let list = candidates(st);
+    // ses paketi varken kaydı olan cümleler öncelikli
+    if (FX.packActive()) {
+      const recorded = list.filter((c) => c.clip && FX.hasClip(c.clip));
+      if (recorded.length) list = recorded;
+    }
     if (!list.length) return null;
     const c = pick(list);
     recent.push(c.key);
@@ -199,7 +206,13 @@ window.Spiker = (() => {
         if (!speaking) hide();
       }, 600);
     };
-    const started = FX.speak(toSay(line.text), { onend: done, rate: 1.06, urgent, style });
+    const avail = (Array.isArray(line.clip) ? line.clip : [line.clip]).filter((c) => c && FX.hasClip(c));
+    const clip = avail[Math.floor(Math.random() * avail.length)];
+    let started;
+    if (clip) started = FX.playClip(clip, { onend: done, urgent, style });
+    // ses paketi varken kaydı olmayan cümle yalnızca altyazıda görünür (tek tip ses)
+    else if (FX.packActive()) started = false;
+    else started = FX.speak(toSay(line.text), { onend: done, rate: 1.06, urgent, style });
     // ses yoksa (OBS, ?tts=0) altyazı okunabilecek kadar ekranda kalır
     setTimeout(done, started ? 20000 : Math.min(9000, 1800 + line.text.length * 60));
   }
@@ -229,7 +242,7 @@ window.Spiker = (() => {
       if (!text) return;
       if (o.soft && (speaking || FX.isSpeaking())) return;
       lastLineEnd = Date.now();
-      say({ text, team: o.team ?? null }, { urgent: !!o.urgent, style: o.style || 'info' });
+      say({ text, team: o.team ?? null, clip: o.clip ?? null }, { urgent: !!o.urgent, style: o.style || 'info' });
     },
     start(opts) {
       getState = opts.getState;

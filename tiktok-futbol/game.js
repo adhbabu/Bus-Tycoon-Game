@@ -550,21 +550,26 @@ export class Game {
       const r = this.rng();
       let text;
       let call;
+      let kind;
       if (gk && r < 0.4) {
+        kind = 'save';
         text = `🧤 ${label(gk)} kurtardı! (${label(sp)} şutu)`;
         call = pickOne([`Şut! Ama kaleci ${label(gk)} geçit vermiyor, müthiş kurtarış!`, `Vurdu... ${label(gk)} uçtu, topu kornere çeldi!`]);
       } else if (r < 0.6) {
+        kind = 'post';
         text = `😱 ${label(sp)} direkten döndü!`;
         call = 'Şuuut... ve direk! Top direkten döndü, inanılmaz!';
       } else if (r < 0.8) {
+        kind = 'wide';
         text = `${label(sp)} şutunu auta gönderdi`;
         call = pickOne([`Vurdu... az farkla dışarı! ${label(sp)} ellerini başına koydu.`, 'Şut... üstten auta! Tribünler nefesini tuttu.']);
       } else {
+        kind = 'offside';
         text = `${label(sp)} ofsayta yakalandı`;
         call = 'Yan hakem bayrağı kaldırdı, ofsayt! Atak sonuçsuz.';
       }
       this.logEvent({ type: 'chance', team: key, text });
-      this.emit({ type: 'chance', team: key, strong, call, text: `${m.minute}' ${text}` });
+      this.emit({ type: 'chance', team: key, strong, kind, call, text: `${m.minute}' ${text}` });
     }
   }
 
@@ -606,7 +611,7 @@ export class Game {
     if (m.minute === 90) {
       m.extra = 1 + Math.floor(this.rng() * 4);
       this.logEvent({ type: 'info', text: `Uzatma: +${m.extra}` });
-      this.emit({ type: 'info', big: true, text: `⏱ Uzatma: +${m.extra} dakika` });
+      this.emit({ type: 'info', kind: 'extra', big: true, text: `⏱ Uzatma: +${m.extra} dakika` });
     }
     if (m.minute >= 90 && m.minute >= 90 + m.extra) this.finish();
     this.onChange();

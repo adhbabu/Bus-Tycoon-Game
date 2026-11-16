@@ -300,7 +300,7 @@ window.FX = (() => {
     }
     current = 0;
   }
-  function speakServer(text, { urgent = false, onend = null, style = 'info' } = {}) {
+  function speakServer(text, { urgent = false, onend = null, style = 'info', url = null } = {}) {
     if (urgent) stopVoice();
     else if (current >= 2) return false;
     current++;
@@ -314,7 +314,7 @@ window.FX = (() => {
       if (onend) onend();
     };
     // ses hemen istenir, sıra gelince çalınır
-    const clip = fetch('tts?s=' + style + '&t=' + encodeURIComponent(text.slice(0, 260)))
+    const clip = fetch(url || 'tts?s=' + style + '&t=' + encodeURIComponent(text.slice(0, 260)))
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('tts ' + r.status))))
       .then((buf) => ctx.decodeAudioData(buf));
     chain = chain
@@ -346,6 +346,24 @@ window.FX = (() => {
     setTimeout(finish, 25000 + text.length * 80);
     return true;
   }
+  // ---------- kayıtlı spiker sesleri (ses paketi) ----------
+  let clips = new Set();
+  fetch('sesler/list')
+    .then((r) => (r.ok ? r.json() : []))
+    .then((a) => {
+      clips = new Set(a);
+    })
+    .catch(() => {});
+  const hasClip = (c) => clips.has(c);
+  const packActive = () => clips.size > 0;
+  // kayıtlı klibi çalar (sıraya girer); çalmaya başladıysa true döner
+  function playClip(code, { urgent = false, onend = null, style = 'info' } = {}) {
+    if (!hasClip(code) || level === 0 || !ttsWanted) return false;
+    init();
+    if (!ctx) return false;
+    return speakServer(code, { urgent, onend, style, url: 'sesler/' + code + '.mp3' });
+  }
+
   fetch('tts/status')
     .then((r) => (r.ok ? r.json() : null))
     .then((j) => {
@@ -570,6 +588,9 @@ window.FX = (() => {
 
   return {
     ttsAvailable: () => ttsWanted && level > 0 && (serverVoice || ttsOn),
+    hasClip,
+    packActive,
+    playClip,
     voiceSource: () => (serverVoice ? 'sunucu' : ttsOn ? 'cihaz' : 'yok'),
     ttsStatus: () => ttsState,
     onTtsStatus: (f) => listeners.push(f),
