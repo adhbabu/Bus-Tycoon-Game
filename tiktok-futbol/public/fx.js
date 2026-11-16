@@ -265,11 +265,16 @@ window.FX = (() => {
 
   // Konuşmayı başlatır; başladıysa true döner. onend konuşma bitince (ya da kesilince/takılınca) çağrılır.
   // iPhone'da konuşma bazen "bitti" sinyali vermeden takılır; bu yüzden her cümlenin bir süre sınırı var.
+  const alive = new Set(); // Chrome konuşma nesnesini erken silerse "bitti" sinyali gelmez; referans tutulur
   function speak(text, { urgent = false, onend = null, rate = 1.02 } = {}) {
     if (!ttsOn || level === 0 || !text) return false;
     if (!speechSynthesis.speaking && !speechSynthesis.pending) current = 0; // takılı sayaç temizlenir
+    let cancelled = false;
     if (urgent) {
-      speechSynthesis.cancel();
+      if (speechSynthesis.speaking || speechSynthesis.pending) {
+        speechSynthesis.cancel();
+        cancelled = true;
+      }
       current = 0;
     } else if (current >= 2) return false;
     try {
@@ -290,13 +295,17 @@ window.FX = (() => {
       done = true;
       current = Math.max(0, current - 1);
       clearTimeout(watchdog);
+      alive.delete(u);
       if (onend) onend();
     };
     u.onstart = () => setTtsState('ok');
     u.onend = finish;
     u.onerror = finish;
+    alive.add(u);
     watchdog = setTimeout(finish, 2500 + text.length * 110);
-    speechSynthesis.speak(u);
+    // iPhone: cancel()'dan hemen sonra gelen konuşma bazen hiç okunmaz; kısa bir ara verilir
+    if (cancelled) setTimeout(() => speechSynthesis.speak(u), 80);
+    else speechSynthesis.speak(u);
     return true;
   }
   const say = (text, urgent = false) => speak(text, { urgent });
@@ -304,17 +313,33 @@ window.FX = (() => {
 
   // Tarayıcılar sese ancak ilk dokunuştan sonra izin verir (OBS'te sorun yok).
   // iPhone'da sesli anons da ilk dokunuşta, dokunuşun içinde başlatılmalı.
-  let unlocked = false;
+  // Spiker gerçekten konuşmaya başlayana kadar her dokunuşta yeniden denenir.
+  // iPhone yalnızca parmak kalkınca (touchend/click) gelen dokunuşu sayar ve konuşma
+  // o dokunuşun içinde, öncesinde cancel() çağrılmadan başlatılmalıdır.
+  let unlockTries = 0;
+  let unlockTimer = null;
   function unlock() {
     init();
-    const p = ctx ? ctx.resume() : Promise.resolve();
-    if (!unlocked && ttsOn && level > 0) {
-      unlocked = true;
-      speak('Merhaba! Canlı Maç Oyna yayınına hoş geldiniz.', { urgent: true });
-      // 4 saniyede hiç konuşmaya başlamadıysa bu tarayıcı konuşamıyor demektir
-      setTimeout(() => {
-        if (ttsState === 'unknown') setTtsState('broken');
-      }, 4000);
+    const p = ctx ? ctx.resume().catch(() => {}) : Promise.resolve();
+    if (ttsOn && level > 0 && ttsState !== 'ok') {
+      unlockTries++;
+      const u = new SpeechSynthesisUtterance(unlockTries === 1 ? 'Merhaba! Canlı Maç Oyna yayınına hoş geldiniz.' : 'Spiker hazır.');
+      u.lang = 'tr-TR';
+      if (voice) u.voice = voice;
+      u.rate = 1.02;
+      u.onstart = () => setTtsState('ok');
+      u.onend = u.onerror = () => alive.delete(u);
+      alive.add(u);
+      try {
+        speechSynthesis.resume();
+      } catch {
+        /* yok say */
+      }
+      speechSynthesis.speak(u);
+      clearTimeout(unlockTimer);
+      unlockTimer = setTimeout(() => {
+        if (ttsState !== 'ok') setTtsState('broken');
+      }, 3000);
     }
     return p;
   }
@@ -322,20 +347,48 @@ window.FX = (() => {
   function setupUnlock() {
     if (level === 0) return;
     init();
-    if (!ctx) return;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = '🔊 Sesi açmak için dokun';
     btn.style.cssText =
       'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;font:800 20px Inter,sans-serif;' +
-      'padding:16px 24px;border-radius:16px;border:3px solid #fff;background:#ffc531;color:#2a1e00;cursor:pointer;display:none';
+      'max-width:86vw;padding:16px 24px;border-radius:16px;border:3px solid #fff;background:#ffc531;color:#2a1e00;cursor:pointer;display:none';
     document.body.appendChild(btn);
+    let gaveUp = false;
+    const needAudio = () => ctx && ctx.state !== 'running';
+    const needTts = () => ttsOn && level > 0 && ttsState !== 'ok';
     const check = () => {
-      btn.style.display = ctx.state === 'running' || level === 0 ? 'none' : 'block';
+      if (level === 0 || (!needAudio() && !needTts())) {
+        btn.style.display = 'none';
+        return;
+      }
+      if (gaveUp && !needAudio()) {
+        btn.style.display = 'none';
+        return;
+      }
+      if (ttsState === 'broken' && unlockTries >= 2 && !needAudio()) {
+        btn.textContent = "🎙 Spiker sesi bu tarayıcıda çalışmıyor. Safari'de aç, sessiz modu kapat. (Altyazılar görünür.)";
+        btn.style.display = 'block';
+        setTimeout(() => {
+          gaveUp = true;
+          check();
+        }, 7000);
+        return;
+      }
+      btn.textContent = unlockTries ? '🔊 Spikeri açmak için tekrar dokun' : '🔊 Sesi ve spikeri açmak için dokun';
+      btn.style.display = 'block';
     };
-    btn.onclick = () => unlock().then(check);
-    document.addEventListener('pointerdown', () => unlock().then(check), { once: true });
-    ctx.onstatechange = check;
+    // tek dokunuş hem touchend hem click üretir; ikisi bir deneme sayılır
+    let lastTap = 0;
+    const onTap = () => {
+      const now = Date.now();
+      if (now - lastTap < 800) return;
+      lastTap = now;
+      if (needAudio() || needTts()) unlock().then(() => setTimeout(check, 300));
+    };
+    document.addEventListener('click', onTap, true);
+    document.addEventListener('touchend', onTap, { capture: true, passive: true });
+    listeners.push(() => setTimeout(check, 50));
+    if (ctx) ctx.onstatechange = check;
     setTimeout(check, 600);
   }
 
