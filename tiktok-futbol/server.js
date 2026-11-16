@@ -71,6 +71,9 @@ const AZURE_VOICES = [
   'de-DE-FlorianMultilingualNeural',
   'fr-FR-RemyMultilingualNeural',
   'it-IT-GiuseppeMultilingualNeural',
+  'tr-TR-EmelNeural',
+  'en-US-AvaMultilingualNeural',
+  'en-US-EmmaMultilingualNeural',
 ];
 // Cümlenin türüne göre tonlama: gol anında coşku, atakta gerilim, duyuruda sakinlik
 const AZURE_STYLE = {
