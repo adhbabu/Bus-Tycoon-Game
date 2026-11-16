@@ -527,10 +527,10 @@ export class Game {
       const text = `GOOOL! ${label(sp)}${assist ? ` (asist: ${label(assist)})` : ''}`;
       const sc = `${this.team('A').name} ${m.score.A}, ${this.team('B').name} ${m.score.B}`;
       const call = pickOne([
-        `GOOOOOOL! ${label(sp)} topu ağlara gönderdi! ${sc}!`,
-        `Ve GOOOOOL! Muhteşem bitiriş, ${label(sp)}! ${sc}!`,
-        `GOL, GOL, GOL! ${teamName} sevince boğuldu! Golü atan ${label(sp)}!`,
-        `Ağlar havalandı! GOOOOL! ${label(sp)} affetmedi! ${sc}!`,
+        `GOOOOOOL! GOL! GOL! GOL! ${label(sp)} topu ağlara gönderdi! ${sc}!`,
+        `Ve GOOOOOL! Gol, gol, gol! Muhteşem bitiriş, ${label(sp)}! ${sc}!`,
+        `GOOOOOL! GOL, GOL, GOL! ${teamName} sevince boğuldu! Golü atan ${label(sp)}!`,
+        `Ağlar havalandı! GOOOOOL! Gol, gol! ${label(sp)} affetmedi! ${sc}!`,
       ]);
       this.logEvent({ type: 'goal', team: key, text });
       this.emit({

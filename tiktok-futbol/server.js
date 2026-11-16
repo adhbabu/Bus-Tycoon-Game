@@ -91,8 +91,8 @@ function prosodyWithGoals(text, st) {
     out += norm(text.slice(last, m.index));
     const long = m[1].length > 3;
     out += long
-      ? `<prosody rate="-60%" pitch="+35%" volume="x-loud">Gooool</prosody><break time="120ms"/>`
-      : `<prosody rate="-25%" pitch="+28%" volume="x-loud">Gol</prosody>`;
+      ? `<prosody rate="-50%" pitch="+35%" volume="x-loud">Gooool</prosody><break time="150ms"/>`
+      : `<prosody rate="-20%" pitch="+30%" volume="x-loud">Gol</prosody><break time="70ms"/>`;
     last = m.index + m[1].length;
   }
   return out + norm(text.slice(last));
