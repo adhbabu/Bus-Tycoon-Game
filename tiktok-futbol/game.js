@@ -99,10 +99,17 @@ export class Game {
       if (player) used.add(player.id);
       return { pos, player };
     });
+    // Boş mevkilere açıkça etiketli botlar girer: hediye atmazlar, kaptan olamazlar,
+    // gerçek bir oyuncu gelince yerlerini hemen ona bırakırlar.
+    if (this.cfg.bots?.enabled) {
+      for (const s of starters) {
+        if (!s.player) s.player = this.bot(key, s.pos);
+      }
+    }
     let captainId = null;
     let best = -1;
     for (const s of starters) {
-      if (s.player && s.player.coins > best) {
+      if (s.player && !s.player.bot && s.player.coins > best) {
         best = s.player.coins;
         captainId = s.player.id;
       }
@@ -111,12 +118,21 @@ export class Game {
     return { starters, bench: players.filter((p) => !used.has(p.id)), captainId };
   }
 
+  bot(key, pos) {
+    const num = { GK: 1, RB: 2, LB: 3, LCB: 4, RCB: 5, CDM: 6, RW: 7, CM: 8, ST: 9, CAM: 10, LW: 11 }[pos.key] ?? '';
+    return { id: `bot-${key}-${pos.key}`, name: `Bot ${num}`, avatar: '', coins: 0, bot: true };
+  }
+
+  realStarters(key) {
+    return this.lineup(key).starters.filter((s) => s.player && !s.player.bot);
+  }
+
   slotMap() {
     const map = new Map();
     for (const t of this.teams) {
       const lu = this.lineup(t.key);
       lu.starters.forEach((s, idx) => {
-        if (s.player) map.set(s.player.id, { team: t.key, idx, captain: s.captain });
+        if (s.player && !s.player.bot) map.set(s.player.id, { team: t.key, idx, captain: s.captain });
       });
     }
     return map;
@@ -371,11 +387,18 @@ export class Game {
       }
     }
     if (left > 0) return;
-    const ready = this.teams.every((t) => this.teamPlayers(t.key).length > 0);
+    // botlar açıksa tek bir gerçek oyuncu yeter (o kişi botlara karşı oynar)
+    const ready = this.cfg.bots?.enabled
+      ? this.players.size > 0
+      : this.teams.every((t) => this.teamPlayers(t.key).length > 0);
     if (!ready) {
       a.endsAt = now + 30000;
       a.warned = { 60: true };
-      this.emit({ type: 'info', big: true, text: 'Maç için iki takımda da en az 1 oyuncu lazım! Hediye at 🎁' });
+      this.emit({
+        type: 'info',
+        big: true,
+        text: this.cfg.bots?.enabled ? 'Maç için ilk oyuncu bekleniyor! Hediye at, sahaya çık 🎁' : 'Maç için iki takımda da en az 1 oyuncu lazım! Hediye at 🎁',
+      });
       this.onChange();
       return;
     }
@@ -387,7 +410,10 @@ export class Game {
   strength(key) {
     const lu = this.lineup(key);
     let s = 0.5;
-    for (const st of lu.starters) if (st.player) s += 1 + log2p(st.player.coins);
+    for (const st of lu.starters) {
+      if (!st.player) continue;
+      s += st.player.bot ? 0.6 : 1 + log2p(st.player.coins);
+    }
     return s;
   }
 
@@ -555,7 +581,7 @@ export class Game {
 
   // ---------- ekrana gönderilen durum ----------
   pub(p) {
-    return { id: p.id, name: p.name, avatar: p.avatar, coins: p.coins, goals: this.match.scorers[p.id] ?? 0 };
+    return { id: p.id, name: p.name, avatar: p.avatar, coins: p.coins, goals: this.match.scorers[p.id] ?? 0, bot: !!p.bot };
   }
 
   snapshot({ admin = false } = {}) {
@@ -563,7 +589,7 @@ export class Game {
       const lu = this.lineup(t.key);
       const all = this.teamPlayers(t.key);
       const captain = lu.starters.find((s) => s.captain)?.player ?? null;
-      const empty = lu.starters.filter((s) => !s.player).length;
+      const empty = lu.starters.filter((s) => !s.player || s.player.bot).length;
       return {
         key: t.key,
         name: t.name,

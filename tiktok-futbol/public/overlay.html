@@ -191,6 +191,10 @@
   .rl { margin-top: 3px; font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px #000; white-space: nowrap; }
   .rl b { color: var(--gold); }
 
+  .pl.bot .av { background: #4a5566; filter: saturate(.5); }
+  .pl.bot .av .ini { font-size: 38px; }
+  .pl.bot .nm { background: rgba(0,0,0,.45); color: #d5dbe3; }
+  .pl.bot .rl { color: #e8edf3; }
   .pl.empty .av {
     background: rgba(0,0,0,.18); border: 4px dashed rgba(255,255,255,.75); box-shadow: none;
   }
@@ -479,9 +483,18 @@ function renderPitch(teams) {
       const [x, y] = slotXY(t.key, s.pos);
       el.style.transform = `translate(${x - 88}px, ${y - AV_HALF}px)`;
       el.classList.toggle('empty', !s.player);
+      el.classList.toggle('bot', !!s.player?.bot);
       el.classList.toggle('captain', !!s.captain);
       el.dataset.team = t.key;
-      if (s.player) {
+      if (s.player?.bot) {
+        setAvatar(el, '', '');
+        el.querySelector('.ini').textContent = '🤖';
+        el.querySelector('.nm').textContent = s.player.name.toLocaleUpperCase('tr');
+        el.querySelector('.rl').innerHTML = `${esc(s.pos.name.toLocaleUpperCase('tr'))} · <b>YERİNİ AL!</b>`;
+        const g = el.querySelector('.goals');
+        g.textContent = s.player.goals ? '⚽' + (s.player.goals > 1 ? s.player.goals : '') : '';
+        g.classList.toggle('on', !!s.player.goals);
+      } else if (s.player) {
         setAvatar(el, s.player.avatar, s.player.name);
         el.querySelector('.nm').textContent = s.player.name;
         el.querySelector('.rl').innerHTML = `${esc(s.captain ? 'KAPTAN · ' + s.pos.short : s.pos.name.toLocaleUpperCase('tr'))} · <b>${fmt(s.player.coins)}🪙</b>`;

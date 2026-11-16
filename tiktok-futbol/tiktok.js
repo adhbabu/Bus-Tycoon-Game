@@ -142,10 +142,12 @@ export class TikTokSource {
     } catch (e) {
       if (this.conn !== conn) return;
       const msg = String(e?.message ?? e);
-      const offline = /offline|not live|UserOffline/i.test(msg) || e?.name === 'UserOfflineError';
+      const offline = /offline|not live|UserOffline|room ?id/i.test(msg) || e?.name === 'UserOfflineError';
       this.status(
         offline ? 'offline' : 'error',
-        offline ? `@${this.username} şu an canlı yayında değil. 30 sn sonra tekrar denenecek.` : `Bağlanılamadı: ${msg}`,
+        offline
+          ? `@${this.username} yayını bulunamadı: ya şu an canlı yayında değilsin ya da kullanıcı adı yanlış. 30 sn sonra tekrar denenecek.`
+          : `Bağlanılamadı: ${msg}`,
       );
       this.scheduleRetry(offline ? 30 : 20);
     }

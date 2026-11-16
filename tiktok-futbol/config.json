@@ -8,6 +8,8 @@
   "announceTopN": 3,
   "bigGift": 99,
 
+  "bots": { "enabled": true },
+
   "auto": {
     "enabled": true,
     "lobbySeconds": 180,

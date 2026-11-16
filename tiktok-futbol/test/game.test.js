@@ -55,7 +55,7 @@ test('minCoins şartı karşılanmazsa mevki boş kalır', () => {
   const g = new Game(cfg);
   g.handleGift({ id: 'a', name: 'A', coins: 10 });
   const lu = g.lineup('A');
-  assert.equal(lu.starters[0].player, null);
+  assert.ok(!lu.starters[0].player || lu.starters[0].player.bot);
   assert.equal(lu.starters[1].player.id, 'a');
 });
 
@@ -108,6 +108,7 @@ test('kayıt / yükleme', () => {
 test('otomatik pilot: geri sayım → maç → ara → yeni kadro', () => {
   const cfg = structuredClone(config);
   cfg.auto = { enabled: true, lobbySeconds: 60, breakSeconds: 10, resetSquadEachRound: true };
+  cfg.bots = { enabled: false };
   const g = new Game(cfg, null, seeded(3));
   const events = [];
   g.onEvent = (e) => events.push(e.type);
@@ -147,4 +148,32 @@ test('kaptan tahtı el değiştirince önceki kaptanın adı duyurulur', () => {
   g.handleGift({ id: 'y', name: 'Y', coins: 50 });
   assert.equal(caps.at(-1).name, 'Y');
   assert.equal(caps.at(-1).prevName, 'X');
+});
+
+test('botlar boş mevkileri doldurur, kaptan olmaz, gerçek oyuncuya yer açar', () => {
+  const cfg = structuredClone(config);
+  cfg.bots = { enabled: true };
+  cfg.auto = { enabled: true, lobbySeconds: 10, breakSeconds: 5 };
+  const g = new Game(cfg, null, seeded(5));
+  let lu = g.lineup('B');
+  assert.equal(lu.starters.filter((s) => s.player?.bot).length, 11);
+  assert.equal(lu.captainId, null);
+
+  g.handleChat({ id: 'tek', text: '2' });
+  g.handleGift({ id: 'tek', name: 'Tek', coins: 1 });
+  lu = g.lineup('B');
+  assert.equal(lu.starters[0].player.id, 'tek');
+  assert.equal(lu.captainId, 'tek');
+  assert.equal(lu.starters.filter((s) => s.player?.bot).length, 10);
+  assert.equal(g.snapshot().teams[1].starterCount, 1);
+
+  // tek gerçek oyuncu varken otomatik pilot maçı başlatır
+  let now = 1_000_000;
+  g.autoTick(now);
+  now += 11_000;
+  g.autoTick(now);
+  assert.equal(g.match.status, 'running');
+  while (g.match.status === 'running') g.tick();
+  assert.equal(g.match.status, 'finished');
+  if (g.match.result.mvp) assert.ok(!g.match.result.mvp.id.startsWith('bot-'));
 });

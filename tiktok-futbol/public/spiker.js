@@ -40,7 +40,8 @@ window.Spiker = (() => {
     const out = [];
     const add = (key, w, text, team = null) => out.push({ key, w, text, team });
     const cap = (t) => t.starters.find((s) => s.captain)?.player ?? null;
-    const empty = (t) => t.starters.filter((s) => !s.player).length;
+    const empty = (t) => t.starters.filter((s) => !s.player || s.player.bot).length;
+    const bots = (t) => t.starters.filter((s) => s.player?.bot).length;
     const phase =
       m.status === 'running' || m.status === 'paused'
         ? 'match'
@@ -52,7 +53,10 @@ window.Spiker = (() => {
       for (const t of [A, B]) {
         const e = empty(t);
         const c = cap(t);
-        if (e > 0) {
+        if (bots(t) > 0) {
+          add('bos' + t.key, 3, `🤖 ${sn(t)} takımında ${bots(t)} mevkide bot oynuyor. Bir hediye at, botun yerini sen al!`, t.key);
+          add('eksik' + t.key, 1.5, `${sn(t)} botlarla mı sahaya çıkacak? Gerçek oyuncular nerede?`, t.key);
+        } else if (e > 0) {
           add('bos' + t.key, 3, `${sn(t)} takımında ${e} forma boş! Tek bir hediyeyle sahaya çıkabilirsin.`, t.key);
           add('eksik' + t.key, 1.5, `${sn(t)} eksik kadroyla mı çıkacak? ${e} oyuncu daha lazım!`, t.key);
         }
@@ -84,7 +88,8 @@ window.Spiker = (() => {
         const v = m.meter?.[t.key] ?? 0;
         if (v >= 50 && v < 100) add('bar' + t.key, v / 20, `⚡ ${sn(t)} atak barı yüzde ${v}! Biraz daha destek, atak geliyor!`, t.key);
         const st9 = t.starters.find((s) => s.pos.key === 'ST')?.player;
-        if (st9) add('forvet' + t.key, 1.5, `${sn(t)} santrforu ${st9.name} gol kokluyor! Atak barını doldurun!`, t.key);
+        if (st9 && !st9.bot) add('forvet' + t.key, 1.5, `${sn(t)} santrforu ${st9.name} gol kokluyor! Atak barını doldurun!`, t.key);
+        if (bots(t) > 0) add('macbot' + t.key, 1.5, `🤖 ${sn(t)} sahada ${bots(t)} botla oynuyor. Hediye at, botu kenara al, oyuna sen gir!`, t.key);
         const c = cap(t);
         if (c) add('mackaptan' + t.key, 1, `👑 ${sn(t)} kaptanı ${c.name} sahada. Tahtı almak isteyen var mı?`, t.key);
       }
