@@ -81,6 +81,34 @@ Açılınca iki adres verir:
 2. **"Sesi OBS üzerinden kontrol et"** kutusunu işaretle (sesler doğrudan yayına gider, tıklama gerekmez).
 3. Not: OBS'in tarayıcısında Türkçe sesli anons çalışmayabilir. Anons istiyorsan Yol A'daki gibi Chrome penceresini yakala.
 
+### Yol C: Sadece iPhone ile (bilgisayarsız)
+
+Oyun sunucusu iPhone'da çalışamaz. Bu yüzden onu ücretsiz bir bulut sunucusuna koyarsın, iPhone'da da yalnızca oyun sayfasını açıp ekranını TikTok'ta yayınlarsın.
+
+**1. Sunucuyu internete koy (bir kez, iPhone'dan yapılır):**
+1. Safari'de <https://render.com> → **GitHub ile giriş yap**.
+2. **New → Blueprint** → `Bus-Tycoon-Game` deposunu seç. Dal olarak bu oyunun bulunduğu dalı seç.
+3. İki değer sorar:
+   - `TIKTOK_USER`: TikTok kullanıcı adın (@ olmadan)
+   - `ADMIN_KEY`: yönetim paneli için kendi belirleyeceğin bir şifre
+4. **Deploy** de. Birkaç dakika sonra sana `https://tiktok-futbol-xxxx.onrender.com` gibi bir adres verir.
+
+**2. Oyun ekranını hazırla:**
+1. Safari'de bu adresi aç → Paylaş → **Ana Ekrana Ekle**. Ana ekrandaki simgeden açınca adres çubuğu olmadan tam ekran açılır.
+2. Ekrana **bir kez dokun** (ses ve sesli anons açılır).
+3. Yönetim paneli: `https://...onrender.com/admin?key=ŞİFREN`. Yayından **önce** bak, yayın sırasında açma (ekranın yayında görünür). Otomatik pilot açık olduğu için yayında panele gerek yok.
+
+**3. Canlıya geç:**
+1. TikTok → **+** → **CANLI** → **Mobil Oyun** → Canlı yayına başla → ekran kaydı iznini ver.
+2. Ana ekrandan **Canlı Futbol** simgesine geç. Artık izleyiciler oyunu görür, hediyeler sahaya yansır.
+3. Bitirmek için TikTok'a dönüp yayını kapat.
+
+**Bilmen gerekenler:**
+- **Mobil Oyun seçeneği:** TikTok bunu her hesapta açmıyor. LIVE menünde göremiyorsan hesabında yok demektir; o zaman Yol A ile bilgisayardan yayın yapman gerekir.
+- **Ücretsiz planda uyku:** Sunucu, kimse bağlı değilken bir süre sonra uyur ve ilk açılışta uyanması yaklaşık 1 dakika sürer. Yayından birkaç dakika önce oyun sayfasını aç.
+- **Kadro kaydı:** Ücretsiz planda sunucu yeniden başlarsa kadro sıfırlanır.
+- **TikTok'a bağlanamazsa:** Bulut sunucularından bağlantı bazen sınırlanır. <https://www.eulerstream.com> adresinden ücretsiz anahtar al, Render'da `SIGN_API_KEY` ortam değişkeni olarak ekle.
+
 ### Ekran ayarları (adresin sonuna eklenir)
 
 | Ayar | Örnek | Ne yapar |

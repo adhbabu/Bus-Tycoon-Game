@@ -51,8 +51,20 @@ window.FX = (() => {
     const check = () => {
       btn.style.display = ctx.state === 'running' ? 'none' : 'block';
     };
-    btn.onclick = () => ctx.resume().then(check);
-    document.addEventListener('pointerdown', () => ctx.resume().then(check), { once: true });
+    // iPhone'da sesli anons da ilk dokunuşta açılır
+    let spoke = false;
+    const unlock = () => {
+      if (ttsOn && !spoke) {
+        spoke = true;
+        const u = new SpeechSynthesisUtterance('Ses açık');
+        u.lang = 'tr-TR';
+        if (voice) u.voice = voice;
+        speechSynthesis.speak(u);
+      }
+      return ctx.resume().then(check);
+    };
+    btn.onclick = unlock;
+    document.addEventListener('pointerdown', unlock, { once: true });
     ctx.onstatechange = check;
     setTimeout(check, 600);
   }

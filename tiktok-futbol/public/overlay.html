@@ -2,7 +2,12 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Canlı Futbol">
+<meta name="theme-color" content="#070d17">
 <title>Canlı Futbol</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,6 +24,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; }
+  body { position: fixed; inset: 0; }
   body {
     background: radial-gradient(ellipse at 50% 30%, #13304a 0%, #070d17 70%);
     font-family: Inter, system-ui, sans-serif;
@@ -305,9 +311,13 @@ if (params.get('bg')) document.body.classList.add('bg-' + params.get('bg'));
 
 const stage = $('#stage');
 function fit() {
-  const s = Math.min(innerWidth / 1080, innerHeight / 1920);
-  stage.style.transform = `translate(${(innerWidth - 1080 * s) / 2}px, 0) scale(${s})`;
+  // body sabit ve taşmasız; telefonda tarayıcı sayfayı 1080px sanıp yakınlaştırmasın
+  const W = document.body.clientWidth || innerWidth;
+  const H = document.body.clientHeight || innerHeight;
+  const s = Math.min(W / 1080, H / 1920);
+  stage.style.transform = `translate(${(W - 1080 * s) / 2}px, ${Math.max(0, (H - 1920 * s) / 2)}px) scale(${s})`;
 }
+addEventListener('orientationchange', () => setTimeout(fit, 300));
 addEventListener('resize', fit);
 fit();
 

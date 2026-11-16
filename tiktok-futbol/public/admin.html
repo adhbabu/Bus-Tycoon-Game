@@ -197,13 +197,36 @@ $('#players').onclick = (e) => {
   if (t.dataset.kick && confirm('Bu oyuncu çıkarılıp engellensin mi?')) cmd('kick', { id: t.dataset.kick });
 };
 
+// Sunucu internetteyse yönetim şifresi gerekir (adres: /admin?key=ŞİFRE ya da sorulunca yaz)
+let adminKey = new URLSearchParams(location.search).get('key') || '';
+try { adminKey = adminKey || localStorage.getItem('futbolAdminKey') || ''; } catch {}
+let authFailed = false;
 function connect() {
-  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/?role=admin`);
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/?role=admin&key=${encodeURIComponent(adminKey)}`);
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
-    if (m.type === 'state') render(m);
+    if (m.type === 'auth' && !m.ok) {
+      authFailed = true;
+      ws.close();
+      const k = prompt('Yönetim şifresi (ADMIN_KEY):', '');
+      if (k !== null) {
+        adminKey = k.trim();
+        try { localStorage.setItem('futbolAdminKey', adminKey); } catch {}
+        authFailed = false;
+      }
+      return;
+    }
+    if (m.type === 'state' && !authFailed) {
+      try { if (adminKey) localStorage.setItem('futbolAdminKey', adminKey); } catch {}
+      render(m);
+    }
   };
-  ws.onclose = () => { $('#st').className = 'status error'; $('#st').textContent = 'Sunucu kapalı'; setTimeout(connect, 1500); };
+  ws.onclose = () => {
+    $('#st').className = 'status error';
+    if (authFailed) { $('#st').textContent = 'Şifre gerekli: sayfayı yenile'; return; }
+    $('#st').textContent = 'Sunucu kapalı';
+    setTimeout(connect, 1500);
+  };
 }
 connect();
 </script>

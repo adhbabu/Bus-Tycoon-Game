@@ -11,7 +11,7 @@ import { TikTokSource } from './tiktok.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
-const DATA_DIR = path.join(ROOT, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
 
 const args = process.argv.slice(2);
@@ -19,8 +19,17 @@ const flag = (name) => args.find((a) => a === `--${name}` || a.startsWith(`--${n
 const flagValue = (name) => flag(name)?.split('=')[1];
 
 const config = JSON.parse(fs.readFileSync(flagValue('config') ?? path.join(ROOT, 'config.json'), 'utf8'));
-const PORT = Number(flagValue('port') ?? config.port ?? 3000);
-const HOST = config.host ?? '127.0.0.1';
+// Bulutta (Render vb.) çalışırken ayarlar ortam değişkenlerinden gelir.
+const env = process.env;
+const PORT = Number(flagValue('port') ?? env.PORT ?? config.port ?? 3000);
+const HOST = env.HOST ?? (env.PORT ? '0.0.0.0' : config.host ?? '127.0.0.1');
+if (env.TIKTOK_USER) config.tiktokUser = env.TIKTOK_USER;
+if (env.SIGN_API_KEY) config.signApiKey = env.SIGN_API_KEY;
+const ADMIN_KEY = String(env.ADMIN_KEY ?? config.adminKey ?? '');
+const PUBLIC_HOST = !['127.0.0.1', 'localhost', '::1'].includes(HOST);
+if (PUBLIC_HOST && !ADMIN_KEY) {
+  console.warn('⚠ Sunucu internete açık ama ADMIN_KEY yok: yönetim paneli kilitli. ADMIN_KEY ortam değişkenini ayarla.');
+}
 
 // ---------- oyun + kayıt ----------
 let saved = null;
@@ -48,6 +57,10 @@ const server = http.createServer((req, res) => {
   let p = decodeURIComponent(url.pathname);
   if (p === '/') p = '/overlay.html';
   if (p === '/admin') p = '/admin.html';
+  if (p === '/health') {
+    res.writeHead(200, { 'content-type': 'text/plain' }).end('ok');
+    return;
+  }
   const file = path.normalize(path.join(PUBLIC, p));
   if (!file.startsWith(PUBLIC)) {
     res.writeHead(403).end();
@@ -105,7 +118,12 @@ wss.on('connection', (ws, req) => {
   } catch {
     /* geçersiz origin */
   }
-  ws.isAdmin = sameOrigin && new URL(req.url, 'http://x').searchParams.get('role') === 'admin';
+  const q = new URL(req.url, 'http://x').searchParams;
+  const wantsAdmin = q.get('role') === 'admin';
+  // Yerelde şifresiz; internete açıkken (veya şifre tanımlıysa) ADMIN_KEY zorunlu
+  const keyOk = ADMIN_KEY ? q.get('key') === ADMIN_KEY : !PUBLIC_HOST;
+  ws.isAdmin = sameOrigin && wantsAdmin && keyOk;
+  if (wantsAdmin && !ws.isAdmin) send(ws, { type: 'auth', ok: false });
   send(ws, stateMsg(ws.isAdmin));
   ws.on('message', (raw) => {
     if (!ws.isAdmin) return;
