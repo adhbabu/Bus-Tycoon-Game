@@ -13,3 +13,11 @@ Kullanıcı bir videoya, oyuna ya da başka bir içeriğe **ses / seslendirme ek
 - Satırlar kodlanır (G = oyun spikeri, P/Q/K/B = videolar) ve `seslendirme/METINLER.md`'ye eklenir.
 - Oyunun spiker sesleri `public/sesler/<KOD>.mp3` içindedir; yayın ekranı `/sesler/list` ile hangilerinin olduğunu öğrenir. Ses paketi varken kaydı olmayan cümleler yalnızca altyazıda görünür (tek tip ses).
 - Azure/Gemini/cihaz sesi yalnızca ElevenLabs'e erişim yoksa yedek olarak kullanılır; bunu kullanıcıya söyle.
+
+## Görsel standardı (kullanıcının isteği)
+
+Videolar hazırlanırken görseller de ElevenLabs'ten (Image & Video) üretilir.
+- API: `POST https://api.elevenlabs.io/v1/flows/image` (asenkron; `GET /v1/flows/image/{id}` ile durum + çıktı adresi). Video için eşdeğer flows video uçları.
+- **Kısıt:** Bu uçlar API'de Pro plan ve üstünü ister. Hesap şu an Starter → API `paid_plan_required` döner (2026-11-16'da denendi).
+  Starter'dayken: kullanıcı görselleri ElevenLabs uygulamasında üretip gönderir, ben videoya yerleştiririm; ya da kod ile çizilen görsellerle devam edilir. Hangisi olacağını kullanıcıya sor.
+- Görsellerde gerçek oyuncu yüzleri, kulüp armaları/logoları ve telifli maç görüntüleri üretilmez; yalnızca takım renkleri ve özgün sahneler.
