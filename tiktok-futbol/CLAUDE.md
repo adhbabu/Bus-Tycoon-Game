@@ -19,5 +19,11 @@ Kullanıcı bir videoya, oyuna ya da başka bir içeriğe **ses / seslendirme ek
 Videolar hazırlanırken görseller de ElevenLabs'ten (Image & Video) üretilir.
 - API: `POST https://api.elevenlabs.io/v1/flows/image` (asenkron; `GET /v1/flows/image/{id}` ile durum + çıktı adresi). Video için eşdeğer flows video uçları.
 - **Kısıt:** Bu uçlar API'de Pro plan ve üstünü ister. Hesap şu an Starter → API `paid_plan_required` döner (2026-11-16'da denendi).
-  Starter'dayken: kullanıcı görselleri ElevenLabs uygulamasında üretip gönderir, ben videoya yerleştiririm; ya da kod ile çizilen görsellerle devam edilir. Hangisi olacağını kullanıcıya sor.
+  Kullanıcının seçimi (2026-11-16): **yeni videolarda** görselleri kullanıcı ElevenLabs uygulamasında üretir.
+- **Akış (her yeni video için):**
+  1. Video fikri + sahne akışı + her sahne için İngilizce görsel promptu (Türkçe ad ve "nerede kullanılacak" açıklamasıyla), oran (9:16 tam ekran, 1:1 yarım ekran) ve kod (ör. MG1).
+  2. Her video için TikTok açıklaması (caption + hashtag) da yazılır.
+  3. Hepsi kopyala butonlu "Görsel Promptları" sayfasına eklenir: https://claude.ai/artifact/14EEpU6kmSxKR6V8K1UW27 (kaynak: scratchpad'deki gorsel-promptlari.html; oturum değiştiyse sayfayı Artifact read ile al).
+  4. Kullanıcı görselleri kodlarıyla gönderir → anlatım Hasan Yasin sesiyle üretilir → görseller hafif zoom/kaydırma ile, yazılar ve efektler üstüne eklenerek 1080x1920 30 fps montajlanır.
+  Zaten yayınlanmış videolar yeniden yapılmaz.
 - Görsellerde gerçek oyuncu yüzleri, kulüp armaları/logoları ve telifli maç görüntüleri üretilmez; yalnızca takım renkleri ve özgün sahneler.
