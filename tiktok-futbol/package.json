@@ -1,0 +1,21 @@
+{
+  "name": "tiktok-canli-futbol",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TikTok canlı yayınında hediyelerle 11'e 11 futbol takımı kurma oyunu",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node server.js --demo --fresh",
+    "build:demo": "node build-demo.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "tiktok-live-connector": "^2.5.0",
+    "ws": "^8.18.0"
+  }
+}
