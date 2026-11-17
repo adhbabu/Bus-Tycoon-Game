@@ -29,3 +29,19 @@ Videolar hazırlanırken görseller de ElevenLabs'ten (Image & Video) üretilir.
   4. Kullanıcı görselleri kodlarıyla gönderir → anlatım Hasan Yasin sesiyle üretilir → görseller hafif zoom/kaydırma ile, yazılar ve efektler üstüne eklenerek 1080x1920 30 fps montajlanır.
   Zaten yayınlanmış videolar yeniden yapılmaz.
 - Görsellerde gerçek oyuncu yüzleri, kulüp armaları/logoları ve telifli maç görüntüleri üretilmez; yalnızca takım renkleri ve özgün sahneler.
+
+## Video görsel stili: ANA TARZ (kullanıcının isteği, 2026-11-17)
+
+"Gol mü, değil mi?" ve "Kaptan olmaya hazır mısın" içerikleri çok izlendi. Kullanıcı **Gol mü, değil mi? videosundaki yazı ve görünüş tarzının kanalın ana tarzı** olmasını istedi. Yeni videoların hepsi bu stille yapılır:
+- Kod: `videolar/stil.cjs` (örnek: `videolar/golmu.cjs`, `videolar/dogru.cjs`; açıklama `videolar/README.md`).
+- Görünüş:
+  - tam ekran ElevenLabs görseli + yavaş zoom; üstte ve altta koyu geçiş
+  - üstte sarı çerçeveli rozet (sarı kart simgesi; ör. HAKEM SENSİN / FUTBOL BİLGİSİ) + numaralı ilerleme noktaları (doğru ✓ yeşil, yanlış ✗ kırmızı)
+  - büyük beyaz Oswald BAŞLIK (soru turlarında üstte), altında gölgeli Inter cümle
+  - açılışta iki satır başlık (ikinci satır sarı) + sarı el yazısı + küçük bilgi
+  - soru: iki büyük seçenek (sol yeşil, sağ kırmızı) + ortada sarı 3-2-1 halkası (tik sesi)
+  - cevap: eğik, kalın çerçeveli damga (yeşil/kırmızı); doğruda beyaz flaş + sarsıntı + patlama ve tribün sesi, yanlışta hakem düdüğü
+  - altta açıklama/kural kartı (sarı küçük başlık + kalın beyaz metin)
+  - kapanış: koyulaşmış görsel üstünde "Kaç tanesini bildin?" + renkli özet listesi + "yorumlara yaz 👇"; en altta "Canlı Maç Oyna" el yazısı imza
+- Soru-cevap olmayan formatlar da aynı parçaları kullanır: rozet + noktalar, büyük başlık, damga, kart, özet listesi. Örneğin Mahalle vs Profesyonel'de turlar "KALE / TOP KAÇINCA…", damga "MAHALLE!"; Aya göre mevki'de damga "KALECİ!", kartta açıklama yer alır.
+- Taraftar tipleri ve Futbol 2126 videoları bu karardan önce farklı stille yapıldı; kullanıcı istemedikçe yeniden yapılmaz.
