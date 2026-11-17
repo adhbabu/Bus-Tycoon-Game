@@ -32,16 +32,26 @@ Videolar hazırlanırken görseller de ElevenLabs'ten (Image & Video) üretilir.
 
 ## Video görsel stili: ANA TARZ (kullanıcının isteği, 2026-11-17)
 
-"Gol mü, değil mi?" ve "Kaptan olmaya hazır mısın" içerikleri çok izlendi. Kullanıcı **Gol mü, değil mi? videosundaki yazı ve görünüş tarzının kanalın ana tarzı** olmasını istedi. Yeni videoların hepsi bu stille yapılır:
-- Kod: `videolar/stil.cjs` (örnek: `videolar/golmu.cjs`, `videolar/dogru.cjs`; açıklama `videolar/README.md`).
-- Görünüş:
-  - tam ekran ElevenLabs görseli + yavaş zoom; üstte ve altta koyu geçiş
-  - üstte sarı çerçeveli rozet (sarı kart simgesi; ör. HAKEM SENSİN / FUTBOL BİLGİSİ) + numaralı ilerleme noktaları (doğru ✓ yeşil, yanlış ✗ kırmızı)
-  - büyük beyaz Oswald BAŞLIK (soru turlarında üstte), altında gölgeli Inter cümle
-  - açılışta iki satır başlık (ikinci satır sarı) + sarı el yazısı + küçük bilgi
-  - soru: iki büyük seçenek (sol yeşil, sağ kırmızı) + ortada sarı 3-2-1 halkası (tik sesi)
-  - cevap: eğik, kalın çerçeveli damga (yeşil/kırmızı); doğruda beyaz flaş + sarsıntı + patlama ve tribün sesi, yanlışta hakem düdüğü
-  - altta açıklama/kural kartı (sarı küçük başlık + kalın beyaz metin)
-  - kapanış: koyulaşmış görsel üstünde "Kaç tanesini bildin?" + renkli özet listesi + "yorumlara yaz 👇"; en altta "Canlı Maç Oyna" el yazısı imza
-- Soru-cevap olmayan formatlar da aynı parçaları kullanır: rozet + noktalar, büyük başlık, damga, kart, özet listesi. Örneğin Mahalle vs Profesyonel'de turlar "KALE / TOP KAÇINCA…", damga "MAHALLE!"; Aya göre mevki'de damga "KALECİ!", kartta açıklama yer alır.
-- Taraftar tipleri ve Futbol 2126 videoları bu karardan önce farklı stille yapıldı; kullanıcı istemedikçe yeniden yapılmaz.
+Kullanıcı, "Gol mü, değil mi?" videosunun **yazı tipi ve görsel görünüşünün** kanalın ana tarzı olmasını istedi. **Konsept/format serbest**: soru-cevap, liste, karşılaştırma, hikâye olabilir. Sabit olan, görünüştür:
+- **Yazı tipleri:**
+  - başlıklar Oswald 700, BÜYÜK HARF, beyaz, büyük boy (110–170 px), koyu gölge; vurgulanan ikinci satır sarı (#ffd400)
+  - cümleler Inter 800, beyaz, gölgeli (44–60 px)
+  - küçük etiketler Inter 800, harf aralıklı, sarı
+  - vurgu için Kaushan Script el yazısı, sarı, hafif eğik
+  - imza en altta "Canlı Maç Oyna" (Kaushan Script, yarı saydam beyaz)
+- **Renkler:**
+  - beyaz + sarı (#ffd400) ana renk
+  - doğru/olumlu yeşil (#22c55e), yanlış/olumsuz kırmızı (#ef4444)
+  - koyu lacivert-siyah yarı saydam kutular
+- **Görüntü:**
+  - tam ekran ElevenLabs görseli, yavaş zoom (sahnede bir içe bir dışa)
+  - üstte ve altta koyu geçiş, yazılar bu bölgelerde
+  - geçişler kısa yumuşak kararma
+- **Ögeler (konsepte uyanlar kullanılır):**
+  - sarı çerçeveli siyah rozet (sarı kart simgeli) + numaralı ilerleme noktaları
+  - eğik, kalın çerçeveli damga yazısı (pop/slam girişi)
+  - yarı saydam koyu kart (sarı küçük başlık + kalın beyaz metin)
+  - renkli satırlı özet listesi
+  - önemli anda beyaz flaş + sarsıntı
+- Kod: `videolar/stil.cjs`; örnekler `videolar/golmu.cjs`, `videolar/dogru.cjs`. Farklı konseptler de bu CSS ve yazı tiplerini kullanır. Başka yazı tipi (Exo 2 vb.) ya da başka renk düzeni kullanılmaz.
+- Taraftar tipleri ve Futbol 2126 videoları bu karardan önce farklı görünüşle yapıldı; kullanıcı istemedikçe yeniden yapılmaz.

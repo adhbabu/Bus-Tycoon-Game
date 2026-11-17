@@ -1,5 +1,6 @@
-// ANA VİDEO STİLİ: "Gol mü, değil mi?" görünüşü (kullanıcının seçimi, 2026-11-17).
-// Yeni videoların hepsi bu parçalarla kurulur:
+// ANA VİDEO STİLİ: "Gol mü, değil mi?" videosunun yazı tipleri ve görsel görünüşü (kullanıcının seçimi, 2026-11-17).
+// Konsept serbest; görünüş sabit. Yazı tipleri: Oswald 700 başlık (beyaz, vurgu satırı sarı #ffd400),
+// Inter 800 cümle, Kaushan Script el yazısı vurgu. Konsepte uyan parçalar kullanılır:
 //   - tam ekran ElevenLabs görseli + yavaş zoom, üstte/altta koyu geçiş
 //   - üstte sarı çerçeveli rozet (sarı kart simgesi) + ilerleme noktaları (✓ yeşil / ✗ kırmızı)
 //   - büyük Oswald başlık (BÜYÜK HARF), altında gölgeli Inter cümle

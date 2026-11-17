@@ -1,6 +1,6 @@
 # TikTok videoları
 
-**Ana stil:** "Gol mü, değil mi?" görünüşü. Tüm yeni videolar `stil.cjs` ile kurulur.
+**Ana stil:** "Gol mü, değil mi?" videosunun yazı tipleri ve görsel görünüşü. Konsept serbesttir; her yeni video, formatı ne olursa olsun `stil.cjs` ile kurulur (aynı yazı tipleri, renkler, görsel düzeni).
 
 | Dosya | Ne işe yarar |
 |---|---|
