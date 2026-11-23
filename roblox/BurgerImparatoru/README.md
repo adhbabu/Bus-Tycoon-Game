@@ -59,10 +59,18 @@ bir burger = 3 basış = "huss huss huss". Makineler bütün burgeri bir kerede 
 | Dükkanıma dön | 🏠 butonu | 🏠 butonu | |
 | Logo/renk/ad değiştir | 🎨 butonu | 🎨 butonu | |
 | Sesi kapat/aç | 🔊 butonu | 🔊 butonu | |
+| Geliştirme al | Dükkanın yanındaki yerdeki butonun **üstüne yürü** ya da DÜKKAN menüsü | aynı | |
+| Robux mağazası | 💎 butonu | 💎 butonu | |
+| Otomatik katlama (geçişi olana) | 🔁 butonu | 🔁 butonu | |
 
 **Katlama:** İmparator Burger açık karton kutuda gelir. **1.** tepsinin kenarları kalkar, **2.** kapağın kenarları
 kalkar, **3.** kapak kapanır: **PAKET!** 📦 Paket banttan satış penceresine gider, parayı alırsın.
 KATLA'nın üstündeki 3 nokta kaçıncı katlamada olduğunu gösterir. Bazen **✨ ALTIN BURGER ✨** çıkar (8 kat para).
+
+**Yerdeki butonlar (tycoon gibi):** Dükkanın iki yanında yerde parlayan butonlar var. Üstüne yürüyünce o
+geliştirmeyi alırsın. Yeşil = alabilirsin, kırmızı = paran yetmiyor, gri = önce başka bir şey alman lazım.
+Alınan buton kaybolur. Çok seviyeli geliştirmelerde (ör. Gizli Sos) bir daha almak için butondan inip
+tekrar bas. Aynı geliştirmeler DÜKKAN menüsünde de var.
 
 **Dükkan menüsü:**
 
@@ -134,6 +142,28 @@ Hepsi `magaza/` klasöründe (indirdiğin zip'te de var):
 5. **Thumbnails:** `magaza/tanitim-1.png`, `tanitim-2.png`, `tanitim-3.png` yükle (eskileri sil).
 6. **Genre:** `Simulation`. **Save Changes**.
 7. Türkçe ad ve açıklama için aşağıdaki **🌍 İki dil** bölümüne bak.
+
+## 💎 Robux mağazası
+
+Oyunda Robux'la alınabilen geçişler ve ürünler var (💎 butonu). Oyunu bozmasınlar diye para paketleri
+oyuncunun o anki kazancına göre verilir, 2 kat para süreli, geçişler oyunu tek başına bitirmez.
+
+| Tür | Ad | Ne yapar | Önerilen fiyat |
+|---|---|---|---|
+| Geçiş | 💰 2x Cash | Bütün paketler hep 2 kat para | 199 R$ |
+| Geçiş | ⭐ VIP | +%25 para, başında ve sohbette VIP yazısı | 249 R$ |
+| Geçiş | ✨ Golden Luck x2 | Altın burger 2 kat sık | 99 R$ |
+| Geçiş | 🔁 Auto Fold | 🔁 butonuyla KATLA'ya otomatik basar | 149 R$ |
+| Ürün | 💵 Cash Pouch | 10 dakikalık kazanç kadar para (en az 2.000) | 49 R$ |
+| Ürün | 💰 Cash Sack | 45 dakikalık kazanç (en az 10.000) | 149 R$ |
+| Ürün | 🏦 Cash Vault | 3 saatlik kazanç (en az 50.000) | 399 R$ |
+| Ürün | 🔥 15 Min Double Cash | 15 dakika 2 kat para (kayıtla devam eder) | 79 R$ |
+| Ürün | ⏰ Golden Hour for Everyone | Bütün sunucuya hemen Altın Saat | 99 R$ |
+
+Geçiş simgeleri: `magaza/robux/`. Her geçişin ve ürünün Roblox'taki numarası (Id)
+**ReplicatedStorage ▸ Ortak ▸ Config** içinde `Config.Robux` bölümüne yazılır; Id'si 0 olanlar satılmaz,
+hiçbiri yoksa 💎 butonu görünmez. Aynı alım iki kere verilmez (alım numaraları kayda yazılır).
+API anahtarına **game-pass** ve **developer-product** (Write) izinlerini eklersen hepsini ben oluştururum.
 
 ## 🌍 İki dil: Türkçe + İngilizce
 

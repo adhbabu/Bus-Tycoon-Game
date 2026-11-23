@@ -1238,7 +1238,37 @@ end)
 ----------------------------------------------------------------------
 -- Ekranı güncelle
 ----------------------------------------------------------------------
+-- Yerdeki satın alma butonlarını paraya göre boya (sadece kendi dükkanında):
+-- yeşil = alabilirsin, kırmızı = paran yetmiyor, gri = kilitli
+local BUTON_YESIL, BUTON_KIRMIZI, BUTON_GRI = Color3.fromRGB(70, 220, 90), Color3.fromRGB(235, 70, 60), Color3.fromRGB(130, 135, 150)
+local function butonlariBoya()
+	if not durum or durum.ArsaIndex <= 0 then
+		return
+	end
+	local harita = workspace:FindFirstChild("Harita")
+	local arsalar = harita and harita:FindFirstChild("Arsalar")
+	local arsa = arsalar and arsalar:FindFirstChild("Arsa" .. durum.ArsaIndex)
+	local kl = arsa and arsa:FindFirstChild("Butonlar")
+	if not kl then
+		return
+	end
+	for _, b in ipairs(kl:GetChildren()) do
+		if b.Name == "SatinAlButonu" then
+			local anahtar = b:GetAttribute("Gelistirme")
+			local fiyat = type(anahtar) == "string" and Ekonomi.Fiyat(anahtar, Ekonomi.Seviye(durum.Gelistirme, anahtar)) or nil
+			local renk = BUTON_GRI
+			if fiyat and Ekonomi.KilidiAcik(durum.Gelistirme, anahtar) then
+				renk = durum.Para >= fiyat and BUTON_YESIL or BUTON_KIRMIZI
+			end
+			if b.Color ~= renk then
+				b.Color = renk
+			end
+		end
+	end
+end
+
 local function arayuzGuncelle()
+	butonlariBoya()
 	if not durum then
 		return
 	end
@@ -1344,6 +1374,223 @@ stilButonu.Activated:Connect(function()
 end)
 evButonu.Activated:Connect(function()
 	EvimeGitOlay:FireServer()
+end)
+
+----------------------------------------------------------------------
+-- 💎 Robux mağazası, otomatik katlama ve VIP
+----------------------------------------------------------------------
+local MarketplaceService = game:GetService("MarketplaceService")
+kucukSira.Size = UDim2.fromOffset(220, 40)
+local robuxButonu = kucukButon("💎")
+robuxButonu.Name = "Robux"
+-- Roblox'ta henüz hiçbir geçiş/ürün yoksa (Id hepsi 0) 💎 butonu gizli kalsın
+do
+	local varMi = false
+	for _, liste in ipairs({ Config.Robux.Gecisler, Config.Robux.Urunler }) do
+		for _, u in ipairs(liste) do
+			if u.Id ~= 0 then
+				varMi = true
+			end
+		end
+	end
+	robuxButonu.Visible = varMi
+end
+local otoButonu = kucukButon("🔁")
+otoButonu.Name = "Oto"
+otoButonu.Visible = false
+
+local robuxPanel = yap("Frame", {
+	Name = "RobuxPaneli",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	Size = UDim2.fromOffset(560, 440),
+	BackgroundColor3 = PANEL,
+	BackgroundTransparency = 0.04,
+	Visible = false,
+	ZIndex = 30,
+	Parent = ekran,
+}, { kose(UDim.new(0, 18)), cizgi(Color3.fromRGB(90, 200, 255), 3) })
+olcekEkle(robuxPanel)
+local robuxBaslikYazi = yazi({
+	Text = "💎 ROBUX MAĞAZASI",
+	Position = UDim2.fromOffset(16, 10),
+	Size = UDim2.new(1, -80, 0, 34),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextColor3 = Color3.fromRGB(120, 215, 255),
+	ZIndex = 31,
+	Parent = robuxPanel,
+})
+yaziCizgisi(KOYU, 2).Parent = robuxBaslikYazi
+local robuxKapat = buton({
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -12, 0, 10),
+	Size = UDim2.fromOffset(34, 34),
+	BackgroundColor3 = Color3.fromRGB(230, 70, 70),
+	Text = "✕",
+	ZIndex = 31,
+	Parent = robuxPanel,
+}, { kose(UDim.new(1, 0)), cizgi(KOYU, 2) })
+local robuxIcerik = yap("ScrollingFrame", {
+	Position = UDim2.fromOffset(16, 52),
+	Size = UDim2.new(1, -32, 1, -64),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	ScrollBarThickness = 6,
+	CanvasSize = UDim2.new(),
+	AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	ZIndex = 31,
+	Parent = robuxPanel,
+}, { yap("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) })
+
+local robuxSatirlari = {}
+local function robuxBaslik(sira, metin)
+	yazi({
+		LayoutOrder = sira,
+		Text = metin,
+		Size = UDim2.new(1, -8, 0, 26),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(255, 210, 80),
+		ZIndex = 32,
+		Parent = robuxIcerik,
+	})
+end
+local function robuxSatir(sira, urun, gecisMi)
+	local satir = yap("Frame", {
+		LayoutOrder = sira,
+		Size = UDim2.new(1, -8, 0, 58),
+		BackgroundColor3 = SATIR,
+		ZIndex = 32,
+		Parent = robuxIcerik,
+	}, { kose(UDim.new(0, 12)) })
+	yazi({ Text = urun.Ikon, Position = UDim2.fromOffset(6, 7), Size = UDim2.fromOffset(44, 44), ZIndex = 33, Parent = satir })
+	yazi({ Text = urun.Ad, Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -196, 0, 24), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 33, Parent = satir })
+	yazi({
+		Text = urun.Aciklama,
+		Position = UDim2.fromOffset(58, 32),
+		Size = UDim2.new(1, -196, 0, 18),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(220, 200, 180),
+		ZIndex = 33,
+		Parent = satir,
+	})
+	local al = buton({
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(124, 40),
+		BackgroundColor3 = YESIL,
+		Text = "",
+		ZIndex = 33,
+		Parent = satir,
+	}, { kose(UDim.new(0, 12)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 7), PaddingBottom = UDim.new(0, 7), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }) })
+	al.Name = "Al_" .. urun.Anahtar
+	robuxSatirlari[urun.Anahtar] = { Al = al, Urun = urun, Gecis = gecisMi, Fiyat = urun.Fiyat }
+	al.Activated:Connect(function()
+		if urun.Id == 0 or (gecisMi and ben:GetAttribute("Gecis_" .. urun.Anahtar)) then
+			salla(al)
+			return
+		end
+		if gecisMi then
+			MarketplaceService:PromptGamePassPurchase(ben, urun.Id)
+		else
+			MarketplaceService:PromptProductPurchase(ben, urun.Id)
+		end
+	end)
+end
+robuxBaslik(1, "⭐ Geçişler: bir kere al, hep senin")
+for i, g in ipairs(Config.Robux.Gecisler) do
+	robuxSatir(1 + i, g, true)
+end
+robuxBaslik(50, "🛍️ Ürünler: istediğin kadar al")
+for i, u in ipairs(Config.Robux.Urunler) do
+	robuxSatir(50 + i, u, false)
+end
+
+local function robuxGuncelle()
+	for anahtar, s in pairs(robuxSatirlari) do
+		if s.Urun.Id == 0 then
+			s.Al.Text = T("Yakında")
+			s.Al.BackgroundColor3 = Color3.fromRGB(110, 110, 120)
+		elseif s.Gecis and ben:GetAttribute("Gecis_" .. anahtar) then
+			s.Al.Text = T("✓ SENDE")
+			s.Al.BackgroundColor3 = Color3.fromRGB(90, 120, 200)
+		else
+			s.Al.Text = "R$ " .. tostring(s.Fiyat)
+			s.Al.BackgroundColor3 = YESIL
+		end
+	end
+end
+robuxGuncelle()
+-- gerçek fiyatları Roblox'tan oku (Creator Hub'da değiştirilirse burada da değişir)
+task.spawn(function()
+	for _, s in pairs(robuxSatirlari) do
+		if s.Urun.Id ~= 0 then
+			local ok, bilgi = pcall(function()
+				return MarketplaceService:GetProductInfo(s.Urun.Id, s.Gecis and Enum.InfoType.GamePass or Enum.InfoType.Product)
+			end)
+			if ok and type(bilgi) == "table" and type(bilgi.PriceInRobux) == "number" then
+				s.Fiyat = bilgi.PriceInRobux
+			end
+		end
+	end
+	robuxGuncelle()
+end)
+
+local function robuxAcKapa(ac)
+	robuxPanel.Visible = ac
+	if ac then
+		robuxGuncelle()
+		dukkanAcKapa(false)
+	end
+end
+robuxButonu.Activated:Connect(function()
+	robuxAcKapa(not robuxPanel.Visible)
+end)
+robuxKapat.Activated:Connect(function()
+	robuxAcKapa(false)
+end)
+
+-- Otomatik katlama (geçişi olana): 🔁 butonuyla aç/kapa
+local otoAcik = false
+local function otoGuncelle()
+	local var = ben:GetAttribute("Gecis_OtoKatla") == true
+	otoButonu.Visible = var
+	if not var then
+		otoAcik = false
+	end
+	otoButonu.BackgroundColor3 = otoAcik and YESIL or PANEL
+end
+otoButonu.Activated:Connect(function()
+	otoAcik = not otoAcik
+	otoGuncelle()
+	duyuru(otoAcik and T("🔁 Otomatik katlama AÇIK") or T("🔁 Otomatik katlama KAPALI"), Color3.fromRGB(140, 255, 140), 1.2)
+end)
+for _, g in ipairs(Config.Robux.Gecisler) do
+	ben:GetAttributeChangedSignal("Gecis_" .. g.Anahtar):Connect(function()
+		robuxGuncelle()
+		otoGuncelle()
+	end)
+end
+otoGuncelle()
+task.spawn(function()
+	while true do
+		task.wait(Config.Robux.OtoKatlaAraligi)
+		if otoAcik and durum and durum.ArsaIndex > 0 then
+			katla()
+		end
+	end
+end)
+
+-- Sohbette VIP yazısı
+pcall(function()
+	TextChatService.OnIncomingMessage = function(mesaj)
+		local oz = Instance.new("TextChatMessageProperties")
+		local kaynak = mesaj.TextSource
+		local kim = kaynak and Players:GetPlayerByUserId(kaynak.UserId)
+		if kim and kim:GetAttribute("Gecis_VIP") then
+			oz.PrefixText = '<font color="#FFD23C">[⭐VIP]</font> ' .. mesaj.PrefixText
+		end
+		return oz
+	end
 end)
 
 ContextActionService:BindAction("BurgerKatla", function(_, girdi)

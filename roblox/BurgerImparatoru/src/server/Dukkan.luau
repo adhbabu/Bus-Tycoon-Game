@@ -108,6 +108,7 @@ function Dukkan.Kur(arsa, veri)
 		tabelaYazisi(pano, Enum.NormalId.Front, "🍔 BOŞ ARSA", "Bir oyuncu bekliyor", Color3.fromRGB(90, 90, 95))
 		tabelaYazisi(pano, Enum.NormalId.Back, "🍔 BOŞ ARSA", "Bir oyuncu bekliyor", Color3.fromRGB(90, 90, 95))
 		klasor.Parent = arsa
+		Dukkan.ButonlariKur(arsa, nil)
 		return
 	end
 
@@ -410,6 +411,87 @@ function Dukkan.Kur(arsa, veri)
 		end
 	end
 
+	klasor.Parent = arsa
+	Dukkan.ButonlariKur(arsa, veri)
+end
+
+-- Yerdeki satın alma butonları (tycoon gibi: üstüne bas, geliştirmeyi al).
+-- Her satın almadan sonra yeniden kurulur: en üst seviyesine gelen geliştirmenin butonu kaybolur,
+-- fiyat yazıları güncellenir. Üstüne basılmasını sunucu dinler (BurgerSunucu), rengini oyuncunun
+-- ekranı paraya göre boyar (yeşil: alabilirsin, kırmızı: paran yetmiyor, gri: kilitli).
+function Dukkan.ButonlariKur(arsa, veri)
+	local eski = arsa:FindFirstChild("Butonlar")
+	if eski then
+		eski:Destroy()
+	end
+	if not veri then
+		return
+	end
+	local klasor = Instance.new("Folder")
+	klasor.Name = "Butonlar"
+	local F = Dukkan.Cerceve(arsa)
+	local g = veri.Gelistirme or {}
+	for yon, liste in ipairs({ Config.Butonlar.Sol, Config.Butonlar.Sag }) do
+		local x = (yon == 1 and -1 or 1) * Y.ButonX
+		for i, anahtar in ipairs(liste) do
+			local gb = Ekonomi.GelistirmeBul(anahtar)
+			local z = Y.ButonZ[i]
+			local seviye = g[anahtar] or 0
+			local fiyat = gb and Ekonomi.Fiyat(anahtar, seviye)
+			if gb and z and fiyat then -- fiyat yoksa en üst seviyede: buton yok
+				local taban = Gorsel.Parca({
+					Name = "ButonTaban",
+					Size = Vector3.new(5.2, 0.4, 5.2),
+					CFrame = F * CFrame.new(x, 0.2, z),
+					Color = Color3.fromRGB(60, 62, 70),
+					Material = Enum.Material.DiamondPlate,
+					CanCollide = true,
+				})
+				taban.Parent = klasor
+				local b = Gorsel.Parca({
+					Name = "SatinAlButonu",
+					Size = Vector3.new(4, 0.5, 4),
+					CFrame = F * CFrame.new(x, 0.45, z),
+					Color = Color3.fromRGB(130, 135, 150),
+					Material = Enum.Material.Neon,
+					CanCollide = false,
+				})
+				b.CanTouch = true
+				b:SetAttribute("Gelistirme", anahtar)
+				b:SetAttribute("Sahip", veri.UserId)
+				local bb = Instance.new("BillboardGui")
+				bb.Name = "Etiket"
+				bb.Size = UDim2.new(8, 0, 3.4, 0)
+				bb.StudsOffset = Vector3.new(0, 3.4, 0)
+				bb.MaxDistance = 70
+				bb.LightInfluence = 0
+				bb.Parent = b
+				yazi(bb, gb.Ikon, Color3.new(1, 1, 1), { Name = "Ikon", Size = UDim2.fromScale(0.22, 0.5) })
+				yazi(bb, gb.Ad, Color3.new(1, 1, 1), {
+					Name = "Ad",
+					Size = UDim2.fromScale(0.78, 0.5),
+					Position = UDim2.fromScale(0.22, 0),
+					TextStrokeTransparency = 0.2,
+				})
+				local alt
+				if not Ekonomi.KilidiAcik(g, anahtar) then
+					local gerekli = Ekonomi.GelistirmeBul(gb.Gerekli or "")
+					alt = string.format("🔒 Önce: %s", gerekli and gerekli.Ad or "?")
+				elseif gb.MaxSeviye > 1 then
+					alt = string.format("💰 %s  •  Sv %d/%d", Ekonomi.Kisalt(fiyat), seviye, gb.MaxSeviye)
+				else
+					alt = "💰 " .. Ekonomi.Kisalt(fiyat)
+				end
+				yazi(bb, alt, Color3.fromRGB(255, 225, 90), {
+					Name = "Fiyat",
+					Size = UDim2.fromScale(1, 0.45),
+					Position = UDim2.fromScale(0, 0.52),
+					TextStrokeTransparency = 0.2,
+				})
+				b.Parent = klasor
+			end
+		end
+	end
 	klasor.Parent = arsa
 end
 

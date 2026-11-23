@@ -195,6 +195,43 @@ Config.Yerlesim = {
 	MusteriGiris = -45, -- müşteriler bu çizgiden (kaldırımdan) gelir
 	KuyrukAralik = 2.6, -- satış penceresinde sıradaki müşteriler arası
 	TabelaYeri = Vector3.new(0, 0, -37),
+	-- yerdeki satın alma butonları: binanın iki yanında birer sıra
+	ButonX = 42,
+	ButonZ = { -9, -3, 3, 9, 15, 21, 27 },
+}
+
+-- Yerdeki butonların sırası (tycoon gibi: üstüne bas, geliştirmeyi al). Sol = binanın sol yanı.
+Config.Butonlar = {
+	Sol = { "HizliEller", "Tarif", "AltinSans", "Asci", "Kasiyer", "Teknisyen", "Temizlikci" },
+	Sag = { "Makine", "MakineHizi", "Duvar", "Cati", "Oturma", "Dekor", "DevTabela" },
+}
+
+----------------------------------------------------------------------
+-- ROBUX MAĞAZASI (💎 butonu)
+-- Id = Roblox'taki numara (Creator Hub > oyunun > Monetization > Passes / Developer Products).
+-- Id 0 olan ürün mağazada "Yakında" görünür, satılmaz. Fiyat sadece gösterim içindir; gerçek fiyat
+-- Roblox'ta ne yazıyorsa odur (oyun açılınca Roblox'tan okunur).
+-- Oyunu bozmasınlar diye: para paketleri oyuncunun o anki kazancına göre verilir (birkaç dakikalık
+-- kazanç kadar), 2 kat para süreli, geçişler kalıcı ama oyunu tek başına bitirmez.
+----------------------------------------------------------------------
+Config.Robux = {
+	-- Geçişler (bir kere alınır, hep geçerli)
+	Gecisler = {
+		{ Anahtar = "IkiKatPara", Id = 0, Fiyat = 199, Ikon = "💰", Ad = "2 Kat Para", Aciklama = "Bütün paketler hep 2 kat para eder" },
+		{ Anahtar = "VIP", Id = 0, Fiyat = 249, Ikon = "⭐", Ad = "VIP", Aciklama = "+%25 para, başında ve sohbette VIP yazısı" },
+		{ Anahtar = "AltinSans", Id = 0, Fiyat = 99, Ikon = "✨", Ad = "Altın Şans x2", Aciklama = "ALTIN BURGER 2 kat daha sık çıkar" },
+		{ Anahtar = "OtoKatla", Id = 0, Fiyat = 149, Ikon = "🔁", Ad = "Otomatik Katlama", Aciklama = "Açınca KATLA'ya senin yerine basar" },
+	},
+	-- Ürünler (istediğin kadar alınır)
+	Urunler = {
+		{ Anahtar = "ParaKucuk", Id = 0, Fiyat = 49, Ikon = "💵", Ad = "Para Kesesi", Aciklama = "10 dakikalık kazancın kadar para", Saniye = 600, EnAz = 2000 },
+		{ Anahtar = "ParaOrta", Id = 0, Fiyat = 149, Ikon = "💰", Ad = "Para Çuvalı", Aciklama = "45 dakikalık kazancın kadar para", Saniye = 2700, EnAz = 10000 },
+		{ Anahtar = "ParaBuyuk", Id = 0, Fiyat = 399, Ikon = "🏦", Ad = "Para Kasası", Aciklama = "3 saatlik kazancın kadar para", Saniye = 10800, EnAz = 50000 },
+		{ Anahtar = "IkiKat15", Id = 0, Fiyat = 79, Ikon = "🔥", Ad = "15 Dakika 2 Kat Para", Aciklama = "15 dakika boyunca bütün paketler 2 kat", Sure = 900 },
+		{ Anahtar = "AltinSaat", Id = 0, Fiyat = 99, Ikon = "⏰", Ad = "Herkese Altın Saat", Aciklama = "Bütün sunucuya hemen Altın Saat başlat" },
+	},
+	VipCarpani = 1.25,
+	OtoKatlaAraligi = 0.3, -- otomatik katlama kaç saniyede bir basar
 }
 
 Config.ArsaSayisi = 8

@@ -123,11 +123,15 @@ local EVENT_NAMES = {
 	MouseButton1Click = true,
 	ChildAdded = true,
 	DescendantAdded = true,
+	Touched = true,
+	PromptGamePassPurchaseFinished = true,
 	Triggered = true,
 }
 
 -- Runtime-only properties that exist in Roblox but are not in the serialized DOM
 local RUNTIME_PROPS = {
+	ProcessReceipt = true,
+	OnIncomingMessage = true,
 	Character = true,
 	DisplayName = true,
 	UserId = true,
@@ -437,7 +441,43 @@ customMethods.DataModel = {
 		table.insert(CLOSE_HANDLERS, fn)
 	end,
 }
+-- Sahte Robux mağazası: sahip olunan geçişler ve açılan satın alma pencereleri
+local SAHIP_GECISLER = {}
+local ROBUX_ISTEKLERI = {}
+customMethods.MarketplaceService = {
+	UserOwnsGamePassAsync = function(self, userId, id)
+		assert(type(userId) == "number" and type(id) == "number", "UserOwnsGamePassAsync args")
+		return SAHIP_GECISLER[userId .. ":" .. id] == true
+	end,
+	PromptGamePassPurchase = function(self, plr, id)
+		assert(type(id) == "number" and id > 0, "PromptGamePassPurchase id")
+		table.insert(ROBUX_ISTEKLERI, "gecis:" .. id)
+	end,
+	PromptProductPurchase = function(self, plr, id)
+		assert(type(id) == "number" and id > 0, "PromptProductPurchase id")
+		table.insert(ROBUX_ISTEKLERI, "urun:" .. id)
+	end,
+	GetProductInfo = function(self, id, tur)
+		return { PriceInRobux = 100 + (id % 100) }
+	end,
+}
 customMethods.Players = {
+	GetPlayerByUserId = function(self, userId)
+		for _, c in ipairs(unwrap(self):GetChildren()) do
+			if c:IsA("Player") and wrap(c).UserId == userId then
+				return wrap(c)
+			end
+		end
+		return nil
+	end,
+	GetPlayerFromCharacter = function(self, karakter)
+		for _, c in ipairs(unwrap(self):GetChildren()) do
+			if c:IsA("Player") and wrap(c).Character == karakter then
+				return wrap(c)
+			end
+		end
+		return nil
+	end,
 	GetPlayers = function(self)
 		local list = {}
 		for _, c in ipairs(unwrap(self):GetChildren()) do
@@ -1012,6 +1052,74 @@ print("Spam ile geçen paket:", stat(p1, "📦") - onceP)
 assert(stat(p1, "📦") - onceP <= 2, "hız sınırı çalışmıyor")
 
 if zengin then
+	print("== Yerdeki satın alma butonları")
+	local function yerButonlari()
+		local kl = unwrap(arsa1):FindFirstChild("Butonlar")
+		local liste = {}
+		for _, b in ipairs(kl and kl:GetChildren() or {}) do
+			if b.Name == "SatinAlButonu" then
+				table.insert(liste, wrap(b))
+			end
+		end
+		return liste
+	end
+	local function yerButonu(anahtar)
+		for _, b in ipairs(yerButonlari()) do
+			if b:GetAttribute("Gelistirme") == anahtar then
+				return b
+			end
+		end
+		return nil
+	end
+	local function tarifSeviyesi()
+		local b = yerButonu("Tarif")
+		return tonumber(string.match(b.Etiket.Fiyat.Text, "(%d+)/%d+"))
+	end
+	assert(#yerButonlari() >= 10, "dükkanın yanında yerde satın alma butonları olmalı")
+	local kok = p1.Character.HumanoidRootPart
+	local sv0 = tarifSeviyesi()
+	local bt = yerButonu("Tarif")
+	local btCf = bt.CFrame -- buton her alımda yeniden kurulur; yerini baştan al
+	kok.CFrame = btCf + roblox.Vector3.new(0, 3, 0)
+	bt.Touched:Fire(kok)
+	task.wait(0.3)
+	local sv1 = tarifSeviyesi()
+	yerButonu("Tarif").Touched:Fire(kok) -- üstünde duruyor: tekrar almamalı
+	task.wait(0.3)
+	local sv2 = tarifSeviyesi()
+	kok.CFrame = btCf + roblox.Vector3.new(12, 3, 0) -- butondan in
+	task.wait(0.4)
+	kok.CFrame = btCf + roblox.Vector3.new(0, 3, 0)
+	yerButonu("Tarif").Touched:Fire(kok) -- tekrar bas
+	task.wait(0.3)
+	local sv3 = tarifSeviyesi()
+	local yabanci = wrap(roblox.Instance.new("Part"))
+	yerButonu("Tarif").Touched:Fire(yabanci) -- karakter olmayan bir şey değerse bir şey olmamalı
+	task.wait(0.2)
+	print("Gizli Sos seviyesi (butonla):", sv0, sv1, sv2, sv3, "buton sayısı:", #yerButonlari())
+	assert(sv1 == sv0 + 1, "butona basınca geliştirme alınmalı")
+	assert(sv2 == sv1, "butonun üstünde durunca tekrar almamalı")
+	assert(sv3 == sv1 + 1, "inip tekrar basınca bir daha almalı")
+	assert(tarifSeviyesi() == sv3, "karakter olmayan dokunuş bir şey almamalı")
+	for _, b in ipairs(yerButonlari()) do
+		local c = b.Color
+		local ok = c == roblox.Color3.fromRGB(70, 220, 90) or c == roblox.Color3.fromRGB(235, 70, 60) or c == roblox.Color3.fromRGB(130, 135, 150)
+		assert(ok, "buton rengi yeşil, kırmızı ya da gri olmalı: " .. tostring(b:GetAttribute("Gelistirme")))
+	end
+	assert(yerButonu("Tarif").Color == roblox.Color3.fromRGB(70, 220, 90), "parası yeten butonun rengi yeşil olmalı")
+	if DIL == "en" then
+		for _, b in ipairs(yerButonlari()) do
+			for _, ad in ipairs({ "Ad", "Fiyat" }) do
+				local t = b.Etiket[ad].Text
+				for _, harf in ipairs({ "ğ", "ü", "ş", "ı", "ö", "ç", "İ", "Ş", "Ö", "Ü", "Ç", "Sv " }) do
+					assert(not string.find(t, harf, 1, true), "buton yazısı İngilizceye çevrilmemiş: " .. t)
+				end
+			end
+		end
+		print("Buton yazısı (en):", yerButonu("Tarif").Etiket.Ad.Text, "|", yerButonu("Tarif").Etiket.Fiyat.Text)
+	end
+	kok.CFrame = roblox.CFrame.new(0, 3, 30)
+
 	print("== Her şeyi satın al")
 	-- iki tur: kilitli olanlar (ör. Teknisyen makineden sonra açılır) ikinci turda alınır
 	for _ = 1, 2 do
@@ -1025,6 +1133,7 @@ if zengin then
 	remotes.SatinAl.OnServerEvent:Fire(p1, "YokBoyle")
 	remotes.SatinAl.OnServerEvent:Fire(p1, 42)
 	task.wait(0.5)
+	assert(#yerButonlari() == 0, "her şey alınınca yerde buton kalmamalı")
 	local d = arsa1.Dukkan
 	for _, ad in ipairs({ "Duvar", "Cati", "NeonTabela", "Masa", "Ampul", "DevBurgerKaide", "Makine1", "Makine6", "AnaBant", "DonusBant",
 		"Calisan_Asci", "Calisan_Kasiyer", "Calisan_Teknisyen", "Calisan_Temizlikci", "Supurge" }) do
@@ -1168,6 +1277,81 @@ for _, root in ipairs({ gui.Ust, gui.Alt }) do
 	end
 end
 
+print("== Robux mağazası")
+do
+	local Mps = game:GetService("MarketplaceService")
+	local Rbx = Cfg.Robux
+	for i, g in ipairs(Rbx.Gecisler) do
+		g.Id = 7000 + i
+	end
+	for i, u in ipairs(Rbx.Urunler) do
+		u.Id = 8000 + i
+	end
+	butonBul(gui, "💎").Activated:Fire()
+	task.wait(0.2)
+	local panel = gui.RobuxPaneli
+	assert(panel.Visible == true, "💎 butonu Robux mağazasını açmalı")
+	local function satinAlButonu(anahtar)
+		return wrap(unwrap(panel):FindFirstChild("Al_" .. anahtar, true))
+	end
+	print("Fiyat yazısı:", satinAlButonu("IkiKatPara").Text, satinAlButonu("ParaKucuk").Text)
+	assert(string.find(satinAlButonu("IkiKatPara").Text, "R$", 1, true), "fiyat Robux olarak yazmalı")
+	satinAlButonu("IkiKatPara").Activated:Fire()
+	satinAlButonu("ParaKucuk").Activated:Fire()
+	task.wait(0.1)
+	assert(table.find(ROBUX_ISTEKLERI, "gecis:7001") and table.find(ROBUX_ISTEKLERI, "urun:8001"), "satın alma penceresi açılmalı")
+
+	-- geçiş alındı: 2 kat para
+	Mps.PromptGamePassPurchaseFinished:Fire(p1, 7001, true)
+	Mps.PromptGamePassPurchaseFinished:Fire(p1, 7003, false) -- vazgeçti: verilmemeli
+	task.wait(0.2)
+	assert(p1:GetAttribute("Gecis_IkiKatPara") == true, "2 Kat Para geçişi verilmeli")
+	assert(p1:GetAttribute("Gecis_AltinSans") ~= true, "vazgeçilen geçiş verilmemeli")
+	task.wait(0.1)
+	assert(satinAlButonu("IkiKatPara").Text == DilT("✓ SENDE"), "alınan geçiş SENDE yazmalı")
+
+	-- ürünler: aynı alım iki kere verilmez
+	local function fis(urunId, alimId, oyuncuId)
+		return Mps.ProcessReceipt({ PlayerId = oyuncuId or 1001, ProductId = urunId, PurchaseId = alimId, CurrencySpent = 49, PlaceIdWherePurchased = 1 })
+	end
+	local VERILDI, BEKLE = roblox.Enum.ProductPurchaseDecision.PurchaseGranted, roblox.Enum.ProductPurchaseDecision.NotProcessedYet
+	local para0 = stat(p1, "💰")
+	local k1 = fis(8001, "alim-1")
+	local para1 = stat(p1, "💰")
+	local k2 = fis(8001, "alim-1")
+	local para2 = stat(p1, "💰")
+	print("Para Kesesi:", para1 - para0, "tekrar:", para2 - para1, k1, k2)
+	assert(k1 == VERILDI and k2 == VERILDI, "ürün verildi demeli")
+	assert(para1 - para0 >= Rbx.Urunler[1].EnAz, "para kesesi en az EnAz kadar vermeli")
+	assert(para2 == para1, "aynı alım iki kere verilmemeli")
+	assert(fis(9999, "alim-2") == BEKLE, "bilinmeyen ürün bekletilmeli")
+	assert(fis(8001, "alim-3", 555) == BEKLE, "oyunda olmayan oyuncunun alımı bekletilmeli")
+	assert(fis(8004, "alim-4") == VERILDI, "15 dakika 2 kat verilmeli")
+	assert((p1:GetAttribute("IkiKatBitis") or 0) > Workspace:GetServerTimeNow() + 800, "2 kat para 15 dakika sürmeli")
+	assert(fis(8005, "alim-5") == VERILDI, "herkese Altın Saat verilmeli")
+	assert((game:GetService("ReplicatedStorage"):GetAttribute("AltinSaatBitis") or 0) > Workspace:GetServerTimeNow(), "Altın Saat başlamalı")
+	if DATASTORE_MODE == "ok" then
+		assert(DATASTORE["oyuncu_1001"] and table.find(DATASTORE["oyuncu_1001"].Alimlar, "alim-1"), "alım numarası kayda yazılmalı")
+	end
+
+	-- otomatik katlama
+	Mps.PromptGamePassPurchaseFinished:Fire(p1, 7004, true)
+	task.wait(0.2)
+	local oto = gui:FindFirstChild("Oto", true)
+	assert(oto and oto.Visible == true, "Otomatik Katlama geçişi olunca 🔁 butonu görünmeli")
+	local pk0 = stat(p1, "📦")
+	oto.Activated:Fire()
+	heartbeat(2.5)
+	oto.Activated:Fire()
+	local pk1 = stat(p1, "📦")
+	print("Otomatik katlama ile paket:", pk1 - pk0)
+	assert(pk1 > pk0, "otomatik katlama paket yapmalı")
+	butonBul(panel, "✕").Activated:Fire()
+
+	-- VIP'i Roblox'tan "satın alınmış" yap: tekrar girişte tanınmalı
+	SAHIP_GECISLER["1001:7002"] = true
+end
+
 print("== Kapanış ve tekrar giriş")
 for _, fn in ipairs(CLOSE_HANDLERS) do
 	local ok, e = xpcall(fn, debug.traceback)
@@ -1193,6 +1377,10 @@ if zengin then
 	end
 	assert(a and a:GetAttribute("Ad") == "Huss Burger", "tekrar girişte dükkan stili gelmeli")
 	assert(stat(p1b, "📦") == paketOnce, "tekrar girişte paket sayısı gelmeli")
+	task.wait(0.2)
+	assert(p1b:GetAttribute("Gecis_VIP") == true, "VIP geçişi tekrar girişte tanınmalı")
+	assert((p1b:GetAttribute("IkiKatBitis") or 0) > Workspace:GetServerTimeNow() + 600, "alınan 2 kat para süresi kayıtla devam etmeli")
+	print("Tekrar girişte VIP:", tostring(p1b:GetAttribute("Gecis_VIP")))
 	print("Tekrar giriş tamam:", a.Name, a:GetAttribute("Ad"), stat(p1b, "📦"))
 	p1b.Parent = nil
 	Players.PlayerRemoving:Fire(p1b)

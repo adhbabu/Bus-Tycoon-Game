@@ -159,6 +159,8 @@ local EN = {
 	["Yeni Şube Aç"] = "Open New Branch",
 	["Yeni şube açınca paran ve bütün geliştirmelerin sıfırlanır, dükkanın baştan kurulur. Ama paket sayın ve unvanın kalır, her şube bütün paralarını kalıcı olarak %%%d artırır!"] = "A new branch resets your cash and all upgrades, and your shop is rebuilt from scratch. But you keep your package count and title, and every branch boosts all your cash by %d%% forever!",
 	["%s  •  Sv %d/%d"] = "%s  •  Lv %d/%d",
+	["Sv %d/%d"] = "Lv %d/%d",
+	["💰 %s  •  Sv %d/%d"] = "💰 %s  •  Lv %d/%d",
 	["Sv"] = "Lv",
 	["🔒 Önce: %s"] = "🔒 Needs: %s",
 	["✓ TAMAM"] = "✓ MAXED",
@@ -207,6 +209,38 @@ local EN = {
 	["Rekorun: %d tık"] = "Your record: %d taps",
 	["🏁 %d TIK  •  +%s 💰"] = "🏁 %d TAPS  •  +%s 💰",
 	["🏆 YENİ REKOR!"] = "🏆 NEW RECORD!",
+
+	------------------------------------------------------------------
+	-- Robux mağazası
+	------------------------------------------------------------------
+	["💎 ROBUX MAĞAZASI"] = "💎 ROBUX SHOP",
+	["⭐ Geçişler: bir kere al, hep senin"] = "⭐ Passes: buy once, yours forever",
+	["🛍️ Ürünler: istediğin kadar al"] = "🛍️ Items: buy as many as you like",
+	["Yakında"] = "Soon",
+	["✓ SENDE"] = "✓ OWNED",
+	["🔁 Otomatik katlama AÇIK"] = "🔁 Auto fold ON",
+	["🔁 Otomatik katlama KAPALI"] = "🔁 Auto fold OFF",
+	["🎉 %s alındı! Teşekkürler!"] = "🎉 %s purchased! Thank you!",
+	["💵 +%s para!"] = "💵 +%s cash!",
+	["🔥 %d dakika 2 KAT PARA!"] = "🔥 DOUBLE CASH for %d minutes!",
+	["⏰ %s herkese ALTIN SAAT hediye etti! %d saniye bütün paketler 2 kat! 🔥"] = "⏰ %s gifted everyone a GOLDEN HOUR! Every package earns double for %d seconds! 🔥",
+	["2 Kat Para"] = "2x Cash",
+	["Bütün paketler hep 2 kat para eder"] = "Every package always earns double cash",
+	["+%25 para, başında ve sohbette VIP yazısı"] = "+25% cash, VIP tag over your head and in chat",
+	["Altın Şans x2"] = "Golden Luck x2",
+	["ALTIN BURGER 2 kat daha sık çıkar"] = "GOLDEN BURGERS show up twice as often",
+	["Otomatik Katlama"] = "Auto Fold",
+	["Açınca KATLA'ya senin yerine basar"] = "Turn it on and it presses FOLD for you",
+	["Para Kesesi"] = "Cash Pouch",
+	["10 dakikalık kazancın kadar para"] = "Cash equal to 10 minutes of your earnings",
+	["Para Çuvalı"] = "Cash Sack",
+	["45 dakikalık kazancın kadar para"] = "Cash equal to 45 minutes of your earnings",
+	["Para Kasası"] = "Cash Vault",
+	["3 saatlik kazancın kadar para"] = "Cash equal to 3 hours of your earnings",
+	["15 Dakika 2 Kat Para"] = "15 Min Double Cash",
+	["15 dakika boyunca bütün paketler 2 kat"] = "Every package earns double for 15 minutes",
+	["Herkese Altın Saat"] = "Golden Hour for Everyone",
+	["Bütün sunucuya hemen Altın Saat başlat"] = "Start a Golden Hour for the whole server now",
 }
 Dil.EN = EN
 

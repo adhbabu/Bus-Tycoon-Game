@@ -275,6 +275,43 @@ Config.Yerlesim = {
 	MusteriGiris = -45, -- müşteriler bu çizgiden (kaldırımdan) gelir
 	KuyrukAralik = 2.6, -- satış penceresinde sıradaki müşteriler arası
 	TabelaYeri = Vector3.new(0, 0, -37),
+	-- yerdeki satın alma butonları: binanın iki yanında birer sıra
+	ButonX = 42,
+	ButonZ = { -9, -3, 3, 9, 15, 21, 27 },
+}
+
+-- Yerdeki butonların sırası (tycoon gibi: üstüne bas, geliştirmeyi al). Sol = binanın sol yanı.
+Config.Butonlar = {
+	Sol = { "HizliEller", "Tarif", "AltinSans", "Asci", "Kasiyer", "Teknisyen", "Temizlikci" },
+	Sag = { "Makine", "MakineHizi", "Duvar", "Cati", "Oturma", "Dekor", "DevTabela" },
+}
+
+----------------------------------------------------------------------
+-- ROBUX MAĞAZASI (💎 butonu)
+-- Id = Roblox'taki numara (Creator Hub > oyunun > Monetization > Passes / Developer Products).
+-- Id 0 olan ürün mağazada "Yakında" görünür, satılmaz. Fiyat sadece gösterim içindir; gerçek fiyat
+-- Roblox'ta ne yazıyorsa odur (oyun açılınca Roblox'tan okunur).
+-- Oyunu bozmasınlar diye: para paketleri oyuncunun o anki kazancına göre verilir (birkaç dakikalık
+-- kazanç kadar), 2 kat para süreli, geçişler kalıcı ama oyunu tek başına bitirmez.
+----------------------------------------------------------------------
+Config.Robux = {
+	-- Geçişler (bir kere alınır, hep geçerli)
+	Gecisler = {
+		{ Anahtar = "IkiKatPara", Id = 0, Fiyat = 199, Ikon = "💰", Ad = "2 Kat Para", Aciklama = "Bütün paketler hep 2 kat para eder" },
+		{ Anahtar = "VIP", Id = 0, Fiyat = 249, Ikon = "⭐", Ad = "VIP", Aciklama = "+%25 para, başında ve sohbette VIP yazısı" },
+		{ Anahtar = "AltinSans", Id = 0, Fiyat = 99, Ikon = "✨", Ad = "Altın Şans x2", Aciklama = "ALTIN BURGER 2 kat daha sık çıkar" },
+		{ Anahtar = "OtoKatla", Id = 0, Fiyat = 149, Ikon = "🔁", Ad = "Otomatik Katlama", Aciklama = "Açınca KATLA'ya senin yerine basar" },
+	},
+	-- Ürünler (istediğin kadar alınır)
+	Urunler = {
+		{ Anahtar = "ParaKucuk", Id = 0, Fiyat = 49, Ikon = "💵", Ad = "Para Kesesi", Aciklama = "10 dakikalık kazancın kadar para", Saniye = 600, EnAz = 2000 },
+		{ Anahtar = "ParaOrta", Id = 0, Fiyat = 149, Ikon = "💰", Ad = "Para Çuvalı", Aciklama = "45 dakikalık kazancın kadar para", Saniye = 2700, EnAz = 10000 },
+		{ Anahtar = "ParaBuyuk", Id = 0, Fiyat = 399, Ikon = "🏦", Ad = "Para Kasası", Aciklama = "3 saatlik kazancın kadar para", Saniye = 10800, EnAz = 50000 },
+		{ Anahtar = "IkiKat15", Id = 0, Fiyat = 79, Ikon = "🔥", Ad = "15 Dakika 2 Kat Para", Aciklama = "15 dakika boyunca bütün paketler 2 kat", Sure = 900 },
+		{ Anahtar = "AltinSaat", Id = 0, Fiyat = 99, Ikon = "⏰", Ad = "Herkese Altın Saat", Aciklama = "Bütün sunucuya hemen Altın Saat başlat" },
+	},
+	VipCarpani = 1.25,
+	OtoKatlaAraligi = 0.3, -- otomatik katlama kaç saniyede bir basar
 }
 
 Config.ArsaSayisi = 8
@@ -448,6 +485,8 @@ local EN = {
 	["Yeni Şube Aç"] = "Open New Branch",
 	["Yeni şube açınca paran ve bütün geliştirmelerin sıfırlanır, dükkanın baştan kurulur. Ama paket sayın ve unvanın kalır, her şube bütün paralarını kalıcı olarak %%%d artırır!"] = "A new branch resets your cash and all upgrades, and your shop is rebuilt from scratch. But you keep your package count and title, and every branch boosts all your cash by %d%% forever!",
 	["%s  •  Sv %d/%d"] = "%s  •  Lv %d/%d",
+	["Sv %d/%d"] = "Lv %d/%d",
+	["💰 %s  •  Sv %d/%d"] = "💰 %s  •  Lv %d/%d",
 	["Sv"] = "Lv",
 	["🔒 Önce: %s"] = "🔒 Needs: %s",
 	["✓ TAMAM"] = "✓ MAXED",
@@ -496,6 +535,38 @@ local EN = {
 	["Rekorun: %d tık"] = "Your record: %d taps",
 	["🏁 %d TIK  •  +%s 💰"] = "🏁 %d TAPS  •  +%s 💰",
 	["🏆 YENİ REKOR!"] = "🏆 NEW RECORD!",
+
+	------------------------------------------------------------------
+	-- Robux mağazası
+	------------------------------------------------------------------
+	["💎 ROBUX MAĞAZASI"] = "💎 ROBUX SHOP",
+	["⭐ Geçişler: bir kere al, hep senin"] = "⭐ Passes: buy once, yours forever",
+	["🛍️ Ürünler: istediğin kadar al"] = "🛍️ Items: buy as many as you like",
+	["Yakında"] = "Soon",
+	["✓ SENDE"] = "✓ OWNED",
+	["🔁 Otomatik katlama AÇIK"] = "🔁 Auto fold ON",
+	["🔁 Otomatik katlama KAPALI"] = "🔁 Auto fold OFF",
+	["🎉 %s alındı! Teşekkürler!"] = "🎉 %s purchased! Thank you!",
+	["💵 +%s para!"] = "💵 +%s cash!",
+	["🔥 %d dakika 2 KAT PARA!"] = "🔥 DOUBLE CASH for %d minutes!",
+	["⏰ %s herkese ALTIN SAAT hediye etti! %d saniye bütün paketler 2 kat! 🔥"] = "⏰ %s gifted everyone a GOLDEN HOUR! Every package earns double for %d seconds! 🔥",
+	["2 Kat Para"] = "2x Cash",
+	["Bütün paketler hep 2 kat para eder"] = "Every package always earns double cash",
+	["+%25 para, başında ve sohbette VIP yazısı"] = "+25% cash, VIP tag over your head and in chat",
+	["Altın Şans x2"] = "Golden Luck x2",
+	["ALTIN BURGER 2 kat daha sık çıkar"] = "GOLDEN BURGERS show up twice as often",
+	["Otomatik Katlama"] = "Auto Fold",
+	["Açınca KATLA'ya senin yerine basar"] = "Turn it on and it presses FOLD for you",
+	["Para Kesesi"] = "Cash Pouch",
+	["10 dakikalık kazancın kadar para"] = "Cash equal to 10 minutes of your earnings",
+	["Para Çuvalı"] = "Cash Sack",
+	["45 dakikalık kazancın kadar para"] = "Cash equal to 45 minutes of your earnings",
+	["Para Kasası"] = "Cash Vault",
+	["3 saatlik kazancın kadar para"] = "Cash equal to 3 hours of your earnings",
+	["15 Dakika 2 Kat Para"] = "15 Min Double Cash",
+	["15 dakika boyunca bütün paketler 2 kat"] = "Every package earns double for 15 minutes",
+	["Herkese Altın Saat"] = "Golden Hour for Everyone",
+	["Bütün sunucuya hemen Altın Saat başlat"] = "Start a Golden Hour for the whole server now",
 }
 Dil.EN = EN
 
@@ -1301,6 +1372,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local TextService = game:GetService("TextService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local Ortak = ReplicatedStorage:WaitForChild("Ortak")
 local Config = require(Ortak:WaitForChild("Config"))
@@ -1467,6 +1539,22 @@ local function tamSayi(x, enAz, enCok, varsayilan)
 	return math.clamp(math.floor(sayi(x, varsayilan)), enAz, enCok)
 end
 
+-- Robux ürünü alımlarının numaraları (aynı alım iki kere verilmesin diye son 50 tanesi saklanır)
+local function alimListesi(x)
+	local liste = {}
+	if type(x) == "table" then
+		for _, id in ipairs(x) do
+			if type(id) == "string" and #id <= 100 then
+				table.insert(liste, id)
+			end
+		end
+	end
+	while #liste > 50 do
+		table.remove(liste, 1)
+	end
+	return liste
+end
+
 local function veriHazirla(ham)
 	ham = type(ham) == "table" and ham or {}
 	local gelistirme = Ekonomi.BosGelistirmeler()
@@ -1493,13 +1581,15 @@ local function veriHazirla(ham)
 		GorevIlerleme = math.max(0, math.floor(sayi(ham.GorevIlerleme, 0))),
 		YarismaRekor = tamSayi(ham.YarismaRekor, 0, 100000, 0),
 		SonHediye = math.floor(sayi(ham.SonHediye, 0)),
+		Alimlar = alimListesi(ham.Alimlar),
+		IkiKatKalan = math.clamp(sayi(ham.IkiKatKalan, 0), 0, 86400),
 	}
 end
 
 local function kaydet(oyuncu)
 	local v = veriler[oyuncu]
 	if not v or not v.KayitAcik or not kayitDeposu then
-		return
+		return false
 	end
 	local paket = {
 		Surum = 3,
@@ -1512,17 +1602,20 @@ local function kaydet(oyuncu)
 		GorevIlerleme = v.GorevIlerleme,
 		YarismaRekor = v.YarismaRekor,
 		SonHediye = v.SonHediye,
+		Alimlar = v.Alimlar,
+		IkiKatKalan = v.IkiKatBitis and math.max(0, math.floor(v.IkiKatBitis - os.clock())) or 0,
 	}
 	for deneme = 1, 3 do
 		local ok, hata = pcall(function()
 			kayitDeposu:SetAsync(kayitAnahtari(oyuncu), paket, { oyuncu.UserId })
 		end)
 		if ok then
-			return
+			return true
 		end
 		warn("[Burger İmparatoru] Kayıt yapılamadı (" .. deneme .. "): " .. tostring(hata))
 		task.wait(1)
 	end
+	return false
 end
 
 ----------------------------------------------------------------------
@@ -1545,14 +1638,28 @@ local function unvan(v)
 	return Config.Unvanlar[Ekonomi.UnvanIndex(v.ToplamPaket)]
 end
 
-local function yeniBurger(v)
-	v.Burger = { Asama = 0, Altin = rastgele:NextNumber() < Ekonomi.AltinSansi(v.Gelistirme) }
+-- Altın burger şansı ("Altın Şans x2" geçişi varsa 2 kat)
+local function altinSansi(v)
+	return Ekonomi.AltinSansi(v.Gelistirme) * ((v.Gecis and v.Gecis.AltinSans) and 2 or 1)
 end
 
--- Geçici çarpanlar: Altın Saat (herkes) ve hediyeden gelen 2 kat para (tek oyuncu)
+local function yeniBurger(v)
+	v.Burger = { Asama = 0, Altin = rastgele:NextNumber() < altinSansi(v) }
+end
+
+-- Ek çarpanlar: Altın Saat (herkes), hediye ya da Robux'la alınan 2 kat para (süreli),
+-- Robux geçişleri (2 Kat Para, VIP)
 local altinSaatBitis = 0
 local function ekstraCarpan(v)
 	local c = 1
+	if v.Gecis then
+		if v.Gecis.IkiKatPara then
+			c *= 2
+		end
+		if v.Gecis.VIP then
+			c *= Config.Robux.VipCarpani
+		end
+	end
 	if os.clock() < altinSaatBitis then
 		c *= Config.AltinSaat.Carpan
 	end
@@ -1637,6 +1744,15 @@ local function kafaYazisiGuncelle(oyuncu)
 		yazi.TextStrokeTransparency = 0.2
 		yazi.Parent = bb
 		bb.Parent = kafa
+	end
+	local vip = kafa:FindFirstChild("VipYazisi")
+	if v.Gecis and v.Gecis.VIP and not vip then
+		vip = bb:Clone()
+		vip.Name = "VipYazisi"
+		vip.StudsOffset = Vector3.new(0, 3.1, 0)
+		vip.Yazi.Text = "⭐ VIP ⭐"
+		vip.Yazi.TextColor3 = Color3.fromRGB(255, 215, 60)
+		vip.Parent = kafa
 	end
 	local u = unvan(v)
 	bb.Yazi.Text = "👑 " .. u.Ad .. (v.Sube > 0 and ("  🏙️" .. v.Sube) or "")
@@ -1753,6 +1869,41 @@ local function karakterGeldi(oyuncu, karakter)
 	kafaYazisiGuncelle(oyuncu)
 end
 
+-- Robux geçişleri: oyuna girerken hangilerine sahip olduğuna bak
+local function gecisBul(id)
+	for _, g in ipairs(Config.Robux.Gecisler) do
+		if g.Id ~= 0 and g.Id == id then
+			return g
+		end
+	end
+	return nil
+end
+local function gecisVer(oyuncu, g)
+	local v = veriler[oyuncu]
+	if not v or v.Gecis[g.Anahtar] then
+		return
+	end
+	v.Gecis[g.Anahtar] = true
+	oyuncu:SetAttribute("Gecis_" .. g.Anahtar, true)
+	if g.Anahtar == "AltinSans" and v.Hazir and v.Burger.Asama == 0 and not v.Burger.Altin then
+		yeniBurger(v)
+	end
+	kafaYazisiGuncelle(oyuncu)
+	durumGonder(oyuncu)
+end
+local function gecisleriKontrolEt(oyuncu)
+	for _, g in ipairs(Config.Robux.Gecisler) do
+		if g.Id ~= 0 then
+			local ok, var = pcall(function()
+				return MarketplaceService:UserOwnsGamePassAsync(oyuncu.UserId, g.Id)
+			end)
+			if ok and var and oyuncu.Parent then
+				gecisVer(oyuncu, g)
+			end
+		end
+	end
+end
+
 local function oyuncuGeldi(oyuncu)
 	if veriler[oyuncu] then
 		return
@@ -1775,6 +1926,8 @@ local function oyuncuGeldi(oyuncu)
 		YarismaRekor = 0,
 		SonHediye = 0,
 		Son = {},
+		Alimlar = {},
+		Gecis = {},
 	}
 	veriler[oyuncu] = v
 
@@ -1816,6 +1969,11 @@ local function oyuncuGeldi(oyuncu)
 	v.GorevIlerleme = hazir.GorevIlerleme
 	v.YarismaRekor = hazir.YarismaRekor
 	v.SonHediye = hazir.SonHediye
+	v.Alimlar = hazir.Alimlar
+	if hazir.IkiKatKalan > 0 then
+		v.IkiKatBitis = os.clock() + hazir.IkiKatKalan
+		oyuncu:SetAttribute("IkiKatBitis", workspace:GetServerTimeNow() + hazir.IkiKatKalan)
+	end
 	v.KayitAcik = basarili
 	yeniBurger(v)
 	v.Hazir = true
@@ -1824,6 +1982,7 @@ local function oyuncuGeldi(oyuncu)
 	skorGuncelle(oyuncu)
 	kafaYazisiGuncelle(oyuncu)
 	durumGonder(oyuncu)
+	task.spawn(gecisleriKontrolEt, oyuncu)
 	if not v.Arsa then
 		DuyuruOlay:FireClient(oyuncu, "Bütün arsalar dolu! Biri çıkınca dükkanın açılacak.")
 	end
@@ -1926,7 +2085,8 @@ local BINA_PARCASI = {
 	Asci = true, Kasiyer = true, Teknisyen = true, Temizlikci = true,
 }
 
-SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
+-- Bir geliştirmeyi satın al (dükkan menüsü de yerdeki butonlar da bunu kullanır)
+local function satinAl(oyuncu, anahtar)
 	local v = veriler[oyuncu]
 	if not v or not v.Hazir or type(anahtar) ~= "string" then
 		return
@@ -1944,10 +2104,52 @@ SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
 	v.Para -= fiyat
 	v.Gelistirme[anahtar] = seviye + 1
 	if BINA_PARCASI[anahtar] then
-		dukkaniKur(oyuncu)
+		dukkaniKur(oyuncu) -- yerdeki butonlar da yeniden kurulur
+	elseif v.Arsa then
+		Dukkan.ButonlariKur(v.Arsa.Model, { Gelistirme = v.Gelistirme, UserId = oyuncu.UserId })
 	end
 	skorGuncelle(oyuncu)
 	durumGonder(oyuncu)
+end
+
+SatinAlOlay.OnServerEvent:Connect(satinAl)
+
+-- Yerdeki satın alma butonları: dükkan sahibi üstüne basınca alır. Üstünde durdukça tekrar almaz;
+-- çok seviyeli geliştirmeyi bir daha almak için butondan inip yeniden basmak gerekir.
+local basili = {} -- oyuncu -> { Anahtar, Konum }
+local function butonaBasildi(buton, temas)
+	local anahtar = buton:GetAttribute("Gelistirme")
+	local karakter = temas and temas.Parent
+	local oyuncu = karakter and Players:GetPlayerFromCharacter(karakter)
+	if not oyuncu or type(anahtar) ~= "string" or buton:GetAttribute("Sahip") ~= oyuncu.UserId then
+		return
+	end
+	local b = basili[oyuncu]
+	if b and b.Anahtar == anahtar then
+		return
+	end
+	basili[oyuncu] = { Anahtar = anahtar, Konum = buton.CFrame.Position }
+	satinAl(oyuncu, anahtar)
+end
+arsaKlasoru.DescendantAdded:Connect(function(d)
+	if d:IsA("BasePart") and d.Name == "SatinAlButonu" then
+		d.Touched:Connect(function(temas)
+			butonaBasildi(d, temas)
+		end)
+	end
+end)
+task.spawn(function()
+	while true do
+		task.wait(0.25)
+		for oyuncu, b in pairs(basili) do
+			local karakter = oyuncu.Character
+			local kok = karakter and karakter:FindFirstChild("HumanoidRootPart")
+			local fark = kok and (kok.CFrame.Position - b.Konum) or nil
+			if oyuncu.Parent == nil or not fark or Vector3.new(fark.X, 0, fark.Z).Magnitude > 3.5 then
+				basili[oyuncu] = nil
+			end
+		end
+	end
 end)
 
 SubeAcOlay.OnServerEvent:Connect(function(oyuncu)
@@ -2053,7 +2255,7 @@ task.spawn(function()
 			local adet = math.min(v.Gelistirme.Makine or 0, #Config.Yerlesim.MakineX)
 			if v.Hazir and v.Arsa and adet > 0 then
 				local sure = Ekonomi.MakineSuresi(v.Gelistirme)
-				local sans = Ekonomi.AltinSansi(v.Gelistirme)
+				local sans = altinSansi(v)
 				local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
 				local uretti = false
 				local ekstra = ekstraCarpan(v)
@@ -2268,20 +2470,103 @@ do
 	fiyonk.Parent = hediyeNpc
 end
 
--- Altın Saat: arada bir bütün kasabada paketler 2 kat para eder
+-- Altın Saat: arada bir (ya da biri Robux'la herkese hediye edince) bütün kasabada paketler 2 kat para eder
+local function herkeseDurum()
+	for oyuncu in pairs(veriler) do
+		task.spawn(durumGonder, oyuncu)
+	end
+end
+local function altinSaatBaslat(hediyeEden)
+	local simdi = os.clock()
+	altinSaatBitis = math.max(simdi, altinSaatBitis) + Config.AltinSaat.Sure -- açıksa uzar
+	local kalan = altinSaatBitis - simdi
+	ReplicatedStorage:SetAttribute("AltinSaatBitis", workspace:GetServerTimeNow() + kalan)
+	if hediyeEden then
+		DuyuruOlay:FireAllClients("⏰ %s herkese ALTIN SAAT hediye etti! %d saniye bütün paketler 2 kat! 🔥", hediyeEden, math.floor(kalan))
+	else
+		DuyuruOlay:FireAllClients("⏰ ALTIN SAAT! %d saniye boyunca bütün paketler 2 kat para! 🔥", math.floor(kalan))
+	end
+	herkeseDurum()
+	task.delay(kalan + 0.2, herkeseDurum)
+end
 task.spawn(function()
 	while true do
 		task.wait(rastgele:NextNumber(Config.AltinSaat.EnAz, Config.AltinSaat.EnCok))
-		altinSaatBitis = os.clock() + Config.AltinSaat.Sure
-		ReplicatedStorage:SetAttribute("AltinSaatBitis", workspace:GetServerTimeNow() + Config.AltinSaat.Sure)
-		DuyuruOlay:FireAllClients("⏰ ALTIN SAAT! %d saniye boyunca bütün paketler 2 kat para! 🔥", Config.AltinSaat.Sure)
-		for oyuncu in pairs(veriler) do
-			task.spawn(durumGonder, oyuncu)
+		altinSaatBaslat(nil)
+		task.wait(Config.AltinSaat.Sure)
+	end
+end)
+
+----------------------------------------------------------------------
+-- Robux mağazası: geçişler (kalıcı) ve ürünler (tekrar alınabilir)
+----------------------------------------------------------------------
+local function urunBul(id)
+	for _, u in ipairs(Config.Robux.Urunler) do
+		if u.Id ~= 0 and u.Id == id then
+			return u
 		end
-		task.wait(Config.AltinSaat.Sure + 0.2)
-		for oyuncu in pairs(veriler) do
-			task.spawn(durumGonder, oyuncu)
-		end
+	end
+	return nil
+end
+
+-- Para paketi oyuncunun o anki kazancına göre: saniyede makinelerden ya da elle katlayarak
+-- kazandığının (hangisi büyükse) birkaç dakikalığı. Böylece hiçbir zaman oyunu bitirmez.
+local function paraPaketi(v, u)
+	local saniyelik = math.max(Ekonomi.MakineGeliri(v.Gelistirme, v.Sube), Ekonomi.PaketDegeri(false, v.Gelistirme, v.Sube))
+	return math.max(u.EnAz or 0, math.floor(saniyelik * (u.Saniye or 0)))
+end
+
+local function urunVer(oyuncu, v, u)
+	if u.Saniye then
+		local para = paraPaketi(v, u)
+		v.Para += para
+		skorGuncelle(oyuncu)
+		DuyuruOlay:FireClient(oyuncu, "💵 +%s para!", Ekonomi.Kisalt(para))
+	elseif u.Sure then
+		local simdi = os.clock()
+		v.IkiKatBitis = math.max(simdi, v.IkiKatBitis or 0) + u.Sure -- açıksa uzar
+		oyuncu:SetAttribute("IkiKatBitis", workspace:GetServerTimeNow() + (v.IkiKatBitis - simdi))
+		DuyuruOlay:FireClient(oyuncu, "🔥 %d dakika 2 KAT PARA!", math.floor(u.Sure / 60))
+	elseif u.Anahtar == "AltinSaat" then
+		altinSaatBaslat(oyuncu.DisplayName)
+	end
+	durumGonder(oyuncu)
+end
+
+-- Roblox her ürün alımını buraya sorar. Aynı alım (PurchaseId) asla iki kere verilmez; kayıt
+-- yapılamazsa "sonra tekrar sor" denir, alım kaybolmaz.
+MarketplaceService.ProcessReceipt = function(bilgi)
+	local oyuncu = Players:GetPlayerByUserId(bilgi.PlayerId)
+	local v = oyuncu and veriler[oyuncu]
+	if not v or not v.Hazir then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	local u = urunBul(bilgi.ProductId)
+	if not u then
+		warn("[Burger İmparatoru] Bilinmeyen Robux ürünü: " .. tostring(bilgi.ProductId))
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	local alimId = tostring(bilgi.PurchaseId)
+	if table.find(v.Alimlar, alimId) then
+		return Enum.ProductPurchaseDecision.PurchaseGranted -- bu alım zaten verildi
+	end
+	urunVer(oyuncu, v, u)
+	table.insert(v.Alimlar, alimId)
+	while #v.Alimlar > 50 do
+		table.remove(v.Alimlar, 1)
+	end
+	if v.KayitAcik and not kaydet(oyuncu) then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	DuyuruOlay:FireClient(oyuncu, "🎉 %s alındı! Teşekkürler!", u.Ad)
+	return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(oyuncu, id, alindi)
+	local g = alindi and gecisBul(id)
+	if g and veriler[oyuncu] then
+		gecisVer(oyuncu, g)
+		DuyuruOlay:FireClient(oyuncu, "🎉 %s alındı! Teşekkürler!", g.Ad)
 	end
 end)
 
@@ -2431,6 +2716,7 @@ function Dukkan.Kur(arsa, veri)
 		tabelaYazisi(pano, Enum.NormalId.Front, "🍔 BOŞ ARSA", "Bir oyuncu bekliyor", Color3.fromRGB(90, 90, 95))
 		tabelaYazisi(pano, Enum.NormalId.Back, "🍔 BOŞ ARSA", "Bir oyuncu bekliyor", Color3.fromRGB(90, 90, 95))
 		klasor.Parent = arsa
+		Dukkan.ButonlariKur(arsa, nil)
 		return
 	end
 
@@ -2733,6 +3019,87 @@ function Dukkan.Kur(arsa, veri)
 		end
 	end
 
+	klasor.Parent = arsa
+	Dukkan.ButonlariKur(arsa, veri)
+end
+
+-- Yerdeki satın alma butonları (tycoon gibi: üstüne bas, geliştirmeyi al).
+-- Her satın almadan sonra yeniden kurulur: en üst seviyesine gelen geliştirmenin butonu kaybolur,
+-- fiyat yazıları güncellenir. Üstüne basılmasını sunucu dinler (BurgerSunucu), rengini oyuncunun
+-- ekranı paraya göre boyar (yeşil: alabilirsin, kırmızı: paran yetmiyor, gri: kilitli).
+function Dukkan.ButonlariKur(arsa, veri)
+	local eski = arsa:FindFirstChild("Butonlar")
+	if eski then
+		eski:Destroy()
+	end
+	if not veri then
+		return
+	end
+	local klasor = Instance.new("Folder")
+	klasor.Name = "Butonlar"
+	local F = Dukkan.Cerceve(arsa)
+	local g = veri.Gelistirme or {}
+	for yon, liste in ipairs({ Config.Butonlar.Sol, Config.Butonlar.Sag }) do
+		local x = (yon == 1 and -1 or 1) * Y.ButonX
+		for i, anahtar in ipairs(liste) do
+			local gb = Ekonomi.GelistirmeBul(anahtar)
+			local z = Y.ButonZ[i]
+			local seviye = g[anahtar] or 0
+			local fiyat = gb and Ekonomi.Fiyat(anahtar, seviye)
+			if gb and z and fiyat then -- fiyat yoksa en üst seviyede: buton yok
+				local taban = Gorsel.Parca({
+					Name = "ButonTaban",
+					Size = Vector3.new(5.2, 0.4, 5.2),
+					CFrame = F * CFrame.new(x, 0.2, z),
+					Color = Color3.fromRGB(60, 62, 70),
+					Material = Enum.Material.DiamondPlate,
+					CanCollide = true,
+				})
+				taban.Parent = klasor
+				local b = Gorsel.Parca({
+					Name = "SatinAlButonu",
+					Size = Vector3.new(4, 0.5, 4),
+					CFrame = F * CFrame.new(x, 0.45, z),
+					Color = Color3.fromRGB(130, 135, 150),
+					Material = Enum.Material.Neon,
+					CanCollide = false,
+				})
+				b.CanTouch = true
+				b:SetAttribute("Gelistirme", anahtar)
+				b:SetAttribute("Sahip", veri.UserId)
+				local bb = Instance.new("BillboardGui")
+				bb.Name = "Etiket"
+				bb.Size = UDim2.new(8, 0, 3.4, 0)
+				bb.StudsOffset = Vector3.new(0, 3.4, 0)
+				bb.MaxDistance = 70
+				bb.LightInfluence = 0
+				bb.Parent = b
+				yazi(bb, gb.Ikon, Color3.new(1, 1, 1), { Name = "Ikon", Size = UDim2.fromScale(0.22, 0.5) })
+				yazi(bb, gb.Ad, Color3.new(1, 1, 1), {
+					Name = "Ad",
+					Size = UDim2.fromScale(0.78, 0.5),
+					Position = UDim2.fromScale(0.22, 0),
+					TextStrokeTransparency = 0.2,
+				})
+				local alt
+				if not Ekonomi.KilidiAcik(g, anahtar) then
+					local gerekli = Ekonomi.GelistirmeBul(gb.Gerekli or "")
+					alt = string.format("🔒 Önce: %s", gerekli and gerekli.Ad or "?")
+				elseif gb.MaxSeviye > 1 then
+					alt = string.format("💰 %s  •  Sv %d/%d", Ekonomi.Kisalt(fiyat), seviye, gb.MaxSeviye)
+				else
+					alt = "💰 " .. Ekonomi.Kisalt(fiyat)
+				end
+				yazi(bb, alt, Color3.fromRGB(255, 225, 90), {
+					Name = "Fiyat",
+					Size = UDim2.fromScale(1, 0.45),
+					Position = UDim2.fromScale(0, 0.52),
+					TextStrokeTransparency = 0.2,
+				})
+				b.Parent = klasor
+			end
+		end
+	end
 	klasor.Parent = arsa
 end
 
@@ -4652,7 +5019,37 @@ end)
 ----------------------------------------------------------------------
 -- Ekranı güncelle
 ----------------------------------------------------------------------
+-- Yerdeki satın alma butonlarını paraya göre boya (sadece kendi dükkanında):
+-- yeşil = alabilirsin, kırmızı = paran yetmiyor, gri = kilitli
+local BUTON_YESIL, BUTON_KIRMIZI, BUTON_GRI = Color3.fromRGB(70, 220, 90), Color3.fromRGB(235, 70, 60), Color3.fromRGB(130, 135, 150)
+local function butonlariBoya()
+	if not durum or durum.ArsaIndex <= 0 then
+		return
+	end
+	local harita = workspace:FindFirstChild("Harita")
+	local arsalar = harita and harita:FindFirstChild("Arsalar")
+	local arsa = arsalar and arsalar:FindFirstChild("Arsa" .. durum.ArsaIndex)
+	local kl = arsa and arsa:FindFirstChild("Butonlar")
+	if not kl then
+		return
+	end
+	for _, b in ipairs(kl:GetChildren()) do
+		if b.Name == "SatinAlButonu" then
+			local anahtar = b:GetAttribute("Gelistirme")
+			local fiyat = type(anahtar) == "string" and Ekonomi.Fiyat(anahtar, Ekonomi.Seviye(durum.Gelistirme, anahtar)) or nil
+			local renk = BUTON_GRI
+			if fiyat and Ekonomi.KilidiAcik(durum.Gelistirme, anahtar) then
+				renk = durum.Para >= fiyat and BUTON_YESIL or BUTON_KIRMIZI
+			end
+			if b.Color ~= renk then
+				b.Color = renk
+			end
+		end
+	end
+end
+
 local function arayuzGuncelle()
+	butonlariBoya()
 	if not durum then
 		return
 	end
@@ -4758,6 +5155,223 @@ stilButonu.Activated:Connect(function()
 end)
 evButonu.Activated:Connect(function()
 	EvimeGitOlay:FireServer()
+end)
+
+----------------------------------------------------------------------
+-- 💎 Robux mağazası, otomatik katlama ve VIP
+----------------------------------------------------------------------
+local MarketplaceService = game:GetService("MarketplaceService")
+kucukSira.Size = UDim2.fromOffset(220, 40)
+local robuxButonu = kucukButon("💎")
+robuxButonu.Name = "Robux"
+-- Roblox'ta henüz hiçbir geçiş/ürün yoksa (Id hepsi 0) 💎 butonu gizli kalsın
+do
+	local varMi = false
+	for _, liste in ipairs({ Config.Robux.Gecisler, Config.Robux.Urunler }) do
+		for _, u in ipairs(liste) do
+			if u.Id ~= 0 then
+				varMi = true
+			end
+		end
+	end
+	robuxButonu.Visible = varMi
+end
+local otoButonu = kucukButon("🔁")
+otoButonu.Name = "Oto"
+otoButonu.Visible = false
+
+local robuxPanel = yap("Frame", {
+	Name = "RobuxPaneli",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	Size = UDim2.fromOffset(560, 440),
+	BackgroundColor3 = PANEL,
+	BackgroundTransparency = 0.04,
+	Visible = false,
+	ZIndex = 30,
+	Parent = ekran,
+}, { kose(UDim.new(0, 18)), cizgi(Color3.fromRGB(90, 200, 255), 3) })
+olcekEkle(robuxPanel)
+local robuxBaslikYazi = yazi({
+	Text = "💎 ROBUX MAĞAZASI",
+	Position = UDim2.fromOffset(16, 10),
+	Size = UDim2.new(1, -80, 0, 34),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextColor3 = Color3.fromRGB(120, 215, 255),
+	ZIndex = 31,
+	Parent = robuxPanel,
+})
+yaziCizgisi(KOYU, 2).Parent = robuxBaslikYazi
+local robuxKapat = buton({
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -12, 0, 10),
+	Size = UDim2.fromOffset(34, 34),
+	BackgroundColor3 = Color3.fromRGB(230, 70, 70),
+	Text = "✕",
+	ZIndex = 31,
+	Parent = robuxPanel,
+}, { kose(UDim.new(1, 0)), cizgi(KOYU, 2) })
+local robuxIcerik = yap("ScrollingFrame", {
+	Position = UDim2.fromOffset(16, 52),
+	Size = UDim2.new(1, -32, 1, -64),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	ScrollBarThickness = 6,
+	CanvasSize = UDim2.new(),
+	AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	ZIndex = 31,
+	Parent = robuxPanel,
+}, { yap("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) })
+
+local robuxSatirlari = {}
+local function robuxBaslik(sira, metin)
+	yazi({
+		LayoutOrder = sira,
+		Text = metin,
+		Size = UDim2.new(1, -8, 0, 26),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(255, 210, 80),
+		ZIndex = 32,
+		Parent = robuxIcerik,
+	})
+end
+local function robuxSatir(sira, urun, gecisMi)
+	local satir = yap("Frame", {
+		LayoutOrder = sira,
+		Size = UDim2.new(1, -8, 0, 58),
+		BackgroundColor3 = SATIR,
+		ZIndex = 32,
+		Parent = robuxIcerik,
+	}, { kose(UDim.new(0, 12)) })
+	yazi({ Text = urun.Ikon, Position = UDim2.fromOffset(6, 7), Size = UDim2.fromOffset(44, 44), ZIndex = 33, Parent = satir })
+	yazi({ Text = urun.Ad, Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -196, 0, 24), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 33, Parent = satir })
+	yazi({
+		Text = urun.Aciklama,
+		Position = UDim2.fromOffset(58, 32),
+		Size = UDim2.new(1, -196, 0, 18),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(220, 200, 180),
+		ZIndex = 33,
+		Parent = satir,
+	})
+	local al = buton({
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(124, 40),
+		BackgroundColor3 = YESIL,
+		Text = "",
+		ZIndex = 33,
+		Parent = satir,
+	}, { kose(UDim.new(0, 12)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 7), PaddingBottom = UDim.new(0, 7), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }) })
+	al.Name = "Al_" .. urun.Anahtar
+	robuxSatirlari[urun.Anahtar] = { Al = al, Urun = urun, Gecis = gecisMi, Fiyat = urun.Fiyat }
+	al.Activated:Connect(function()
+		if urun.Id == 0 or (gecisMi and ben:GetAttribute("Gecis_" .. urun.Anahtar)) then
+			salla(al)
+			return
+		end
+		if gecisMi then
+			MarketplaceService:PromptGamePassPurchase(ben, urun.Id)
+		else
+			MarketplaceService:PromptProductPurchase(ben, urun.Id)
+		end
+	end)
+end
+robuxBaslik(1, "⭐ Geçişler: bir kere al, hep senin")
+for i, g in ipairs(Config.Robux.Gecisler) do
+	robuxSatir(1 + i, g, true)
+end
+robuxBaslik(50, "🛍️ Ürünler: istediğin kadar al")
+for i, u in ipairs(Config.Robux.Urunler) do
+	robuxSatir(50 + i, u, false)
+end
+
+local function robuxGuncelle()
+	for anahtar, s in pairs(robuxSatirlari) do
+		if s.Urun.Id == 0 then
+			s.Al.Text = T("Yakında")
+			s.Al.BackgroundColor3 = Color3.fromRGB(110, 110, 120)
+		elseif s.Gecis and ben:GetAttribute("Gecis_" .. anahtar) then
+			s.Al.Text = T("✓ SENDE")
+			s.Al.BackgroundColor3 = Color3.fromRGB(90, 120, 200)
+		else
+			s.Al.Text = "R$ " .. tostring(s.Fiyat)
+			s.Al.BackgroundColor3 = YESIL
+		end
+	end
+end
+robuxGuncelle()
+-- gerçek fiyatları Roblox'tan oku (Creator Hub'da değiştirilirse burada da değişir)
+task.spawn(function()
+	for _, s in pairs(robuxSatirlari) do
+		if s.Urun.Id ~= 0 then
+			local ok, bilgi = pcall(function()
+				return MarketplaceService:GetProductInfo(s.Urun.Id, s.Gecis and Enum.InfoType.GamePass or Enum.InfoType.Product)
+			end)
+			if ok and type(bilgi) == "table" and type(bilgi.PriceInRobux) == "number" then
+				s.Fiyat = bilgi.PriceInRobux
+			end
+		end
+	end
+	robuxGuncelle()
+end)
+
+local function robuxAcKapa(ac)
+	robuxPanel.Visible = ac
+	if ac then
+		robuxGuncelle()
+		dukkanAcKapa(false)
+	end
+end
+robuxButonu.Activated:Connect(function()
+	robuxAcKapa(not robuxPanel.Visible)
+end)
+robuxKapat.Activated:Connect(function()
+	robuxAcKapa(false)
+end)
+
+-- Otomatik katlama (geçişi olana): 🔁 butonuyla aç/kapa
+local otoAcik = false
+local function otoGuncelle()
+	local var = ben:GetAttribute("Gecis_OtoKatla") == true
+	otoButonu.Visible = var
+	if not var then
+		otoAcik = false
+	end
+	otoButonu.BackgroundColor3 = otoAcik and YESIL or PANEL
+end
+otoButonu.Activated:Connect(function()
+	otoAcik = not otoAcik
+	otoGuncelle()
+	duyuru(otoAcik and T("🔁 Otomatik katlama AÇIK") or T("🔁 Otomatik katlama KAPALI"), Color3.fromRGB(140, 255, 140), 1.2)
+end)
+for _, g in ipairs(Config.Robux.Gecisler) do
+	ben:GetAttributeChangedSignal("Gecis_" .. g.Anahtar):Connect(function()
+		robuxGuncelle()
+		otoGuncelle()
+	end)
+end
+otoGuncelle()
+task.spawn(function()
+	while true do
+		task.wait(Config.Robux.OtoKatlaAraligi)
+		if otoAcik and durum and durum.ArsaIndex > 0 then
+			katla()
+		end
+	end
+end)
+
+-- Sohbette VIP yazısı
+pcall(function()
+	TextChatService.OnIncomingMessage = function(mesaj)
+		local oz = Instance.new("TextChatMessageProperties")
+		local kaynak = mesaj.TextSource
+		local kim = kaynak and Players:GetPlayerByUserId(kaynak.UserId)
+		if kim and kim:GetAttribute("Gecis_VIP") then
+			oz.PrefixText = '<font color="#FFD23C">[⭐VIP]</font> ' .. mesaj.PrefixText
+		end
+		return oz
+	end
 end)
 
 ContextActionService:BindAction("BurgerKatla", function(_, girdi)
