@@ -394,6 +394,12 @@ customMethods.Sound = {
 		local real = unwrap(self)
 		assert(real.SoundId ~= "", "Sound played without SoundId")
 		STATS.sounds += 1
+		if real.PlaybackRegionsEnabled then
+			local r = real.PlaybackRegion
+			assert(r.Min >= 0 and r.Max > r.Min and r.Max <= 0.71, "huss bölgesi sesin dışında")
+			assert(math.abs((self.TimePosition or 0) - r.Min) < 0.001, "tek huss bölgenin başından çalmalı")
+			STATS.tekHuss = (STATS.tekHuss or 0) + 1
+		end
 	end,
 	Stop = function() end,
 }
@@ -927,6 +933,8 @@ end
 task.wait(0.8)
 print("Paket:", stat(p1, "📦") - p0, "Para:", stat(p1, "💰"))
 assert(stat(p1, "📦") - p0 == 4, "12 tıkta 4 paket bekleniyordu")
+print("Tek huss sesi:", STATS.tekHuss or 0)
+assert((STATS.tekHuss or 0) >= 12, "her KATLA basışında tek huss çalmalı (12 basış)")
 local gorsel = Workspace:FindFirstChild("BurgerGorselleri")
 assert(gorsel and #unwrap(gorsel):GetChildren() > 0, "tezgahta kutu görseli yok")
 
@@ -1248,7 +1256,7 @@ for k, v in pairs(DATASTORE) do
 end
 
 print("== İstatistik")
-print("  tween:", STATS.tweens, "ses:", STATS.sounds, "konfeti:", STATS.emits, "ışınlama:", STATS.pivots, "arazi:", STATS.arazi)
+print("  tween:", STATS.tweens, "ses:", STATS.sounds, "tek huss:", STATS.tekHuss or 0, "konfeti:", STATS.emits, "ışınlama:", STATS.pivots, "arazi:", STATS.arazi)
 for _, m in ipairs(STATS.systemMessages) do
 	print("  sohbet:", m)
 end

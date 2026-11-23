@@ -23,6 +23,10 @@ Config.MakineSesSeviyesi = 0.22 -- kendi makinelerin
 Config.BaskasininSesSeviyesi = 0.3 -- başka oyuncuların dükkanı (yakındaysan duyarsın)
 -- Seste her "huss" kaçıncı saniyede başlıyor? Ekrandaki HUSS! yazıları bu anlarda fırlar.
 Config.HussZamanlari = { 0.04, 0.24, 0.44 }
+-- Her KATLA basışı (E) sesten TEK bir huss çalar: 1. katlama 1. huss'ı, 2. katlama 2.'yi, 3. katlama 3.'yü.
+-- Böylece bir burger = 3 basış = 3 huss. Sayılar her huss'ın başladığı ve bittiği saniye.
+-- (Makineler bütün burgeri bir kerede paketlediği için sesin tamamını, yani 3 huss'ı çalar.)
+Config.HussParcalari = { { 0.03, 0.235 }, { 0.235, 0.435 }, { 0.435, 0.70 } }
 
 ----------------------------------------------------------------------
 -- KATLAMA VE PAKETLEME

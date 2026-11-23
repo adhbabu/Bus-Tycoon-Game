@@ -33,8 +33,8 @@ bu yüzden şimdilik sadece HUSS! yazıları çıkıyor. Aşağıdaki adımları
 Numarayı bana da yazarsan koda kalıcı olarak koyarım, her yeni sürümde ses hazır gelir.
 
 Ses dosyası hazır: `sesler/huss.mp3` (indirdiğin zip'in içinde de var). Bu, gönderdiğin videodan
-(Instagram: **turkish.huss**) kesilmiş "huss huss huss" sesi. Oyun her tıklamada bu sesin tamamını çalar,
-ekrandaki üç sarı HUSS! yazısı da sesteki üç "huss"a denk gelir. Makinelerin de kısık sesle huss'lar.
+(Instagram: **turkish.huss**) kesilmiş "huss huss huss" sesi. Her **KATLA** basışında (E) sesten **bir** huss çalar:
+bir burger = 3 basış = "huss huss huss". Makineler bütün burgeri bir kerede paketlediği için üçünü birden (kısık sesle) çalar.
 
 1. https://create.roblox.com/dashboard/creations adresine git ▸ **Development Items** ▸ **Audio** ▸ **Import Asset**.
 2. `sesler/huss.mp3` dosyasını seç ve yükle.

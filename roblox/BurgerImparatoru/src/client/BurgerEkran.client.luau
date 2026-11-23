@@ -84,21 +84,40 @@ elseif RunService:IsStudio() then
 	warn("[Burger İmparatoru] Huss sesi yok: Config.HussSesId boş. README'deki 'Sesi ekle' adımlarına bak.")
 end
 
-local function hussCal(hiz, seviye)
+-- Sesin hangi kısmı çalınsın: parca = 1, 2 ya da 3 ise o tek huss, nil ise sesin tamamı (3 huss)
+local function bolgeAyarla(s, parca)
+	local b = parca and Config.HussParcalari[parca]
+	if b then
+		s.PlaybackRegionsEnabled = true
+		s.PlaybackRegion = NumberRange.new(b[1], b[2])
+		s.TimePosition = b[1]
+	else
+		s.PlaybackRegionsEnabled = false
+		s.TimePosition = 0
+	end
+end
+
+-- Katlama numarasından (1, 2, 3) çalınacak huss
+local function hussNumarasi(asama)
+	return math.clamp(math.floor(asama or 1), 1, #Config.HussParcalari)
+end
+
+local function hussCal(hiz, seviye, parca)
 	if not sesAcik or not sesVar then
 		return
 	end
 	sesSirasi = sesSirasi % #sesHavuzu + 1
 	local s = sesHavuzu[sesSirasi]
+	s:Stop()
 	s.PlaybackSpeed = hiz or 1
 	s.Volume = seviye or Config.HussSesSeviyesi
-	s.TimePosition = 0
+	bolgeAyarla(s, parca)
 	s:Play()
 end
 
 -- Başka bir dükkandan gelen 3 boyutlu ses (yakındaysan duyarsın)
 local sonUzakSes = {}
-local function uzakHuss(parca, anahtar, aralik)
+local function uzakHuss(parca, anahtar, aralik, hussNo)
 	if not sesAcik or not sesVar or not parca then
 		return
 	end
@@ -114,6 +133,7 @@ local function uzakHuss(parca, anahtar, aralik)
 	s.RollOffMinDistance = 10
 	s.RollOffMaxDistance = 90
 	s.PlaybackSpeed = rastgele:NextNumber(0.95, 1.1)
+	bolgeAyarla(s, hussNo)
 	s.Parent = parca
 	s:Play()
 	Debris:AddItem(s, 2)
@@ -1280,6 +1300,7 @@ local function katla()
 
 	-- ekranı hemen güncelle (sunucunun cevabı gelince düzelir)
 	durum.Asama += Ekonomi.TikBasinaKatlama(durum.Gelistirme)
+	local hussNo = hussNumarasi(math.min(durum.Asama, Config.KatlamaSayisi)) -- bu basışın huss'ı
 	if durum.Asama >= Config.KatlamaSayisi then
 		durum.Asama = 0
 		durum.ToplamPaket += 1
@@ -1290,8 +1311,8 @@ local function katla()
 	end
 
 	local hiz = 1 + math.min(kombo, 40) * 0.008
-	hussCal(hiz)
-	hussSerisi(hiz, 1 + math.min(kombo, 30) * 0.01)
+	hussCal(hiz, nil, hussNo) -- her basışta tek huss: burger başına 3 huss
+	hussYazisi(1 + math.min(kombo, 30) * 0.01)
 	zipla(katlaOlcek, 0.86)
 	if kombo >= 3 then
 		komboYazi.Visible = true
@@ -1394,7 +1415,7 @@ KatlandiOlay.OnClientEvent:Connect(function(kim, sira, asama, paketlendi, kazanc
 	if kim == ben then
 		if otomatik then
 			-- aşçı katladı: kısık huss ve küçük yazı
-			hussCal(rastgele:NextNumber(0.95, 1.05), Config.HussSesSeviyesi * 0.5)
+			hussCal(rastgele:NextNumber(0.95, 1.05), Config.HussSesSeviyesi * 0.5, hussNumarasi(paketlendi and Config.KatlamaSayisi or asama))
 			ucanYazi("👨‍🍳 HUSS!", SARI, 0.6, rastgele:NextInteger(-170, 170), rastgele:NextInteger(-205, -160))
 		end
 		if paketlendi then
@@ -1404,7 +1425,7 @@ KatlandiOlay.OnClientEvent:Connect(function(kim, sira, asama, paketlendi, kazanc
 			end
 		end
 	else
-		uzakHuss(arsaParcasi(sira, "AnaTezgahUst"), "k" .. tostring(sira), 0.3)
+		uzakHuss(arsaParcasi(sira, "AnaTezgahUst"), "k" .. tostring(sira), 0.15, hussNumarasi(paketlendi and Config.KatlamaSayisi or asama))
 	end
 end)
 
