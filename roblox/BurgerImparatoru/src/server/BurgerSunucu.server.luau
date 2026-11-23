@@ -1,17 +1,19 @@
 -- BURGER İMPARATORU - Sunucu
--- Katlama, paketleme, dükkan, unvanlar ve kayıt burada. Oyuncunun ekranı (client) sadece
--- "katla" ve "satın al" ister; her şeyi sunucu kontrol eder, böylece hile yapılamaz.
+-- Arsalar, katlama, paketleme makineleri, dükkan geliştirmeleri, yeni şube, dükkan stili ve kayıt.
+-- Oyuncunun ekranı sadece istekte bulunur; parayı ve her kararı sunucu verir (hile yapılamaz).
+-- Kutuların katlanması ve bantta gitmesi gibi görüntüleri her oyuncunun ekranı kendisi çizer.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local TextService = game:GetService("TextService")
 
 local Ortak = ReplicatedStorage:WaitForChild("Ortak")
 local Config = require(Ortak:WaitForChild("Config"))
 local Ekonomi = require(Ortak:WaitForChild("Ekonomi"))
-local Dunya = require(script.Parent:WaitForChild("Dunya"))
+local Gorsel = require(Ortak:WaitForChild("Gorsel"))
+local Dukkan = require(script.Parent:WaitForChild("Dukkan"))
+local HaritaUretici = require(script.Parent:WaitForChild("HaritaUretici"))
 
 ----------------------------------------------------------------------
 -- Uzak olaylar (RemoteEvent)
@@ -26,20 +28,37 @@ local function olay(ad)
 end
 local KatlaOlay = olay("Katla") -- oyuncu -> sunucu
 local SatinAlOlay = olay("SatinAl") -- oyuncu -> sunucu (anahtar)
-local DurumIsteOlay = olay("DurumIste") -- oyuncu -> sunucu (ekran açılınca durumu ister)
+local SubeAcOlay = olay("SubeAc") -- oyuncu -> sunucu
+local StilSecOlay = olay("StilSec") -- oyuncu -> sunucu ({Logo, Renk, Ad})
+local DurumIsteOlay = olay("DurumIste") -- oyuncu -> sunucu
+local EvimeGitOlay = olay("EvimeGit") -- oyuncu -> sunucu (dükkanına ışınlan)
 local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
--- sunucu -> herkes: kim, tezgah, kaç katlama, paketlendi mi, kazanç, altın mı, otomatik mi
+-- sunucu -> herkes: kim, arsa, aşama, paketlendi mi, kazanç, bu burger altın mı, sıradaki altın mı
 local KatlandiOlay = olay("Katlandi")
+local UretimOlay = olay("Uretim") -- sunucu -> herkes: { {arsa, makine, altin}, ... }
 local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
+local DuyuruOlay = olay("Duyuru") -- sunucu -> herkes ya da bir oyuncu (yazı)
 uzaklar.Parent = ReplicatedStorage
 
-----------------------------------------------------------------------
--- Dünya
-----------------------------------------------------------------------
-local tezgahlar, ucanKlasor = Dunya.Kur()
 local rastgele = Random.new()
-local function zar()
-	return rastgele:NextNumber()
+
+----------------------------------------------------------------------
+-- Harita ve arsalar
+----------------------------------------------------------------------
+local harita = workspace:FindFirstChild("Harita")
+if not harita then
+	-- Harita dosyası yoksa (örneğin Rojo ile sadece kod aktarıldıysa) aynısını kodla kur
+	harita = HaritaUretici.Uret(Config, Gorsel)
+	harita.Parent = workspace
+end
+local arsaKlasoru = harita:WaitForChild("Arsalar")
+local arsalar = {}
+for i = 1, Config.ArsaSayisi do
+	local m = arsaKlasoru:FindFirstChild("Arsa" .. i)
+	if m then
+		arsalar[i] = { Index = i, Model = m, Sahip = nil }
+		Dukkan.Kur(m, nil)
+	end
 end
 
 ----------------------------------------------------------------------
@@ -74,40 +93,49 @@ local function kayitYukle(oyuncu)
 		end
 		local mesaj = tostring(sonuc)
 		warn("[Burger İmparatoru] Kayıt yüklenemedi (" .. deneme .. "): " .. mesaj)
-		-- Studio'da API erişimi kapalıysa tekrar denemenin anlamı yok
 		if string.find(mesaj, "StudioAccessToApisNotAllowed") or string.find(mesaj, "publish") then
-			break
+			break -- Studio'da API erişimi kapalı, tekrar denemeye gerek yok
 		end
 		task.wait(1.5)
 	end
 	return nil, false
 end
 
-----------------------------------------------------------------------
--- Oyuncu verileri
-----------------------------------------------------------------------
-local veriler = {} -- [Player] = veri tablosu
+local veriler = {} -- [Player] = veri
 
-local function sayiYap(x, varsayilan)
+local function sayi(x, varsayilan)
 	if type(x) == "number" and x == x and x ~= math.huge and x ~= -math.huge then
 		return x
 	end
 	return varsayilan
 end
 
+local function tamSayi(x, enAz, enCok, varsayilan)
+	return math.clamp(math.floor(sayi(x, varsayilan)), enAz, enCok)
+end
+
 local function veriHazirla(ham)
+	ham = type(ham) == "table" and ham or {}
 	local gelistirme = Ekonomi.BosGelistirmeler()
-	if type(ham) == "table" and type(ham.Gelistirme) == "table" then
+	if type(ham.Gelistirme) == "table" then
 		for _, g in ipairs(Config.Gelistirmeler) do
-			local sv = math.floor(sayiYap(ham.Gelistirme[g.Anahtar], 0))
-			gelistirme[g.Anahtar] = math.clamp(sv, 0, g.MaxSeviye)
+			gelistirme[g.Anahtar] = tamSayi(ham.Gelistirme[g.Anahtar], 0, g.MaxSeviye, 0)
 		end
 	end
-	ham = type(ham) == "table" and ham or {}
+	local stil = nil
+	if type(ham.Stil) == "table" and type(ham.Stil.Ad) == "string" then
+		stil = {
+			Logo = tamSayi(ham.Stil.Logo, 1, #Config.Logolar, 1),
+			Renk = tamSayi(ham.Stil.Renk, 1, #Config.Renkler, 1),
+			Ad = string.sub(ham.Stil.Ad, 1, 80),
+		}
+	end
 	return {
-		Para = math.max(0, math.floor(sayiYap(ham.Para, 0))),
-		ToplamPaket = math.max(0, math.floor(sayiYap(ham.ToplamPaket, 0))),
+		Para = math.max(0, math.floor(sayi(ham.Para, 0))),
+		ToplamPaket = math.max(0, math.floor(sayi(ham.ToplamPaket, 0))),
+		Sube = tamSayi(ham.Sube, 0, 1000, 0),
 		Gelistirme = gelistirme,
+		Stil = stil,
 	}
 end
 
@@ -117,10 +145,12 @@ local function kaydet(oyuncu)
 		return
 	end
 	local paket = {
-		Surum = 2,
+		Surum = 3,
 		Para = v.Para,
 		ToplamPaket = v.ToplamPaket,
+		Sube = v.Sube,
 		Gelistirme = v.Gelistirme,
+		Stil = v.Stil,
 	}
 	for deneme = 1, 3 do
 		local ok, hata = pcall(function()
@@ -135,10 +165,27 @@ local function kaydet(oyuncu)
 end
 
 ----------------------------------------------------------------------
--- Ekran güncellemeleri
+-- Yardımcılar
 ----------------------------------------------------------------------
+local function varsayilanAd(oyuncu)
+	return string.sub(oyuncu.DisplayName, 1, Config.AdEnUzun - 7) .. " Burger"
+end
+
+local function stilCoz(oyuncu, v)
+	local s = v.Stil or { Logo = 1, Renk = 1, Ad = varsayilanAd(oyuncu) }
+	return {
+		Logo = Config.Logolar[s.Logo] or Config.Logolar[1],
+		Renk = (Config.Renkler[s.Renk] or Config.Renkler[1]).Renk,
+		Ad = s.Ad,
+	}
+end
+
 local function unvan(v)
 	return Config.Unvanlar[Ekonomi.UnvanIndex(v.ToplamPaket)]
+end
+
+local function yeniBurger(v)
+	v.Burger = { Asama = 0, Altin = rastgele:NextNumber() < Ekonomi.AltinSansi(v.Gelistirme) }
 end
 
 local function durumGonder(oyuncu)
@@ -146,28 +193,19 @@ local function durumGonder(oyuncu)
 	if not v or not v.Hazir then
 		return
 	end
-	local b = v.Burger
 	DurumOlay:FireClient(oyuncu, {
 		Para = v.Para,
 		ToplamPaket = v.ToplamPaket,
+		Sube = v.Sube,
 		UnvanIndex = Ekonomi.UnvanIndex(v.ToplamPaket),
-		Asama = b and b.Asama or 0,
-		BurgerDegeri = b and Ekonomi.PaketDegeri(b.Deger, v.Gelistirme) or 0,
-		Altin = b ~= nil and b.Altin,
+		Asama = v.Burger.Asama,
+		Altin = v.Burger.Altin,
 		Gelistirme = v.Gelistirme,
-		TezgahVar = v.Tezgah ~= nil,
+		ArsaIndex = v.Arsa and v.Arsa.Index or 0,
 		KayitAcik = v.KayitAcik,
+		StilVar = v.Stil ~= nil,
+		Stil = v.Stil or { Logo = 1, Renk = 1, Ad = varsayilanAd(oyuncu) },
 	})
-end
-
-local function tabelaGuncelle(oyuncu)
-	local v = veriler[oyuncu]
-	if not v or not v.Tezgah then
-		return
-	end
-	local t = v.Tezgah
-	t.TabelaBaslik.Text = "🍔 " .. oyuncu.DisplayName
-	t.TabelaAlt.Text = string.format("%s paket • %s", Ekonomi.Kisalt(v.ToplamPaket), unvan(v).Ad)
 end
 
 local function skorGuncelle(oyuncu)
@@ -194,164 +232,23 @@ local function kafaYazisiGuncelle(oyuncu)
 	if not bb then
 		bb = Instance.new("BillboardGui")
 		bb.Name = "UnvanYazisi"
-		bb.Size = UDim2.new(6, 0, 1.1, 0)
-		bb.StudsOffset = Vector3.new(0, 2.4, 0)
-		bb.MaxDistance = 70
+		bb.Size = UDim2.new(5, 0, 0.9, 0)
+		bb.StudsOffset = Vector3.new(0, 2.2, 0)
+		bb.MaxDistance = 60
 		bb.LightInfluence = 0
 		local yazi = Instance.new("TextLabel")
 		yazi.Name = "Yazi"
 		yazi.BackgroundTransparency = 1
 		yazi.Size = UDim2.fromScale(1, 1)
-		yazi.Font = Enum.Font.FredokaOne
+		yazi.FontFace = Font.fromEnum(Enum.Font.FredokaOne)
 		yazi.TextScaled = true
 		yazi.TextStrokeTransparency = 0.2
 		yazi.Parent = bb
 		bb.Parent = kafa
 	end
 	local u = unvan(v)
-	bb.Yazi.Text = "👑 " .. u.Ad
+	bb.Yazi.Text = "👑 " .. u.Ad .. (v.Sube > 0 and ("  🏙️" .. v.Sube) or "")
 	bb.Yazi.TextColor3 = u.Renk
-end
-
-----------------------------------------------------------------------
--- Burger ve kağıt
-----------------------------------------------------------------------
-local KATLAMA = TweenInfo.new(0.17, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local PATLAMA = TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-local UCUS = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-local SARMA_SURESI = 0.17 -- son kanatlar katlanınca bu kadar sonra burger pakete dönüşür
-local BEKLEME = 0.2 -- paket tezgahta bu kadar durup kuleye uçar
-local KAGIT_PARCALARI = { "Orta", "Sol", "Sag", "On", "Arka" }
-
--- gecikme: önceki paket tezgahtan kalkana kadar yeni burger yukarıda bekler
-local function yeniBurger(oyuncu, gecikme)
-	local v = veriler[oyuncu]
-	if not v or not v.Tezgah then
-		return
-	end
-	local t = v.Tezgah
-	local liste, deger, altin = Ekonomi.BurgerTarifi(zar, v.Gelistirme)
-
-	local klasor = Instance.new("Folder")
-	klasor.Name = "Burger"
-	local parcalar = {}
-
-	-- Burger, kağıdın ortasında
-	local taban = t.KagitCFrame * CFrame.new(0, Dunya.KagitKalinligi(), 0)
-	local cf = taban
-	local katlar = { Config.AltEkmek }
-	for _, m in ipairs(liste) do
-		table.insert(katlar, m)
-	end
-	table.insert(katlar, Config.UstEkmek)
-	local yukseklik = 0
-	for _, m in ipairs(katlar) do
-		local yeni, k = Dunya.KatYap(m, cf, 1, rastgele)
-		for _, p in ipairs(yeni) do
-			table.insert(parcalar, p)
-		end
-		cf = cf * CFrame.new(0, k, 0)
-		yukseklik += k
-	end
-
-	local kagit = Dunya.KagitYap(t.KagitCFrame, altin, yukseklik)
-	for _, ad in ipairs(KAGIT_PARCALARI) do
-		table.insert(parcalar, kagit[ad])
-	end
-
-	-- Yukarıdan düşerek gelsin
-	local dusme = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, gecikme or 0)
-	for _, p in ipairs(parcalar) do
-		local hedef = p.CFrame
-		p.CFrame = hedef + Vector3.new(0, 6, 0)
-		p.Parent = klasor
-		TweenService:Create(p, dusme, { CFrame = hedef }):Play()
-	end
-	klasor.Parent = t.PaketKlasoru
-
-	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kagit = kagit, Klasor = klasor, Yukseklik = yukseklik }
-end
-
-local function modelParcalari(model)
-	local liste = {}
-	for _, p in ipairs(model:GetDescendants()) do
-		if p:IsA("BasePart") then
-			table.insert(liste, p)
-		end
-	end
-	return liste
-end
-
-local function kuleyiBosalt(t)
-	t.Yigin.Nesil += 1
-	for _, paket in pairs(t.Yigin.Paketler) do
-		for _, p in ipairs(modelParcalari(paket)) do
-			TweenService:Create(p, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				CFrame = p.CFrame + Vector3.new(0, 25, 0),
-			}):Play()
-		end
-		task.delay(0.62, function()
-			paket:Destroy()
-		end)
-	end
-	t.Yigin.Paketler = {}
-end
-
--- Kağıda sarılan burgeri pakete çevirir, kuleye uçurur, yeni burger getirir
-local function paketle(oyuncu)
-	local v = veriler[oyuncu]
-	local t = v.Tezgah
-	local b = v.Burger
-
-	-- Kuledeki yerini şimdiden ayır
-	local y = t.Yigin
-	if y.Sayac >= Config.YiginEnFazla then
-		kuleyiBosalt(t)
-		y.Sayac = 0
-	end
-	y.Sayac += 1
-	local sira = y.Sayac
-	local nesil = y.Nesil
-	local boy = Dunya.PaketBoyu()
-	local hedef = t.YiginCFrame
-		* CFrame.new(0, (sira - 1) * Dunya.YiginAdimi() + boy.Y / 2, 0)
-		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-25, 25)), 0)
-
-	local klasor = b.Klasor
-	local altin = b.Altin
-	local merkez = t.KagitCFrame * CFrame.new(0, boy.Y / 2, 0)
-	klasor.Parent = ucanKlasor
-
-	task.delay(SARMA_SURESI, function()
-		-- Kanatlar kapandı: kağıt + burger yerine sarılmış paket "pof" diye belirir
-		klasor:Destroy()
-		local paket = Dunya.PaketliBurger(merkez, altin)
-		local govde = paket.PrimaryPart
-		local tamBoy = govde.Size
-		govde.Size = tamBoy * 0.75
-		paket.Parent = ucanKlasor
-		TweenService:Create(govde, PATLAMA, { Size = tamBoy }):Play()
-
-		task.delay(BEKLEME, function()
-			if not paket.Parent then
-				return
-			end
-			for _, p in ipairs(modelParcalari(paket)) do
-				local goreli = merkez:ToObjectSpace(p.CFrame)
-				TweenService:Create(p, UCUS, { CFrame = hedef * goreli }):Play()
-			end
-			task.delay(UCUS.Time + 0.02, function()
-				if t.Yigin.Nesil ~= nesil or not paket.Parent then
-					paket:Destroy() -- bu arada kule boşaltıldı ya da oyuncu çıktı
-					return
-				end
-				paket.Parent = t.YiginKlasoru
-				t.Yigin.Paketler[sira] = paket
-			end)
-		end)
-	end)
-
-	yeniBurger(oyuncu, SARMA_SURESI + BEKLEME + 0.05)
 end
 
 local function unvanKontrol(oyuncu, eskiIndex)
@@ -363,10 +260,37 @@ local function unvanKontrol(oyuncu, eskiIndex)
 	end
 end
 
--- adet kadar katlama yapar (burger paketlenince durur)
-local function katla(oyuncu, adet, otomatik)
+local function dukkaniKur(oyuncu)
 	local v = veriler[oyuncu]
-	if not v or not v.Hazir or not v.Tezgah or not v.Burger then
+	if not v or not v.Arsa then
+		return
+	end
+	Dukkan.Kur(v.Arsa.Model, {
+		Stil = stilCoz(oyuncu, v),
+		Gelistirme = v.Gelistirme,
+		UserId = oyuncu.UserId,
+		SahipAdi = oyuncu.DisplayName,
+	})
+end
+
+local function evineIsinla(oyuncu)
+	local v = veriler[oyuncu]
+	local karakter = oyuncu.Character
+	if not v or not v.Arsa or not karakter then
+		return
+	end
+	local kok = karakter:WaitForChild("HumanoidRootPart", 5)
+	if kok then
+		karakter:PivotTo(Dukkan.OyuncuCFrame(v.Arsa.Model))
+	end
+end
+
+----------------------------------------------------------------------
+-- Katlama (KATLA butonu)
+----------------------------------------------------------------------
+local function katla(oyuncu, adet)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or not v.Arsa then
 		return
 	end
 	local b = v.Burger
@@ -381,74 +305,48 @@ local function katla(oyuncu, adet, otomatik)
 	if eklenen == 0 then
 		return
 	end
-
-	-- Kağıdın kanatlarını burgerin üstüne katla
-	local poz = Dunya.KagitPozu(v.Tezgah.KagitCFrame, b.Asama, b.Yukseklik)
-	for _, ad in ipairs(KAGIT_PARCALARI) do
-		local p = b.Kagit[ad]
-		if p.CFrame ~= poz[ad] then
-			TweenService:Create(p, KATLAMA, { CFrame = poz[ad] }):Play()
-		end
-	end
-
 	local paketlendi = b.Asama >= Config.KatlamaSayisi
 	local kazanc = 0
-	local altin = b.Altin
 	if paketlendi then
 		local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
-		kazanc = Ekonomi.PaketDegeri(b.Deger, v.Gelistirme)
+		kazanc = Ekonomi.PaketDegeri(b.Altin, v.Gelistirme, v.Sube)
 		v.Para += kazanc
 		v.ToplamPaket += 1
-		paketle(oyuncu)
-		tabelaGuncelle(oyuncu)
+		yeniBurger(v)
 		skorGuncelle(oyuncu)
 		unvanKontrol(oyuncu, eskiUnvan)
 	end
-
-	KatlandiOlay:FireAllClients(oyuncu, v.Tezgah.Index, eklenen, paketlendi, kazanc, altin, otomatik)
+	KatlandiOlay:FireAllClients(oyuncu, v.Arsa.Index, b.Asama, paketlendi, kazanc, b.Altin, v.Burger.Altin)
 	durumGonder(oyuncu)
 end
 
 ----------------------------------------------------------------------
--- Tezgah dağıtımı
+-- Arsa dağıtımı
 ----------------------------------------------------------------------
-local function bosTezgahAl(oyuncu)
-	for _, t in ipairs(tezgahlar) do
-		if t.Sahip == nil then
-			t.Sahip = oyuncu
-			return t
+local function bosArsaAl(oyuncu)
+	for i = 1, Config.ArsaSayisi do
+		local a = arsalar[i]
+		if a and a.Sahip == nil then
+			a.Sahip = oyuncu
+			return a
 		end
 	end
 	return nil
 end
 
-local function tezgahiBirak(t)
-	t.Sahip = nil
-	t.PaketKlasoru:ClearAllChildren()
-	t.YiginKlasoru:ClearAllChildren()
-	t.Yigin = { Paketler = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
-	t.TabelaBaslik.Text = "🍔 Boş Tezgah"
-	t.TabelaAlt.Text = "Gel burger katla!"
-end
-
-local function tezgahaIsinla(oyuncu)
-	local v = veriler[oyuncu]
-	local karakter = oyuncu.Character
-	if not v or not v.Tezgah or not karakter then
-		return
-	end
-	local kok = karakter:WaitForChild("HumanoidRootPart", 5)
-	if kok then
-		task.wait(0.1)
-		karakter:PivotTo(v.Tezgah.OyuncuCFrame)
-	end
+local function arsayiBirak(a)
+	a.Sahip = nil
+	Dukkan.Kur(a.Model, nil)
 end
 
 ----------------------------------------------------------------------
 -- Oyuncu girişi / çıkışı
 ----------------------------------------------------------------------
 local function karakterGeldi(oyuncu, karakter)
-	task.spawn(tezgahaIsinla, oyuncu)
+	task.spawn(function()
+		task.wait(0.1)
+		evineIsinla(oyuncu)
+	end)
 	karakter:WaitForChild("Head", 5)
 	kafaYazisiGuncelle(oyuncu)
 end
@@ -462,15 +360,17 @@ local function oyuncuGeldi(oyuncu)
 		KayitAcik = false,
 		Para = 0,
 		ToplamPaket = 0,
+		Sube = 0,
 		Gelistirme = Ekonomi.BosGelistirmeler(),
-		Burger = nil,
+		Stil = nil,
+		Burger = { Asama = 0, Altin = false },
 		Jeton = 4,
 		SonJeton = os.clock(),
-		OtoBirikim = 0,
+		MakineBirikim = {},
+		Son = {},
 	}
 	veriler[oyuncu] = v
 
-	-- Skor tablosu (sağ üstteki liste)
 	local skorlar = Instance.new("Folder")
 	skorlar.Name = "leaderstats"
 	local paketDeger = Instance.new("IntValue")
@@ -486,7 +386,7 @@ local function oyuncuGeldi(oyuncu)
 	skorlar.Parent = oyuncu
 	v.Skor = { Paket = paketDeger, Para = paraDeger, Unvan = unvanDeger }
 
-	v.Tezgah = bosTezgahAl(oyuncu)
+	v.Arsa = bosArsaAl(oyuncu)
 
 	oyuncu.CharacterAdded:Connect(function(karakter)
 		karakterGeldi(oyuncu, karakter)
@@ -502,15 +402,20 @@ local function oyuncuGeldi(oyuncu)
 	local hazir = veriHazirla(ham)
 	v.Para = hazir.Para
 	v.ToplamPaket = hazir.ToplamPaket
+	v.Sube = hazir.Sube
 	v.Gelistirme = hazir.Gelistirme
+	v.Stil = hazir.Stil
 	v.KayitAcik = basarili
+	yeniBurger(v)
 	v.Hazir = true
 
-	yeniBurger(oyuncu)
-	tabelaGuncelle(oyuncu)
+	dukkaniKur(oyuncu)
 	skorGuncelle(oyuncu)
 	kafaYazisiGuncelle(oyuncu)
 	durumGonder(oyuncu)
+	if not v.Arsa then
+		DuyuruOlay:FireClient(oyuncu, "Bütün arsalar dolu! Biri çıkınca dükkanın açılacak.")
+	end
 end
 
 local function oyuncuGitti(oyuncu)
@@ -521,25 +426,24 @@ local function oyuncuGitti(oyuncu)
 	if v.Hazir then
 		kaydet(oyuncu)
 	end
-	if v.Tezgah then
-		tezgahiBirak(v.Tezgah)
+	if v.Arsa then
+		arsayiBirak(v.Arsa)
 	end
 	veriler[oyuncu] = nil
 
-	-- Tezgahsız bekleyen biri varsa ona ver
+	-- Arsası olmayan bekleyen biri varsa ona ver
 	for bekleyen, bv in pairs(veriler) do
-		if bv.Tezgah == nil then
-			local t = bosTezgahAl(bekleyen)
-			if not t then
+		if bv.Arsa == nil then
+			local a = bosArsaAl(bekleyen)
+			if not a then
 				break
 			end
-			bv.Tezgah = t
+			bv.Arsa = a
 			if bv.Hazir then
-				yeniBurger(bekleyen)
-				tabelaGuncelle(bekleyen)
+				dukkaniKur(bekleyen)
 				durumGonder(bekleyen)
 			end
-			task.spawn(tezgahaIsinla, bekleyen)
+			task.spawn(evineIsinla, bekleyen)
 		end
 	end
 end
@@ -553,13 +457,12 @@ end
 ----------------------------------------------------------------------
 -- Oyuncu istekleri
 ----------------------------------------------------------------------
--- Hile koruması: saniyede en fazla (1 / KatlamaBeklemesi) tıklama, küçük patlamalara izin var
+-- saniyede en fazla (1 / KatlamaBeklemesi) tıklama, küçük patlamalara izin var
 local JETON_KAPASITE = 4
 local function jetonHarca(v)
 	local simdi = os.clock()
-	local dolum = (simdi - v.SonJeton) / Config.KatlamaBeklemesi
+	v.Jeton = math.min(JETON_KAPASITE, v.Jeton + (simdi - v.SonJeton) / Config.KatlamaBeklemesi)
 	v.SonJeton = simdi
-	v.Jeton = math.min(JETON_KAPASITE, v.Jeton + dolum)
 	if v.Jeton < 1 then
 		return false
 	end
@@ -567,21 +470,43 @@ local function jetonHarca(v)
 	return true
 end
 
+-- Aynı isteği çok sık yapmasın
+local function cokSik(v, ad, sure)
+	local simdi = os.clock()
+	if v.Son[ad] and simdi - v.Son[ad] < sure then
+		return true
+	end
+	v.Son[ad] = simdi
+	return false
+end
+
 KatlaOlay.OnServerEvent:Connect(function(oyuncu)
 	local v = veriler[oyuncu]
-	if not v or not v.Hazir or not v.Tezgah then
+	if not v or not v.Hazir or not v.Arsa then
 		return
 	end
 	if not jetonHarca(v) then
 		durumGonder(oyuncu) -- ekran fazladan saydıysa düzelsin
 		return
 	end
-	katla(oyuncu, Ekonomi.TikBasinaKatlama(v.Gelistirme), false)
+	katla(oyuncu, Ekonomi.TikBasinaKatlama(v.Gelistirme))
 end)
 
 DurumIsteOlay.OnServerEvent:Connect(function(oyuncu)
-	durumGonder(oyuncu)
+	local v = veriler[oyuncu]
+	if v and not cokSik(v, "Durum", 0.5) then
+		durumGonder(oyuncu)
+	end
 end)
+
+EvimeGitOlay.OnServerEvent:Connect(function(oyuncu)
+	local v = veriler[oyuncu]
+	if v and not cokSik(v, "Ev", 1) then
+		evineIsinla(oyuncu)
+	end
+end)
+
+local BINA_PARCASI = { Makine = true, Duvar = true, Cati = true, Oturma = true, Dekor = true, DevTabela = true }
 
 SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
 	local v = veriler[oyuncu]
@@ -589,7 +514,7 @@ SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
 		return
 	end
 	local g = Ekonomi.GelistirmeBul(anahtar)
-	if not g then
+	if not g or not Ekonomi.KilidiAcik(v.Gelistirme, anahtar) then
 		return
 	end
 	local seviye = v.Gelistirme[anahtar] or 0
@@ -600,24 +525,130 @@ SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
 	end
 	v.Para -= fiyat
 	v.Gelistirme[anahtar] = seviye + 1
+	if BINA_PARCASI[anahtar] then
+		dukkaniKur(oyuncu)
+	end
 	skorGuncelle(oyuncu)
 	durumGonder(oyuncu)
 end)
 
+SubeAcOlay.OnServerEvent:Connect(function(oyuncu)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or cokSik(v, "Sube", 2) then
+		return
+	end
+	local fiyat = Ekonomi.SubeFiyati(v.Sube)
+	if v.Para < fiyat then
+		durumGonder(oyuncu)
+		return
+	end
+	v.Sube += 1
+	v.Para = 0
+	v.Gelistirme = Ekonomi.BosGelistirmeler()
+	v.MakineBirikim = {}
+	yeniBurger(v)
+	dukkaniKur(oyuncu)
+	skorGuncelle(oyuncu)
+	kafaYazisiGuncelle(oyuncu)
+	durumGonder(oyuncu)
+	DuyuruOlay:FireAllClients(string.format("🏙️ %s %d. şubesini açtı!", oyuncu.DisplayName, v.Sube + 1))
+	task.spawn(kaydet, oyuncu)
+end)
+
+local function adiFiltrele(oyuncu, ad)
+	local ok, sonuc = pcall(function()
+		local filtre = TextService:FilterStringAsync(ad, oyuncu.UserId)
+		return filtre:GetNonChatStringForBroadcastAsync()
+	end)
+	if ok and type(sonuc) == "string" then
+		return sonuc
+	end
+	return nil
+end
+
+StilSecOlay.OnServerEvent:Connect(function(oyuncu, istek)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or type(istek) ~= "table" or cokSik(v, "Stil", 1.5) then
+		return
+	end
+	local logo, renk, ad = istek.Logo, istek.Renk, istek.Ad
+	if type(logo) ~= "number" or type(renk) ~= "number" or type(ad) ~= "string" then
+		return
+	end
+	logo = math.floor(logo)
+	renk = math.floor(renk)
+	if logo < 1 or logo > #Config.Logolar or renk < 1 or renk > #Config.Renkler then
+		return
+	end
+	-- kontrol karakterlerini ve baştaki/sondaki boşlukları temizle
+	ad = string.gsub(ad, "%c", "")
+	ad = string.match(ad, "^%s*(.-)%s*$") or ""
+	local uzunluk = utf8.len(ad)
+	if uzunluk == nil or uzunluk > Config.AdEnUzun then
+		DuyuruOlay:FireClient(oyuncu, "Dükkan adı en fazla " .. Config.AdEnUzun .. " harf olabilir.")
+		return
+	end
+	if uzunluk == 0 then
+		ad = varsayilanAd(oyuncu)
+	end
+	local temiz = adiFiltrele(oyuncu, ad)
+	if not temiz then
+		temiz = varsayilanAd(oyuncu)
+		DuyuruOlay:FireClient(oyuncu, "İsim kontrol edilemedi, şimdilik \"" .. temiz .. "\" yazdık.")
+	elseif temiz ~= ad then
+		DuyuruOlay:FireClient(oyuncu, "Bu isim Roblox kurallarına uymuyor, bazı harfler gizlendi.")
+	end
+	v.Stil = { Logo = logo, Renk = renk, Ad = temiz }
+	dukkaniKur(oyuncu)
+	durumGonder(oyuncu)
+	task.spawn(kaydet, oyuncu)
+end)
+
 ----------------------------------------------------------------------
--- Çırak Aşçı (otomatik katlama)
+-- Paketleme makineleri (otomasyon)
 ----------------------------------------------------------------------
-RunService.Heartbeat:Connect(function(dt)
-	for oyuncu, v in pairs(veriler) do
-		if v.Hazir and v.Tezgah and v.Burger then
-			local aralik = Ekonomi.OtoAralik(v.Gelistirme)
-			if aralik then
-				v.OtoBirikim += dt
-				if v.OtoBirikim >= aralik then
-					v.OtoBirikim -= aralik
-					katla(oyuncu, 1, true)
+local URETIM_ARALIGI = 0.25
+local EN_FAZLA_GORUNTU = 80 -- bir turda ekranlara en fazla kaç kutu gönderilsin
+
+task.spawn(function()
+	local son = os.clock()
+	while true do
+		task.wait(URETIM_ARALIGI)
+		local simdi = os.clock()
+		local dt = math.min(simdi - son, 2)
+		son = simdi
+		local liste = {}
+		for oyuncu, v in pairs(veriler) do
+			local adet = math.min(v.Gelistirme.Makine or 0, #Config.Yerlesim.MakineX)
+			if v.Hazir and v.Arsa and adet > 0 then
+				local sure = Ekonomi.MakineSuresi(v.Gelistirme)
+				local sans = Ekonomi.AltinSansi(v.Gelistirme)
+				local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
+				local uretti = false
+				for m = 1, adet do
+					-- makineler aynı anda değil, sırayla çalışsın
+					local birikim = (v.MakineBirikim[m] or (m - 1) / adet * sure) + dt
+					while birikim >= sure do
+						birikim -= sure
+						local altin = rastgele:NextNumber() < sans
+						v.Para += Ekonomi.PaketDegeri(altin, v.Gelistirme, v.Sube)
+						v.ToplamPaket += 1
+						uretti = true
+						if #liste < EN_FAZLA_GORUNTU then
+							table.insert(liste, { v.Arsa.Index, m, altin })
+						end
+					end
+					v.MakineBirikim[m] = birikim
+				end
+				if uretti then
+					skorGuncelle(oyuncu)
+					unvanKontrol(oyuncu, eskiUnvan)
+					durumGonder(oyuncu)
 				end
 			end
+		end
+		if #liste > 0 then
+			UretimOlay:FireAllClients(liste)
 		end
 	end
 end)
@@ -651,4 +682,4 @@ game:BindToClose(function()
 	end
 end)
 
-print("[Burger İmparatoru] Sunucu hazır! Tezgah sayısı: " .. #tezgahlar)
+print("[Burger İmparatoru] Sunucu hazır! Arsa sayısı: " .. #arsalar)

@@ -1,18 +1,18 @@
 -- BURGER İMPARATORU - Ekonomi hesapları
--- Hem sunucu hem oyuncu (client) aynı hesapları buradan yapar, böylece ekrandaki fiyatlar
+-- Hem sunucu hem oyuncu ekranı aynı hesapları buradan yapar, böylece ekrandaki fiyatlar
 -- ile sunucunun kabul ettiği fiyatlar hep aynı olur.
 
 local Config = require(script.Parent.Config)
 
 local Ekonomi = {}
 
-local gelistirmeTablosu = {}
+local tablo = {}
 for _, g in ipairs(Config.Gelistirmeler) do
-	gelistirmeTablosu[g.Anahtar] = g
+	tablo[g.Anahtar] = g
 end
 
 function Ekonomi.GelistirmeBul(anahtar)
-	return gelistirmeTablosu[anahtar]
+	return tablo[anahtar]
 end
 
 function Ekonomi.BosGelistirmeler()
@@ -27,79 +27,101 @@ function Ekonomi.Seviye(gelistirmeler, anahtar)
 	return (gelistirmeler and gelistirmeler[anahtar]) or 0
 end
 
--- Bu seviyedeki bir geliştirmeyi almak kaç para? (MAX ise nil)
+-- Bu geliştirmenin kilidi açık mı? (Gerekli olan alınmış mı)
+function Ekonomi.KilidiAcik(gelistirmeler, anahtar)
+	local g = tablo[anahtar]
+	if not g then
+		return false
+	end
+	return g.Gerekli == nil or Ekonomi.Seviye(gelistirmeler, g.Gerekli) > 0
+end
+
+-- Bir sonraki seviyenin fiyatı (MAX ise nil)
 function Ekonomi.Fiyat(anahtar, mevcutSeviye)
-	local g = gelistirmeTablosu[anahtar]
+	local g = tablo[anahtar]
 	if not g or mevcutSeviye >= g.MaxSeviye then
 		return nil
 	end
 	return math.floor(g.TabanFiyat * g.Carpan ^ mevcutSeviye)
 end
 
--- Bir tıklama kaç katlama yapar? (en fazla bir burgeri bitirecek kadar)
 function Ekonomi.TikBasinaKatlama(gelistirmeler)
 	return math.min(Config.KatlamaSayisi, 1 + Ekonomi.Seviye(gelistirmeler, "HizliEller"))
 end
 
-function Ekonomi.LezzetCarpani(gelistirmeler)
-	return 1 + Ekonomi.Seviye(gelistirmeler, "Lezzet")
+function Ekonomi.TarifCarpani(gelistirmeler)
+	return 1 + 0.5 * Ekonomi.Seviye(gelistirmeler, "Tarif")
+end
+
+-- Dükkanın ünü: alınan bina geliştirmelerinin toplamı
+function Ekonomi.UnCarpani(gelistirmeler)
+	local un = 1
+	for _, g in ipairs(Config.Gelistirmeler) do
+		if g.Un and Ekonomi.Seviye(gelistirmeler, g.Anahtar) > 0 then
+			un += g.Un
+		end
+	end
+	return un
+end
+
+function Ekonomi.SubeCarpani(sube)
+	return 1 + (sube or 0) * Config.SubeBonusu
 end
 
 function Ekonomi.AltinSansi(gelistirmeler)
 	return Config.AltinTabanSansi + Ekonomi.Seviye(gelistirmeler, "AltinSans") * Config.AltinSansArtisi
 end
 
--- Çırak Aşçı kaç saniyede bir katlar? (hiç alınmadıysa nil)
-function Ekonomi.OtoAralik(gelistirmeler)
-	local sv = Ekonomi.Seviye(gelistirmeler, "OtoAsci")
-	if sv <= 0 then
-		return nil
-	end
-	return Config.OtoAsciIlkAralik * Config.OtoAsciHizlanma ^ (sv - 1)
+-- Bir paketin parası
+function Ekonomi.PaketDegeri(altin, gelistirmeler, sube)
+	local d = Config.PaketTabanDegeri
+		* (altin and Config.AltinCarpani or 1)
+		* Ekonomi.TarifCarpani(gelistirmeler)
+		* Ekonomi.UnCarpani(gelistirmeler)
+		* Ekonomi.SubeCarpani(sube)
+	return math.floor(d)
 end
 
--- Geliştirmenin şu anki etkisini oyuncuya yazı olarak anlatır.
+-- Bir makine kaç saniyede bir paket yapar
+function Ekonomi.MakineSuresi(gelistirmeler)
+	local s = Config.MakineIlkSure * Config.MakineHizlanma ^ Ekonomi.Seviye(gelistirmeler, "MakineHizi")
+	return math.max(Config.MakineEnKisaSure, s)
+end
+
+-- Makinelerin saniyede getirdiği ortalama para
+function Ekonomi.MakineGeliri(gelistirmeler, sube)
+	local adet = Ekonomi.Seviye(gelistirmeler, "Makine")
+	if adet <= 0 then
+		return 0
+	end
+	local sans = Ekonomi.AltinSansi(gelistirmeler)
+	local ortalama = (1 - sans) * Ekonomi.PaketDegeri(false, gelistirmeler, sube)
+		+ sans * Ekonomi.PaketDegeri(true, gelistirmeler, sube)
+	return adet / Ekonomi.MakineSuresi(gelistirmeler) * ortalama
+end
+
+function Ekonomi.SubeFiyati(sube)
+	return math.floor(Config.SubeTabanFiyat * Config.SubeCarpan ^ (sube or 0))
+end
+
+-- Geliştirmenin şu anki etkisini yazıyla anlatır
 function Ekonomi.EtkiYazisi(anahtar, seviye)
+	local g = tablo[anahtar]
 	if anahtar == "HizliEller" then
 		return string.format("Tık başına %d katlama", math.min(Config.KatlamaSayisi, 1 + seviye))
-	elseif anahtar == "Lezzet" then
-		return string.format("Paket değeri x%d", 1 + seviye)
-	elseif anahtar == "OtoAsci" then
-		if seviye <= 0 then
-			return "Henüz yok"
-		end
-		return string.format("%.1f saniyede 1 katlama", Config.OtoAsciIlkAralik * Config.OtoAsciHizlanma ^ (seviye - 1))
+	elseif anahtar == "Tarif" then
+		return string.format("Paket parası x%.1f", 1 + 0.5 * seviye)
 	elseif anahtar == "AltinSans" then
-		return string.format("Altın burger ihtimali %%%d", math.floor((Config.AltinTabanSansi + seviye * Config.AltinSansArtisi) * 100 + 0.5))
+		return string.format("Altın burger %%%d", math.floor((Config.AltinTabanSansi + seviye * Config.AltinSansArtisi) * 100 + 0.5))
+	elseif anahtar == "Makine" then
+		return string.format("%d / %d makine", seviye, g.MaxSeviye)
+	elseif anahtar == "MakineHizi" then
+		local s = math.max(Config.MakineEnKisaSure, Config.MakineIlkSure * Config.MakineHizlanma ^ seviye)
+		return string.format("%.1f sn'de 1 paket", s)
+	elseif g and g.Un then
+		return seviye > 0 and "Alındı ✓" or string.format("Ün +%%%d", math.floor(g.Un * 100 + 0.5))
 	end
 	return ""
-end
-
---[[
-	Yeni bir burgerin içinde ne olacağına karar verir.
-	rastgele: 0 ile 1 arası sayı veren fonksiyon
-	Döndürür: malzeme listesi (alttan üste, ekmekler hariç), taban değer, altın mı
-]]
-function Ekonomi.BurgerTarifi(rastgele, gelistirmeler)
-	local altin = rastgele() < Ekonomi.AltinSansi(gelistirmeler)
-	local liste = {}
-	local deger = Config.PaketTabanDegeri
-	for i, adim in ipairs(Config.Tarif) do
-		if rastgele() < adim.Sans then
-			local m = Config.Malzemeler[adim.Malzeme]
-			if i == 1 and altin then
-				m = Config.Malzemeler.AltinKofte
-			end
-			table.insert(liste, m)
-			deger += m.Deger
-		end
-	end
-	return liste, deger, altin
-end
-
--- Paketlenince kazanılacak para
-function Ekonomi.PaketDegeri(tabanDeger, gelistirmeler)
-	return math.floor(tabanDeger * Ekonomi.LezzetCarpani(gelistirmeler))
 end
 
 function Ekonomi.UnvanIndex(toplamPaket)

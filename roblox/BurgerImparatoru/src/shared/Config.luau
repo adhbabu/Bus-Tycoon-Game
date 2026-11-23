@@ -13,120 +13,113 @@ local Config = {}
 ----------------------------------------------------------------------
 Config.HussSesId = ""
 Config.HussSesSeviyesi = 0.9 -- kendi katlaman (0 ile 1 arası)
-Config.BaskasininSesSeviyesi = 0.35 -- başka oyuncuların katlaması (yakındaysan duyarsın)
+Config.MakineSesSeviyesi = 0.22 -- kendi makinelerin
+Config.BaskasininSesSeviyesi = 0.3 -- başka oyuncuların dükkanı (yakındaysan duyarsın)
 -- Seste her "huss" kaçıncı saniyede başlıyor? Ekrandaki HUSS! yazıları bu anlarda fırlar.
 Config.HussZamanlari = { 0.04, 0.24, 0.44 }
 
 ----------------------------------------------------------------------
 -- KATLAMA VE PAKETLEME
--- Her burger açık bir burger kağıdının ortasında gelir. Her katlamada kağıdın bir kanadı
--- burgerin üstüne katlanır: 1) sol, 2) sağ, 3) ön ve arka -> burger kağıda sarılır, paketlenir.
+-- İmparator Burger açık bir karton kutuda gelir. Her katlamada kutu biraz daha kapanır:
+-- 1) tepsinin kenarları kalkar, 2) kapağın kenarları kalkar, 3) kapak kapanır = PAKET!
 ----------------------------------------------------------------------
-Config.KatlamaSayisi = 3 -- bir burger kaç katlamada paketlenir
+Config.KatlamaSayisi = 3
 Config.KatlamaBeklemesi = 0.08 -- iki tıklama arası en az kaç saniye (hile koruması)
-Config.PaketTabanDegeri = 4 -- her paket en az bu kadar para eder (+ içindeki malzemeler)
-
--- Malzemeler: Deger = paketin değerine eklediği para.
--- Sekil: "disk" (yuvarlak), "kare" (peynir gibi), "dalga" (marul gibi)
-Config.Malzemeler = {
-	Kofte = { Ad = "Köfte", Deger = 3, Renk = Color3.fromRGB(110, 62, 38), Kalinlik = 0.55, Cap = 4.3, Sekil = "disk", Malzeme = "Slate" },
-	Peynir = { Ad = "Peynir", Deger = 2, Renk = Color3.fromRGB(255, 196, 40), Kalinlik = 0.16, Cap = 4.7, Sekil = "kare", Malzeme = "SmoothPlastic" },
-	Marul = { Ad = "Marul", Deger = 1, Renk = Color3.fromRGB(110, 200, 70), Kalinlik = 0.22, Cap = 4.9, Sekil = "dalga", Malzeme = "Grass" },
-	Domates = { Ad = "Domates", Deger = 1, Renk = Color3.fromRGB(225, 45, 40), Kalinlik = 0.26, Cap = 3.9, Sekil = "disk", Malzeme = "SmoothPlastic" },
-	Sogan = { Ad = "Soğan", Deger = 1, Renk = Color3.fromRGB(235, 215, 235), Kalinlik = 0.14, Cap = 3.7, Sekil = "disk", Malzeme = "SmoothPlastic" },
-	Tursu = { Ad = "Turşu", Deger = 2, Renk = Color3.fromRGB(120, 140, 40), Kalinlik = 0.12, Cap = 3.4, Sekil = "disk", Malzeme = "SmoothPlastic" },
-	AltinKofte = { Ad = "ALTIN KÖFTE", Deger = 30, Renk = Color3.fromRGB(255, 205, 50), Kalinlik = 0.6, Cap = 4.4, Sekil = "disk", Malzeme = "Foil", Altin = true },
-}
-
--- Burger tarifi, alttan üste. Sans = o malzemenin burgerde olma ihtimali (1 = hep var).
--- İlk köfte bazen ALTIN KÖFTE olur (bkz. AltinTabanSansi).
-Config.Tarif = {
-	{ Malzeme = "Kofte", Sans = 1 },
-	{ Malzeme = "Peynir", Sans = 0.75 },
-	{ Malzeme = "Kofte", Sans = 0.2 },
-	{ Malzeme = "Marul", Sans = 0.6 },
-	{ Malzeme = "Domates", Sans = 0.5 },
-	{ Malzeme = "Sogan", Sans = 0.3 },
-	{ Malzeme = "Tursu", Sans = 0.3 },
-}
-
+Config.PaketTabanDegeri = 5 -- bir İmparator Burger paketi kaç para eder (geliştirmeler bunu çarpar)
+Config.AltinCarpani = 8 -- ALTIN BURGER normalin kaç katı para eder
 Config.AltinTabanSansi = 0.03 -- %3 ihtimalle ALTIN BURGER
 Config.AltinSansArtisi = 0.02 -- "Altın Şans" geliştirmesinin her seviyesi +%2
 
-Config.AltEkmek = { Ad = "Alt Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 0.7, Cap = 4.5 }
-Config.UstEkmek = { Ad = "Üst Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 1.8, Cap = 4.6 }
-
--- Burger kağıdı
-Config.KagitRengi = Color3.fromRGB(250, 242, 226)
-Config.KagitBaskiRengi = Color3.fromRGB(215, 45, 45) -- kağıdın üstündeki kırmızı baskı
-Config.AltinKagitRengi = Color3.fromRGB(255, 205, 60) -- ALTIN BURGER altın kağıda sarılır
-Config.YiginEnFazla = 6 -- tezgahın yanındaki paket kulesi en fazla kaç paket olur
+----------------------------------------------------------------------
+-- DÜKKAN STİLİ (oyunun başında herkes seçer)
+----------------------------------------------------------------------
+Config.Logolar = { "🍔", "👑", "🔥", "⭐", "🐉", "🦁", "🚀", "💎", "🌶️", "🍟", "🐔", "🎩" }
+Config.Renkler = {
+	{ Ad = "Kırmızı", Renk = Color3.fromRGB(220, 55, 50) },
+	{ Ad = "Turuncu", Renk = Color3.fromRGB(245, 140, 40) },
+	{ Ad = "Sarı", Renk = Color3.fromRGB(245, 200, 45) },
+	{ Ad = "Yeşil", Renk = Color3.fromRGB(75, 185, 90) },
+	{ Ad = "Turkuaz", Renk = Color3.fromRGB(40, 185, 190) },
+	{ Ad = "Mavi", Renk = Color3.fromRGB(60, 120, 230) },
+	{ Ad = "Mor", Renk = Color3.fromRGB(150, 90, 220) },
+	{ Ad = "Pembe", Renk = Color3.fromRGB(240, 110, 170) },
+	{ Ad = "Siyah", Renk = Color3.fromRGB(50, 50, 58) },
+	{ Ad = "Beyaz", Renk = Color3.fromRGB(235, 235, 235) },
+}
+Config.AdEnUzun = 20 -- dükkan adı en fazla kaç harf
 
 ----------------------------------------------------------------------
--- GELİŞTİRMELER (Dükkan)
+-- GELİŞTİRMELER (Dükkan menüsü)
 -- Fiyat = TabanFiyat * Carpan ^ seviye
+-- Un = dükkanın ünü: her paketin parasını bu oranda artırır (0.15 = +%15)
+-- Gerekli = bunu almadan önce alınması gereken geliştirme
 ----------------------------------------------------------------------
-Config.Gelistirmeler = {
-	{
-		Anahtar = "HizliEller",
-		Ad = "Hızlı Eller",
-		Ikon = "✋",
-		Aciklama = "Her tıkta daha çok katlama",
-		TabanFiyat = 75,
-		Carpan = 4,
-		MaxSeviye = 2,
-	},
-	{
-		Anahtar = "Lezzet",
-		Ad = "Lezzet Ustası",
-		Ikon = "🧂",
-		Aciklama = "Her paket daha çok para eder",
-		TabanFiyat = 40,
-		Carpan = 1.9,
-		MaxSeviye = 25,
-	},
-	{
-		Anahtar = "OtoAsci",
-		Ad = "Çırak Aşçı",
-		Ikon = "👨‍🍳",
-		Aciklama = "Sen dururken o katlar",
-		TabanFiyat = 120,
-		Carpan = 2.3,
-		MaxSeviye = 10,
-	},
-	{
-		Anahtar = "AltinSans",
-		Ad = "Altın Şans",
-		Ikon = "✨",
-		Aciklama = "ALTIN BURGER daha sık çıkar",
-		TabanFiyat = 100,
-		Carpan = 2.2,
-		MaxSeviye = 10,
-	},
+Config.Kategoriler = {
+	{ Anahtar = "Mutfak", Ad = "Mutfak", Ikon = "🍳" },
+	{ Anahtar = "Otomasyon", Ad = "Makineler", Ikon = "⚙️" },
+	{ Anahtar = "Dukkan", Ad = "Dükkan", Ikon = "🏪" },
+	{ Anahtar = "Sube", Ad = "Yeni Şube", Ikon = "🏙️" },
 }
 
-Config.OtoAsciIlkAralik = 3.0 -- Çırak Aşçı 1. seviyede kaç saniyede bir katlar
-Config.OtoAsciHizlanma = 0.78 -- her seviyede aralık bu sayıyla çarpılır
+Config.Gelistirmeler = {
+	-- Mutfak
+	{ Anahtar = "HizliEller", Kategori = "Mutfak", Ad = "Hızlı Eller", Ikon = "✋", Aciklama = "Her tıkta 2 katlama", TabanFiyat = 250, Carpan = 1, MaxSeviye = 1 },
+	{ Anahtar = "Tarif", Kategori = "Mutfak", Ad = "Gizli Sos", Ikon = "🧂", Aciklama = "Her paket daha çok para eder", TabanFiyat = 100, Carpan = 1.6, MaxSeviye = 40 },
+	{ Anahtar = "AltinSans", Kategori = "Mutfak", Ad = "Altın Şans", Ikon = "✨", Aciklama = "ALTIN BURGER daha sık çıkar", TabanFiyat = 250, Carpan = 1.9, MaxSeviye = 10 },
+	-- Otomasyon
+	{ Anahtar = "Makine", Kategori = "Otomasyon", Ad = "Paketleme Makinesi", Ikon = "🤖", Aciklama = "Sen dururken burger paketler", TabanFiyat = 1000, Carpan = 3, MaxSeviye = 6 },
+	{ Anahtar = "MakineHizi", Kategori = "Otomasyon", Ad = "Makine Hızı", Ikon = "⚡", Aciklama = "Bütün makineler daha hızlı", TabanFiyat = 1500, Carpan = 2.1, MaxSeviye = 12, Gerekli = "Makine" },
+	-- Dükkan (binan büyür, ün kazanırsın)
+	{ Anahtar = "Duvar", Kategori = "Dukkan", Ad = "Duvarlar ve Camlar", Ikon = "🧱", Aciklama = "Gerçek bir dükkan! Ün +%15", TabanFiyat = 8000, Carpan = 1, MaxSeviye = 1, Un = 0.15 },
+	{ Anahtar = "Cati", Kategori = "Dukkan", Ad = "Çatı ve Neon Tabela", Ikon = "💡", Aciklama = "Logon gece gündüz parlar. Ün +%20", TabanFiyat = 40000, Carpan = 1, MaxSeviye = 1, Un = 0.2, Gerekli = "Duvar" },
+	{ Anahtar = "Oturma", Kategori = "Dukkan", Ad = "Oturma Alanı", Ikon = "🪑", Aciklama = "Şemsiyeli masalar. Ün +%20", TabanFiyat = 150000, Carpan = 1, MaxSeviye = 1, Un = 0.2, Gerekli = "Cati" },
+	{ Anahtar = "Dekor", Kategori = "Dukkan", Ad = "Çiçek ve Işıklar", Ikon = "🌸", Aciklama = "Saksılar, ışık zinciri. Ün +%25", TabanFiyat = 300000, Carpan = 1, MaxSeviye = 1, Un = 0.25, Gerekli = "Oturma" },
+	{ Anahtar = "DevTabela", Kategori = "Dukkan", Ad = "Çatıda Dev Burger", Ikon = "🍔", Aciklama = "Herkes dükkanını uzaktan görür. Ün +%50", TabanFiyat = 900000, Carpan = 1, MaxSeviye = 1, Un = 0.5, Gerekli = "Dekor" },
+}
+
+Config.MakineIlkSure = 6 -- 1 makine kaç saniyede 1 paket yapar (hız almadan)
+Config.MakineHizlanma = 0.85 -- her "Makine Hızı" seviyesinde süre bu sayıyla çarpılır
+Config.MakineEnKisaSure = 0.8
+
+-- Yeni Şube: her şeyi sıfırlar (stilin ve paket sayın kalır), kalıcı para çarpanı verir
+Config.SubeTabanFiyat = 2500000
+Config.SubeCarpan = 4 -- her yeni şube öncekinin 4 katı pahalı
+Config.SubeBonusu = 0.5 -- her şube paralara +%50
 
 ----------------------------------------------------------------------
 -- UNVANLAR (toplam paketlenen burgere göre)
 ----------------------------------------------------------------------
 Config.Unvanlar = {
 	{ Esik = 0, Ad = "Çırak", Renk = Color3.fromRGB(200, 200, 200) },
-	{ Esik = 20, Ad = "Aşçı", Renk = Color3.fromRGB(120, 220, 120) },
-	{ Esik = 100, Ad = "Şef", Renk = Color3.fromRGB(90, 170, 255) },
-	{ Esik = 400, Ad = "Usta Şef", Renk = Color3.fromRGB(190, 110, 255) },
-	{ Esik = 1500, Ad = "Burger Lordu", Renk = Color3.fromRGB(255, 140, 50) },
-	{ Esik = 5000, Ad = "Burger Sultanı", Renk = Color3.fromRGB(255, 70, 90) },
-	{ Esik = 20000, Ad = "BURGER İMPARATORU", Renk = Color3.fromRGB(255, 215, 0) },
+	{ Esik = 50, Ad = "Aşçı", Renk = Color3.fromRGB(120, 220, 120) },
+	{ Esik = 300, Ad = "Şef", Renk = Color3.fromRGB(90, 170, 255) },
+	{ Esik = 1500, Ad = "Usta Şef", Renk = Color3.fromRGB(190, 110, 255) },
+	{ Esik = 7500, Ad = "Burger Lordu", Renk = Color3.fromRGB(255, 140, 50) },
+	{ Esik = 30000, Ad = "Burger Sultanı", Renk = Color3.fromRGB(255, 70, 90) },
+	{ Esik = 150000, Ad = "BURGER İMPARATORU", Renk = Color3.fromRGB(255, 215, 0) },
 }
 
 ----------------------------------------------------------------------
--- DÜNYA
+-- DÜKKAN YERLEŞİMİ (arsanın içindeki yerler, arsanın ortasına göre; -Z = yola bakan ön)
+-- Hem sunucu (binayı kurar) hem oyuncu ekranı (kutuları oynatır) bunu kullanır.
 ----------------------------------------------------------------------
-Config.TezgahSayisi = 12 -- aynı sunucuda en fazla kaç oyuncu burger yapabilir
-Config.TezgahYaricapi = 46 -- tezgahlar ortadaki heykelin etrafında bu uzaklıkta dizilir
+Config.Yerlesim = {
+	ArsaBoyu = Vector3.new(70, 1, 60),
+	BinaMerkez = Vector3.new(0, 0, 5), -- binanın tabanının ortası
+	BinaBoyu = Vector3.new(50, 12, 34), -- en, yükseklik, derinlik
+	TezgahYuksekligi = 3.4,
+	AnaTezgah = Vector3.new(-12, 0, -16), -- KATLA kutusunun durduğu tezgah (binanın önünde)
+	OyuncuYeri = Vector3.new(-12, 0, -24), -- oyuncu buraya ışınlanır, tezgaha bakar
+	SatisNoktasi = Vector3.new(14, 0, -15.5), -- paketler burada satılır
+	MakineZ = 17, -- makineler arka duvarın önünde
+	MakineX = { -21, -15, -9, -3, 3, 9 },
+	BantZ = 10, -- makinelerin önündeki ana bant
+	BantX = 14, -- bant buradan öne, satış penceresine döner
+	Masalar = { Vector3.new(-28.5, 0, -26), Vector3.new(-28.5, 0, -18), Vector3.new(27, 0, -27), Vector3.new(28.5, 0, -19) },
+	TabelaYeri = Vector3.new(0, 0, -28),
+}
 
-Config.KayitAnahtari = "BurgerImparatoru_v2" -- DataStore adı (değiştirirsen herkesin kaydı sıfırlanır)
+Config.ArsaSayisi = 8
+Config.KayitAnahtari = "BurgerImparatoru_v3" -- DataStore adı (değiştirirsen herkesin kaydı sıfırlanır)
 
 return Config

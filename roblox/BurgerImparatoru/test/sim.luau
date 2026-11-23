@@ -87,6 +87,7 @@ end
 local nextId = 0
 local proxies = {} -- id -> proxy
 local realOf = setmetatable({}, { __mode = "k" }) -- proxy -> real
+local proxyExtra = setmetatable({}, { __mode = "k" }) -- proxy -> extra
 local extra = {} -- id -> { signals = {}, props = {}, methods = {} }
 
 local wrap, unwrap
@@ -198,7 +199,16 @@ wrap = function(v)
 			end
 			return wrap(val)
 		end
-		local child = real:FindFirstChild(key)
+		if not ok and string.find(tostring(val), "destroyed") then
+			-- Roblox: silinmiş bir parçanın özellikleri okunabilir, Parent'ı nil olur
+			return nil
+		end
+		local okC, child = pcall(function()
+			return real:FindFirstChild(key)
+		end)
+		if not okC then
+			return nil -- silinmiş parça: Roblox'ta özellikler nil/varsayılan döner
+		end
 		if child then
 			return wrap(child)
 		end
@@ -218,6 +228,9 @@ wrap = function(v)
 		local ok, err = pcall(function()
 			v[key] = unwrap(value)
 		end)
+		if not ok and string.find(tostring(err), "destroyed") and key ~= "Parent" then
+			return -- Roblox: silinmiş parçanın özelliği değiştirilebilir, hata vermez
+		end
 		if not ok then
 			error(string.format("Cannot set %s.%s = %s: %s", v.ClassName, tostring(key), tostring(value), tostring(err)), 2)
 		end
@@ -230,6 +243,7 @@ wrap = function(v)
 	end
 	proxies[id] = p
 	realOf[p] = v
+	proxyExtra[p] = ex
 	return p
 end
 
@@ -274,6 +288,32 @@ customMethods["*"] = {
 	end,
 	GetPropertyChangedSignal = function(self, prop)
 		return newSignal("PropChanged:" .. prop)
+	end,
+	GetAttributeChangedSignal = function(self, ad)
+		local ex = proxyExtra[self]
+		ex.attr = ex.attr or {}
+		ex.attr[ad] = ex.attr[ad] or newSignal("Attr:" .. ad)
+		return ex.attr[ad]
+	end,
+	SetAttribute = function(self, ad, deger)
+		local real = unwrap(self)
+		local eski = real:GetAttribute(ad)
+		real:SetAttribute(ad, deger)
+		local ex = proxyExtra[self]
+		if eski ~= deger and ex.attr and ex.attr[ad] then
+			ex.attr[ad]:Fire()
+		end
+	end,
+}
+customMethods.TextService = {
+	FilterStringAsync = function(self, metin, userId)
+		assert(type(metin) == "string" and type(userId) == "number", "FilterStringAsync args")
+		return {
+			GetNonChatStringForBroadcastAsync = function()
+				-- fake filter: hide a "bad" test word like Roblox does with hashtags
+				return (string.gsub(metin, "kotu", "####"))
+			end,
+		}
 	end,
 }
 customMethods.Model = {
@@ -369,11 +409,14 @@ customMethods.TweenService = {
 		assert(isProxy(obj), "Tween target must be an instance")
 		assert(type(info) == "table" and info.__tweeninfo, "TweenInfo expected")
 		STATS.tweens += 1
-		local tw = {}
+		local tw = { Completed = newSignal("Completed") }
 		function tw:Play()
 			for k, val in pairs(goals) do
 				obj[k] = val -- validates property + type
 			end
+			task.delay((info.Time or 0) + (info.DelayTime or 0), function()
+				tw.Completed:Fire(roblox.Enum.PlaybackState.Completed)
+			end)
 		end
 		function tw:Cancel() end
 		return tw
@@ -404,7 +447,7 @@ end
 
 local TweenInfo = {
 	new = function(time, style, dir, repeatCount, reverses, delay)
-		return { __tweeninfo = true, Time = time or 1, EasingStyle = style, EasingDirection = dir }
+		return { __tweeninfo = true, Time = time or 1, EasingStyle = style, EasingDirection = dir, DelayTime = delay or 0 }
 	end,
 }
 
@@ -455,6 +498,7 @@ local function makeEnv(scriptProxy)
 			end,
 		},
 		Vector3 = roblox.Vector3,
+		Font = roblox.Font,
 		Vector2 = roblox.Vector2,
 		CFrame = roblox.CFrame,
 		Color3 = roblox.Color3,
@@ -556,60 +600,18 @@ game:GetService("UserInputService").KeyboardEnabled = true
 
 local function senaryo()
 print("== Sunucu başlıyor")
+local ConfigS = nil
 runScript(findScript(game:GetService("ServerScriptService"), "BurgerSunucu"))
-task.wait(0.3)
+task.wait(0.4)
+local harita = Workspace:WaitForChild("Harita")
+local arsaSayisi = #unwrap(harita.Arsalar):GetChildren()
+print("Arsa sayısı:", arsaSayisi)
+assert(arsaSayisi == 8, "8 arsa bekleniyordu")
+assert(harita.Arsalar.Arsa1.Dukkan:FindFirstChild("Pano") ~= nil, "boş arsada tabela olmalı")
 
-if process.args[2] == "poz" then
-	local Dunya = runScript(findScript(game:GetService("ServerScriptService"), "Dunya"))
-	local st = Workspace.Tezgahlar.Tezgah1
-	-- local box frame: use the station tray orientation, origin on top of tray
-	local tabak = unwrap(st.Tabak)
-	local base = tabak.CFrame * roblox.CFrame.new(0, tabak.Size.Y / 2, 0)
-	local out = { stages = {}, burger = {}, paket = {} }
-	local function corners(cf, size)
-		local c = {}
-		for _, sx in ipairs({ -1, 1 }) do
-			for _, sy in ipairs({ -1, 1 }) do
-				for _, sz in ipairs({ -1, 1 }) do
-					local p = (base:ToObjectSpace(cf * roblox.CFrame.new(sx * size.X / 2, sy * size.Y / 2, sz * size.Z / 2))).Position
-					table.insert(c, { p.X, p.Y, p.Z })
-				end
-			end
-		end
-		return c
-	end
-	local Config = runScript(findScript(game:GetService("ReplicatedStorage"), "Config"))
-	local cf = base * roblox.CFrame.new(0, Dunya.KagitKalinligi(), 0)
-	local h = 0
-	local katlar = { Config.AltEkmek, Config.Malzemeler.Kofte, Config.Malzemeler.Peynir, Config.Malzemeler.Marul, Config.Malzemeler.Domates, Config.Malzemeler.Tursu, Config.UstEkmek }
-	for _, m in ipairs(katlar) do
-		local parts, k = Dunya.KatYap(m, cf, 1, Random.new(3))
-		for _, p in ipairs(parts) do
-			local r = unwrap(p)
-			table.insert(out.burger, { corners = corners(r.CFrame, r.Size), color = { r.Color.R, r.Color.G, r.Color.B } })
-		end
-		cf = cf * roblox.CFrame.new(0, k, 0)
-		h += k
-	end
-	local kagit = Dunya.KagitYap(base, false, h)
-	for asama = 0, 3 do
-		local poz = Dunya.KagitPozu(base, asama, h)
-		local panels = {}
-		for ad, pcf in pairs(poz) do
-			panels[ad] = corners(pcf, unwrap(kagit[ad]).Size)
-		end
-		out.stages[asama + 1] = panels
-	end
-	local paket = Dunya.PaketliBurger(base * roblox.CFrame.new(0, Dunya.PaketBoyu().Y / 2, 0), false)
-	for _, d in ipairs(unwrap(paket):GetDescendants()) do
-		if d:IsA("BasePart") then
-			table.insert(out.paket, { name = d.Name, corners = corners(d.CFrame, d.Size), color = { d.Color.R, d.Color.G, d.Color.B }, transparent = d.Transparency > 0.5 })
-		end
-	end
-	local serde = require("@lune/serde")
-	fs.writeFile("poz.json", serde.encode("json", out))
-	print("poz yazıldı")
-	process.exit(0)
+local zengin = DATASTORE_MODE ~= "studio"
+if zengin then
+	DATASTORE["oyuncu_1001"] = { Surum = 3, Para = 50000000000, ToplamPaket = 10, Sube = 0, Gelistirme = {} }
 end
 
 local function makePlayer(name, userId)
@@ -617,12 +619,11 @@ local function makePlayer(name, userId)
 	plr.Name = name
 	plr.DisplayName = name
 	plr.UserId = userId
-	local gui = wrap(roblox.Instance.new("PlayerGui"))
-	gui.Parent = plr
+	local g = wrap(roblox.Instance.new("PlayerGui"))
+	g.Parent = plr
 	plr.Parent = Players
 	return plr
 end
-
 local function makeCharacter(plr)
 	local char = wrap(roblox.Instance.new("Model"))
 	char.Name = plr.Name
@@ -637,155 +638,224 @@ local function makeCharacter(plr)
 	plr.CharacterAdded:Fire(char)
 	return char
 end
-
--- Player 1 (local)
-local p1 = makePlayer("Burgerci", 1001)
-LOCAL_PLAYER = p1
-Players.LocalPlayer = p1
-Players.PlayerAdded:Fire(p1)
-makeCharacter(p1)
-task.wait(0.2)
-
-print("== İstemci başlıyor")
-runScript(findScript(game:GetService("StarterPlayer"), "BurgerEkran"))
-task.wait(0.4)
-
--- Player 2 (other)
-local p2 = makePlayer("Arkadas", 1002)
-Players.PlayerAdded:Fire(p2)
-makeCharacter(p2)
-task.wait(0.2)
-
-local gui = p1.PlayerGui:WaitForChild("BurgerArayuz")
-local alt = gui.Alt
-local katla = alt.Katla
-local dukkanBtn = alt.Dukkan
-local ust = gui.Ust
-
 local function stat(plr, n)
 	return plr.leaderstats[n].Value
 end
-
+local function butonBul(kok, metin)
+	for _, d in ipairs(unwrap(kok):GetDescendants()) do
+		if d:IsA("TextButton") and d.Text == metin then
+			return wrap(d)
+		end
+	end
+	return nil
+end
 local function heartbeat(seconds)
 	local steps = math.floor(seconds / 0.05)
 	for _ = 1, steps do
 		RunService.Heartbeat:FireSync(0.05)
 		RunService.RenderStepped:FireSync(0.05)
-		task.wait(0.001)
+		task.wait(0.05)
 	end
 end
 
-print("== Katlama testi")
-local station = Workspace.Tezgahlar.Tezgah1
+local p1 = makePlayer("Burgerci", 1001)
+LOCAL_PLAYER = p1
+Players.LocalPlayer = p1
+Players.PlayerAdded:Fire(p1)
+makeCharacter(p1)
+task.wait(0.3)
+
+print("== İstemci başlıyor")
+runScript(findScript(game:GetService("StarterPlayer"), "BurgerEkran"))
+task.wait(1.0)
+local gui = p1.PlayerGui:WaitForChild("BurgerArayuz")
 local remotes = game:GetService("ReplicatedStorage").Uzaklar
-local function pileCount(st)
-	return #unwrap(st.Yigin):GetChildren()
+local arsa1 = harita.Arsalar.Arsa1
+assert(arsa1:GetAttribute("Sahip") == 1001, "oyuncu 1. arsayı almalı")
+
+print("== Dükkanını kur ekranı")
+assert(gui.StilPaneli.Visible == true, "ilk girişte stil ekranı açılmalı")
+local Cfg = runScript(findScript(game:GetService("ReplicatedStorage"), "Config"))
+butonBul(gui.StilPaneli, Cfg.Logolar[3]).Activated:Fire()
+for _, d in ipairs(unwrap(gui.StilPaneli):GetDescendants()) do
+	if d:IsA("TextButton") and d.Text == "" and d.BackgroundColor3 == Cfg.Renkler[6].Renk then
+		wrap(d).Activated:Fire()
+	end
 end
-assert(#unwrap(station.Paket):GetChildren() == 1, "başta bir açık kutu olmalı")
-for i = 1, 12 do
-	katla.Activated:Fire()
+local kutu = nil
+for _, d in ipairs(unwrap(gui.StilPaneli):GetDescendants()) do
+	if d:IsA("TextBox") then
+		kutu = wrap(d)
+	end
+end
+kutu.Text = "Huss Burger"
+butonBul(gui.StilPaneli, "✅ DÜKKANI AÇ!").Activated:Fire()
+task.wait(0.5)
+print("Logo:", arsa1:GetAttribute("Logo"), "Ad:", arsa1:GetAttribute("Ad"), "Renk:", tostring(arsa1:GetAttribute("Renk")))
+assert(arsa1:GetAttribute("Logo") == Cfg.Logolar[3], "logo uygulanmadı")
+assert(arsa1:GetAttribute("Ad") == "Huss Burger", "ad uygulanmadı")
+assert(arsa1:GetAttribute("Renk") == Cfg.Renkler[6].Renk, "renk uygulanmadı")
+assert(gui.StilPaneli.Visible == false, "stil ekranı kapanmalı")
+
+print("== Katlama")
+local katlaB = gui.Alt.Katla
+local p0 = stat(p1, "Paket")
+for _ = 1, 12 do
+	katlaB.Activated:Fire()
 	task.wait(0.1)
 end
-task.wait(1.0)
-print("Paket (leaderstats):", stat(p1, "Paket"), "Para:", stat(p1, "Para"), "Kule:", pileCount(station))
-assert(stat(p1, "Paket") == 4, "12 tıkta 4 paket bekleniyordu, gelen " .. stat(p1, "Paket"))
-assert(stat(p1, "Para") > 0, "paketleme para vermedi")
-assert(pileCount(station) == 4, "kulede 4 kutu olmalı")
-assert(#unwrap(station.Paket):GetChildren() == 1, "tezgahta yine tek açık kutu olmalı")
-print("Tabela:", station:FindFirstChild("TabelaNoktasi").Tabela:FindFirstChildOfClass("Frame").Alt.Text)
-print("Ekran burger:", gui.Ust:FindFirstChildOfClass("Frame") ~= nil)
+task.wait(0.8)
+print("Paket:", stat(p1, "Paket") - p0, "Para:", stat(p1, "Para"))
+assert(stat(p1, "Paket") - p0 == 4, "12 tıkta 4 paket bekleniyordu")
+local gorsel = Workspace:FindFirstChild("BurgerGorselleri")
+assert(gorsel and #unwrap(gorsel):GetChildren() > 0, "tezgahta kutu görseli yok")
 
--- Hile koruması: arka arkaya 20 istek → en fazla 4 katlama geçmeli
 local onceP = stat(p1, "Paket")
 for _ = 1, 20 do
 	remotes.Katla.OnServerEvent:Fire(p1)
 end
-task.wait(0.8)
-local hile = stat(p1, "Paket") - onceP
-print("Spam ile geçen paket:", hile)
-assert(hile <= 2, "rate limit çalışmıyor")
+task.wait(0.5)
+print("Spam ile geçen paket:", stat(p1, "Paket") - onceP)
+assert(stat(p1, "Paket") - onceP <= 2, "hız sınırı çalışmıyor")
 
-print("== Dükkan testi")
-dukkanBtn.Activated:Fire()
-task.wait(0.1)
-local panel = gui.DukkanPaneli
-assert(panel.Visible == true, "dükkan açılmadı")
-local paraOnce = stat(p1, "Para")
-remotes.SatinAl.OnServerEvent:Fire(p1, "Lezzet")
-remotes.SatinAl.OnServerEvent:Fire(p1, "YokBoyle")
-remotes.SatinAl.OnServerEvent:Fire(p1, 12345)
-task.wait(0.2)
-print("Para önce/sonra:", paraOnce, stat(p1, "Para"))
-
--- Çok para kazanmak için birçok burger paketle, her turda geliştirme al
-for tur = 1, 8 do
-	for _ = 1, 30 do
-		katla.Activated:Fire()
-		task.wait(0.095)
+if zengin then
+	print("== Her şeyi satın al")
+	for _, g in ipairs(Cfg.Gelistirmeler) do
+		for _ = 1, g.MaxSeviye + 1 do
+			remotes.SatinAl.OnServerEvent:Fire(p1, g.Anahtar)
+		end
+		task.wait(0.05)
 	end
-	task.wait(0.3)
-	for _, anahtar in ipairs({ "HizliEller", "Lezzet", "OtoAsci", "AltinSans" }) do
-		remotes.SatinAl.OnServerEvent:Fire(p1, anahtar)
+	remotes.SatinAl.OnServerEvent:Fire(p1, "YokBoyle")
+	remotes.SatinAl.OnServerEvent:Fire(p1, 42)
+	task.wait(0.5)
+	local d = arsa1.Dukkan
+	for _, ad in ipairs({ "Duvar", "Cati", "NeonTabela", "Masa", "Ampul", "DevBurgerKaide", "Makine1", "Makine6", "AnaBant", "DonusBant" }) do
+		assert(d:FindFirstChild(ad, true) ~= nil, "dükkanda yok: " .. ad)
+	end
+	print("Makine sayısı (attribute):", arsa1:GetAttribute("Makine"), "Para:", stat(p1, "Para"))
+
+	print("== Dükkan menüsü (sekmeler)")
+	gui.Alt.Dukkan.Activated:Fire()
+	task.wait(0.1)
+	assert(gui.DukkanPaneli.Visible == true)
+	for _, kat in ipairs(Cfg.Kategoriler) do
+		butonBul(gui.DukkanPaneli, kat.Ikon .. " " .. kat.Ad).Activated:Fire()
+		task.wait(0.05)
+	end
+	butonBul(gui.DukkanPaneli, Cfg.Kategoriler[1].Ikon .. " " .. Cfg.Kategoriler[1].Ad).Activated:Fire()
+	for _, d2 in ipairs(unwrap(gui.DukkanPaneli):GetDescendants()) do
+		if d2:IsA("TextButton") and d2.Parent and d2.Parent:IsA("Frame") and d2.Parent.Name == "Frame" then
+			wrap(d2).Activated:Fire()
+		end
 	end
 	task.wait(0.2)
-	print(string.format("  tur %d: Para=%d Paket=%d Unvan=%s Kule=%d", tur, stat(p1, "Para"), stat(p1, "Paket"), stat(p1, "Unvan"), pileCount(station)))
-	assert(pileCount(station) <= 6, "kule sınırı aşıldı")
-end
 
--- Dükkan butonlarına tıkla (UI yolu)
-for _, satir in ipairs(unwrap(panel):GetChildren()) do
-	if satir:IsA("Frame") then
-		for _, c in ipairs(satir:GetChildren()) do
-			if c:IsA("TextButton") then
-				wrap(c).Activated:Fire()
+	print("== Makineler çalışıyor")
+	local pm = stat(p1, "Paket")
+	heartbeat(3)
+	task.wait(0.6)
+	local uretilen = stat(p1, "Paket") - pm
+	print("3 saniyede makine paketi:", uretilen)
+	assert(uretilen >= 12, "makineler üretmiyor")
+	local bantta = 0
+	for _, d2 in ipairs(unwrap(gorsel):GetChildren()) do
+		if d2.Name == "PaketTepsi" then
+			bantta += 1
+		end
+	end
+	print("Ekrandaki bant kutusu:", bantta)
+
+	-- görsel kontrol için dükkanın parçalarını yaz
+	local serde = require("@lune/serde")
+	local taban = unwrap(arsa1.Taban)
+	local F = taban.CFrame * roblox.CFrame.new(0, taban.Size.Y / 2, 0)
+	local parcalar = {}
+	local function topla(kok)
+		for _, d2 in ipairs(kok:GetDescendants()) do
+			if d2:IsA("BasePart") and d2.Transparency < 0.95 then
+				local cf = F:ToObjectSpace(d2.CFrame)
+				local shape = "Block"
+				if d2:IsA("Part") then
+					shape = tostring(d2.Shape):gsub("Enum.PartType.", "")
+				end
+				local mesh = d2:FindFirstChildOfClass("SpecialMesh")
+				if mesh then
+					shape = "Ball"
+				end
+				if math.abs(cf.Position.X) < 40 and math.abs(cf.Position.Z) < 36 then
+					table.insert(parcalar, { cf = { cf:GetComponents() }, size = { d2.Size.X, d2.Size.Y, d2.Size.Z }, color = { d2.Color.R, d2.Color.G, d2.Color.B }, shape = shape, alpha = 1 - d2.Transparency })
+				end
 			end
 		end
 	end
+	topla(unwrap(arsa1))
+	topla(unwrap(gorsel))
+	fs.writeFile("dukkan.json", serde.encode("json", { dukkan = parcalar }))
+
+	print("== Yeni şube")
+	gui.Alt.Dukkan.Activated:Fire()
+	task.wait(0.05)
+	gui.Alt.Dukkan.Activated:Fire()
+	task.wait(0.05)
+	butonBul(gui.DukkanPaneli, Cfg.Kategoriler[4].Ikon .. " " .. Cfg.Kategoriler[4].Ad).Activated:Fire()
+	local subeButonu = nil
+	for _, d2 in ipairs(unwrap(gui.DukkanPaneli):GetDescendants()) do
+		if d2:IsA("TextButton") and string.sub(d2.Text, 1, 4) == "💰" and d2.Parent.LayoutOrder == 100 then
+			subeButonu = wrap(d2)
+		end
+	end
+	assert(subeButonu, "şube butonu yok")
+	subeButonu.Activated:Fire()
+	task.wait(0.1)
+	print("Onay yazısı:", subeButonu.Text)
+	subeButonu.Activated:Fire()
+	task.wait(0.6)
+	print("Şube sonrası Para:", stat(p1, "Para"), "Duvar var mı:", arsa1.Dukkan:FindFirstChild("Duvar") ~= nil)
+	assert(stat(p1, "Para") == 0, "şube parayı sıfırlamalı")
+	assert(arsa1.Dukkan:FindFirstChild("Duvar") == nil, "şube dükkanı sıfırlamalı")
+	assert(arsa1:GetAttribute("Logo") == Cfg.Logolar[3], "şube stili silmemeli")
 end
-task.wait(0.3)
-gui.DukkanPaneli:FindFirstChildOfClass("TextButton").Activated:Fire() -- kapat
-task.wait(0.1)
 
-print("== Çırak Aşçı (otomatik) testi")
-local paketOnce = stat(p1, "Paket")
-heartbeat(8)
-task.wait(1)
-print("Oto ile eklenen paket:", stat(p1, "Paket") - paketOnce)
-
-print("== Klavye kısayolları")
-for name in pairs(BOUND_ACTIONS) do
-	print("  bağlı:", name)
+print("== Geçersiz stil istekleri")
+local function stilDene(istek)
+	task.wait(1.6)
+	remotes.StilSec.OnServerEvent:Fire(p1, istek)
+	task.wait(0.1)
 end
-local beginState = roblox.Enum.UserInputState.Begin
-BOUND_ACTIONS.BurgerDukkan.fn("BurgerDukkan", beginState)
-BOUND_ACTIONS.BurgerDukkan.fn("BurgerDukkan", beginState)
-BOUND_ACTIONS.BurgerKatla.fn("BurgerKatla", beginState)
-task.wait(0.8)
+stilDene({ Logo = 99, Renk = 1, Ad = "x" })
+stilDene({ Logo = 1, Renk = 1, Ad = string.rep("a", 30) })
+stilDene("bozuk")
+assert(arsa1:GetAttribute("Logo") == Cfg.Logolar[3], "geçersiz istek stili değiştirmemeli")
+stilDene({ Logo = 2, Renk = 3, Ad = "kotu burger" })
+task.wait(0.2)
+print("Filtrelenmiş ad:", arsa1:GetAttribute("Ad"))
+assert(arsa1:GetAttribute("Ad") == "#### burger", "ad filtreden geçmeli")
+stilDene({ Logo = 3, Renk = 6, Ad = "  Huss Burger  " })
+assert(arsa1:GetAttribute("Ad") == "Huss Burger", "boşluklar temizlenmeli")
 
-print("== Ses düğmesi")
-ust.Ses.Activated:Fire()
-task.wait(0.05)
-ust.Ses.Activated:Fire()
-
-print("== Diğer oyuncu katlıyor")
-for _ = 1, 7 do
+print("== İkinci oyuncu")
+local p2 = makePlayer("Arkadas", 1002)
+Players.PlayerAdded:Fire(p2)
+makeCharacter(p2)
+task.wait(0.4)
+local arsa2 = harita.Arsalar.Arsa2
+assert(arsa2:GetAttribute("Sahip") == 1002, "ikinci oyuncu 2. arsayı almalı")
+for _ = 1, 6 do
 	remotes.Katla.OnServerEvent:Fire(p2)
 	task.wait(0.1)
 end
-task.wait(1)
-print("Oyuncu 2 paket:", stat(p2, "Paket"), "kule:", pileCount(Workspace.Tezgahlar.Tezgah2))
-assert(stat(p2, "Paket") == 2, "oyuncu 2 için 2 paket bekleniyordu")
-
-print("== Karakter yeniden doğuyor")
+task.wait(0.5)
+print("Oyuncu 2 paket:", stat(p2, "Paket"), "Ad:", arsa2:GetAttribute("Ad"))
+assert(stat(p2, "Paket") == 2)
+remotes.EvimeGit.OnServerEvent:Fire(p1)
 makeCharacter(p1)
 task.wait(0.3)
-
-print("== Oyuncu 2 çıkıyor")
 p2.Parent = nil
 Players.PlayerRemoving:Fire(p2)
-task.wait(1)
-assert(Workspace.Tezgahlar.Tezgah2.TabelaNoktasi.Tabela:FindFirstChildOfClass("Frame").Baslik.Text == "🍔 Boş Tezgah", "tezgah boşalmadı")
-assert(pileCount(Workspace.Tezgahlar.Tezgah2) == 0, "boş tezgahın kulesi temizlenmeli")
+task.wait(0.4)
+assert(arsa2:GetAttribute("Sahip") == 0, "çıkan oyuncunun arsası boşalmalı")
+assert(arsa2.Dukkan:FindFirstChild("Pano") ~= nil, "boş arsa tabelası gelmeli")
 
 print("== Ekrandaki yazılar")
 for _, root in ipairs({ gui.Ust, gui.Alt }) do
@@ -795,20 +865,42 @@ for _, root in ipairs({ gui.Ust, gui.Alt }) do
 		end
 	end
 end
-print("== Kapanış")
+
+print("== Kapanış ve tekrar giriş")
 for _, fn in ipairs(CLOSE_HANDLERS) do
 	local ok, e = xpcall(fn, debug.traceback)
 	if not ok then
 		reportError(e)
 	end
 end
+local paketOnce = stat(p1, "Paket")
 p1.Parent = nil
 Players.PlayerRemoving:Fire(p1)
-task.wait(0.5)
-
+task.wait(0.4)
+if zengin then
+	local k = DATASTORE["oyuncu_1001"]
+	assert(k and k.Stil and k.Stil.Ad == "Huss Burger" and k.Sube == 1, "kayıt eksik")
+	local p1b = makePlayer("Burgerci", 1001)
+	Players.PlayerAdded:Fire(p1b)
+	task.wait(0.4)
+	local a = nil
+	for i = 1, 8 do
+		if harita.Arsalar["Arsa" .. i]:GetAttribute("Sahip") == 1001 then
+			a = harita.Arsalar["Arsa" .. i]
+		end
+	end
+	assert(a and a:GetAttribute("Ad") == "Huss Burger", "tekrar girişte dükkan stili gelmeli")
+	assert(stat(p1b, "Paket") == paketOnce, "tekrar girişte paket sayısı gelmeli")
+	print("Tekrar giriş tamam:", a.Name, a:GetAttribute("Ad"), stat(p1b, "Paket"))
+	p1b.Parent = nil
+	Players.PlayerRemoving:Fire(p1b)
+	task.wait(0.3)
+end
 end
 local okS, errS = xpcall(senaryo, debug.traceback)
-if not okS then reportError("SENARYO: " .. tostring(errS)) end
+if not okS then
+	reportError("SENARYO: " .. tostring(errS))
+end
 -- Ekran yazılarını göster
 print("== Son ekran")
 local function texts(root, depth)
@@ -820,7 +912,7 @@ local function texts(root, depth)
 		end
 	end
 end
-pcall(function() local g = Players:FindFirstChild("Burgerci") end)
+
 
 print("== Kayıt")
 for k, v in pairs(DATASTORE) do

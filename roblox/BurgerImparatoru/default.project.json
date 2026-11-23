@@ -14,7 +14,7 @@
     },
     "StarterPlayer": {
       "$properties": {
-        "CameraMaxZoomDistance": 150
+        "CameraMaxZoomDistance": 160
       },
       "StarterPlayerScripts": {
         "Ekran": {
@@ -26,49 +26,45 @@
       "$properties": {
         "StreamingEnabled": false
       },
-      "Baseplate": {
-        "$className": "Part",
-        "$properties": {
-          "Anchored": true,
-          "Locked": true,
-          "Size": [400, 2, 400],
-          "CFrame": {
-            "CFrame": {
-              "position": [0, -1, 0],
-              "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-            }
-          },
-          "Color": [0.42, 0.72, 0.36],
-          "Material": "Grass",
-          "TopSurface": "Smooth",
-          "BottomSurface": "Smooth"
-        }
-      },
-      "SpawnLocation": {
-        "$className": "SpawnLocation",
-        "$properties": {
-          "Anchored": true,
-          "Neutral": true,
-          "Duration": 0,
-          "Size": [8, 1, 8],
-          "CFrame": {
-            "CFrame": {
-              "position": [0, 0.5, 62],
-              "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-            }
-          },
-          "Color": [1, 0.78, 0.2],
-          "Material": "Neon",
-          "Transparency": 0.4,
-          "TopSurface": "Smooth",
-          "BottomSurface": "Smooth"
-        }
+      "Harita": {
+        "$path": "harita/Harita.rbxm"
       }
     },
     "Lighting": {
       "$properties": {
-        "ClockTime": 14.5,
-        "Brightness": 2.5
+        "ClockTime": 14.3,
+        "Brightness": 2.4,
+        "GlobalShadows": true,
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.6,
+        "OutdoorAmbient": [0.55, 0.53, 0.5]
+      },
+      "Atmosfer": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.28,
+          "Offset": 0.12,
+          "Color": [0.78, 0.82, 0.88],
+          "Decay": [0.42, 0.45, 0.52],
+          "Glare": 0.15,
+          "Haze": 1.1
+        }
+      },
+      "Parlama": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.4,
+          "Size": 24,
+          "Threshold": 1.6
+        }
+      },
+      "Renkler": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Saturation": 0.12,
+          "Contrast": 0.05,
+          "Brightness": 0.02
+        }
       }
     },
     "TextChatService": {

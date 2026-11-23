@@ -1,11 +1,12 @@
 # 🍔 Burger İmparatoru 👑
 
-Roblox oyunu. Burgerler açık bir burger kağıdının ortasında gelir; **KATLA**'ya her bastığında kağıdın
-bir kanadı burgerin üstüne katlanır ve **"huss huss huss"** sesi gelir. **3 katlamada burger kağıda sarılıp
-paketlenir**, paket tezgahının yanındaki kuleye uçar, sen de parayı kaparsın. Parayla dükkandan geliştirme al, unvanını yükselt: Çırak'tan
-başla, **BURGER İMPARATORU** ol.
+Roblox burger dükkanı oyunu. Herkesin **kendi dükkanı** var. İki köfteli, üç ekmekli
+**İmparator Burger**'i karton kutusunda **KATLA**: her katlamada **"huss huss huss"** sesi gelir, 3 katlamada
+kutu kapanır ve paket banttan satış penceresine gider. Parayla dükkanını büyüt: paketleme makineleri,
+bantlar, duvarlar, neon tabela, masalar, çatıda dev burger. Bir süre sonra işi makineler yapar.
+Sonra **Yeni Şube** aç, baştan başla, kalıcı çarpanla daha hızlı büyü.
 
-## Hızlı başlangıç (5 dakika)
+## Hızlı başlangıç
 
 1. **Roblox Studio'yu kur:** https://create.roblox.com adresine gir, "Start Creating" de, Studio'yu indir ve Roblox hesabınla giriş yap.
 2. **Oyunu indir:** Bilgisayarda şu linke tıkla, dosya kendiliğinden iner:
@@ -13,112 +14,129 @@ başla, **BURGER İMPARATORU** ol.
 3. **Zip'i aç:** **İndirilenler** (Downloads) klasöründe `BurgerImparatoru-indir.zip`'e sağ tıkla ▸ **Tümünü ayıkla** ▸ **Ayıkla**.
    Açılan klasörde `BurgerImparatoru.rbxlx` dosyasına **çift tıkla**; Roblox Studio oyunu açar.
    (Çift tıklayınca açılmazsa: Studio'yu aç ▸ sol üstte **File** ▸ **Open from File...** ▸ bu dosyayı seç.)
-4. **Oyna:** Üstteki ▶️ **Play** düğmesine bas (ya da F5). Karakterin kendi tezgahına ışınlanır.
-5. **KATLA!** butonuna bas (bilgisayarda **E** tuşu). 3 basışta burger kağıda sarılır, paketlenir.
-
-> İlk açılışta ses yok, sadece sarı HUSS! yazıları var. Sesi eklemek için aşağıdaki adımları izle.
+4. Studio açılınca Burger Kasabası haritasını hemen görürsün. Üstteki ▶️ **Play**'e bas.
+5. Önce **Dükkanını Kur** ekranı gelir: logonu, dükkan rengini ve dükkan adını seç, **DÜKKANI AÇ!**'a bas.
+6. Dükkanına ışınlanırsın. **KATLA!**'ya bas (bilgisayarda **E**).
 
 ## 🔊 "Huss huss huss" sesini ekle
 
-Ses dosyası hazır: `sesler/huss.mp3` (indirdiğin zip'in içinde de var). Bu, gönderdiğin videodan (Instagram: **turkish.huss**) kesilmiş
-"huss huss huss" sesi. Oyun her tıklamada bu sesin tamamını çalar, ekrandaki üç HUSS! yazısı da sesteki
-üç "huss"a denk gelir.
-
-Roblox'ta bir sesi oyunda çalmak için önce Roblox'a yüklemen gerekiyor:
+Ses dosyası hazır: `sesler/huss.mp3` (indirdiğin zip'in içinde de var). Bu, gönderdiğin videodan
+(Instagram: **turkish.huss**) kesilmiş "huss huss huss" sesi. Oyun her tıklamada bu sesin tamamını çalar,
+ekrandaki üç sarı HUSS! yazısı da sesteki üç "huss"a denk gelir. Makinelerin de kısık sesle huss'lar.
 
 1. https://create.roblox.com/dashboard/creations adresine git ▸ **Development Items** ▸ **Audio** ▸ **Import Asset**.
-2. `sesler/huss.mp3` dosyasını seç ve yükle (ücretsiz; Roblox kısa bir kontrol yapar).
+2. `sesler/huss.mp3` dosyasını seç ve yükle.
 3. Yüklenen sesin üstüne tıkla ▸ **Copy Asset ID**.
 4. Studio'da soldaki **Explorer** penceresinde **ReplicatedStorage ▸ Ortak ▸ Config**'e çift tıkla.
 5. Şu satırı bul ve numarayı yapıştır:
    ```lua
    Config.HussSesId = "rbxassetid://BURAYA_NUMARA"
    ```
-6. Play'e bas. Artık her katlamada **huss huss huss**! 🎉
 
 > ⚠️ Bu ses başka birinin videosundan. Roblox, sahibi olmadığın sesleri telif hakkı yüzünden reddedebilir
-> ya da sonradan silebilir. Öyle olursa aynı "huss huss huss"u kendi sesinle kaydet (telefonun ses kaydedicisi
-> yeter) ve onu yükle. Kendi sesin olunca sorun çıkmaz.
->
-> Yükle düğmesi çıkmazsa hesabının ses yükleme hakkı yoktur (yaş/doğrulama sınırı); Creator Hub bunu yazar.
-> Ses senin hesabına yüklendiği için oyun da aynı hesapta (ya da senin grubunda) olmalı, yoksa ses çalmaz.
+> ya da sonradan silebilir. Öyle olursa aynı "huss huss huss"u kendi sesinle kaydet ve onu yükle.
+> Ses senin hesabına yüklendiği için oyun da aynı hesapta olmalı, yoksa ses çalmaz.
 
 ## Nasıl oynanır
 
 | Ne | Bilgisayar | Telefon/Tablet | Oyun kolu |
 |---|---|---|---|
-| Kağıdı katla | **E** ya da KATLA butonu | KATLA butonu | R2 |
-| Dükkanı aç | **B** ya da DÜKKAN | DÜKKAN butonu | Y |
+| Kutuyu katla | **E** ya da KATLA | KATLA butonu | R2 |
+| Dükkan menüsü | **B** ya da DÜKKAN | DÜKKAN butonu | Y |
+| Dükkanıma dön | 🏠 butonu | 🏠 butonu | |
+| Logo/renk/ad değiştir | 🎨 butonu | 🎨 butonu | |
+| Sesi kapat/aç | 🔊 butonu | 🔊 butonu | |
 
-- Her burger açık bir burger kağıdının ortasında gelir. **1. katlama:** sol kanat, **2. katlama:** sağ kanat,
-  **3. katlama:** ön ve arka kanatlar burgerin üstüne katlanır ve burger kağıda sarılıp **PAKETLENİR** 📦
-- KATLA'nın üstündeki 3 nokta kaçıncı katlamada olduğunu gösterir.
-- Paketlenen burgerler tezgahının yanında kule olur (en fazla 6 paket, sonra kule boşalır, yenisi başlar).
-- İçindeki malzemeye göre her paket farklı para eder. Bazen **✨ ALTIN BURGER ✨** çıkar: altın kağıda sarılır, parası çok!
-- **Hızlı katla, KOMBO yap:** Durmadan basarsan ses hızlanır, HUSS! yazıları büyür.
-- **Dükkan:**
-  - ✋ **Hızlı Eller**: Her tıkta daha çok katlama (en sonunda tek tıkta paket!)
-  - 🧂 **Lezzet Ustası**: Her paket daha çok para eder
-  - 👨‍🍳 **Çırak Aşçı**: Sen dururken o senin yerine katlar
-  - ✨ **Altın Şans**: Altın burger daha sık çıkar
-- **Unvanlar** (toplam paketlediğin burgere göre): Çırak ▸ Aşçı (20) ▸ Şef (100) ▸ Usta Şef (400) ▸
-  Burger Lordu (1.500) ▸ Burger Sultanı (5.000) ▸ **BURGER İMPARATORU** (20.000)
+**Katlama:** İmparator Burger açık karton kutuda gelir. **1.** tepsinin kenarları kalkar, **2.** kapağın kenarları
+kalkar, **3.** kapak kapanır: **PAKET!** 📦 Paket banttan satış penceresine gider, parayı alırsın.
+KATLA'nın üstündeki 3 nokta kaçıncı katlamada olduğunu gösterir. Bazen **✨ ALTIN BURGER ✨** çıkar (8 kat para).
 
-## Oyunu yayınla (arkadaşların da oynasın)
+**Dükkan menüsü:**
+
+| Sekme | Ne var |
+|---|---|
+| 🍳 Mutfak | ✋ Hızlı Eller (tıkta 2 katlama), 🧂 Gizli Sos (paket parası), ✨ Altın Şans |
+| ⚙️ Makineler | 🤖 Paketleme Makinesi (6 taneye kadar, sen dururken paketler), ⚡ Makine Hızı |
+| 🏪 Dükkan | 🧱 Duvarlar ve Camlar ▸ 💡 Çatı ve Neon Tabela ▸ 🪑 Oturma Alanı ▸ 🌸 Çiçek ve Işıklar ▸ 🍔 Çatıda Dev Burger. Her biri dükkanının **ününü** artırır, bütün paketler daha çok para eder |
+| 🏙️ Yeni Şube | Paran ve geliştirmelerin sıfırlanır, dükkan baştan kurulur; ama paket sayın, unvanın, logon kalır ve her şube bütün paralarını **kalıcı olarak +%50** artırır |
+
+DÜKKAN butonundaki kırmızı nokta "alabileceğin bir şey var" demek.
+
+**Unvanlar** (toplam paket): Çırak ▸ Aşçı (50) ▸ Şef (300) ▸ Usta Şef (1.500) ▸ Burger Lordu (7.500) ▸
+Burger Sultanı (30.000) ▸ **BURGER İMPARATORU** (150.000)
+
+**Tahmini süreler** (saniyede 4 tıklayan biri için): ilk makine ~2 dk, 6 makine ~45 dk,
+çatıda dev burger ~1,5 saat, ilk yeni şube ~2 saat.
+
+## Harita: Burger Kasabası
+
+Ortada dev burger heykelli meydan ve fıskiyeler, etrafında yaya geçitli yol ve lambalar, yolun dışında
+**8 dükkan arsası** (her oyuncuya bir tane), köşelerde parklar (birinde göl), en dışta ağaçlar, şehir binaları ve
+tepeler. Harita oyun dosyasının içinde: Studio'da açınca görünür, istediğin gibi değiştirebilirsin.
+
+## Oyunu yayınla
 
 1. Studio'da **File ▸ Publish to Roblox**, oyuna bir ad ver ("Burger İmparatoru").
-2. **Home ▸ Game Settings ▸ Security** ▸ **Enable Studio Access to API Services**'ı aç. (İlerleme kaydı için gerekli. Kapalıyken de oyun çalışır, sadece kayıt olmaz.)
-3. **Game Settings ▸ Places ▸ Max Players**'ı **12** yap (12 tezgah var).
+2. **Home ▸ Game Settings ▸ Security** ▸ **Enable Studio Access to API Services**'ı aç (ilerleme kaydı için).
+   Kapalıyken oyun yine çalışır, sadece kayıt olmaz ve her Play'de "Dükkanını Kur" ekranı yeniden gelir.
+3. **Game Settings ▸ Places ▸ Max Players**'ı **8** yap (8 arsa var).
 4. Creator Hub'da oyunu **Public** yap, linki arkadaşlarına at.
 
 ## Kendin değiştir
 
-Bütün ayarlar **ReplicatedStorage ▸ Ortak ▸ Config** içinde, Türkçe açıklamalı:
-kaç katlamada paketleneceği, burger tarifi (hangi malzeme ne sıklıkla), kağıt renkleri, dükkan fiyatları,
-unvanlar, tezgah sayısı, ses seviyesi. Mesela altın burgeri daha sık çıkarmak için
+Bütün ayarlar **ReplicatedStorage ▸ Ortak ▸ Config** içinde, Türkçe açıklamalı: logolar, renkler, fiyatlar,
+makine hızı, şube bonusu, unvanlar, dükkanın içindeki yerleşim. Örnek: altın burgeri daha sık çıkarmak için
 `Config.AltinTabanSansi = 0.03` satırını `0.10` yap.
 
 ## Dosyalar
 
 ```
-BurgerImparatoru.rbxlx              ← Studio'da açılan hazır oyun
-BurgerImparatoru-indir.zip          ← oyun + ses, tek tıkla indirmek için
-sesler/huss.mp3                     ← huss huss huss sesi (Roblox'a yüklenecek)
-src/shared/Config.luau              ← bütün ayarlar
-src/shared/Ekonomi.luau             ← fiyat, para, tarif, unvan hesapları
-src/server/BurgerSunucu.server.luau ← katlama, paketleme, dükkan, kayıt (hile korumalı)
-src/server/Dunya.luau               ← mutfak, tezgahlar, burger kağıdı, paket kulesi, dev burger heykeli
-src/client/BurgerEkran.client.luau  ← butonlar, HUSS! yazıları, ses, dükkan ekranı
-default.project.json                ← Rojo proje dosyası
-test/sim.luau                       ← Studio açmadan hızlı test
+BurgerImparatoru.rbxlx               ← Studio'da açılan hazır oyun (harita dahil)
+BurgerImparatoru-indir.zip           ← oyun + ses, tek tıkla indirmek için
+sesler/huss.mp3                      ← huss huss huss sesi (Roblox'a yüklenecek)
+harita/Harita.rbxm                   ← Burger Kasabası haritası
+src/shared/Config.luau               ← bütün ayarlar
+src/shared/Ekonomi.luau              ← fiyat, para, makine, şube, unvan hesapları
+src/shared/Gorsel.luau               ← İmparator Burger, karton kutu, logolar
+src/server/BurgerSunucu.server.luau  ← arsalar, katlama, makineler, dükkan, şube, stil, kayıt (hile korumalı)
+src/server/Dukkan.luau               ← oyuncunun dükkanını arsasına kurar
+src/server/HaritaUretici.luau        ← haritayı kodla kurar
+src/client/BurgerEkran.client.luau   ← butonlar, menüler, HUSS! yazıları, ses
+src/client/PaketGorsel.luau          ← kutunun katlanması, bantta giden paketler, makine presi
+araclar/harita-uret.luau             ← haritayı harita/Harita.rbxm dosyasına yazar
+test/sim.luau                        ← Studio açmadan hızlı test
 ```
 
-### Geliştiriciler için (Rojo)
+### Geliştiriciler için
 
-Kodu VS Code'da yazıp Studio'ya canlı aktarmak istersen [Rojo](https://rojo.space) kullan:
+Gerekenler: [Rojo](https://rojo.space) ve [Lune](https://lune-org.github.io/docs). Komutlar bu klasörde çalışır.
+
+Haritayı değiştirdiysen (`src/server/HaritaUretici.luau`) yeniden üret:
 
 ```bash
-rojo serve
+lune run araclar/harita-uret.luau
 ```
 
-Studio'da Rojo eklentisinden **Connect** de. `.rbxlx` dosyasını yeniden üretmek için:
+Oyun dosyasını yeniden üret:
 
 ```bash
 rojo build -o BurgerImparatoru.rbxlx
 ```
 
-İndirme zip'ini yenilemek için (oyun dosyası + ses):
+İndirme zip'ini yenile:
 
 ```bash
 rm -f BurgerImparatoru-indir.zip && zip -j BurgerImparatoru-indir.zip BurgerImparatoru.rbxlx sesler/huss.mp3
 ```
 
-Studio açmadan hızlı test ([Lune](https://lune-org.github.io/docs) gerekir): sunucu ve ekran kodunu sahte bir
-Roblox ortamında çalıştırır; katlama, paketleme, paket kulesi, hile koruması, dükkan, otomatik aşçı, kayıt
-ve çıkışı dener.
+Studio açmadan test: sunucu ve ekran kodunu sahte bir Roblox ortamında çalıştırır; dükkan kurma ekranı,
+katlama, hile koruması, bütün geliştirmeler, makineler, yeni şube, isim filtresi, ikinci oyuncu, kayıt ve
+tekrar giriş denenir.
 
 ```bash
 lune run test/sim.luau BurgerImparatoru.rbxlx ok        # kayıt açık
 lune run test/sim.luau BurgerImparatoru.rbxlx studio    # Studio'da kayıt kapalı
 lune run test/sim.luau BurgerImparatoru.rbxlx ok ses    # ses numarası girilmiş gibi
 ```
+
+Kodu VS Code'da yazıp Studio'ya canlı aktarmak için `rojo serve` ve Studio'daki Rojo eklentisi.
