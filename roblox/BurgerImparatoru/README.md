@@ -2,9 +2,10 @@
 
 Roblox burger dükkanı oyunu. Herkesin **kendi dükkanı** var. İki köfteli, üç ekmekli
 **İmparator Burger**'i karton kutusunda **KATLA**: her katlamada **"huss huss huss"** sesi gelir, 3 katlamada
-kutu kapanır ve paket banttan satış penceresine gider. Parayla dükkanını büyüt: paketleme makineleri,
-bantlar, duvarlar, neon tabela, masalar, çatıda dev burger. Bir süre sonra işi makineler yapar.
-Sonra **Yeni Şube** aç, baştan başla, kalıcı çarpanla daha hızlı büyü.
+kutu kapanır ve paket banttan satış penceresine gider; **müşteriler** sıraya girip paketini alır, kimi masada
+yer, kimi alıp gider. Parayla dükkanını büyüt: **çalışanlar** (aşçı, kasiyer, teknisyen, temizlikçi),
+paketleme makineleri, bantlar, duvarlar, neon tabela, masalar, çatıda dev burger. Bir süre sonra işi aşçın ve
+makinelerin yapar. Sonra **Yeni Şube** aç, baştan başla, kalıcı çarpanla daha hızlı büyü.
 
 ## Hızlı başlangıç
 
@@ -19,6 +20,11 @@ Sonra **Yeni Şube** aç, baştan başla, kalıcı çarpanla daha hızlı büyü
 6. Dükkanına ışınlanırsın. **KATLA!**'ya bas (bilgisayarda **E**).
 
 ## 🔊 "Huss huss huss" sesini ekle
+
+**Neden ses çıkmıyor?** Roblox oyunun içine ses dosyası koymaya izin vermez; ses önce Roblox'a yüklenir,
+Roblox ona bir numara verir, oyun da o numarayla sesi çalar. Oyundaki `Config.HussSesId` şu an boş,
+bu yüzden şimdilik sadece HUSS! yazıları çıkıyor. Aşağıdaki adımları bir kere yapınca ses gelir.
+Numarayı bana da yazarsan koda kalıcı olarak koyarım, her yeni sürümde ses hazır gelir.
 
 Ses dosyası hazır: `sesler/huss.mp3` (indirdiğin zip'in içinde de var). Bu, gönderdiğin videodan
 (Instagram: **turkish.huss**) kesilmiş "huss huss huss" sesi. Oyun her tıklamada bu sesin tamamını çalar,
@@ -56,6 +62,7 @@ KATLA'nın üstündeki 3 nokta kaçıncı katlamada olduğunu gösterir. Bazen *
 | Sekme | Ne var |
 |---|---|
 | 🍳 Mutfak | ✋ Hızlı Eller (tıkta 2 katlama), 🧂 Gizli Sos (paket parası), ✨ Altın Şans |
+| 👷 Çalışanlar | 👨‍🍳 Aşçı (tezgahında senin yerine katlar, 5 seviye), 🧑‍💼 Kasiyer (ün +%20), 🧑‍🔧 Teknisyen (makineler hızlanır), 🧹 Temizlikçi (ün +%15). Hepsi dükkanında görünür |
 | ⚙️ Makineler | 🤖 Paketleme Makinesi (6 taneye kadar, sen dururken paketler), ⚡ Makine Hızı |
 | 🏪 Dükkan | 🧱 Duvarlar ve Camlar ▸ 💡 Çatı ve Neon Tabela ▸ 🪑 Oturma Alanı ▸ 🌸 Çiçek ve Işıklar ▸ 🍔 Çatıda Dev Burger. Her biri dükkanının **ününü** artırır, bütün paketler daha çok para eder |
 | 🏙️ Yeni Şube | Paran ve geliştirmelerin sıfırlanır, dükkan baştan kurulur; ama paket sayın, unvanın, logon kalır ve her şube bütün paralarını **kalıcı olarak +%50** artırır |
@@ -68,24 +75,59 @@ Burger Sultanı (30.000) ▸ **BURGER İMPARATORU** (150.000)
 **Tahmini süreler** (saniyede 4 tıklayan biri için): ilk makine ~2 dk, 6 makine ~45 dk,
 çatıda dev burger ~1,5 saat, ilk yeni şube ~2 saat.
 
+**Müşteriler:** Kaldırımdan gelir, satış penceresinde sıraya girer, paketini alıp kucağında taşır. Masaların
+varsa bazıları oturup yer. Dükkanın ünü (duvar, çatı, kasiyer...) ve makinelerin arttıkça daha sık gelirler.
+
 ## Harita: Burger Kasabası
 
-Ortada dev burger heykelli meydan ve fıskiyeler, etrafında yaya geçitli yol ve lambalar, yolun dışında
-**8 dükkan arsası** (her oyuncuya bir tane), köşelerde parklar (birinde göl), en dışta ağaçlar, şehir binaları ve
-tepeler. Harita oyun dosyasının içinde: Studio'da açınca görünür, istediğin gibi değiştirebilirsin.
+Ortada kırmızı-beyaz damalı meydan, dev burger heykeli, dev patates ve kola, fıskiyeler, dört girişte
+"BURGER KASABASI" kemerleri ve bayrak süsleri; etrafında yaya geçitli yol ve lambalar; yolun dışında **8 dükkan
+arsası** (her oyuncuya bir tane); köşelerde parklar (dev ketçap ve hardal şişeleri, yemek kamyonları, göl,
+gökyüzünde burger balon); en dışta ağaçlar, şehir binaları ve tepeler. Harita oyun dosyasının içinde: Studio'da
+açınca görünür. Oyun başlayınca tepeler ve göl gerçek Roblox arazisine dönüşür (yumuşak tepeler, dalgalı su).
 
-## Oyunu yayınla
+**Grafik:** Roblox'un en güzel ışıklandırması (Future), bulutlar, hafif sis, güneş ışınları, parlama.
+Gün ve gece döngüsü var (10 dakikada bir gün): gece neon tabelalar, lambalar ve ışık zincirleri parlar.
 
-1. Studio'da **File ▸ Publish to Roblox**, oyuna bir ad ver ("Burger İmparatoru").
-2. **Home ▸ Game Settings ▸ Security** ▸ **Enable Studio Access to API Services**'ı aç (ilerleme kaydı için).
-   Kapalıyken oyun yine çalışır, sadece kayıt olmaz ve her Play'de "Dükkanını Kur" ekranı yeniden gelir.
-3. **Game Settings ▸ Places ▸ Max Players**'ı **8** yap (8 arsa var).
-4. Creator Hub'da oyunu **Public** yap, linki arkadaşlarına at.
+## 🚀 Roblox'a yayınlama (ilk kez)
+
+1. `BurgerImparatoru.rbxlx`'i Studio'da aç.
+2. Sol üstte **File ▸ Publish to Roblox** (ya da **Alt + P**).
+3. **Create a new experience** (yeni oyun) seç. **Name:** `Burger İmparatoru`, istersen bir açıklama yaz,
+   **Creator:** kendi hesabın. **Create**'e bas. Artık oyun Roblox'ta ama sadece sen görüyorsun.
+4. **Home ▸ Game Settings ▸ Security** ▸ **Enable Studio Access to API Services**'ı aç ▸ **Save**.
+   (Bu, ilerlemenin kaydedilmesi için. Kapalıyken de oyun çalışır, sadece kayıt olmaz.)
+5. https://create.roblox.com/dashboard/creations adresinde oyununa tıkla:
+   - **Places ▸ Burger İmparatoru ▸ Max Players** (en fazla oyuncu) = **8** (8 arsa var).
+   - Sol menüde **Audience ▸ Maturity & Compliance** anketini doldur (Roblox herkese açmadan önce ister).
+   - Oyun sayfasında **Privacy / Access** kısmını **Public** yap.
+6. Oyunun linkini (roblox.com/games/...) arkadaşlarına at. 🎉
+
+## 🔄 Yayınladıktan sonra güncelleme
+
+Oyunu bir kere yayınladın; sonraki her değişiklikte aynı oyunun **üstüne** yayınlarsın, link ve oyuncuların
+kayıtları aynı kalır.
+
+1. Benden yeni bir şey iste. Ben kodu değiştiririm ve indirme linkindeki zip'i yenilerim (link hep aynı).
+2. Yeni zip'i indir, ayıkla, `BurgerImparatoru.rbxlx`'i Studio'da aç.
+3. **File ▸ Publish to Roblox As...** ▸ listeden kendi **Burger İmparatoru** oyununu seç ▸ **Publish**
+   (üstüne yazmayı onayla).
+4. Açık sunuculardaki oyuncular eski sürümde kalır. Hemen güncellemek için Creator Hub'da oyununun **⋯** menüsünden
+   **Restart Servers for Updates**'e bas (yeni girenler zaten yeni sürümü görür).
+
+⚠️ **Önemli:** Studio'da kendin bir şey değiştirirsen (ör. ses numarası, haritaya eklediğin bir şey), yeni sürümü
+yayınlamadan önce bana söyle; ben de koda eklerim. Yoksa yeni sürüm senin değişikliğinin üstüne yazar.
+En kolayı: ses numarasını bana yaz, koda kalıcı koyayım.
+
+**İleri seviye (isteğe bağlı):** Roblox'un Open Cloud API anahtarıyla güncellemeleri doğrudan ben de
+yayınlayabilirim; sen hiçbir şey indirmeden oyun güncellenir. İstersen adım adım kurarız
+(anahtarı sohbete yazmazsın, güvenli bir form açılır).
 
 ## Kendin değiştir
 
 Bütün ayarlar **ReplicatedStorage ▸ Ortak ▸ Config** içinde, Türkçe açıklamalı: logolar, renkler, fiyatlar,
-makine hızı, şube bonusu, unvanlar, dükkanın içindeki yerleşim. Örnek: altın burgeri daha sık çıkarmak için
+makine hızı, çalışanlar, müşteri sıklığı, burgerin boyu (`BurgerOlcegi`), gün uzunluğu (`GunSuresi`),
+şube bonusu, unvanlar, dükkanın içindeki yerleşim. Örnek: altın burgeri daha sık çıkarmak için
 `Config.AltinTabanSansi = 0.03` satırını `0.10` yap.
 
 ## Dosyalar
@@ -103,6 +145,7 @@ src/server/Dukkan.luau               ← oyuncunun dükkanını arsasına kurar
 src/server/HaritaUretici.luau        ← haritayı kodla kurar
 src/client/BurgerEkran.client.luau   ← butonlar, menüler, HUSS! yazıları, ses
 src/client/PaketGorsel.luau          ← kutunun katlanması, bantta giden paketler, makine presi
+src/client/Musteriler.luau           ← müşteriler (gelir, sıra, paket, masa, gider) ve çalışanların hareketi
 araclar/harita-uret.luau             ← haritayı harita/Harita.rbxm dosyasına yazar
 test/sim.luau                        ← Studio açmadan hızlı test
 ```
@@ -130,8 +173,8 @@ rm -f BurgerImparatoru-indir.zip && zip -j BurgerImparatoru-indir.zip BurgerImpa
 ```
 
 Studio açmadan test: sunucu ve ekran kodunu sahte bir Roblox ortamında çalıştırır; dükkan kurma ekranı,
-katlama, hile koruması, bütün geliştirmeler, makineler, yeni şube, isim filtresi, ikinci oyuncu, kayıt ve
-tekrar giriş denenir.
+katlama, hile koruması, bütün geliştirmeler ve çalışanlar, aşçı ve makineler, müşteriler, arazi, yeni şube,
+isim filtresi, ikinci oyuncu, kayıt ve tekrar giriş denenir.
 
 ```bash
 lune run test/sim.luau BurgerImparatoru.rbxlx ok        # kayıt açık

@@ -18,6 +18,7 @@ local Config = require(Ortak:WaitForChild("Config"))
 local Ekonomi = require(Ortak:WaitForChild("Ekonomi"))
 local Gorsel = require(Ortak:WaitForChild("Gorsel"))
 local PaketGorsel = require(script.Parent:WaitForChild("PaketGorsel"))
+local Musteriler = require(script.Parent:WaitForChild("Musteriler"))
 local Uzaklar = ReplicatedStorage:WaitForChild("Uzaklar")
 local KatlaOlay = Uzaklar:WaitForChild("Katla")
 local SatinAlOlay = Uzaklar:WaitForChild("SatinAl")
@@ -617,7 +618,7 @@ local satirlar = {}
 for i, kat in ipairs(Config.Kategoriler) do
 	local s = buton({
 		LayoutOrder = i,
-		Size = UDim2.fromOffset(124, 32),
+		Size = UDim2.fromOffset(100, 32),
 		BackgroundColor3 = SATIR,
 		Text = kat.Ikon .. " " .. kat.Ad,
 		ZIndex = 12,
@@ -1168,9 +1169,17 @@ DurumOlay.OnClientEvent:Connect(function(yeni)
 	arayuzGuncelle()
 end)
 
-KatlandiOlay.OnClientEvent:Connect(function(kim, sira, asama, paketlendi, kazanc, altin, siradakiAltin)
+KatlandiOlay.OnClientEvent:Connect(function(kim, sira, asama, paketlendi, kazanc, altin, siradakiAltin, otomatik)
 	PaketGorsel.Katla(sira, asama, paketlendi, altin, siradakiAltin)
+	if otomatik then
+		Musteriler.AsciKatladi(sira)
+	end
 	if kim == ben then
+		if otomatik then
+			-- aşçı katladı: kısık huss ve küçük yazı
+			hussCal(rastgele:NextNumber(0.95, 1.05), Config.HussSesSeviyesi * 0.5)
+			ucanYazi("👨‍🍳 HUSS!", SARI, 0.6, rastgele:NextInteger(-170, 170), rastgele:NextInteger(-205, -160))
+		end
 		if paketlendi then
 			ucanYazi("📦 +" .. K(kazanc), Color3.fromRGB(140, 255, 120), 0.85, rastgele:NextInteger(-40, 40), -175)
 			if altin then
@@ -1228,6 +1237,10 @@ end)
 ----------------------------------------------------------------------
 -- Başlat
 ----------------------------------------------------------------------
+task.spawn(function()
+	Musteriler.Baslat(Config, Gorsel)
+end)
+PaketGorsel.SatisaGeldi = Musteriler.PaketGeldi
 task.spawn(function()
 	PaketGorsel.Baslat(Config, Gorsel)
 	if durum and durum.ArsaIndex > 0 then

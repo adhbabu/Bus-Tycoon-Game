@@ -75,9 +75,10 @@ local function yeniKutu(st, altin, asama, gecikme)
 	asama = asama or 0
 	st.Asama = asama
 	st.Altin = altin and true or false
-	local kutu = Gorsel.KutuYap(taban, stilOku(st, st.Altin))
-	local poz = Gorsel.KutuPozu(taban, asama)
-	local burger = Gorsel.Burger(taban * CFrame.new(0, Gorsel.KartonKalinligi, 0), 1, st.Altin, false)
+	local o = Config.BurgerOlcegi
+	local kutu = Gorsel.KutuYap(taban, stilOku(st, st.Altin), o)
+	local poz = Gorsel.KutuPozu(taban, asama, o)
+	local burger = Gorsel.Burger(taban * CFrame.new(0, Gorsel.KartonKalinligi * o, 0), o, st.Altin, false)
 	local hepsi = {}
 	for ad, p in pairs(kutu) do
 		p.CFrame = poz[ad]
@@ -159,7 +160,7 @@ function PaketGorsel.Katla(sira, asama, paketlendi, altin, siradakiAltin)
 	if not taban or not st.Kutu then
 		return
 	end
-	local poz = Gorsel.KutuPozu(taban, asama)
+	local poz = Gorsel.KutuPozu(taban, asama, Config.BurgerOlcegi)
 	for ad, p in pairs(st.Kutu) do
 		TweenService:Create(p, KATLAMA, { CFrame = poz[ad] }):Play()
 	end
@@ -183,11 +184,15 @@ function PaketGorsel.Katla(sira, asama, paketlendi, altin, siradakiAltin)
 		if not F or not sahipli(st) then
 			return
 		end
-		local paket = Gorsel.KapaliKutu(taban, stil, 1)
+		local paket = Gorsel.KapaliKutu(taban, stil, Config.BurgerOlcegi)
 		for _, p in ipairs(paket) do
 			p.Parent = klasor
 		end
-		yoldanGotur(paket, taban, { satisNoktasi(F) }, 18)
+		yoldanGotur(paket, taban, { satisNoktasi(F) }, 18, function()
+			if PaketGorsel.SatisaGeldi then
+				PaketGorsel.SatisaGeldi(sira, stil)
+			end
+		end)
 	end)
 	yeniKutu(st, siradakiAltin, 0, 0.3)
 end
@@ -251,7 +256,7 @@ function PaketGorsel.Uretim(sira, makine, altin)
 	local x = Y.MakineX[makine]
 	local tepe = Y.TezgahYuksekligi
 	local bas = F * CFrame.new(x, tepe, Y.MakineZ - 0.4)
-	local paket = Gorsel.KapaliKutu(bas, stilOku(st, altin), 0.5)
+	local paket = Gorsel.KapaliKutu(bas, stilOku(st, altin), Config.BantKutuOlcegi)
 	for _, p in ipairs(paket) do
 		p.Parent = klasor
 	end
@@ -260,8 +265,12 @@ function PaketGorsel.Uretim(sira, makine, altin)
 		F * CFrame.new(Y.BantX, tepe, Y.BantZ),
 		satisNoktasi(F),
 	}
+	local stil = stilOku(st, altin)
 	yoldanGotur(paket, bas, noktalar, 11, function()
 		st.Bantta -= 1
+		if PaketGorsel.SatisaGeldi then
+			PaketGorsel.SatisaGeldi(sira, stil)
+		end
 	end)
 end
 

@@ -305,6 +305,16 @@ customMethods["*"] = {
 		end
 	end,
 }
+customMethods.Terrain = {
+	FillBall = function(self, merkez, yaricap, malzeme)
+		assert(typeof(merkez) == "Vector3" and type(yaricap) == "number" and typeof(malzeme) == "EnumItem", "FillBall args")
+		STATS.arazi = (STATS.arazi or 0) + 1
+	end,
+	FillCylinder = function(self, cf, boy, yaricap, malzeme)
+		assert(typeof(cf) == "CFrame" and type(boy) == "number" and type(yaricap) == "number" and typeof(malzeme) == "EnumItem", "FillCylinder args")
+		STATS.arazi = (STATS.arazi or 0) + 1
+	end,
+}
 customMethods.TextService = {
 	FilterStringAsync = function(self, metin, userId)
 		assert(type(metin) == "string" and type(userId) == "number", "FilterStringAsync args")
@@ -720,17 +730,21 @@ assert(stat(p1, "Paket") - onceP <= 2, "hız sınırı çalışmıyor")
 
 if zengin then
 	print("== Her şeyi satın al")
-	for _, g in ipairs(Cfg.Gelistirmeler) do
-		for _ = 1, g.MaxSeviye + 1 do
-			remotes.SatinAl.OnServerEvent:Fire(p1, g.Anahtar)
+	-- iki tur: kilitli olanlar (ör. Teknisyen makineden sonra açılır) ikinci turda alınır
+	for _ = 1, 2 do
+		for _, g in ipairs(Cfg.Gelistirmeler) do
+			for _ = 1, g.MaxSeviye + 1 do
+				remotes.SatinAl.OnServerEvent:Fire(p1, g.Anahtar)
+			end
+			task.wait(0.05)
 		end
-		task.wait(0.05)
 	end
 	remotes.SatinAl.OnServerEvent:Fire(p1, "YokBoyle")
 	remotes.SatinAl.OnServerEvent:Fire(p1, 42)
 	task.wait(0.5)
 	local d = arsa1.Dukkan
-	for _, ad in ipairs({ "Duvar", "Cati", "NeonTabela", "Masa", "Ampul", "DevBurgerKaide", "Makine1", "Makine6", "AnaBant", "DonusBant" }) do
+	for _, ad in ipairs({ "Duvar", "Cati", "NeonTabela", "Masa", "Ampul", "DevBurgerKaide", "Makine1", "Makine6", "AnaBant", "DonusBant",
+		"Calisan_Asci", "Calisan_Kasiyer", "Calisan_Teknisyen", "Calisan_Temizlikci", "Supurge" }) do
 		assert(d:FindFirstChild(ad, true) ~= nil, "dükkanda yok: " .. ad)
 	end
 	print("Makine sayısı (attribute):", arsa1:GetAttribute("Makine"), "Para:", stat(p1, "Para"))
@@ -751,13 +765,17 @@ if zengin then
 	end
 	task.wait(0.2)
 
-	print("== Makineler çalışıyor")
+	print("== Makineler, aşçı ve müşteriler çalışıyor")
 	local pm = stat(p1, "Paket")
-	heartbeat(3)
+	heartbeat(6)
 	task.wait(0.6)
 	local uretilen = stat(p1, "Paket") - pm
-	print("3 saniyede makine paketi:", uretilen)
-	assert(uretilen >= 12, "makineler üretmiyor")
+	print("6 saniyede otomatik paket:", uretilen)
+	assert(uretilen >= 24, "makineler üretmiyor")
+	local mk = Workspace:FindFirstChild("Musteriler")
+	local musteriParca = mk and #unwrap(mk):GetChildren() or 0
+	print("Ekrandaki müşteri parçası:", musteriParca)
+	assert(musteriParca > 0, "müşteri gelmedi")
 	local bantta = 0
 	for _, d2 in ipairs(unwrap(gorsel):GetChildren()) do
 		if d2.Name == "PaketTepsi" then
@@ -791,6 +809,7 @@ if zengin then
 	end
 	topla(unwrap(arsa1))
 	topla(unwrap(gorsel))
+	topla(unwrap(mk))
 	fs.writeFile("dukkan.json", serde.encode("json", { dukkan = parcalar }))
 
 	print("== Yeni şube")
@@ -923,7 +942,7 @@ for k, v in pairs(DATASTORE) do
 end
 
 print("== İstatistik")
-print("  tween:", STATS.tweens, "ses:", STATS.sounds, "konfeti:", STATS.emits, "ışınlama:", STATS.pivots)
+print("  tween:", STATS.tweens, "ses:", STATS.sounds, "konfeti:", STATS.emits, "ışınlama:", STATS.pivots, "arazi:", STATS.arazi)
 for _, m in ipairs(STATS.systemMessages) do
 	print("  sohbet:", m)
 end

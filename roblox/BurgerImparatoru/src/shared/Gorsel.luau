@@ -196,7 +196,7 @@ function Gorsel.LogoEtiketi(p, yuz, logo, renk, buyukluk)
 end
 
 ----------------------------------------------------------------------
--- Karton kutu (tepsi + kapak)
+-- Karton kutu (tepsi + kapak). "o" = ölçek (1 = tam boy)
 ----------------------------------------------------------------------
 local S = 5.8 -- kutunun eni ve derinliği
 local T = 0.12 -- karton kalınlığı
@@ -212,42 +212,46 @@ local KAPAK_ACIK = math.rad(110)
 -- Kutunun her parçasının, verilen aşamadaki yeri.
 -- 0 = karton açık, 1 = tepsinin kenarları kalktı, 2 = kapağın kenarları kalktı, 3 = kapak kapandı
 -- taban: kutunun alt yüzünün ortası; -Z yönü kutunun önü (oyuncuya bakar)
-function Gorsel.KutuPozu(taban, asama)
+function Gorsel.KutuPozu(taban, asama, o)
+	o = o or 1
+	local s, t, th, lh = S * o, T * o, TH * o, LH * o
 	local fi = asama >= 1 and 0 or DUZ
 	local beta = asama >= 2 and 0 or DUZ
 	local alfa = asama >= 3 and 0 or KAPAK_ACIK
-	local K = taban * CFrame.new(0, TH, S / 2) * CFrame.Angles(alfa, 0, 0) -- kapağın menteşesi
+	local K = taban * CFrame.new(0, th, s / 2) * CFrame.Angles(alfa, 0, 0) -- kapağın menteşesi
 	return {
-		Taban = taban * CFrame.new(0, T / 2, 0),
-		TArka = taban * CFrame.new(0, TH / 2, S / 2 - T / 2),
-		TOn = taban * CFrame.new(0, 0, -S / 2) * CFrame.Angles(-fi, 0, 0) * CFrame.new(0, TH / 2, T / 2),
-		TSol = taban * CFrame.new(-S / 2, 0, 0) * CFrame.Angles(0, 0, fi) * CFrame.new(T / 2, TH / 2, 0),
-		TSag = taban * CFrame.new(S / 2, 0, 0) * CFrame.Angles(0, 0, -fi) * CFrame.new(-T / 2, TH / 2, 0),
-		KUst = K * CFrame.new(0, LH - T / 2, -S / 2),
-		KArka = K * CFrame.new(0, LH / 2, -T / 2),
-		KOn = K * CFrame.new(0, LH, -S) * CFrame.Angles(beta, 0, 0) * CFrame.new(0, -LH / 2, T / 2),
-		KSol = K * CFrame.new(-S / 2, LH, -S / 2) * CFrame.Angles(0, 0, -beta) * CFrame.new(T / 2, -LH / 2, 0),
-		KSag = K * CFrame.new(S / 2, LH, -S / 2) * CFrame.Angles(0, 0, beta) * CFrame.new(-T / 2, -LH / 2, 0),
+		Taban = taban * CFrame.new(0, t / 2, 0),
+		TArka = taban * CFrame.new(0, th / 2, s / 2 - t / 2),
+		TOn = taban * CFrame.new(0, 0, -s / 2) * CFrame.Angles(-fi, 0, 0) * CFrame.new(0, th / 2, t / 2),
+		TSol = taban * CFrame.new(-s / 2, 0, 0) * CFrame.Angles(0, 0, fi) * CFrame.new(t / 2, th / 2, 0),
+		TSag = taban * CFrame.new(s / 2, 0, 0) * CFrame.Angles(0, 0, -fi) * CFrame.new(-t / 2, th / 2, 0),
+		KUst = K * CFrame.new(0, lh - t / 2, -s / 2),
+		KArka = K * CFrame.new(0, lh / 2, -t / 2),
+		KOn = K * CFrame.new(0, lh, -s) * CFrame.Angles(beta, 0, 0) * CFrame.new(0, -lh / 2, t / 2),
+		KSol = K * CFrame.new(-s / 2, lh, -s / 2) * CFrame.Angles(0, 0, -beta) * CFrame.new(t / 2, -lh / 2, 0),
+		KSag = K * CFrame.new(s / 2, lh, -s / 2) * CFrame.Angles(0, 0, beta) * CFrame.new(-t / 2, -lh / 2, 0),
 	}
 end
 
 Gorsel.KutuParcalari = { "Taban", "TArka", "TOn", "TSol", "TSag", "KUst", "KArka", "KOn", "KSol", "KSag" }
 
 -- Açık bir karton kutu yapar (Parent'ı yok). stil = { Renk, Logo, Altin }
-function Gorsel.KutuYap(taban, stil)
-	local poz = Gorsel.KutuPozu(taban, 0)
+function Gorsel.KutuYap(taban, stil, o)
+	o = o or 1
+	local s, t, th, lh = S * o, T * o, TH * o, LH * o
+	local poz = Gorsel.KutuPozu(taban, 0, o)
 	local kapakRengi = stil.Altin and ALTIN or stil.Renk
 	local boyut = {
-		Taban = Vector3.new(S, T, S),
-		TArka = Vector3.new(S, TH, T),
-		TOn = Vector3.new(S, TH, T),
-		TSol = Vector3.new(T, TH, S - 2 * T),
-		TSag = Vector3.new(T, TH, S - 2 * T),
-		KUst = Vector3.new(S, T, S),
-		KArka = Vector3.new(S, LH, T),
-		KOn = Vector3.new(S, LH, T),
-		KSol = Vector3.new(T, LH, S - 2 * T),
-		KSag = Vector3.new(T, LH, S - 2 * T),
+		Taban = Vector3.new(s, t, s),
+		TArka = Vector3.new(s, th, t),
+		TOn = Vector3.new(s, th, t),
+		TSol = Vector3.new(t, th, s - 2 * t),
+		TSag = Vector3.new(t, th, s - 2 * t),
+		KUst = Vector3.new(s, t, s),
+		KArka = Vector3.new(s, lh, t),
+		KOn = Vector3.new(s, lh, t),
+		KSol = Vector3.new(t, lh, s - 2 * t),
+		KSag = Vector3.new(t, lh, s - 2 * t),
 	}
 	local kutu = {}
 	for _, ad in ipairs(Gorsel.KutuParcalari) do
@@ -284,8 +288,102 @@ function Gorsel.KapaliKutu(cf, stil, olcek)
 		Material = stil.Altin and Enum.Material.Foil or Enum.Material.Cardboard,
 	})
 	Gorsel.LogoEtiketi(kapak, Enum.NormalId.Top, stil.Logo, kapakRengi, 0.75)
-	Gorsel.LogoEtiketi(kapak, Enum.NormalId.Front, stil.Logo, kapakRengi, 0.8)
+	if olcek >= 0.4 then
+		Gorsel.LogoEtiketi(kapak, Enum.NormalId.Front, stil.Logo, kapakRengi, 0.8)
+	end
 	return { tepsi, kapak }
+end
+
+----------------------------------------------------------------------
+-- İnsan (müşteriler ve çalışanlar). Klasik Roblox karakteri gibi bloklardan.
+----------------------------------------------------------------------
+-- cf: ayaklarının ortası, yüzü -Z'ye (LookVector) bakar
+-- oz = { Gomlek, Pantolon, Ten, Yuz, Sapka = "kep" | "sef" | nil, SapkaRenk, Onluk }
+-- salinim: kol/bacak sallanma açısı (radyan), oturuyor: true ise bacaklar öne,
+-- kolAci: verilirse iki kol da bu açıyla öne uzanır (paket taşırken)
+function Gorsel.InsanPozu(cf, salinim, oturuyor, kolAci)
+	salinim = salinim or 0
+	local kalca = cf * CFrame.new(0, 2, 0)
+	local omuz = cf * CFrame.new(0, 3.8, 0)
+	local bacakAci = oturuyor and math.rad(-90) or 0
+	local dus = oturuyor and -1 or 0
+	local govde = cf * CFrame.new(0, 3 + dus, 0)
+	return {
+		Govde = govde,
+		Bas = cf * CFrame.new(0, 4.65 + dus, 0),
+		SolKol = omuz * CFrame.new(-1.5, dus, 0) * CFrame.Angles(kolAci or salinim, 0, 0) * CFrame.new(0, -0.8, 0),
+		SagKol = omuz * CFrame.new(1.5, dus, 0) * CFrame.Angles(kolAci or -salinim, 0, 0) * CFrame.new(0, -0.8, 0),
+		SolBacak = kalca * CFrame.new(-0.5, dus, 0) * CFrame.Angles(-salinim * 0.8 - bacakAci, 0, 0) * CFrame.new(0, -1, 0),
+		SagBacak = kalca * CFrame.new(0.5, dus, 0) * CFrame.Angles(salinim * 0.8 - bacakAci, 0, 0) * CFrame.new(0, -1, 0),
+	}
+end
+
+local TENLER = {
+	Color3.fromRGB(255, 220, 185), Color3.fromRGB(240, 195, 150), Color3.fromRGB(205, 150, 105),
+	Color3.fromRGB(160, 110, 75), Color3.fromRGB(110, 75, 50),
+}
+Gorsel.Tenler = TENLER
+
+function Gorsel.Insan(cf, oz)
+	local poz = Gorsel.InsanPozu(cf, 0, false)
+	local ten = oz.Ten or TENLER[1]
+	local p = {}
+	p.Govde = parca({ Name = "Govde", Size = Vector3.new(2, 2, 1), CFrame = poz.Govde, Color = oz.Gomlek })
+	p.Bas = parca({ Name = "Bas", Size = Vector3.new(1.25, 1.25, 1.25), CFrame = poz.Bas, Color = ten })
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Head
+	mesh.Scale = Vector3.new(1.25, 1.25, 1.25)
+	mesh.Parent = p.Bas
+	p.SolKol = parca({ Name = "SolKol", Size = Vector3.new(1, 2, 1), CFrame = poz.SolKol, Color = ten })
+	p.SagKol = parca({ Name = "SagKol", Size = Vector3.new(1, 2, 1), CFrame = poz.SagKol, Color = ten })
+	p.SolBacak = parca({ Name = "SolBacak", Size = Vector3.new(1, 2, 1), CFrame = poz.SolBacak, Color = oz.Pantolon })
+	p.SagBacak = parca({ Name = "SagBacak", Size = Vector3.new(1, 2, 1), CFrame = poz.SagBacak, Color = oz.Pantolon })
+	-- kısa kollu gömlek: kolun üst yarısı gömlek renginde
+	-- yüz
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.LightInfluence = 0.6
+	sg.CanvasSize = Vector2.new(100, 100)
+	sg.Parent = p.Bas
+	local yuz = Instance.new("TextLabel")
+	yuz.BackgroundTransparency = 1
+	yuz.Size = UDim2.fromScale(1, 1)
+	yuz.TextScaled = true
+	yuz.FontFace = Font.fromEnum(Enum.Font.FredokaOne)
+	yuz.Text = oz.Yuz or "🙂"
+	yuz.Parent = sg
+	local ekler = {}
+	if oz.Onluk then
+		table.insert(ekler, { "Onluk", Vector3.new(1.6, 1.8, 0.1), CFrame.new(0, -0.1, -0.55), Color3.new(1, 1, 1) })
+	end
+	if oz.Sapka == "kep" then
+		table.insert(ekler, { "Sapka", Vector3.new(1.35, 0.45, 1.35), CFrame.new(0, 0.62, 0), oz.SapkaRenk or oz.Gomlek, "Bas" })
+		table.insert(ekler, { "Siper", Vector3.new(1.2, 0.12, 0.7), CFrame.new(0, 0.45, -0.85), oz.SapkaRenk or oz.Gomlek, "Bas" })
+	elseif oz.Sapka == "sef" then
+		table.insert(ekler, { "Sapka", Vector3.new(1.3, 1.1, 1.3), CFrame.new(0, 1.05, 0), Color3.new(1, 1, 1), "Bas" })
+	end
+	p.Ekler = {}
+	for _, e in ipairs(ekler) do
+		local bagli = e[5] or "Govde"
+		local ek = parca({ Name = e[1], Size = e[2], CFrame = p[bagli].CFrame * e[3], Color = e[4] })
+		table.insert(p.Ekler, { Parca = ek, Bagli = bagli, Goreli = e[3] })
+	end
+	p.Liste = { p.Govde, p.Bas, p.SolKol, p.SagKol, p.SolBacak, p.SagBacak }
+	for _, e in ipairs(p.Ekler) do
+		table.insert(p.Liste, e.Parca)
+	end
+	return p
+end
+
+-- Daha önce yapılmış bir insanı yeni yerine ve duruşuna taşır
+function Gorsel.InsanTasi(p, cf, salinim, oturuyor, kolAci)
+	local poz = Gorsel.InsanPozu(cf, salinim, oturuyor, kolAci)
+	for ad, c in pairs(poz) do
+		p[ad].CFrame = c
+	end
+	for _, e in ipairs(p.Ekler) do
+		e.Parca.CFrame = p[e.Bagli].CFrame * e.Goreli
+	end
 end
 
 return Gorsel

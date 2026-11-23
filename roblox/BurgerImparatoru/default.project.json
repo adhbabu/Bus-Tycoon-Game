@@ -28,6 +28,32 @@
       },
       "Harita": {
         "$path": "harita/Harita.rbxm"
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": true,
+          "WaterColor": [
+            0.16,
+            0.52,
+            0.72
+          ],
+          "WaterWaveSize": 0.12,
+          "WaterWaveSpeed": 8,
+          "WaterTransparency": 0.55,
+          "WaterReflectance": 0.6
+        },
+        "Bulutlar": {
+          "$className": "Clouds",
+          "$properties": {
+            "Cover": 0.55,
+            "Density": 0.65,
+            "Color": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
       }
     },
     "Lighting": {
@@ -37,15 +63,28 @@
         "GlobalShadows": true,
         "EnvironmentDiffuseScale": 0.6,
         "EnvironmentSpecularScale": 0.6,
-        "OutdoorAmbient": [0.55, 0.53, 0.5]
+        "OutdoorAmbient": [
+          0.55,
+          0.53,
+          0.5
+        ],
+        "Technology": "Future"
       },
       "Atmosfer": {
         "$className": "Atmosphere",
         "$properties": {
           "Density": 0.28,
           "Offset": 0.12,
-          "Color": [0.78, 0.82, 0.88],
-          "Decay": [0.42, 0.45, 0.52],
+          "Color": [
+            0.78,
+            0.82,
+            0.88
+          ],
+          "Decay": [
+            0.42,
+            0.45,
+            0.52
+          ],
           "Glare": 0.15,
           "Haze": 1.1
         }
@@ -64,6 +103,13 @@
           "Saturation": 0.12,
           "Contrast": 0.05,
           "Brightness": 0.02
+        }
+      },
+      "Gunes": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.04,
+          "Spread": 0.7
         }
       }
     },

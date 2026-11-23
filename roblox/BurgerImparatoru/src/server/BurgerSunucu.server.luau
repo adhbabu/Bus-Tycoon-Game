@@ -4,6 +4,7 @@
 -- Kutuların katlanması ve bantta gitmesi gibi görüntüleri her oyuncunun ekranı kendisi çizer.
 
 local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local TextService = game:GetService("TextService")
@@ -33,7 +34,7 @@ local StilSecOlay = olay("StilSec") -- oyuncu -> sunucu ({Logo, Renk, Ad})
 local DurumIsteOlay = olay("DurumIste") -- oyuncu -> sunucu
 local EvimeGitOlay = olay("EvimeGit") -- oyuncu -> sunucu (dükkanına ışınlan)
 local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
--- sunucu -> herkes: kim, arsa, aşama, paketlendi mi, kazanç, bu burger altın mı, sıradaki altın mı
+-- sunucu -> herkes: kim, arsa, aşama, paketlendi mi, kazanç, bu burger altın mı, sıradaki altın mı, aşçı mı katladı
 local KatlandiOlay = olay("Katlandi")
 local UretimOlay = olay("Uretim") -- sunucu -> herkes: { {arsa, makine, altin}, ... }
 local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
@@ -52,6 +53,52 @@ if not harita then
 	harita.Parent = workspace
 end
 local arsaKlasoru = harita:WaitForChild("Arsalar")
+
+-- Oyun başlayınca tepeler ve göl gerçek araziye (Terrain) dönüşür: yumuşak çimen tepeler, dalgalı su.
+-- (Studio'da düzenlerken bloklar olarak görünürler.)
+task.spawn(function()
+	local arazi = workspace:FindFirstChildOfClass("Terrain")
+	if not arazi then
+		return
+	end
+	local ok, hata = pcall(function()
+		local tepeler = harita:FindFirstChild("Tepeler")
+		if tepeler then
+			for _, t in ipairs(tepeler:GetChildren()) do
+				if t:IsA("BasePart") then
+					arazi:FillBall(t.CFrame.Position, t.Size.X / 2, Enum.Material.Grass)
+					t:Destroy()
+				end
+			end
+		end
+		for _, gol in ipairs(harita:GetDescendants()) do
+			if gol:IsA("BasePart") and gol.Name == "Gol" then
+				local r = gol.Size.Y / 2
+				arazi:FillCylinder(CFrame.new(gol.CFrame.Position.X, -0.6, gol.CFrame.Position.Z), 2, r, Enum.Material.Water)
+				gol.Transparency = 1
+			end
+		end
+	end)
+	if not ok then
+		warn("[Burger İmparatoru] Arazi kurulamadı: " .. tostring(hata))
+	end
+end)
+
+-- Gün ve gece: gün dörtte üç sürer, gece kısa; gece neon tabelalar ve lambalar parlar
+task.spawn(function()
+	local baslangic = os.clock()
+	while true do
+		local p = ((os.clock() - baslangic) / Config.GunSuresi) % 1
+		local saat
+		if p < 0.75 then
+			saat = 7 + p / 0.75 * 12 -- 07:00 -> 19:00
+		else
+			saat = 19 + (p - 0.75) / 0.25 * 12 -- 19:00 -> 07:00
+		end
+		Lighting.ClockTime = saat % 24
+		task.wait(0.5)
+	end
+end)
 local arsalar = {}
 for i = 1, Config.ArsaSayisi do
 	local m = arsaKlasoru:FindFirstChild("Arsa" .. i)
@@ -288,7 +335,7 @@ end
 ----------------------------------------------------------------------
 -- Katlama (KATLA butonu)
 ----------------------------------------------------------------------
-local function katla(oyuncu, adet)
+local function katla(oyuncu, adet, otomatik)
 	local v = veriler[oyuncu]
 	if not v or not v.Hazir or not v.Arsa then
 		return
@@ -316,7 +363,7 @@ local function katla(oyuncu, adet)
 		skorGuncelle(oyuncu)
 		unvanKontrol(oyuncu, eskiUnvan)
 	end
-	KatlandiOlay:FireAllClients(oyuncu, v.Arsa.Index, b.Asama, paketlendi, kazanc, b.Altin, v.Burger.Altin)
+	KatlandiOlay:FireAllClients(oyuncu, v.Arsa.Index, b.Asama, paketlendi, kazanc, b.Altin, v.Burger.Altin, otomatik == true)
 	durumGonder(oyuncu)
 end
 
@@ -367,6 +414,7 @@ local function oyuncuGeldi(oyuncu)
 		Jeton = 4,
 		SonJeton = os.clock(),
 		MakineBirikim = {},
+		AsciBirikim = 0,
 		Son = {},
 	}
 	veriler[oyuncu] = v
@@ -506,7 +554,10 @@ EvimeGitOlay.OnServerEvent:Connect(function(oyuncu)
 	end
 end)
 
-local BINA_PARCASI = { Makine = true, Duvar = true, Cati = true, Oturma = true, Dekor = true, DevTabela = true }
+local BINA_PARCASI = {
+	Makine = true, Duvar = true, Cati = true, Oturma = true, Dekor = true, DevTabela = true,
+	Asci = true, Kasiyer = true, Teknisyen = true, Temizlikci = true,
+}
 
 SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
 	local v = veriler[oyuncu]
@@ -546,6 +597,7 @@ SubeAcOlay.OnServerEvent:Connect(function(oyuncu)
 	v.Para = 0
 	v.Gelistirme = Ekonomi.BosGelistirmeler()
 	v.MakineBirikim = {}
+	v.AsciBirikim = 0
 	yeniBurger(v)
 	dukkaniKur(oyuncu)
 	skorGuncelle(oyuncu)
@@ -619,6 +671,18 @@ task.spawn(function()
 		son = simdi
 		local liste = {}
 		for oyuncu, v in pairs(veriler) do
+			-- Aşçı: tezgahta oyuncunun yerine katlar
+			local asci = Ekonomi.AsciAraligi(v.Gelistirme)
+			if v.Hazir and v.Arsa and asci then
+				v.AsciBirikim += dt
+				local tur = 0
+				while v.AsciBirikim >= asci and tur < 4 do
+					v.AsciBirikim -= asci
+					tur += 1
+					katla(oyuncu, 1, true)
+				end
+				v.AsciBirikim = math.min(v.AsciBirikim, asci) -- takılma olursa birikmesin
+			end
 			local adet = math.min(v.Gelistirme.Makine or 0, #Config.Yerlesim.MakineX)
 			if v.Hazir and v.Arsa and adet > 0 then
 				local sure = Ekonomi.MakineSuresi(v.Gelistirme)

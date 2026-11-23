@@ -29,6 +29,8 @@ Config.PaketTabanDegeri = 5 -- bir İmparator Burger paketi kaç para eder (geli
 Config.AltinCarpani = 8 -- ALTIN BURGER normalin kaç katı para eder
 Config.AltinTabanSansi = 0.03 -- %3 ihtimalle ALTIN BURGER
 Config.AltinSansArtisi = 0.02 -- "Altın Şans" geliştirmesinin her seviyesi +%2
+Config.BurgerOlcegi = 0.55 -- tezgahtaki kutu ve burgerin boyu (1 = kocaman)
+Config.BantKutuOlcegi = 0.38 -- makinelerden bantta giden kutuların boyu
 
 ----------------------------------------------------------------------
 -- DÜKKAN STİLİ (oyunun başında herkes seçer)
@@ -56,6 +58,7 @@ Config.AdEnUzun = 20 -- dükkan adı en fazla kaç harf
 ----------------------------------------------------------------------
 Config.Kategoriler = {
 	{ Anahtar = "Mutfak", Ad = "Mutfak", Ikon = "🍳" },
+	{ Anahtar = "Calisanlar", Ad = "Çalışanlar", Ikon = "👷" },
 	{ Anahtar = "Otomasyon", Ad = "Makineler", Ikon = "⚙️" },
 	{ Anahtar = "Dukkan", Ad = "Dükkan", Ikon = "🏪" },
 	{ Anahtar = "Sube", Ad = "Yeni Şube", Ikon = "🏙️" },
@@ -66,6 +69,11 @@ Config.Gelistirmeler = {
 	{ Anahtar = "HizliEller", Kategori = "Mutfak", Ad = "Hızlı Eller", Ikon = "✋", Aciklama = "Her tıkta 2 katlama", TabanFiyat = 250, Carpan = 1, MaxSeviye = 1 },
 	{ Anahtar = "Tarif", Kategori = "Mutfak", Ad = "Gizli Sos", Ikon = "🧂", Aciklama = "Her paket daha çok para eder", TabanFiyat = 100, Carpan = 1.6, MaxSeviye = 40 },
 	{ Anahtar = "AltinSans", Kategori = "Mutfak", Ad = "Altın Şans", Ikon = "✨", Aciklama = "ALTIN BURGER daha sık çıkar", TabanFiyat = 250, Carpan = 1.9, MaxSeviye = 10 },
+	-- Çalışanlar (dükkanında gerçekten dururlar)
+	{ Anahtar = "Asci", Kategori = "Calisanlar", Ad = "Aşçı", Ikon = "👨‍🍳", Aciklama = "Tezgahında senin yerine katlar", TabanFiyat = 600, Carpan = 2.2, MaxSeviye = 5 },
+	{ Anahtar = "Kasiyer", Kategori = "Calisanlar", Ad = "Kasiyer", Ikon = "🧑‍💼", Aciklama = "Müşterilere güler yüz. Ün +%20", TabanFiyat = 3000, Carpan = 1, MaxSeviye = 1, Un = 0.2 },
+	{ Anahtar = "Teknisyen", Kategori = "Calisanlar", Ad = "Teknisyen", Ikon = "🧑‍🔧", Aciklama = "Makineler %25 daha kısa sürede paketler", TabanFiyat = 25000, Carpan = 1, MaxSeviye = 1, Gerekli = "Makine" },
+	{ Anahtar = "Temizlikci", Kategori = "Calisanlar", Ad = "Temizlikçi", Ikon = "🧹", Aciklama = "Pırıl pırıl dükkan. Ün +%15", TabanFiyat = 60000, Carpan = 1, MaxSeviye = 1, Un = 0.15 },
 	-- Otomasyon
 	{ Anahtar = "Makine", Kategori = "Otomasyon", Ad = "Paketleme Makinesi", Ikon = "🤖", Aciklama = "Sen dururken burger paketler", TabanFiyat = 1000, Carpan = 3, MaxSeviye = 6 },
 	{ Anahtar = "MakineHizi", Kategori = "Otomasyon", Ad = "Makine Hızı", Ikon = "⚡", Aciklama = "Bütün makineler daha hızlı", TabanFiyat = 1500, Carpan = 2.1, MaxSeviye = 12, Gerekli = "Makine" },
@@ -80,6 +88,19 @@ Config.Gelistirmeler = {
 Config.MakineIlkSure = 6 -- 1 makine kaç saniyede 1 paket yapar (hız almadan)
 Config.MakineHizlanma = 0.85 -- her "Makine Hızı" seviyesinde süre bu sayıyla çarpılır
 Config.MakineEnKisaSure = 0.8
+Config.TeknisyenCarpani = 0.75 -- teknisyen varken makine süresi bununla çarpılır
+Config.AsciIlkSure = 2.0 -- aşçı 1. seviyede kaç saniyede bir katlar
+Config.AsciHizlanma = 0.75 -- her seviyede bu sayıyla çarpılır
+
+-- Müşteriler (sadece görüntü): dükkanın ünü ve makineleri arttıkça daha sık gelirler
+Config.Musteri = {
+	EnFazla = 5, -- bir dükkanda aynı anda en fazla kaç müşteri
+	TemelAralik = 7, -- hiç geliştirme yokken kaç saniyede bir müşteri gelir
+	EnKisaAralik = 1.6,
+	Hiz = 7, -- yürüme hızı
+}
+
+Config.GunSuresi = 600 -- bir gün (sabah -> gece -> sabah) kaç saniye sürer
 
 -- Yeni Şube: her şeyi sıfırlar (stilin ve paket sayın kalır), kalıcı para çarpanı verir
 Config.SubeTabanFiyat = 2500000
@@ -116,6 +137,15 @@ Config.Yerlesim = {
 	BantZ = 10, -- makinelerin önündeki ana bant
 	BantX = 14, -- bant buradan öne, satış penceresine döner
 	Masalar = { Vector3.new(-28.5, 0, -26), Vector3.new(-28.5, 0, -18), Vector3.new(27, 0, -27), Vector3.new(28.5, 0, -19) },
+	-- çalışanların durduğu yerler ve baktıkları yön
+	Calisanlar = {
+		Asci = { Yer = Vector3.new(-18.6, 0, -16), Bakis = Vector3.new(1, 0, 0) },
+		Kasiyer = { Yer = Vector3.new(10.4, 0, -9.6), Bakis = Vector3.new(0, 0, -1) },
+		Teknisyen = { Yer = Vector3.new(0, 0, 13.2), Bakis = Vector3.new(0, 0, 1) },
+		Temizlikci = { Yer = Vector3.new(5, 0, -21), Bakis = Vector3.new(-1, 0, -0.4) },
+	},
+	MusteriGiris = -33, -- müşteriler bu çizgiden (kaldırımdan) gelir
+	KuyrukAralik = 2.6, -- satış penceresinde sıradaki müşteriler arası
 	TabelaYeri = Vector3.new(0, 0, -28),
 }
 

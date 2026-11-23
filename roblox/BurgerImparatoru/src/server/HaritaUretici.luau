@@ -73,7 +73,23 @@ function HaritaUretici.Uret(Config, Gorsel)
 	-- Meydan
 	------------------------------------------------------------------
 	local meydan = klasor("Meydan")
-	blok(meydan, "MeydanTasi", Vector3.new(YOL_IC * 2, 0.4, YOL_IC * 2), CFrame.new(0, 0.2, 0), Color3.fromRGB(214, 198, 172), Enum.Material.Cobblestone)
+	-- eski burgercilerdeki gibi kırmızı-beyaz damalı meydan
+	local karo = 8
+	local adet = (YOL_IC * 2) / karo
+	for ix = 0, adet - 1 do
+		for iz = 0, adet - 1 do
+			local kirmizi = (ix + iz) % 2 == 0
+			blok(meydan, "Karo", Vector3.new(karo, 0.4, karo), CFrame.new(-YOL_IC + karo / 2 + ix * karo, 0.2, -YOL_IC + karo / 2 + iz * karo),
+				kirmizi and Color3.fromRGB(205, 52, 48) or Color3.fromRGB(248, 244, 236), Enum.Material.SmoothPlastic)
+		end
+	end
+	-- sarı çerçeve
+	local kenarRenk = Color3.fromRGB(250, 205, 60)
+	local L = YOL_IC * 2 + 1
+	blok(meydan, "MeydanKenari", Vector3.new(L, 0.5, 1), CFrame.new(0, 0.25, -YOL_IC), kenarRenk, Enum.Material.SmoothPlastic)
+	blok(meydan, "MeydanKenari", Vector3.new(L, 0.5, 1), CFrame.new(0, 0.25, YOL_IC), kenarRenk, Enum.Material.SmoothPlastic)
+	blok(meydan, "MeydanKenari", Vector3.new(1, 0.5, L), CFrame.new(-YOL_IC, 0.25, 0), kenarRenk, Enum.Material.SmoothPlastic)
+	blok(meydan, "MeydanKenari", Vector3.new(1, 0.5, L), CFrame.new(YOL_IC, 0.25, 0), kenarRenk, Enum.Material.SmoothPlastic)
 	local halka = disk(CFrame.new(0, 0.45, 0), 0.1, 44, Color3.fromRGB(180, 82, 70), Enum.Material.Brick)
 	halka.CanCollide = true
 	halka.Parent = meydan
@@ -125,8 +141,51 @@ function HaritaUretici.Uret(Config, Gorsel)
 	bc.Thickness = 4
 	bc.Parent = baslik
 
+	-- Dev patates kızartması (meydanın köşesinde)
+	local function devPatates(merkez)
+		local m = Instance.new("Model")
+		m.Name = "DevPatates"
+		local cf = CFrame.new(merkez)
+		blok(m, "Kutu", Vector3.new(7, 7, 4.5), cf * CFrame.new(0, 3.5, 0), Color3.fromRGB(215, 40, 40), Enum.Material.SmoothPlastic)
+		blok(m, "KutuUst", Vector3.new(7.6, 1, 5), cf * CFrame.new(0, 7.2, 0), Color3.fromRGB(235, 55, 50), Enum.Material.SmoothPlastic)
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = Enum.NormalId.Front
+		sg.CanvasSize = Vector2.new(200, 200)
+		sg.Parent = m:FindFirstChild("Kutu")
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(1, 1)
+		t.TextScaled = true
+		t.Text = "🍟"
+		t.Parent = sg
+		for i = 1, 14 do
+			local x = rastgele:NextNumber(-2.8, 2.8)
+			local z = rastgele:NextNumber(-1.6, 1.6)
+			local boy = rastgele:NextNumber(4, 7)
+			blok(m, "Patates", Vector3.new(0.7, boy, 0.7), cf * CFrame.new(x, 7 + boy / 2 - 1.5, z) * CFrame.Angles(rastgele:NextNumber(-0.15, 0.15), 0, rastgele:NextNumber(-0.2, 0.2)),
+				Color3.fromRGB(250, 205, 70), Enum.Material.SmoothPlastic)
+		end
+		return m
+	end
+	-- Dev kola bardağı
+	local function devKola(merkez)
+		local m = Instance.new("Model")
+		m.Name = "DevKola"
+		local cf = CFrame.new(merkez)
+		local govde = disk(cf * CFrame.new(0, 5, 0), 10, 6.5, Color3.fromRGB(215, 40, 40), Enum.Material.SmoothPlastic)
+		govde.CanCollide = true
+		govde.Parent = m
+		disk(cf * CFrame.new(0, 5, 0), 3, 6.7, Color3.fromRGB(250, 250, 250), Enum.Material.SmoothPlastic).Parent = m
+		disk(cf * CFrame.new(0, 10.3, 0), 0.6, 7, Color3.fromRGB(245, 245, 245), Enum.Material.SmoothPlastic).Parent = m
+		local pipet = disk(cf * CFrame.new(0.8, 13, 0) * CFrame.Angles(0, 0, math.rad(-12)), 6, 0.6, Color3.fromRGB(255, 220, 60), Enum.Material.SmoothPlastic)
+		pipet.Parent = m
+		return m
+	end
+	devPatates(Vector3.new(30, 0.4, 30)).Parent = meydan
+	devKola(Vector3.new(-30, 0.4, 30)).Parent = meydan
+
 	-- Fıskiyeler
-	for _, k in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
+	for _, k in ipairs({ { 1, -1 }, { -1, -1 } }) do
 		local m = Vector3.new(k[1] * 30, 0, k[2] * 30)
 		local havuz = disk(CFrame.new(m + Vector3.new(0, 0.9, 0)), 1.4, 13, Color3.fromRGB(190, 190, 195), Enum.Material.Concrete)
 		havuz.CanCollide = true
@@ -288,6 +347,7 @@ function HaritaUretici.Uret(Config, Gorsel)
 		if k[1] == 1 and k[2] == -1 then
 			-- göl
 			local gol = disk(CFrame.new(merkez + Vector3.new(8, 0.35, -8)), 0.2, 34, Color3.fromRGB(60, 150, 220), Enum.Material.Glass)
+			gol.Name = "Gol"
 			gol.Transparency = 0.15
 			gol.Reflectance = 0.25
 			gol.Parent = parklar
@@ -347,6 +407,165 @@ function HaritaUretici.Uret(Config, Gorsel)
 		local r = rastgele:NextNumber(300, 345)
 		local p = Vector3.new(math.cos(a) * r, -cap * 0.28, math.sin(a) * r)
 		top(tepeler, "Tepe", cap, CFrame.new(p), Color3.fromRGB(85, 155, 65):Lerp(Color3.fromRGB(120, 175, 80), rastgele:NextNumber()))
+	end
+
+	------------------------------------------------------------------
+	-- Burger kasabası süsleri
+	------------------------------------------------------------------
+	local sus = klasor("Susler")
+	local KIRMIZI = Color3.fromRGB(215, 45, 45)
+	local SARI = Color3.fromRGB(250, 205, 50)
+	local BEYAZ = Color3.fromRGB(248, 246, 240)
+
+	local function yazili(p, yuz, metin, renk, arka)
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = yuz
+		sg.LightInfluence = 0.3
+		sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		sg.PixelsPerStud = 25
+		sg.Parent = p
+		local f = Instance.new("Frame")
+		f.Size = UDim2.fromScale(1, 1)
+		f.BackgroundColor3 = arka
+		f.Parent = sg
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(0.96, 0.86)
+		t.Position = UDim2.fromScale(0.02, 0.07)
+		t.TextScaled = true
+		t.FontFace = Font.fromEnum(Enum.Font.FredokaOne)
+		t.Text = metin
+		t.TextColor3 = renk
+		t.Parent = f
+	end
+
+	-- Meydanın dört girişinde kemer
+	for _, k in ipairs({ { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } }) do
+		local yon = Vector3.new(k[1], 0, k[2])
+		local yan = Vector3.new(-k[2], 0, k[1])
+		local merkez = yon * (YOL_IC - 2)
+		local cf = CFrame.lookAt(merkez, merkez + yon)
+		for _, s in ipairs({ -1, 1 }) do
+			for seg = 0, 5 do
+				blok(sus, "KemerDirek", Vector3.new(1.6, 2, 1.6), cf * CFrame.new(s * 9, 1 + seg * 2, 0), seg % 2 == 0 and KIRMIZI or BEYAZ, Enum.Material.SmoothPlastic)
+			end
+			top(sus, "KemerTopu", 2.2, cf * CFrame.new(s * 9, 13.1, 0), SARI, Enum.Material.SmoothPlastic)
+		end
+		local tabela = blok(sus, "KemerTabela", Vector3.new(20, 3.2, 0.8), cf * CFrame.new(0, 10.6, 0), KIRMIZI, Enum.Material.SmoothPlastic)
+		yazili(tabela, Enum.NormalId.Front, "🍔 BURGER KASABASI 🍔", SARI, KIRMIZI)
+		yazili(tabela, Enum.NormalId.Back, "🍔 BURGER KASABASI 🍔", SARI, KIRMIZI)
+	end
+
+	-- Meydanın kenarında bayrak süsü: köşe direkleri ile kemerler arasında
+	local bayrakRenk = { KIRMIZI, SARI, Color3.fromRGB(70, 170, 90), Color3.fromRGB(60, 130, 230), Color3.fromRGB(245, 130, 40) }
+	local koseler = { Vector3.new(-46, 0, -46), Vector3.new(46, 0, -46), Vector3.new(46, 0, 46), Vector3.new(-46, 0, 46) }
+	for _, kp in ipairs(koseler) do
+		local direk = disk(CFrame.new(kp + Vector3.new(0, 5.5, 0)), 11, 0.6, BEYAZ, Enum.Material.Metal)
+		direk.CanCollide = true
+		direk.Parent = sus
+		top(sus, "DirekTopu", 1.2, CFrame.new(kp + Vector3.new(0, 11.3, 0)), SARI, Enum.Material.SmoothPlastic)
+	end
+	local bayrakNo = 0
+	local function bayrakDizisi(a, b)
+		local fark = b - a
+		local boy = fark.Magnitude
+		local cf = CFrame.lookAt(a, b)
+		blok(sus, "Ip", Vector3.new(0.1, 0.1, boy), cf * CFrame.new(0, 0, -boy / 2), Color3.fromRGB(60, 60, 60), nil, { CanCollide = false })
+		local n = math.floor(boy / 2.4)
+		for i = 1, n - 1 do
+			bayrakNo += 1
+			local t = i / n
+			local sarkma = math.sin(t * math.pi) * 1.2
+			local p = a + fark * t - Vector3.new(0, sarkma + 0.75, 0)
+			local w = Instance.new("WedgePart")
+			w.Name = "Bayrak"
+			w.Anchored = true
+			w.CanCollide = false
+			w.CanTouch = false
+			w.Size = Vector3.new(0.1, 1.5, 1.4)
+			w.CFrame = CFrame.lookAt(p, p + fark.Unit) * CFrame.Angles(0, math.rad(90), 0) * CFrame.Angles(math.rad(180), 0, 0)
+			w.Color = bayrakRenk[bayrakNo % #bayrakRenk + 1]
+			w.Material = Enum.Material.Fabric
+			w.Parent = sus
+		end
+	end
+	for i, kp in ipairs(koseler) do
+		local sonraki = koseler[i % 4 + 1]
+		local orta = (kp + sonraki) / 2
+		local yanYon = (sonraki - kp).Unit
+		local y = Vector3.new(0, 10.5, 0)
+		bayrakDizisi(kp + y, orta - yanYon * 9 + Vector3.new(0, 12, 0))
+		bayrakDizisi(orta + yanYon * 9 + Vector3.new(0, 12, 0), sonraki + y)
+	end
+
+	-- Parklarda dev ketçap ve hardal şişeleri
+	local function sise(merkez, renk, kapak, yazi)
+		local m = Instance.new("Model")
+		m.Name = "DevSise"
+		local cf = CFrame.new(merkez)
+		local govde = disk(cf * CFrame.new(0, 5, 0), 10, 5, renk, Enum.Material.SmoothPlastic)
+		govde.CanCollide = true
+		govde.Parent = m
+		disk(cf * CFrame.new(0, 10.8, 0), 1.6, 3.6, renk, Enum.Material.SmoothPlastic).Parent = m
+		disk(cf * CFrame.new(0, 12.4, 0), 1.6, 2.4, kapak, Enum.Material.SmoothPlastic).Parent = m
+		disk(cf * CFrame.new(0, 13.8, 0), 1.2, 1, kapak, Enum.Material.SmoothPlastic).Parent = m
+		local etiket = blok(m, "Etiket", Vector3.new(3.4, 3, 0.2), cf * CFrame.new(0, 5, -2.45), BEYAZ, Enum.Material.SmoothPlastic, { CanCollide = false })
+		yazili(etiket, Enum.NormalId.Front, yazi, renk, BEYAZ)
+		return m
+	end
+	sise(Vector3.new(-122, 0.3, 98), Color3.fromRGB(205, 35, 35), BEYAZ, "KETÇAP").Parent = sus
+	sise(Vector3.new(-116, 0.3, 104), Color3.fromRGB(245, 200, 30), Color3.fromRGB(205, 35, 35), "HARDAL").Parent = sus
+	sise(Vector3.new(118, 0.3, 122), Color3.fromRGB(205, 35, 35), BEYAZ, "KETÇAP").Parent = sus
+
+	-- Yemek kamyonları
+	local function kamyon(cf, renk, yazi)
+		local m = Instance.new("Model")
+		m.Name = "YemekKamyonu"
+		blok(m, "Kasa", Vector3.new(7, 6, 13), cf * CFrame.new(0, 4.2, 0), renk, Enum.Material.SmoothPlastic)
+		blok(m, "Kabin", Vector3.new(7, 4.4, 4), cf * CFrame.new(0, 3.4, -8.5), renk:Lerp(Color3.new(1, 1, 1), 0.3), Enum.Material.SmoothPlastic)
+		blok(m, "OnCam", Vector3.new(6.2, 2, 0.2), cf * CFrame.new(0, 4.4, -10.55), Color3.fromRGB(150, 200, 235), Enum.Material.Glass, { Transparency = 0.3 })
+		blok(m, "SatisCami", Vector3.new(0.2, 2.6, 7), cf * CFrame.new(3.55, 4.8, 0.5), Color3.fromRGB(40, 40, 45), Enum.Material.SmoothPlastic)
+		blok(m, "Tente", Vector3.new(2.6, 0.2, 8), cf * CFrame.new(4.6, 6.6, 0.5) * CFrame.Angles(0, 0, math.rad(-18)), BEYAZ, Enum.Material.Fabric)
+		local tabela = blok(m, "Tabela", Vector3.new(0.4, 2.4, 9), cf * CFrame.new(0, 8.4, 0.5), BEYAZ, Enum.Material.SmoothPlastic)
+		yazili(tabela, Enum.NormalId.Right, yazi, renk, BEYAZ)
+		yazili(tabela, Enum.NormalId.Left, yazi, renk, BEYAZ)
+		for _, t in ipairs({ { -3.6, -8 }, { 3.6, -8 }, { -3.6, 4 }, { 3.6, 4 } }) do
+			local teker = Gorsel.Parca({ Name = "Teker", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 2.4, 2.4), CFrame = cf * CFrame.new(t[1], 1.2, t[2]), Color = Color3.fromRGB(35, 35, 40), CanCollide = true })
+			teker.Parent = m
+		end
+		return m
+	end
+	kamyon(CFrame.lookAt(Vector3.new(-96, 0.3, -122), Vector3.new(-96, 0.3, -140)), Color3.fromRGB(240, 120, 170), "🍦 DONDURMA").Parent = sus
+	kamyon(CFrame.lookAt(Vector3.new(124, 0.3, 92), Vector3.new(140, 0.3, 92)), Color3.fromRGB(70, 160, 230), "🌭 SOSİSLİ").Parent = sus
+
+	-- Gökyüzünde burger balon
+	local balon = Instance.new("Model")
+	balon.Name = "BurgerBalon"
+	local balonCf = CFrame.new(-110, 52, -105) * CFrame.Angles(math.rad(6), 0, math.rad(-4))
+	local bParcalar = Gorsel.Burger(balonCf, 3, false, true)
+	for _, p in ipairs(bParcalar) do
+		p.Parent = balon
+	end
+	blok(balon, "Sepet", Vector3.new(5, 3.2, 5), balonCf * CFrame.new(0, -9, 0), Color3.fromRGB(150, 100, 55), Enum.Material.WoodPlanks, { CanCollide = false })
+	for _, c in ipairs({ { -2.3, -2.3 }, { 2.3, -2.3 }, { -2.3, 2.3 }, { 2.3, 2.3 } }) do
+		local alt = (balonCf * CFrame.new(c[1], -7.4, c[2])).Position
+		local ust = (balonCf * CFrame.new(c[1] * 2, 0.2, c[2] * 2)).Position
+		local boy = (ust - alt).Magnitude
+		blok(balon, "Halat", Vector3.new(0.15, 0.15, boy), CFrame.lookAt(alt, ust) * CFrame.new(0, 0, -boy / 2), Color3.fromRGB(90, 70, 50), nil, { CanCollide = false })
+	end
+	balon.Parent = sus
+
+	-- Kaldırımlarda çöp kutuları
+	for _, k in ipairs({ { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } }) do
+		local yon = Vector3.new(k[1], 0, k[2])
+		local yan = Vector3.new(-k[2], 0, k[1])
+		for _, t in ipairs({ -15, 15 }) do
+			local p = yon * (YOL_DIS + 3) + yan * t
+			local kutu = disk(CFrame.new(p + Vector3.new(0, 1.9, 0)), 2.8, 1.8, Color3.fromRGB(60, 140, 80), Enum.Material.Metal)
+			kutu.CanCollide = true
+			kutu.Parent = sus
+			disk(CFrame.new(p + Vector3.new(0, 3.4, 0)), 0.3, 2, Color3.fromRGB(45, 100, 60), Enum.Material.Metal).Parent = sus
+		end
 	end
 
 	------------------------------------------------------------------

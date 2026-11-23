@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Ortak = ReplicatedStorage:WaitForChild("Ortak")
 local Config = require(Ortak:WaitForChild("Config"))
 local Gorsel = require(Ortak:WaitForChild("Gorsel"))
+local Ekonomi = require(Ortak:WaitForChild("Ekonomi"))
 
 local Dukkan = {}
 
@@ -97,6 +98,8 @@ function Dukkan.Kur(arsa, veri)
 		-- Boş arsa: küçük bir tabela
 		arsa:SetAttribute("Sahip", 0)
 		arsa:SetAttribute("Makine", 0)
+		arsa:SetAttribute("Un", 1)
+		arsa:SetAttribute("Oturma", false)
 		local p = Y.TabelaYeri
 		for _, x in ipairs({ -3.5, 3.5 }) do
 			blok("Direk", Vector3.new(0.5, 6, 0.5), CFrame.new(p.X + x, 3, p.Z), AHSAP, Enum.Material.Wood)
@@ -122,6 +125,8 @@ function Dukkan.Kur(arsa, veri)
 	arsa:SetAttribute("Logo", stil.Logo)
 	arsa:SetAttribute("Ad", stil.Ad)
 	arsa:SetAttribute("Makine", makineSayisi)
+	arsa:SetAttribute("Un", Ekonomi.UnCarpani(g))
+	arsa:SetAttribute("Oturma", var("Oturma"))
 
 	local bm, bb = Y.BinaMerkez, Y.BinaBoyu
 	local onZ = bm.Z - bb.Z / 2 -- binanın ön duvarı
@@ -323,6 +328,39 @@ function Dukkan.Kur(arsa, veri)
 			local ampul = blok("Ampul", Vector3.new(0.6, 0.6, 0.6), CFrame.new(x, y, onZ - 1.2), renkler[k % #renkler + 1], Enum.Material.Neon)
 			ampul.Shape = Enum.PartType.Ball
 			ampul.CanCollide = false
+		end
+	end
+
+	-- Çalışanlar
+	local kiyafet = {
+		Asci = { Gomlek = Color3.fromRGB(245, 245, 245), Pantolon = Color3.fromRGB(60, 60, 70), Sapka = "sef", Yuz = "😋" },
+		Kasiyer = { Gomlek = renk, Pantolon = Color3.fromRGB(45, 45, 55), Sapka = "kep", SapkaRenk = renk, Onluk = true, Yuz = "😊" },
+		Teknisyen = { Gomlek = Color3.fromRGB(70, 95, 130), Pantolon = Color3.fromRGB(45, 55, 75), Sapka = "kep", SapkaRenk = Color3.fromRGB(255, 200, 40), Yuz = "🤓" },
+		Temizlikci = { Gomlek = Color3.fromRGB(110, 185, 120), Pantolon = Color3.fromRGB(50, 60, 55), Yuz = "😄" },
+	}
+	for anahtar, yer in pairs(Y.Calisanlar) do
+		if var(anahtar) then
+			local konum = Vector3.new(yer.Yer.X, 0.3, yer.Yer.Z)
+			local cf = F * CFrame.lookAt(konum, konum + yer.Bakis)
+			local oz = kiyafet[anahtar]
+			oz.Ten = Gorsel.Tenler[(#anahtar + (veri.UserId % 5)) % #Gorsel.Tenler + 1]
+			local insan = Gorsel.Insan(cf, oz)
+			local m = Instance.new("Model")
+			m.Name = "Calisan_" .. anahtar
+			for _, p in ipairs(insan.Liste) do
+				p.CanCollide = false
+				p.Parent = m
+			end
+			if anahtar == "Temizlikci" then
+				-- süpürge
+				local sap = Gorsel.Parca({ Name = "Supurge", Size = Vector3.new(0.25, 4.2, 0.25), CFrame = cf * CFrame.new(1.9, 2.1, -0.6) * CFrame.Angles(math.rad(-15), 0, math.rad(8)), Color = Color3.fromRGB(150, 100, 55), Material = Enum.Material.Wood })
+				sap.Parent = m
+				local fir = Gorsel.Parca({ Name = "SupurgeUcu", Size = Vector3.new(1.4, 0.6, 0.5), CFrame = cf * CFrame.new(2.2, 0.3, -1.1), Color = Color3.fromRGB(230, 200, 90), Material = Enum.Material.Fabric })
+				fir.Parent = m
+			end
+			m:SetAttribute("Rol", anahtar)
+			m.PrimaryPart = insan.Govde
+			m.Parent = klasor
 		end
 	end
 

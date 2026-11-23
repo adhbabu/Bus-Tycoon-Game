@@ -85,19 +85,40 @@ end
 -- Bir makine kaç saniyede bir paket yapar
 function Ekonomi.MakineSuresi(gelistirmeler)
 	local s = Config.MakineIlkSure * Config.MakineHizlanma ^ Ekonomi.Seviye(gelistirmeler, "MakineHizi")
-	return math.max(Config.MakineEnKisaSure, s)
+	s = math.max(Config.MakineEnKisaSure, s)
+	if Ekonomi.Seviye(gelistirmeler, "Teknisyen") > 0 then
+		s *= Config.TeknisyenCarpani
+	end
+	return s
 end
 
--- Makinelerin saniyede getirdiği ortalama para
+-- Aşçı kaç saniyede bir katlar (aşçı yoksa nil)
+function Ekonomi.AsciAraligi(gelistirmeler)
+	local sv = Ekonomi.Seviye(gelistirmeler, "Asci")
+	if sv <= 0 then
+		return nil
+	end
+	return Config.AsciIlkSure * Config.AsciHizlanma ^ (sv - 1)
+end
+
+-- Makinelerin ve aşçının saniyede getirdiği ortalama para (sen hiç tıklamasan da)
 function Ekonomi.MakineGeliri(gelistirmeler, sube)
+	local paketSaniye = 0
 	local adet = Ekonomi.Seviye(gelistirmeler, "Makine")
-	if adet <= 0 then
+	if adet > 0 then
+		paketSaniye += adet / Ekonomi.MakineSuresi(gelistirmeler)
+	end
+	local asci = Ekonomi.AsciAraligi(gelistirmeler)
+	if asci then
+		paketSaniye += 1 / (asci * Config.KatlamaSayisi)
+	end
+	if paketSaniye <= 0 then
 		return 0
 	end
 	local sans = Ekonomi.AltinSansi(gelistirmeler)
 	local ortalama = (1 - sans) * Ekonomi.PaketDegeri(false, gelistirmeler, sube)
 		+ sans * Ekonomi.PaketDegeri(true, gelistirmeler, sube)
-	return adet / Ekonomi.MakineSuresi(gelistirmeler) * ortalama
+	return paketSaniye * ortalama
 end
 
 function Ekonomi.SubeFiyati(sube)
@@ -118,6 +139,13 @@ function Ekonomi.EtkiYazisi(anahtar, seviye)
 	elseif anahtar == "MakineHizi" then
 		local s = math.max(Config.MakineEnKisaSure, Config.MakineIlkSure * Config.MakineHizlanma ^ seviye)
 		return string.format("%.1f sn'de 1 paket", s)
+	elseif anahtar == "Asci" then
+		if seviye <= 0 then
+			return "Henüz yok"
+		end
+		return string.format("%.1f sn'de 1 katlama", Config.AsciIlkSure * Config.AsciHizlanma ^ (seviye - 1))
+	elseif anahtar == "Teknisyen" then
+		return seviye > 0 and "Alındı ✓" or "Makine süresi -%25"
 	elseif g and g.Un then
 		return seviye > 0 and "Alındı ✓" or string.format("Ün +%%%d", math.floor(g.Un * 100 + 0.5))
 	end
