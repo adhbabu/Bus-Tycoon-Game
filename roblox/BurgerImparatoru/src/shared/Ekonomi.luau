@@ -3,6 +3,8 @@
 -- ile sunucunun kabul ettiği fiyatlar hep aynı olur.
 
 local Config = require(script.Parent.Config)
+local Dil = require(script.Parent.Dil)
+local T = Dil.T
 
 local Ekonomi = {}
 
@@ -97,13 +99,13 @@ end
 
 function Ekonomi.GorevYazisi(tip, hedef)
 	if tip == "Katla" then
-		return string.format("KATLA'ya %s kez bas", Ekonomi.Kisalt(hedef))
+		return T("KATLA'ya %s kez bas", Ekonomi.Kisalt(hedef))
 	elseif tip == "Paket" then
-		return string.format("Elle %s paket yap", Ekonomi.Kisalt(hedef))
+		return T("Elle %s paket yap", Ekonomi.Kisalt(hedef))
 	elseif tip == "Altin" then
-		return string.format("%d altın burger bul ✨", hedef)
+		return T("%d altın burger bul ✨", hedef)
 	elseif tip == "Para" then
-		return string.format("%s para kazan", Ekonomi.Kisalt(hedef))
+		return T("%s para kazan", Ekonomi.Kisalt(hedef))
 	end
 	return "?"
 end
@@ -155,25 +157,25 @@ end
 function Ekonomi.EtkiYazisi(anahtar, seviye)
 	local g = tablo[anahtar]
 	if anahtar == "HizliEller" then
-		return string.format("Tık başına %d katlama", math.min(Config.KatlamaSayisi, 1 + seviye))
+		return T("Tık başına %d katlama", math.min(Config.KatlamaSayisi, 1 + seviye))
 	elseif anahtar == "Tarif" then
-		return string.format("Paket parası x%.1f", 1 + 0.5 * seviye)
+		return T("Paket parası x%.1f", 1 + 0.5 * seviye)
 	elseif anahtar == "AltinSans" then
-		return string.format("Altın burger %%%d", math.floor((Config.AltinTabanSansi + seviye * Config.AltinSansArtisi) * 100 + 0.5))
+		return T("Altın burger %%%d", math.floor((Config.AltinTabanSansi + seviye * Config.AltinSansArtisi) * 100 + 0.5))
 	elseif anahtar == "Makine" then
-		return string.format("%d / %d makine", seviye, g.MaxSeviye)
+		return T("%d / %d makine", seviye, g.MaxSeviye)
 	elseif anahtar == "MakineHizi" then
 		local s = math.max(Config.MakineEnKisaSure, Config.MakineIlkSure * Config.MakineHizlanma ^ seviye)
-		return string.format("%.1f sn'de 1 paket", s)
+		return T("%.1f sn'de 1 paket", s)
 	elseif anahtar == "Asci" then
 		if seviye <= 0 then
-			return "Henüz yok"
+			return T("Henüz yok")
 		end
-		return string.format("%.1f sn'de 1 katlama", Config.AsciIlkSure * Config.AsciHizlanma ^ (seviye - 1))
+		return T("%.1f sn'de 1 katlama", Config.AsciIlkSure * Config.AsciHizlanma ^ (seviye - 1))
 	elseif anahtar == "Teknisyen" then
-		return seviye > 0 and "Alındı ✓" or "Makine süresi -%25"
+		return seviye > 0 and T("Alındı ✓") or T("Makine süresi -%25")
 	elseif g and g.Un then
-		return seviye > 0 and "Alındı ✓" or string.format("Ün +%%%d", math.floor(g.Un * 100 + 0.5))
+		return seviye > 0 and T("Alındı ✓") or T("Ün +%%%d", math.floor(g.Un * 100 + 0.5))
 	end
 	return ""
 end

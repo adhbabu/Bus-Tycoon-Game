@@ -17,6 +17,25 @@ local Ortak = ReplicatedStorage:WaitForChild("Ortak")
 local Config = require(Ortak:WaitForChild("Config"))
 local Ekonomi = require(Ortak:WaitForChild("Ekonomi"))
 local Gorsel = require(Ortak:WaitForChild("Gorsel"))
+local Dil = require(Ortak:WaitForChild("Dil"))
+local T = Dil.T
+
+-- Dil: Config.Dil "tr"/"en" ise o, değilse oyuncunun Roblox dili (Türkçe -> Türkçe, diğerleri -> İngilizce)
+do
+	local kod = Config.Dil
+	if kod ~= "tr" and kod ~= "en" then
+		local ok, yerel = pcall(function()
+			return game:GetService("LocalizationService").RobloxLocaleId
+		end)
+		if not ok or type(yerel) ~= "string" or yerel == "" then
+			ok, yerel = pcall(function()
+				return ben.LocaleId
+			end)
+		end
+		kod = (ok and type(yerel) == "string" and yerel ~= "") and yerel or "en"
+	end
+	Dil.Ayarla(kod)
+end
 local PaketGorsel = require(script.Parent:WaitForChild("PaketGorsel"))
 local Musteriler = require(script.Parent:WaitForChild("Musteriler"))
 local KasabaHalki = require(script.Parent:WaitForChild("KasabaHalki"))
@@ -152,6 +171,7 @@ local function yazi(oz)
 	for k, v in pairs(oz) do
 		o[k] = v
 	end
+	o.Text = T(o.Text)
 	return yap("TextLabel", o)
 end
 
@@ -165,6 +185,7 @@ local function buton(oz, cocuklar)
 	for k, v in pairs(oz) do
 		o[k] = v
 	end
+	o.Text = T(o.Text)
 	return yap("TextButton", o, cocuklar)
 end
 
@@ -184,6 +205,7 @@ local GRI = Color3.fromRGB(110, 100, 95)
 local ekran = yap("ScreenGui", {
 	Name = "BurgerArayuz",
 	ResetOnSpawn = false,
+	AutoLocalize = Dil.Kod ~= "tr", -- Türkçe yazılara Roblox'un otomatik çevirisi karışmasın
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	Parent = ben:WaitForChild("PlayerGui"),
 })
@@ -262,9 +284,9 @@ end
 local paraYazi, paraAlt = hap(1, "💰", Color3.fromRGB(255, 210, 60), 152)
 local paketYazi, paketAlt = hap(2, "📦", Color3.fromRGB(255, 140, 50), 152)
 local gelirYazi, gelirAlt = hap(3, "⚙️", Color3.fromRGB(90, 220, 110), 152)
-paraAlt.Text = "Para"
-paketAlt.Text = "Paket"
-gelirAlt.Text = "Makineler / sn"
+paraAlt.Text = T("Para")
+paketAlt.Text = T("Paket")
+gelirAlt.Text = T("Makineler / sn")
 
 local unvanCubuk = yap("Frame", {
 	Position = UDim2.fromOffset(16, 50),
@@ -281,7 +303,7 @@ local unvanDolgu = yap("Frame", {
 	Parent = unvanCubuk,
 }, { kose(UDim.new(0, 10)) })
 local unvanYazi = yazi({
-	Text = "👑 Çırak",
+	Text = "👑 " .. T("Çırak"),
 	Size = UDim2.new(1, -12, 1, -4),
 	Position = UDim2.fromOffset(6, 2),
 	ZIndex = 2,
@@ -410,7 +432,7 @@ local dukkanOlcek = yap("UIScale", { Parent = dukkanButonu })
 local dukkanYazi = yazi({ Text = "🛒 DÜKKAN", Size = UDim2.new(0.9, 0, 0.46, 0), Position = UDim2.fromScale(0.05, 0.1), Parent = dukkanButonu })
 yaziCizgisi(KOYU, 2).Parent = dukkanYazi
 local dukkanAlt = yazi({
-	Text = klavyeVar and "[B]" or "Geliştir!",
+	Text = klavyeVar and "[B]" or T("Geliştir!"),
 	Size = UDim2.new(0.9, 0, 0.3, 0),
 	Position = UDim2.fromScale(0.05, 0.6),
 	TextColor3 = Color3.fromRGB(255, 255, 235),
@@ -624,7 +646,7 @@ for i, kat in ipairs(Config.Kategoriler) do
 		LayoutOrder = i,
 		Size = UDim2.fromOffset(100, 32),
 		BackgroundColor3 = SATIR,
-		Text = kat.Ikon .. " " .. kat.Ad,
+		Text = kat.Ikon .. " " .. T(kat.Ad),
 		ZIndex = 12,
 		Parent = sekmeSirasi,
 	}, { kose(UDim.new(0, 10)), yap("UIPadding", { PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }) })
@@ -640,7 +662,7 @@ local function satirYap(sira, ikon, ad)
 		Parent = icerik,
 	}, { kose(UDim.new(0, 12)) })
 	yazi({ Text = ikon, Position = UDim2.fromOffset(6, 9), Size = UDim2.fromOffset(44, 44), ZIndex = 12, Parent = satir })
-	local baslik = yazi({ Text = ad, Position = UDim2.fromOffset(58, 5), Size = UDim2.new(1, -196, 0, 22), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 12, Parent = satir })
+	local baslik = yazi({ Text = T(ad), Position = UDim2.fromOffset(58, 5), Size = UDim2.new(1, -196, 0, 22), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 12, Parent = satir })
 	local aciklama = yazi({
 		Text = "",
 		Position = UDim2.fromOffset(58, 28),
@@ -673,7 +695,7 @@ end
 
 for i, g in ipairs(Config.Gelistirmeler) do
 	local satir, baslik, aciklama, etki, al = satirYap(i, g.Ikon, g.Ad)
-	aciklama.Text = g.Aciklama
+	aciklama.Text = T(g.Aciklama)
 	satirlar[g.Anahtar] = { Satir = satir, Baslik = baslik, Etki = etki, Al = al, G = g }
 	al.Activated:Connect(function()
 		if not durum then
@@ -689,7 +711,7 @@ for i, g in ipairs(Config.Gelistirmeler) do
 		end
 		if durum.Para < fiyat then
 			salla(al)
-			duyuru("Paran yetmiyor! 🍔", Color3.fromRGB(255, 120, 120), 1.2, "Biraz daha burger paketle.")
+			duyuru(T("Paran yetmiyor! 🍔"), Color3.fromRGB(255, 120, 120), 1.2, T("Biraz daha burger paketle."))
 			return
 		end
 		SatinAlOlay:FireServer(g.Anahtar)
@@ -702,10 +724,10 @@ subeSatir.Size = UDim2.new(1, -8, 0, 62)
 local subeBilgi = yazi({
 	LayoutOrder = 101,
 	Size = UDim2.new(1, -8, 0, 64),
-	Text = "Yeni şube açınca paran ve bütün geliştirmelerin sıfırlanır, dükkanın baştan kurulur. "
-		.. "Ama paket sayın ve unvanın kalır, her şube bütün paralarını kalıcı olarak %"
-		.. math.floor(Config.SubeBonusu * 100)
-		.. " artırır!",
+	Text = T(
+		"Yeni şube açınca paran ve bütün geliştirmelerin sıfırlanır, dükkanın baştan kurulur. Ama paket sayın ve unvanın kalır, her şube bütün paralarını kalıcı olarak %%%d artırır!",
+		math.floor(Config.SubeBonusu * 100)
+	),
 	TextScaled = false,
 	TextSize = 15,
 	TextWrapped = true,
@@ -752,10 +774,10 @@ local function dukkanGuncelle()
 		local sv = Ekonomi.Seviye(durum.Gelistirme, anahtar)
 		local fiyat = Ekonomi.Fiyat(anahtar, sv)
 		local acik = Ekonomi.KilidiAcik(durum.Gelistirme, anahtar)
-		s.Baslik.Text = g.MaxSeviye > 1 and string.format("%s  •  Sv %d/%d", g.Ad, sv, g.MaxSeviye) or g.Ad
+		s.Baslik.Text = g.MaxSeviye > 1 and T("%s  •  Sv %d/%d", g.Ad, sv, g.MaxSeviye) or T(g.Ad)
 		if not acik then
 			local gerekli = Ekonomi.GelistirmeBul(g.Gerekli)
-			s.Etki.Text = "🔒 Önce: " .. (gerekli and gerekli.Ad or "?")
+			s.Etki.Text = T("🔒 Önce: %s", gerekli and gerekli.Ad or "?")
 			s.Al.Text = "🔒"
 			s.Al.BackgroundColor3 = GRI
 		elseif fiyat then
@@ -770,16 +792,16 @@ local function dukkanGuncelle()
 			herhangi = herhangi or yeter
 		else
 			s.Etki.Text = Ekonomi.EtkiYazisi(anahtar, sv)
-			s.Al.Text = "✓ TAMAM"
+			s.Al.Text = T("✓ TAMAM")
 			s.Al.BackgroundColor3 = Color3.fromRGB(200, 150, 40)
 		end
 	end
 	local subeFiyat = Ekonomi.SubeFiyati(durum.Sube)
-	subeBaslik.Text = string.format("Yeni Şube Aç  •  Şu an %d. şube", durum.Sube + 1)
-	subeAciklama.Text = string.format("Şimdiki para çarpanı x%.1f", Ekonomi.SubeCarpani(durum.Sube))
-	subeEtki.Text = string.format("Yeni şubede x%.1f", Ekonomi.SubeCarpani(durum.Sube + 1))
+	subeBaslik.Text = T("Yeni Şube Aç  •  Şu an %d. şube", durum.Sube + 1)
+	subeAciklama.Text = T("Şimdiki para çarpanı x%.1f", Ekonomi.SubeCarpani(durum.Sube))
+	subeEtki.Text = T("Yeni şubede x%.1f", Ekonomi.SubeCarpani(durum.Sube + 1))
 	if subeOnay > os.clock() then
-		subeAl.Text = "Emin misin? Bas!"
+		subeAl.Text = T("Emin misin? Bas!")
 		subeAl.BackgroundColor3 = Color3.fromRGB(230, 70, 70)
 	else
 		subeAl.Text = "💰 " .. K(subeFiyat)
@@ -795,7 +817,7 @@ subeAl.Activated:Connect(function()
 	local fiyat = Ekonomi.SubeFiyati(durum.Sube)
 	if durum.Para < fiyat then
 		salla(subeAl)
-		duyuru("Yeni şube için 💰 " .. K(fiyat) .. " lazım", Color3.fromRGB(255, 160, 120), 1.6)
+		duyuru(T("Yeni şube için 💰 %s lazım", K(fiyat)), Color3.fromRGB(255, 160, 120), 1.6)
 		return
 	end
 	if subeOnay > os.clock() then
@@ -899,7 +921,7 @@ local adKutusu = yap("TextBox", {
 	Size = UDim2.fromOffset(310, 36),
 	BackgroundColor3 = Color3.fromRGB(250, 245, 235),
 	TextColor3 = KOYU,
-	PlaceholderText = "Örn: Mega Burger",
+	PlaceholderText = T("Örn: Mega Burger"),
 	PlaceholderColor3 = Color3.fromRGB(150, 140, 130),
 	Text = "",
 	ClearTextOnFocus = false,
@@ -1001,7 +1023,7 @@ stilKaydet.Activated:Connect(function()
 	end
 	StilSecOlay:FireServer({ Logo = secim.Logo, Renk = secim.Renk, Ad = ad })
 	stilAcKapa(false)
-	duyuru(Config.Logolar[secim.Logo] .. " " .. ad, Config.Renkler[secim.Renk].Renk, 2.2, "Dükkanın açıldı! KATLA'ya bas.")
+	duyuru(Config.Logolar[secim.Logo] .. " " .. ad, Config.Renkler[secim.Renk].Renk, 2.2, T("Dükkanın açıldı! KATLA'ya bas."))
 end)
 stilKapat.Activated:Connect(function()
 	stilAcKapa(false)
@@ -1054,7 +1076,7 @@ local gorevPenceresi = yap("Frame", {
 }, { kose(UDim.new(0, 18)), cizgi(Color3.fromRGB(255, 200, 80), 3) })
 olcekEkle(gorevPenceresi)
 yazi({ Text = Config.NPCler.Gorev.Yuz, Position = UDim2.fromOffset(14, 14), Size = UDim2.fromOffset(70, 70), ZIndex = 16, Parent = gorevPenceresi })
-yazi({ Text = Config.NPCler.Gorev.Ad, Position = UDim2.fromOffset(92, 14), Size = UDim2.new(1, -110, 0, 26), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 215, 90), ZIndex = 16, Parent = gorevPenceresi })
+yazi({ Text = T(Config.NPCler.Gorev.Ad), Position = UDim2.fromOffset(92, 14), Size = UDim2.new(1, -110, 0, 26), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 215, 90), ZIndex = 16, Parent = gorevPenceresi })
 local husnuKonusma = yazi({
 	Text = "",
 	Position = UDim2.fromOffset(92, 44),
@@ -1084,18 +1106,23 @@ local function gorevGuncelle()
 	local g = durum.Gorev
 	local bitti = g.Ilerleme >= g.Hedef
 	gorevKutusu.Visible = true
-	gorevBaslik.Text = "📜 Görev " .. g.N .. (bitti and "  ✅" or "")
+	gorevBaslik.Text = T("📜 Görev %d", g.N) .. (bitti and "  ✅" or "")
 	gorevYazi.Text = Ekonomi.GorevYazisi(g.Tip, g.Hedef)
 	gorevDolgu.Size = UDim2.fromScale(math.clamp(g.Ilerleme / g.Hedef, 0, 1), 1)
 	gorevSayi.Text = K(g.Ilerleme) .. " / " .. K(g.Hedef)
-	gorevOdulYazi.Text = bitti and "" or ("Ödül: 💰 " .. K(g.Odul))
+	gorevOdulYazi.Text = bitti and "" or T("Ödül: 💰 %s", K(g.Odul))
 	gorevAlButonu.Visible = bitti
 	husnuAl.Visible = bitti
 	if bitti then
-		husnuKonusma.Text = "Aferin evlat! Görevini bitirdin. 👏\nİşte ödülün: 💰 " .. K(g.Odul)
+		husnuKonusma.Text = T("Aferin evlat! Görevini bitirdin. 👏\nİşte ödülün: 💰 %s", K(g.Odul))
 	else
-		husnuKonusma.Text = "Merhaba evlat! Sana bir görevim var:\n" .. Ekonomi.GorevYazisi(g.Tip, g.Hedef)
-			.. " (" .. K(g.Ilerleme) .. "/" .. K(g.Hedef) .. ")\nBitirirsen sana 💰 " .. K(g.Odul) .. " veririm!"
+		husnuKonusma.Text = T(
+			"Merhaba evlat! Sana bir görevim var:\n%s (%s/%s)\nBitirirsen sana 💰 %s veririm!",
+			Ekonomi.GorevYazisi(g.Tip, g.Hedef),
+			K(g.Ilerleme),
+			K(g.Hedef),
+			K(g.Odul)
+		)
 	end
 end
 
@@ -1156,17 +1183,17 @@ task.spawn(function()
 		local ikiKat = (ben:GetAttribute("IkiKatBitis") or 0) - simdi
 		ikiKatHap.Visible = ikiKat > 0
 		if ikiKat > 0 then
-			ikiKatHap.Text = "🔥 2 KAT PARA " .. sureYazi(ikiKat)
+			ikiKatHap.Text = T("🔥 2 KAT PARA %s", sureYazi(ikiKat))
 		end
 		local altinSaat = (ReplicatedStorage:GetAttribute("AltinSaatBitis") or 0) - simdi
 		altinSaatHap.Visible = altinSaat > 0
 		if altinSaat > 0 then
-			altinSaatHap.Text = "⏰ ALTIN SAAT x2 " .. sureYazi(altinSaat)
+			altinSaatHap.Text = T("⏰ ALTIN SAAT x2 %s", sureYazi(altinSaat))
 		end
 		if durum then
 			local kalan = hediyeHazirZamani - os.clock()
 			hediyeHap.Visible = true
-			hediyeHap.Text = kalan > 0 and ("🎁 Hediye " .. sureYazi(kalan)) or "🎁 Hediye hazır! Meydana gel"
+			hediyeHap.Text = kalan > 0 and T("🎁 Hediye %s", sureYazi(kalan)) or T("🎁 Hediye hazır! Meydana gel")
 		end
 		-- yarışma
 		if yarisma then
@@ -1174,13 +1201,13 @@ task.spawn(function()
 			yarismaKutusu.Visible = true
 			if t < yarisma.Baslangic then
 				yarismaUst.Text = "⏱️ " .. math.ceil(yarisma.Baslangic - t) .. "..."
-				yarismaAlt.Text = "Hazır ol! KATLA'ya hızlı hızlı bas!"
+				yarismaAlt.Text = T("Hazır ol! KATLA'ya hızlı hızlı bas!")
 			elseif t < yarisma.Bitis then
-				yarismaUst.Text = string.format("⏱️ %.1f  •  %d TIK", yarisma.Bitis - t, yarisma.Sayac)
+				yarismaUst.Text = T("⏱️ %.1f  •  %d TIK", yarisma.Bitis - t, yarisma.Sayac)
 				yarismaAlt.Text = "HUSS! HUSS! HUSS!"
 			else
-				yarismaUst.Text = string.format("⏱️ BİTTİ  •  %d TIK", yarisma.Sayac)
-				yarismaAlt.Text = "Hakem sayıyor..."
+				yarismaUst.Text = T("⏱️ BİTTİ  •  %d TIK", yarisma.Sayac)
+				yarismaAlt.Text = T("Hakem sayıyor...")
 			end
 		elseif yarismaKutusu.Visible and not yarismaKutusu:GetAttribute("Sonuc") then
 			yarismaKutusu.Visible = false
@@ -1200,8 +1227,8 @@ local function arayuzGuncelle()
 	paketYazi.Text = K(durum.ToplamPaket)
 	local gelir = Ekonomi.MakineGeliri(durum.Gelistirme, durum.Sube)
 	gelirYazi.Text = gelir > 0 and ("+" .. K(gelir)) or "-"
-	gelirAlt.Text = gelir > 0 and string.format("%d makine / sn", Ekonomi.Seviye(durum.Gelistirme, "Makine")) or "Makine yok"
-	paketAlt.Text = durum.Sube > 0 and string.format("Paket • 🏙️ x%.1f", Ekonomi.SubeCarpani(durum.Sube)) or "Paket"
+	gelirAlt.Text = gelir > 0 and T("%d makine / sn", Ekonomi.Seviye(durum.Gelistirme, "Makine")) or T("Makine yok")
+	paketAlt.Text = durum.Sube > 0 and T("Paket • 🏙️ x%.1f", Ekonomi.SubeCarpani(durum.Sube)) or T("Paket")
 	for i, n in ipairs(noktalar) do
 		n.BackgroundColor3 = (i <= durum.Asama) and SARI or PANEL
 	end
@@ -1211,20 +1238,20 @@ local function arayuzGuncelle()
 	local sonraki = Config.Unvanlar[idx + 1]
 	if sonraki then
 		unvanDolgu.Size = UDim2.fromScale(math.clamp((durum.ToplamPaket - u.Esik) / (sonraki.Esik - u.Esik), 0, 1), 1)
-		unvanYazi.Text = string.format("👑 %s  •  %s / %s paket → %s", u.Ad, K(durum.ToplamPaket), K(sonraki.Esik), sonraki.Ad)
+		unvanYazi.Text = T("👑 %s  •  %s / %s paket → %s", u.Ad, K(durum.ToplamPaket), K(sonraki.Esik), sonraki.Ad)
 	else
 		unvanDolgu.Size = UDim2.fromScale(1, 1)
-		unvanYazi.Text = "👑 " .. u.Ad .. "  •  EN TEPEDESİN!"
+		unvanYazi.Text = T("👑 %s  •  EN TEPEDESİN!", u.Ad)
 	end
 	unvanDolgu.BackgroundColor3 = u.Renk
-	katlaYazi.Text = durum.ArsaIndex > 0 and "KATLA!" or "BEKLE"
+	katlaYazi.Text = durum.ArsaIndex > 0 and T("KATLA!") or T("BEKLE")
 
 	if durum.KayitAcik then
 		kayitYazi.Visible = false
 	else
 		kayitYazi.Visible = true
-		kayitYazi.Text = RunService:IsStudio() and "💾 Studio testinde kayıt kapalı (oyunu yayınlayınca açılır)"
-			or "💾 Kayıt yüklenemedi, bu seferki ilerlemen kaydedilmeyecek"
+		kayitYazi.Text = RunService:IsStudio() and T("💾 Studio testinde kayıt kapalı (oyunu yayınlayınca açılır)")
+			or T("💾 Kayıt yüklenemedi, bu seferki ilerlemen kaydedilmeyecek")
 	end
 	dukkanGuncelle()
 end
@@ -1237,7 +1264,7 @@ local function katla()
 		return
 	end
 	if durum.ArsaIndex == 0 then
-		duyuru("Bütün arsalar dolu!", Color3.fromRGB(255, 150, 120), 1.5, "Biri çıkınca dükkanın açılacak.")
+		duyuru(T("Bütün arsalar dolu!"), Color3.fromRGB(255, 150, 120), 1.5, T("Biri çıkınca dükkanın açılacak."))
 		return
 	end
 	local simdi = os.clock()
@@ -1268,7 +1295,7 @@ local function katla()
 	zipla(katlaOlcek, 0.86)
 	if kombo >= 3 then
 		komboYazi.Visible = true
-		komboYazi.Text = "KOMBO x" .. kombo
+		komboYazi.Text = T("KOMBO x%d", kombo)
 		zipla(komboOlcek, 1.25)
 	end
 	arayuzGuncelle()
@@ -1332,7 +1359,7 @@ DurumOlay.OnClientEvent:Connect(function(yeni)
 			local once = Ekonomi.Seviye(eski.Gelistirme, g.Anahtar)
 			local simdi = Ekonomi.Seviye(yeni.Gelistirme, g.Anahtar)
 			if simdi > once then
-				duyuru(g.Ikon .. " " .. g.Ad .. (g.MaxSeviye > 1 and (" Sv " .. simdi) or "") .. "!", Color3.fromRGB(140, 255, 140), 1.4, Ekonomi.EtkiYazisi(g.Anahtar, simdi))
+				duyuru(g.Ikon .. " " .. T(g.Ad) .. (g.MaxSeviye > 1 and (" " .. T("Sv") .. " " .. simdi) or "") .. "!", Color3.fromRGB(140, 255, 140), 1.4, Ekonomi.EtkiYazisi(g.Anahtar, simdi))
 				local s = satirlar[g.Anahtar]
 				if s then
 					s.Satir.BackgroundColor3 = Color3.fromRGB(80, 170, 90)
@@ -1341,7 +1368,7 @@ DurumOlay.OnClientEvent:Connect(function(yeni)
 			end
 		end
 		if yeni.Sube > eski.Sube then
-			duyuru("🏙️ " .. (yeni.Sube + 1) .. ". ŞUBE AÇILDI!", SARI, 2.6, string.format("Bütün paralar artık x%.1f", Ekonomi.SubeCarpani(yeni.Sube)))
+			duyuru(T("🏙️ %d. ŞUBE AÇILDI!", yeni.Sube + 1), SARI, 2.6, T("Bütün paralar artık x%.1f", Ekonomi.SubeCarpani(yeni.Sube)))
 			hussSerisi(1, 1.4)
 		end
 	end
@@ -1353,7 +1380,7 @@ DurumOlay.OnClientEvent:Connect(function(yeni)
 		if not yeni.StilVar then
 			stilAcKapa(true)
 		elseif yeni.ArsaIndex > 0 then
-			duyuru("🍔 BURGER İMPARATORU 👑", Color3.fromRGB(255, 215, 80), 2.4, "KATLA'ya bas: 3 katlamada burger paketlenir!")
+			duyuru(T("🍔 BURGER İMPARATORU 👑"), Color3.fromRGB(255, 215, 80), 2.4, T("KATLA'ya bas: 3 katlamada burger paketlenir!"))
 		end
 	end
 	arayuzGuncelle()
@@ -1373,7 +1400,7 @@ KatlandiOlay.OnClientEvent:Connect(function(kim, sira, asama, paketlendi, kazanc
 		if paketlendi then
 			ucanYazi("📦 +" .. K(kazanc), Color3.fromRGB(140, 255, 120), 0.85, rastgele:NextInteger(-40, 40), -175)
 			if altin then
-				duyuru("✨ ALTIN BURGER! ✨", SARI, 1.6, "+" .. K(kazanc) .. " 💰")
+				duyuru(T("✨ ALTIN BURGER! ✨"), SARI, 1.6, "+" .. K(kazanc) .. " 💰")
 			end
 		end
 	else
@@ -1408,11 +1435,11 @@ UnvanOlay.OnClientEvent:Connect(function(kim, index)
 		return
 	end
 	if kim == ben then
-		duyuru("👑 YENİ UNVAN: " .. u.Ad .. "!", u.Renk, 2.4, "Burger İmparatorluğuna bir adım daha!")
+		duyuru(T("👑 YENİ UNVAN: %s!", u.Ad), u.Renk, 2.4, T("Burger İmparatorluğuna bir adım daha!"))
 		hussSerisi(1.1, 1.4)
 	end
 	if kim then
-		sohbetMesaji("👑 " .. kim.DisplayName .. " artık " .. u.Ad .. "!")
+		sohbetMesaji(T("👑 %s artık %s!", kim.DisplayName, u.Ad))
 	end
 end)
 
@@ -1431,13 +1458,13 @@ YarismaOlay.OnClientEvent:Connect(function(bilgi)
 		local simdi = os.clock()
 		yarisma = { Baslangic = simdi + (bilgi.GeriSayim or 3), Bitis = simdi + (bilgi.GeriSayim or 3) + (bilgi.Sure or 15), Sayac = 0 }
 		yarismaKutusu:SetAttribute("Sonuc", false)
-		duyuru("⏱️ HUSS YARIŞMASI!", SARI, 2, "Rekorun: " .. tostring(bilgi.Rekor or 0) .. " tık")
+		duyuru(T("⏱️ HUSS YARIŞMASI!"), SARI, 2, T("Rekorun: %d tık", bilgi.Rekor or 0))
 	elseif bilgi.Durum == "bitti" then
 		yarisma = nil
 		yarismaKutusu.Visible = true
 		yarismaKutusu:SetAttribute("Sonuc", true)
-		yarismaUst.Text = string.format("🏁 %d TIK  •  +%s 💰", bilgi.Sayac or 0, K(bilgi.Odul or 0))
-		yarismaAlt.Text = bilgi.YeniRekor and "🏆 YENİ REKOR!" or ("Rekorun: " .. tostring(bilgi.Rekor or 0) .. " tık")
+		yarismaUst.Text = T("🏁 %d TIK  •  +%s 💰", bilgi.Sayac or 0, K(bilgi.Odul or 0))
+		yarismaAlt.Text = bilgi.YeniRekor and T("🏆 YENİ REKOR!") or T("Rekorun: %d tık", bilgi.Rekor or 0)
 		hussSerisi(1.1, 1.3)
 		task.delay(3.5, function()
 			if not yarisma then
@@ -1448,10 +1475,12 @@ YarismaOlay.OnClientEvent:Connect(function(bilgi)
 	end
 end)
 
-DuyuruOlay.OnClientEvent:Connect(function(metin)
+DuyuruOlay.OnClientEvent:Connect(function(metin, ...)
 	if type(metin) ~= "string" then
 		return
 	end
+	local ok, cevrilmis = pcall(T, metin, ...)
+	metin = ok and cevrilmis or metin
 	duyuru(metin, Color3.fromRGB(255, 230, 150), 2.4)
 	sohbetMesaji(metin)
 end)
@@ -1459,6 +1488,9 @@ end)
 ----------------------------------------------------------------------
 -- Başlat
 ----------------------------------------------------------------------
+task.spawn(function()
+	Dil.DunyayiCevir(workspace) -- haritadaki tabelalar, NPC adları, dükkan yazıları
+end)
 task.spawn(function()
 	Musteriler.Baslat(Config, Gorsel)
 end)

@@ -1,6 +1,6 @@
-# 🍔 Burger İmparatoru 👑
+# 🍔 Burger İmparatoru 👑 (Burger Emperor)
 
-Roblox burger dükkanı oyunu. Herkesin **kendi dükkanı** var. İki köfteli, üç ekmekli
+Roblox burger dükkanı oyunu, **iki dilli**: Türk oyuncular Türkçe, diğer herkes İngilizce görür. Herkesin **kendi dükkanı** var. İki köfteli, üç ekmekli
 **İmparator Burger**'i karton kutusunda **KATLA**: her katlamada **"huss huss huss"** sesi gelir, 3 katlamada
 kutu kapanır ve paket banttan satış penceresine gider; **müşteriler** sıraya girip paketini alır, kimi masada
 yer, kimi alıp gider. Parayla dükkanını büyüt: **çalışanlar** (aşçı, kasiyer, teknisyen, temizlikçi),
@@ -124,11 +124,32 @@ Gün ve gece döngüsü var (10 dakikada bir gün): gece neon tabelalar, lambala
 Hepsi `magaza/` klasöründe (indirdiğin zip'te de var):
 
 1. https://create.roblox.com/dashboard/creations ▸ oyununa tıkla ▸ **Configure** (ya da **Basic Info**).
-2. **Name:** `🍔 Burger İmparatoru 👑`
-3. **Description:** `magaza/aciklama.md` içindeki Türkçe açıklamayı kopyala yapıştır.
+2. **Name:** `🍔 Burger Emperor 👑`
+3. **Description:** `magaza/aciklama.md` içindeki **İngilizce** açıklamayı kopyala yapıştır.
 4. **Icon:** `magaza/ikon-512.png` yükle.
-5. **Thumbnails:** `magaza/tanitim-1.png`, `tanitim-2.png`, `tanitim-3.png` yükle.
+5. **Thumbnails:** `magaza/tanitim-1.png`, `tanitim-2.png`, `tanitim-3.png` yükle (eskileri sil).
 6. **Genre:** `Simulation`. **Save Changes**.
+7. Türkçe ad ve açıklama için aşağıdaki **🌍 İki dil** bölümüne bak.
+
+## 🌍 İki dil: Türkçe + İngilizce
+
+Oyun her oyuncunun Roblox diline bakar: Roblox'u Türkçe kullanan oyuncu her şeyi Türkçe görür (butonlar,
+menüler, NPC'ler, tabelalar, duyurular), diğer herkes İngilizce. Oyunun İngilizce adı **Burger Emperor**.
+
+**Studio'da denerken:** Studio İngilizceyse oyun da İngilizce açılır. Türkçe görmek için
+**ReplicatedStorage ▸ Ortak ▸ Config**'te `Config.Dil = "otomatik"` satırını `Config.Dil = "tr"` yap
+(İngilizce için `"en"`). Yayınlamadan önce tekrar `"otomatik"` yap.
+
+**Roblox sayfasını iki dilli yap** (menü adları biraz farklı olabilir):
+1. https://create.roblox.com/dashboard/creations ▸ oyununa tıkla ▸ soldaki menüde **Localization**.
+2. **Settings** ▸ **Source Language** (ana dil): **English**.
+3. **Languages** ▸ **Add Language** ▸ **Turkish** (Türkçe).
+4. Turkish ▸ **Experience Information**: **Name** kısmına `🍔 Burger İmparatoru 👑`, **Description** kısmına
+   `magaza/aciklama.md` içindeki Türkçe açıklamayı yapıştır ▸ **Save**.
+5. Türk oyuncular sayfayı Türkçe, diğerleri İngilizce görür.
+
+Yeni yazı eklersen İngilizcesini **Ortak ▸ Dil** dosyasına ekle (`["Türkçe"] = "English"`). Testteki dil
+kontrolü çevrilmemiş yazı kalırsa söyler.
 
 ## 👶 Yaş sınırı: herkes oynayabilsin
 
@@ -201,7 +222,8 @@ BurgerImparatoru.rbxlx               ← Studio'da açılan hazır oyun (harita 
 BurgerImparatoru-indir.zip           ← oyun + ses, tek tıkla indirmek için
 sesler/huss.mp3                      ← huss huss huss sesi (Roblox'a yüklenecek)
 harita/Harita.rbxm                   ← Burger Kasabası haritası
-src/shared/Config.luau               ← bütün ayarlar
+src/shared/Config.luau               ← bütün ayarlar (Config.Dil: otomatik / tr / en)
+src/shared/Dil.luau                  ← Türkçe -> İngilizce sözlük, oyuncunun diline göre yazılar
 src/shared/Ekonomi.luau              ← fiyat, para, makine, şube, unvan hesapları
 src/shared/Gorsel.luau               ← İmparator Burger, karton kutu, logolar
 src/server/BurgerSunucu.server.luau  ← arsalar, katlama, makineler, dükkan, şube, stil, kayıt (hile korumalı)
@@ -248,11 +270,12 @@ denenir.
 lune run test/sim.luau BurgerImparatoru.rbxlx ok        # kayıt açık
 lune run test/sim.luau BurgerImparatoru.rbxlx studio    # Studio'da kayıt kapalı
 lune run test/sim.luau BurgerImparatoru.rbxlx ok ses    # ses numarası girilmiş gibi
+lune run test/sim.luau BurgerImparatoru.rbxlx ok en     # İngilizce: Türkçe yazı kalmış mı kontrol eder
 ```
 
 Kodu VS Code'da yazıp Studio'ya canlı aktarmak için `rojo serve` ve Studio'daki Rojo eklentisi.
 
-İkon ve tanıtım resimlerini yeniden çek (Node.js, Playwright ve Python Pillow gerekir). `foto` modu 4 oyunculu
+İkon ve tanıtım resimlerini yeniden çek (Node.js, Playwright ve Python Pillow gerekir). `foto` modu (İngilizce) 4 oyunculu
 dolu bir kasaba kurup bütün sahneyi `sahne.json`'a yazar; `cek.js` onu three.js ile çizer
 (çekim açıları `cekimler.json`'da), `kucult.py` de Roblox boyutlarına küçültür:
 

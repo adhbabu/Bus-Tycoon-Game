@@ -4,6 +4,7 @@
 
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local Dil = require(game:GetService("ReplicatedStorage"):WaitForChild("Ortak"):WaitForChild("Dil"))
 
 local KasabaHalki = {}
 
@@ -117,7 +118,7 @@ local function guncelle(dt)
 		if g.Konus <= 0 then
 			g.Konus = rastgele:NextNumber(7, 16)
 			g.Durak = rastgele:NextNumber(1.5, 3)
-			konus(g, sec(Config.KasabaSozleri), 3)
+			konus(g, Dil.T(sec(Config.KasabaSozleri)), 3)
 		end
 		local yurudu = false
 		if g.Durak and g.Durak > 0 then

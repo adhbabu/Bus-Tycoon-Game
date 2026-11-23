@@ -17,7 +17,7 @@
   "gunesYukseklik": 48,
   "yazilar": [
    {
-    "html": "BURGER<br><span style='color:#ffd614'>İMPARATORU</span> 👑",
+    "html": "BURGER<br><span style='color:#ffd614'>EMPEROR</span> 👑",
     "stil": {
      "left": "70px",
      "top": "40px",
@@ -48,7 +48,7 @@
   "yazilar": [
    {
     "sinif": "etiket",
-    "html": "🏙️ Burger Kasabası: görevler, Huss Yarışması, hediyeler!",
+    "html": "🏙️ Burger Town: quests, Huss Contest, free gifts!",
     "stil": {
      "left": "50%",
      "transform": "translateX(-50%)",
@@ -107,7 +107,7 @@
    },
    {
     "sinif": "etiket",
-    "html": "🍔 Katla, paketle, zengin ol! 🔊",
+    "html": "🍔 Fold it, pack it, get rich! 🔊",
     "stil": {
      "left": "50%",
      "transform": "translateX(-50%)",
@@ -146,12 +146,12 @@
     }
    },
    {
-    "html": "BURGER<br><span style='color:#ffd614'>İMPARATORU</span>",
+    "html": "BURGER<br><span style='color:#ffd614'>EMPEROR</span>",
     "stil": {
      "left": "0",
      "right": "0",
      "bottom": "14px",
-     "fontSize": "56px",
+     "fontSize": "66px",
      "lineHeight": "0.95"
     }
    }

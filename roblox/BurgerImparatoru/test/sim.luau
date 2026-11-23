@@ -16,6 +16,18 @@ for _, d in ipairs(game_real:GetDescendants()) do
 		d.Source = string.gsub(d.Source, "Config.AltinSaat = { EnAz = 300, EnCok = 480,", "Config.AltinSaat = { EnAz = 2, EnCok = 3,")
 	end
 end
+-- dil: "tr" (varsayılan) ya da "en" argümanı; foto modu İngilizce çeker
+local DIL = DATASTORE_MODE == "foto" and "en" or "tr"
+for _, a in ipairs(process.args) do
+	if a == "en" or a == "tr" then
+		DIL = a
+	end
+end
+for _, d in ipairs(game_real:GetDescendants()) do
+	if d.Name == "Config" and d:IsA("ModuleScript") then
+		d.Source = string.gsub(d.Source, 'Config.Dil = "otomatik"', 'Config.Dil = "' .. DIL .. '"')
+	end
+end
 if process.args[3] == "ses" then
 	for _, d in ipairs(game_real:GetDescendants()) do
 		if d.Name == "Config" and d:IsA("ModuleScript") then
@@ -110,6 +122,7 @@ local EVENT_NAMES = {
 	Changed = true,
 	MouseButton1Click = true,
 	ChildAdded = true,
+	DescendantAdded = true,
 	Triggered = true,
 }
 
@@ -232,9 +245,38 @@ wrap = function(v)
 			ex.props[key] = value
 			return
 		end
+		local okEski, eski = pcall(function()
+			return v[key]
+		end)
 		local ok, err = pcall(function()
 			v[key] = unwrap(value)
 		end)
+		if ok then
+			-- GetPropertyChangedSignal ve DescendantAdded (Roblox gibi)
+			if ex.propSig and ex.propSig[key] and (not okEski or eski ~= unwrap(value)) then
+				ex.propSig[key]:Fire()
+			end
+			if key == "Parent" and value ~= nil then
+				local eklenen = nil
+				local a = v.Parent
+				while a do
+					local e = extra[idOf(a)]
+					local sig = e and e.signals.DescendantAdded
+					if sig and #sig.conns > 0 then
+						if not eklenen then
+							eklenen = { v }
+							for _, d in ipairs(v:GetDescendants()) do
+								table.insert(eklenen, d)
+							end
+						end
+						for _, d in ipairs(eklenen) do
+							sig:Fire(wrap(d))
+						end
+					end
+					a = a.Parent
+				end
+			end
+		end
 		if not ok and string.find(tostring(err), "destroyed") and key ~= "Parent" then
 			return -- Roblox: silinmiş parçanın özelliği değiştirilebilir, hata vermez
 		end
@@ -294,7 +336,10 @@ customMethods["*"] = {
 		end
 	end,
 	GetPropertyChangedSignal = function(self, prop)
-		return newSignal("PropChanged:" .. prop)
+		local ex = proxyExtra[self]
+		ex.propSig = ex.propSig or {}
+		ex.propSig[prop] = ex.propSig[prop] or newSignal("PropChanged:" .. prop)
+		return ex.propSig[prop]
 	end,
 	GetAttributeChangedSignal = function(self, ad)
 		local ex = proxyExtra[self]
@@ -810,9 +855,15 @@ end
 local function stat(plr, n)
 	return plr.leaderstats[n].Value
 end
+local DilModul = nil
+local function DilT(metin, ...)
+	DilModul = DilModul or runScript(findScript(game:GetService("ReplicatedStorage"), "Dil"))
+	return DilModul.T(metin, ...)
+end
 local function butonBul(kok, metin)
+	local aranan = DilT(metin)
 	for _, d in ipairs(unwrap(kok):GetDescendants()) do
-		if d:IsA("TextButton") and d.Text == metin then
+		if d:IsA("TextButton") and (d.Text == metin or d.Text == aranan) then
 			return wrap(d)
 		end
 	end
@@ -868,14 +919,14 @@ assert(gui.StilPaneli.Visible == false, "stil ekranı kapanmalı")
 
 print("== Katlama")
 local katlaB = gui.Alt.Katla
-local p0 = stat(p1, "Paket")
+local p0 = stat(p1, "📦")
 for _ = 1, 12 do
 	katlaB.Activated:Fire()
 	task.wait(0.1)
 end
 task.wait(0.8)
-print("Paket:", stat(p1, "Paket") - p0, "Para:", stat(p1, "Para"))
-assert(stat(p1, "Paket") - p0 == 4, "12 tıkta 4 paket bekleniyordu")
+print("Paket:", stat(p1, "📦") - p0, "Para:", stat(p1, "💰"))
+assert(stat(p1, "📦") - p0 == 4, "12 tıkta 4 paket bekleniyordu")
 local gorsel = Workspace:FindFirstChild("BurgerGorselleri")
 assert(gorsel and #unwrap(gorsel):GetChildren() > 0, "tezgahta kutu görseli yok")
 
@@ -896,12 +947,12 @@ for _ = 1, 30 do
 	task.wait(0.1)
 end
 task.wait(0.4)
-local paraGorevOnce = stat(p1, "Para")
+local paraGorevOnce = stat(p1, "💰")
 assert(butonBul(gui.Gorev, "🎁 ÖDÜLÜ AL").Visible == true, "görev bitince ödül butonu çıkmalı")
 butonBul(gui.Gorev, "🎁 ÖDÜLÜ AL").Activated:Fire()
 task.wait(0.4)
-print("Görev ödülü:", stat(p1, "Para") - paraGorevOnce, "Yeni görev:", gui.Gorev:FindFirstChildOfClass("TextLabel").Text)
-assert(stat(p1, "Para") - paraGorevOnce >= 150, "görev ödülü verilmedi")
+print("Görev ödülü:", stat(p1, "💰") - paraGorevOnce, "Yeni görev:", gui.Gorev:FindFirstChildOfClass("TextLabel").Text)
+assert(stat(p1, "💰") - paraGorevOnce >= 150, "görev ödülü verilmedi")
 
 print("== Huss Yarışması")
 npcKonus("NPC_Yarisma")
@@ -916,11 +967,11 @@ npcKonus("NPC_Yarisma") -- hemen tekrar: beklemeli
 task.wait(0.2)
 
 print("== Hediye")
-local paraHediyeOnce = stat(p1, "Para")
+local paraHediyeOnce = stat(p1, "💰")
 npcKonus("NPC_Hediye")
 task.wait(0.3)
-print("Hediye:", stat(p1, "Para") - paraHediyeOnce, "2 kat:", tostring(p1:GetAttribute("IkiKatBitis")))
-assert(stat(p1, "Para") > paraHediyeOnce or p1:GetAttribute("IkiKatBitis") ~= nil, "hediye verilmedi")
+print("Hediye:", stat(p1, "💰") - paraHediyeOnce, "2 kat:", tostring(p1:GetAttribute("IkiKatBitis")))
+assert(stat(p1, "💰") > paraHediyeOnce or p1:GetAttribute("IkiKatBitis") ~= nil, "hediye verilmedi")
 npcKonus("NPC_Hediye") -- tekrar: beklemeli
 task.wait(0.2)
 print("Altın Saat bitişi:", tostring(game:GetService("ReplicatedStorage"):GetAttribute("AltinSaatBitis")))
@@ -928,13 +979,13 @@ local halk = Workspace:FindFirstChild("KasabaHalki")
 print("Kasaba halkı parçası:", halk and #unwrap(halk):GetChildren() or 0)
 assert(halk and #unwrap(halk):GetChildren() > 50, "kasaba halkı yok")
 
-local onceP = stat(p1, "Paket")
+local onceP = stat(p1, "📦")
 for _ = 1, 20 do
 	remotes.Katla.OnServerEvent:Fire(p1)
 end
 task.wait(0.5)
-print("Spam ile geçen paket:", stat(p1, "Paket") - onceP)
-assert(stat(p1, "Paket") - onceP <= 2, "hız sınırı çalışmıyor")
+print("Spam ile geçen paket:", stat(p1, "📦") - onceP)
+assert(stat(p1, "📦") - onceP <= 2, "hız sınırı çalışmıyor")
 
 if zengin then
 	print("== Her şeyi satın al")
@@ -955,17 +1006,17 @@ if zengin then
 		"Calisan_Asci", "Calisan_Kasiyer", "Calisan_Teknisyen", "Calisan_Temizlikci", "Supurge" }) do
 		assert(d:FindFirstChild(ad, true) ~= nil, "dükkanda yok: " .. ad)
 	end
-	print("Makine sayısı (attribute):", arsa1:GetAttribute("Makine"), "Para:", stat(p1, "Para"))
+	print("Makine sayısı (attribute):", arsa1:GetAttribute("Makine"), "Para:", stat(p1, "💰"))
 
 	print("== Dükkan menüsü (sekmeler)")
 	gui.Alt.Dukkan.Activated:Fire()
 	task.wait(0.1)
 	assert(gui.DukkanPaneli.Visible == true)
 	for _, kat in ipairs(Cfg.Kategoriler) do
-		butonBul(gui.DukkanPaneli, kat.Ikon .. " " .. kat.Ad).Activated:Fire()
+		butonBul(gui.DukkanPaneli, kat.Ikon .. " " .. DilT(kat.Ad)).Activated:Fire()
 		task.wait(0.05)
 	end
-	butonBul(gui.DukkanPaneli, Cfg.Kategoriler[1].Ikon .. " " .. Cfg.Kategoriler[1].Ad).Activated:Fire()
+	butonBul(gui.DukkanPaneli, Cfg.Kategoriler[1].Ikon .. " " .. DilT(Cfg.Kategoriler[1].Ad)).Activated:Fire()
 	for _, d2 in ipairs(unwrap(gui.DukkanPaneli):GetDescendants()) do
 		if d2:IsA("TextButton") and d2.Parent and d2.Parent:IsA("Frame") and d2.Parent.Name == "Frame" then
 			wrap(d2).Activated:Fire()
@@ -974,10 +1025,10 @@ if zengin then
 	task.wait(0.2)
 
 	print("== Makineler, aşçı ve müşteriler çalışıyor")
-	local pm = stat(p1, "Paket")
+	local pm = stat(p1, "📦")
 	heartbeat(6)
 	task.wait(0.6)
-	local uretilen = stat(p1, "Paket") - pm
+	local uretilen = stat(p1, "📦") - pm
 	print("6 saniyede otomatik paket:", uretilen)
 	assert(uretilen >= 24, "makineler üretmiyor")
 	local mk = Workspace:FindFirstChild("Musteriler")
@@ -1025,7 +1076,7 @@ if zengin then
 	task.wait(0.05)
 	gui.Alt.Dukkan.Activated:Fire()
 	task.wait(0.05)
-	butonBul(gui.DukkanPaneli, Cfg.Kategoriler[4].Ikon .. " " .. Cfg.Kategoriler[4].Ad).Activated:Fire()
+	butonBul(gui.DukkanPaneli, Cfg.Kategoriler[4].Ikon .. " " .. DilT(Cfg.Kategoriler[4].Ad)).Activated:Fire()
 	local subeButonu = nil
 	for _, d2 in ipairs(unwrap(gui.DukkanPaneli):GetDescendants()) do
 		if d2:IsA("TextButton") and string.sub(d2.Text, 1, 4) == "💰" and d2.Parent.LayoutOrder == 100 then
@@ -1038,8 +1089,8 @@ if zengin then
 	print("Onay yazısı:", subeButonu.Text)
 	subeButonu.Activated:Fire()
 	task.wait(0.6)
-	print("Şube sonrası Para:", stat(p1, "Para"), "Duvar var mı:", arsa1.Dukkan:FindFirstChild("Duvar") ~= nil)
-	assert(stat(p1, "Para") == 0, "şube parayı sıfırlamalı")
+	print("Şube sonrası Para:", stat(p1, "💰"), "Duvar var mı:", arsa1.Dukkan:FindFirstChild("Duvar") ~= nil)
+	assert(stat(p1, "💰") == 0, "şube parayı sıfırlamalı")
 	assert(arsa1.Dukkan:FindFirstChild("Duvar") == nil, "şube dükkanı sıfırlamalı")
 	assert(arsa1:GetAttribute("Logo") == Cfg.Logolar[3], "şube stili silmemeli")
 end
@@ -1073,8 +1124,8 @@ for _ = 1, 6 do
 	task.wait(0.1)
 end
 task.wait(0.5)
-print("Oyuncu 2 paket:", stat(p2, "Paket"), "Ad:", arsa2:GetAttribute("Ad"))
-assert(stat(p2, "Paket") == 2)
+print("Oyuncu 2 paket:", stat(p2, "📦"), "Ad:", arsa2:GetAttribute("Ad"))
+assert(stat(p2, "📦") == 2)
 remotes.EvimeGit.OnServerEvent:Fire(p1)
 makeCharacter(p1)
 task.wait(0.3)
@@ -1100,7 +1151,7 @@ for _, fn in ipairs(CLOSE_HANDLERS) do
 		reportError(e)
 	end
 end
-local paketOnce = stat(p1, "Paket")
+local paketOnce = stat(p1, "📦")
 p1.Parent = nil
 Players.PlayerRemoving:Fire(p1)
 task.wait(0.4)
@@ -1117,8 +1168,8 @@ if zengin then
 		end
 	end
 	assert(a and a:GetAttribute("Ad") == "Huss Burger", "tekrar girişte dükkan stili gelmeli")
-	assert(stat(p1b, "Paket") == paketOnce, "tekrar girişte paket sayısı gelmeli")
-	print("Tekrar giriş tamam:", a.Name, a:GetAttribute("Ad"), stat(p1b, "Paket"))
+	assert(stat(p1b, "📦") == paketOnce, "tekrar girişte paket sayısı gelmeli")
+	print("Tekrar giriş tamam:", a.Name, a:GetAttribute("Ad"), stat(p1b, "📦"))
 	p1b.Parent = nil
 	Players.PlayerRemoving:Fire(p1b)
 	task.wait(0.3)
@@ -1127,6 +1178,53 @@ end
 local okS, errS = xpcall(DATASTORE_MODE == "foto" and fotoSenaryo or senaryo, debug.traceback)
 if not okS then
 	reportError("SENARYO: " .. tostring(errS))
+end
+
+-- İngilizce modda ekranda ya da haritada Türkçe yazı kalmış mı?
+if DIL == "en" and DATASTORE_MODE ~= "foto" then
+	print("== Dil kontrolü (en)")
+	local EN = runScript(findScript(game:GetService("ReplicatedStorage"), "Dil")).EN
+	local kalan, bakilan = {}, 0
+	local function bak(yer, metin)
+		if type(metin) ~= "string" or metin == "" then
+			return
+		end
+		bakilan += 1
+		local turkce = string.find(metin, "ğ") or string.find(metin, "ü") or string.find(metin, "ş") or string.find(metin, "ı")
+			or string.find(metin, "ö") or string.find(metin, "ç") or string.find(metin, "İ") or string.find(metin, "Ğ")
+			or string.find(metin, "Ü") or string.find(metin, "Ş") or string.find(metin, "Ö") or string.find(metin, "Ç")
+		if turkce or (EN[metin] and EN[metin] ~= metin) then
+			kalan[yer .. ": " .. metin] = true
+		end
+	end
+	for _, d in ipairs(game_real:GetDescendants()) do
+		local ilk = d:FindFirstAncestorOfClass("Workspace") or d:FindFirstAncestorOfClass("PlayerGui")
+		if ilk then
+			if d:IsA("TextLabel") or d:IsA("TextButton") then
+				bak(d:GetFullName(), d.Text)
+			elseif d:IsA("TextBox") then
+				bak(d:GetFullName(), d.PlaceholderText)
+			elseif d:IsA("ProximityPrompt") then
+				bak(d:GetFullName(), d.ActionText)
+				bak(d:GetFullName(), d.ObjectText)
+			end
+		end
+	end
+	for _, m in ipairs(STATS.systemMessages) do
+		bak("sohbet", m)
+	end
+	local liste = {}
+	for k in pairs(kalan) do
+		table.insert(liste, k)
+	end
+	table.sort(liste)
+	print(string.format("  %d yazıya bakıldı, %d tanesi çevrilmemiş", bakilan, #liste))
+	for _, k in ipairs(liste) do
+		print("  TÜRKÇE KALDI: " .. k)
+	end
+	if #liste > 0 then
+		reportError(#liste .. " yazı İngilizceye çevrilmemiş")
+	end
 end
 -- Ekran yazılarını göster
 print("== Son ekran")

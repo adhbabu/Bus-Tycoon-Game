@@ -12,6 +12,12 @@ local Config = {}
 -- Boş bırakırsan oyun yine çalışır, sadece ses yerine ekranda HUSS! yazıları çıkar.
 ----------------------------------------------------------------------
 Config.HussSesId = ""
+
+----------------------------------------------------------------------
+-- DİL: oyun Türkçe ve İngilizce. "otomatik" = Roblox dili Türkçe olan Türkçe, diğer herkes İngilizce görür.
+-- Studio'da denemek için "tr" ya da "en" yazabilirsin. Çeviriler: Ortak > Dil
+----------------------------------------------------------------------
+Config.Dil = "otomatik"
 Config.HussSesSeviyesi = 0.9 -- kendi katlaman (0 ile 1 arası)
 Config.MakineSesSeviyesi = 0.22 -- kendi makinelerin
 Config.BaskasininSesSeviyesi = 0.3 -- başka oyuncuların dükkanı (yakındaysan duyarsın)
@@ -149,13 +155,13 @@ Config.SubeBonusu = 0.5 -- her şube paralara +%50
 -- UNVANLAR (toplam paketlenen burgere göre)
 ----------------------------------------------------------------------
 Config.Unvanlar = {
-	{ Esik = 0, Ad = "Çırak", Renk = Color3.fromRGB(200, 200, 200) },
-	{ Esik = 50, Ad = "Aşçı", Renk = Color3.fromRGB(120, 220, 120) },
-	{ Esik = 300, Ad = "Şef", Renk = Color3.fromRGB(90, 170, 255) },
-	{ Esik = 1500, Ad = "Usta Şef", Renk = Color3.fromRGB(190, 110, 255) },
-	{ Esik = 7500, Ad = "Burger Lordu", Renk = Color3.fromRGB(255, 140, 50) },
-	{ Esik = 30000, Ad = "Burger Sultanı", Renk = Color3.fromRGB(255, 70, 90) },
-	{ Esik = 150000, Ad = "BURGER İMPARATORU", Renk = Color3.fromRGB(255, 215, 0) },
+	{ Esik = 0, Ad = "Çırak", Ikon = "🥄", Renk = Color3.fromRGB(200, 200, 200) },
+	{ Esik = 50, Ad = "Aşçı", Ikon = "🍳", Renk = Color3.fromRGB(120, 220, 120) },
+	{ Esik = 300, Ad = "Şef", Ikon = "👨‍🍳", Renk = Color3.fromRGB(90, 170, 255) },
+	{ Esik = 1500, Ad = "Usta Şef", Ikon = "🎖️", Renk = Color3.fromRGB(190, 110, 255) },
+	{ Esik = 7500, Ad = "Burger Lordu", Ikon = "🍔", Renk = Color3.fromRGB(255, 140, 50) },
+	{ Esik = 30000, Ad = "Burger Sultanı", Ikon = "💎", Renk = Color3.fromRGB(255, 70, 90) },
+	{ Esik = 150000, Ad = "BURGER İMPARATORU", Ikon = "👑", Renk = Color3.fromRGB(255, 215, 0) },
 }
 
 ----------------------------------------------------------------------

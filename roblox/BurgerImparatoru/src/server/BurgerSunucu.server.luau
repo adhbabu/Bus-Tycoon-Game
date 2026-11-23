@@ -38,7 +38,7 @@ local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
 local KatlandiOlay = olay("Katlandi")
 local UretimOlay = olay("Uretim") -- sunucu -> herkes: { {arsa, makine, altin}, ... }
 local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
-local DuyuruOlay = olay("Duyuru") -- sunucu -> herkes ya da bir oyuncu (yazı)
+local DuyuruOlay = olay("Duyuru") -- sunucu -> herkes ya da bir oyuncu (Türkçe yazı ya da biçim + argümanlar; ekran kendi dilinde gösterir)
 local GorevAlOlay = olay("GorevAl") -- oyuncu -> sunucu (görev ödülünü al)
 local NPCOlay = olay("NPC") -- sunucu -> oyuncu (NPC ile konuştu: hangi pencere açılsın)
 local YarismaOlay = olay("Yarisma") -- sunucu -> oyuncu (yarışma başladı / bitti)
@@ -304,7 +304,7 @@ local function skorGuncelle(oyuncu)
 	end
 	v.Skor.Paket.Value = v.ToplamPaket
 	v.Skor.Para.Value = v.Para
-	v.Skor.Unvan.Value = unvan(v).Ad
+	v.Skor.Unvan.Value = unvan(v).Ikon
 end
 
 local function kafaYazisiGuncelle(oyuncu)
@@ -478,14 +478,14 @@ local function oyuncuGeldi(oyuncu)
 	local skorlar = Instance.new("Folder")
 	skorlar.Name = "leaderstats"
 	local paketDeger = Instance.new("IntValue")
-	paketDeger.Name = "Paket"
+	paketDeger.Name = "📦"
 	paketDeger.Parent = skorlar
 	local paraDeger = Instance.new("IntValue")
-	paraDeger.Name = "Para"
+	paraDeger.Name = "💰"
 	paraDeger.Parent = skorlar
 	local unvanDeger = Instance.new("StringValue")
-	unvanDeger.Name = "Unvan"
-	unvanDeger.Value = Config.Unvanlar[1].Ad
+	unvanDeger.Name = "👑"
+	unvanDeger.Value = Config.Unvanlar[1].Ikon
 	unvanDeger.Parent = skorlar
 	skorlar.Parent = oyuncu
 	v.Skor = { Paket = paketDeger, Para = paraDeger, Unvan = unvanDeger }
@@ -667,7 +667,7 @@ SubeAcOlay.OnServerEvent:Connect(function(oyuncu)
 	skorGuncelle(oyuncu)
 	kafaYazisiGuncelle(oyuncu)
 	durumGonder(oyuncu)
-	DuyuruOlay:FireAllClients(string.format("🏙️ %s %d. şubesini açtı!", oyuncu.DisplayName, v.Sube + 1))
+	DuyuruOlay:FireAllClients("🏙️ %s %d. şubesini açtı!", oyuncu.DisplayName, v.Sube + 1)
 	task.spawn(kaydet, oyuncu)
 end)
 
@@ -701,7 +701,7 @@ StilSecOlay.OnServerEvent:Connect(function(oyuncu, istek)
 	ad = string.match(ad, "^%s*(.-)%s*$") or ""
 	local uzunluk = utf8.len(ad)
 	if uzunluk == nil or uzunluk > Config.AdEnUzun then
-		DuyuruOlay:FireClient(oyuncu, "Dükkan adı en fazla " .. Config.AdEnUzun .. " harf olabilir.")
+		DuyuruOlay:FireClient(oyuncu, "Dükkan adı en fazla %d harf olabilir.", Config.AdEnUzun)
 		return
 	end
 	if uzunluk == 0 then
@@ -710,7 +710,7 @@ StilSecOlay.OnServerEvent:Connect(function(oyuncu, istek)
 	local temiz = adiFiltrele(oyuncu, ad)
 	if not temiz then
 		temiz = varsayilanAd(oyuncu)
-		DuyuruOlay:FireClient(oyuncu, "İsim kontrol edilemedi, şimdilik \"" .. temiz .. "\" yazdık.")
+		DuyuruOlay:FireClient(oyuncu, 'İsim kontrol edilemedi, şimdilik "%s" yazdık.', temiz)
 	elseif temiz ~= ad then
 		DuyuruOlay:FireClient(oyuncu, "Bu isim Roblox kurallarına uymuyor, bazı harfler gizlendi.")
 	end
@@ -871,7 +871,7 @@ GorevAlOlay.OnServerEvent:Connect(function(oyuncu)
 	v.Para += odul
 	v.GorevN += 1
 	v.GorevIlerleme = 0
-	DuyuruOlay:FireClient(oyuncu, "📜 Görev tamam! +" .. Ekonomi.Kisalt(odul) .. " para")
+	DuyuruOlay:FireClient(oyuncu, "📜 Görev tamam! +%s para", Ekonomi.Kisalt(odul))
 	skorGuncelle(oyuncu)
 	durumGonder(oyuncu)
 end)
@@ -885,7 +885,7 @@ local function yarismaBaslat(oyuncu)
 	end
 	local kalan = (v.YarismaSon or -1e9) + Config.Yarisma.Bekleme - os.clock()
 	if kalan > 0 then
-		DuyuruOlay:FireClient(oyuncu, string.format("Hakem Hülya: Biraz dinlen! %d saniye sonra tekrar gel.", math.ceil(kalan)))
+		DuyuruOlay:FireClient(oyuncu, "Hakem Hülya: Biraz dinlen! %d saniye sonra tekrar gel.", math.ceil(kalan))
 		return
 	end
 	local simdi = os.clock()
@@ -913,7 +913,7 @@ task.spawn(function()
 				YarismaOlay:FireClient(oyuncu, { Durum = "bitti", Sayac = y.Sayac, Odul = odul, Rekor = v.YarismaRekor, YeniRekor = yeniRekor })
 				if y.Sayac > sunucuRekoru and y.Sayac > 0 then
 					sunucuRekoru = y.Sayac
-					DuyuruOlay:FireAllClients(string.format("🏆 %s Huss Yarışmasında %d tık! Kasaba rekoru!", oyuncu.DisplayName, y.Sayac))
+					DuyuruOlay:FireAllClients("🏆 %s Huss Yarışmasında %d tık! Kasaba rekoru!", oyuncu.DisplayName, y.Sayac)
 				end
 				skorGuncelle(oyuncu)
 				durumGonder(oyuncu)
@@ -930,14 +930,14 @@ local function hediyeVer(oyuncu)
 	end
 	local kalan = v.SonHediye + Config.Hediye.Bekleme - os.time()
 	if kalan > 0 then
-		DuyuruOlay:FireClient(oyuncu, string.format("Hediyeci Hasan: Sıradaki hediye %d:%02d sonra! 🎁", kalan // 60, kalan % 60))
+		DuyuruOlay:FireClient(oyuncu, "Hediyeci Hasan: Sıradaki hediye %d:%02d sonra! 🎁", kalan // 60, kalan % 60)
 		return
 	end
 	v.SonHediye = os.time()
 	if rastgele:NextNumber() < 0.3 then
 		v.IkiKatBitis = os.clock() + Config.Hediye.IkiKatSuresi
 		oyuncu:SetAttribute("IkiKatBitis", workspace:GetServerTimeNow() + Config.Hediye.IkiKatSuresi)
-		DuyuruOlay:FireClient(oyuncu, "🎁 Hediye: " .. Config.Hediye.IkiKatSuresi .. " saniye boyunca 2 KAT PARA! 🔥")
+		DuyuruOlay:FireClient(oyuncu, "🎁 Hediye: %d saniye boyunca 2 KAT PARA! 🔥", Config.Hediye.IkiKatSuresi)
 	else
 		local para = math.max(
 			Config.Hediye.EnAzPara,
@@ -946,7 +946,7 @@ local function hediyeVer(oyuncu)
 		)
 		para = math.floor(para * rastgele:NextNumber(1, 2))
 		v.Para += para
-		DuyuruOlay:FireClient(oyuncu, "🎁 Hediye: +" .. Ekonomi.Kisalt(para) .. " para!")
+		DuyuruOlay:FireClient(oyuncu, "🎁 Hediye: +%s para!", Ekonomi.Kisalt(para))
 	end
 	skorGuncelle(oyuncu)
 	durumGonder(oyuncu)
@@ -971,7 +971,7 @@ task.spawn(function()
 		task.wait(rastgele:NextNumber(Config.AltinSaat.EnAz, Config.AltinSaat.EnCok))
 		altinSaatBitis = os.clock() + Config.AltinSaat.Sure
 		ReplicatedStorage:SetAttribute("AltinSaatBitis", workspace:GetServerTimeNow() + Config.AltinSaat.Sure)
-		DuyuruOlay:FireAllClients(string.format("⏰ ALTIN SAAT! %d saniye boyunca bütün paketler 2 kat para! 🔥", Config.AltinSaat.Sure))
+		DuyuruOlay:FireAllClients("⏰ ALTIN SAAT! %d saniye boyunca bütün paketler 2 kat para! 🔥", Config.AltinSaat.Sure)
 		for oyuncu in pairs(veriler) do
 			task.spawn(durumGonder, oyuncu)
 		end
