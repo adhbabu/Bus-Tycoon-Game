@@ -1,0 +1,80 @@
+{
+  "name": "BurgerImparatoru",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Ortak": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Sunucu": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMaxZoomDistance": 150
+      },
+      "StarterPlayerScripts": {
+        "Ekran": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
+      },
+      "Baseplate": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "Locked": true,
+          "Size": [400, 2, 400],
+          "CFrame": {
+            "CFrame": {
+              "position": [0, -1, 0],
+              "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+            }
+          },
+          "Color": [0.42, 0.72, 0.36],
+          "Material": "Grass",
+          "TopSurface": "Smooth",
+          "BottomSurface": "Smooth"
+        }
+      },
+      "SpawnLocation": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "Neutral": true,
+          "Duration": 0,
+          "Size": [8, 1, 8],
+          "CFrame": {
+            "CFrame": {
+              "position": [0, 0.5, 62],
+              "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+            }
+          },
+          "Color": [1, 0.78, 0.2],
+          "Material": "Neon",
+          "Transparency": 0.4,
+          "TopSurface": "Smooth",
+          "BottomSurface": "Smooth"
+        }
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "ClockTime": 14.5,
+        "Brightness": 2.5
+      }
+    },
+    "TextChatService": {
+      "$properties": {
+        "ChatVersion": "TextChatService"
+      }
+    }
+  }
+}
