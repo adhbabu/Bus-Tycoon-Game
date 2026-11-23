@@ -1,23 +1,26 @@
 # 🍔 Burger İmparatoru 👑
 
-Roblox oyunu. Burgerler açık bir kutunun içinde gelir; **KATLA**'ya her bastığında kutu bir kez
-katlanır ve **"huss huss huss"** sesi gelir. **3 katlamada burger paketlenir**, paket tezgahının yanındaki
-kuleye uçar, sen de parayı kaparsın. Parayla dükkandan geliştirme al, unvanını yükselt: Çırak'tan
+Roblox oyunu. Burgerler açık bir burger kağıdının ortasında gelir; **KATLA**'ya her bastığında kağıdın
+bir kanadı burgerin üstüne katlanır ve **"huss huss huss"** sesi gelir. **3 katlamada burger kağıda sarılıp
+paketlenir**, paket tezgahının yanındaki kuleye uçar, sen de parayı kaparsın. Parayla dükkandan geliştirme al, unvanını yükselt: Çırak'tan
 başla, **BURGER İMPARATORU** ol.
 
 ## Hızlı başlangıç (5 dakika)
 
 1. **Roblox Studio'yu kur:** https://create.roblox.com adresine gir, "Start Creating" de, Studio'yu indir ve Roblox hesabınla giriş yap.
-2. **Oyun dosyasını indir:** Bu klasördeki `BurgerImparatoru.rbxlx` dosyası (GitHub'da dosyayı aç, sağ üstteki ⬇️ "Download raw file").
-3. **Studio'da aç:** Dosyaya çift tıkla, ya da Studio'da **File ▸ Open from File** ile seç.
+2. **Oyunu indir:** Bilgisayarda şu linke tıkla, dosya kendiliğinden iner:
+   https://github.com/adhbabu/Bus-Tycoon-Game/raw/claude/sleepy-mccarthy-vqe8bx/roblox/BurgerImparatoru/BurgerImparatoru-indir.zip
+3. **Zip'i aç:** **İndirilenler** (Downloads) klasöründe `BurgerImparatoru-indir.zip`'e sağ tıkla ▸ **Tümünü ayıkla** ▸ **Ayıkla**.
+   Açılan klasörde `BurgerImparatoru.rbxlx` dosyasına **çift tıkla**; Roblox Studio oyunu açar.
+   (Çift tıklayınca açılmazsa: Studio'yu aç ▸ sol üstte **File** ▸ **Open from File...** ▸ bu dosyayı seç.)
 4. **Oyna:** Üstteki ▶️ **Play** düğmesine bas (ya da F5). Karakterin kendi tezgahına ışınlanır.
-5. **KATLA!** butonuna bas (bilgisayarda **E** tuşu). 3 basışta burger paketlenir.
+5. **KATLA!** butonuna bas (bilgisayarda **E** tuşu). 3 basışta burger kağıda sarılır, paketlenir.
 
 > İlk açılışta ses yok, sadece sarı HUSS! yazıları var. Sesi eklemek için aşağıdaki adımları izle.
 
 ## 🔊 "Huss huss huss" sesini ekle
 
-Ses dosyası hazır: `sesler/huss.mp3`. Bu, gönderdiğin videodan (Instagram: **turkish.huss**) kesilmiş
+Ses dosyası hazır: `sesler/huss.mp3` (indirdiğin zip'in içinde de var). Bu, gönderdiğin videodan (Instagram: **turkish.huss**) kesilmiş
 "huss huss huss" sesi. Oyun her tıklamada bu sesin tamamını çalar, ekrandaki üç HUSS! yazısı da sesteki
 üç "huss"a denk gelir.
 
@@ -44,14 +47,14 @@ Roblox'ta bir sesi oyunda çalmak için önce Roblox'a yüklemen gerekiyor:
 
 | Ne | Bilgisayar | Telefon/Tablet | Oyun kolu |
 |---|---|---|---|
-| Kutuyu katla | **E** ya da KATLA butonu | KATLA butonu | R2 |
+| Kağıdı katla | **E** ya da KATLA butonu | KATLA butonu | R2 |
 | Dükkanı aç | **B** ya da DÜKKAN | DÜKKAN butonu | Y |
 
-- Her burger açık bir kutuda gelir. **1. katlama:** yan kapaklar, **2. katlama:** ön ve arka kapaklar,
-  **3. katlama:** kırmızı üst kapak kapanır ve burger **PAKETLENİR** 📦
+- Her burger açık bir burger kağıdının ortasında gelir. **1. katlama:** sol kanat, **2. katlama:** sağ kanat,
+  **3. katlama:** ön ve arka kanatlar burgerin üstüne katlanır ve burger kağıda sarılıp **PAKETLENİR** 📦
 - KATLA'nın üstündeki 3 nokta kaçıncı katlamada olduğunu gösterir.
-- Paketlenen burgerler tezgahının yanında kule olur (en fazla 6 kutu, sonra kule boşalır, yenisi başlar).
-- İçindeki malzemeye göre her paket farklı para eder. Bazen **✨ ALTIN BURGER ✨** çıkar: kapağı altın, parası çok!
+- Paketlenen burgerler tezgahının yanında kule olur (en fazla 6 paket, sonra kule boşalır, yenisi başlar).
+- İçindeki malzemeye göre her paket farklı para eder. Bazen **✨ ALTIN BURGER ✨** çıkar: altın kağıda sarılır, parası çok!
 - **Hızlı katla, KOMBO yap:** Durmadan basarsan ses hızlanır, HUSS! yazıları büyür.
 - **Dükkan:**
   - ✋ **Hızlı Eller**: Her tıkta daha çok katlama (en sonunda tek tıkta paket!)
@@ -71,7 +74,7 @@ Roblox'ta bir sesi oyunda çalmak için önce Roblox'a yüklemen gerekiyor:
 ## Kendin değiştir
 
 Bütün ayarlar **ReplicatedStorage ▸ Ortak ▸ Config** içinde, Türkçe açıklamalı:
-kaç katlamada paketleneceği, burger tarifi (hangi malzeme ne sıklıkla), kutu renkleri, dükkan fiyatları,
+kaç katlamada paketleneceği, burger tarifi (hangi malzeme ne sıklıkla), kağıt renkleri, dükkan fiyatları,
 unvanlar, tezgah sayısı, ses seviyesi. Mesela altın burgeri daha sık çıkarmak için
 `Config.AltinTabanSansi = 0.03` satırını `0.10` yap.
 
@@ -79,11 +82,12 @@ unvanlar, tezgah sayısı, ses seviyesi. Mesela altın burgeri daha sık çıkar
 
 ```
 BurgerImparatoru.rbxlx              ← Studio'da açılan hazır oyun
+BurgerImparatoru-indir.zip          ← oyun + ses, tek tıkla indirmek için
 sesler/huss.mp3                     ← huss huss huss sesi (Roblox'a yüklenecek)
 src/shared/Config.luau              ← bütün ayarlar
 src/shared/Ekonomi.luau             ← fiyat, para, tarif, unvan hesapları
 src/server/BurgerSunucu.server.luau ← katlama, paketleme, dükkan, kayıt (hile korumalı)
-src/server/Dunya.luau               ← mutfak, tezgahlar, katlanan kutu, paket kulesi, dev burger heykeli
+src/server/Dunya.luau               ← mutfak, tezgahlar, burger kağıdı, paket kulesi, dev burger heykeli
 src/client/BurgerEkran.client.luau  ← butonlar, HUSS! yazıları, ses, dükkan ekranı
 default.project.json                ← Rojo proje dosyası
 test/sim.luau                       ← Studio açmadan hızlı test
@@ -101,6 +105,12 @@ Studio'da Rojo eklentisinden **Connect** de. `.rbxlx` dosyasını yeniden üretm
 
 ```bash
 rojo build -o BurgerImparatoru.rbxlx
+```
+
+İndirme zip'ini yenilemek için (oyun dosyası + ses):
+
+```bash
+rm -f BurgerImparatoru-indir.zip && zip -j BurgerImparatoru-indir.zip BurgerImparatoru.rbxlx sesler/huss.mp3
 ```
 
 Studio açmadan hızlı test ([Lune](https://lune-org.github.io/docs) gerekir): sunucu ve ekran kodunu sahte bir

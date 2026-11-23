@@ -19,7 +19,8 @@ Config.HussZamanlari = { 0.04, 0.24, 0.44 }
 
 ----------------------------------------------------------------------
 -- KATLAMA VE PAKETLEME
--- Her burger açık bir kutunun içinde gelir. 3 katlamada kutu kapanır, burger paketlenir.
+-- Her burger açık bir burger kağıdının ortasında gelir. Her katlamada kağıdın bir kanadı
+-- burgerin üstüne katlanır: 1) sol, 2) sağ, 3) ön ve arka -> burger kağıda sarılır, paketlenir.
 ----------------------------------------------------------------------
 Config.KatlamaSayisi = 3 -- bir burger kaç katlamada paketlenir
 Config.KatlamaBeklemesi = 0.08 -- iki tıklama arası en az kaç saniye (hile koruması)
@@ -55,13 +56,11 @@ Config.AltinSansArtisi = 0.02 -- "Altın Şans" geliştirmesinin her seviyesi +%
 Config.AltEkmek = { Ad = "Alt Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 0.7, Cap = 4.5 }
 Config.UstEkmek = { Ad = "Üst Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 1.8, Cap = 4.6 }
 
--- Paket kutusu
-Config.KutuGenislik = 5.8
-Config.KutuYukseklik = 5.0
-Config.KutuRengi = Color3.fromRGB(250, 238, 214)
-Config.KapakRengi = Color3.fromRGB(215, 45, 45)
-Config.AltinKapakRengi = Color3.fromRGB(255, 200, 40)
-Config.YiginEnFazla = 6 -- tezgahın yanındaki paket kulesi en fazla kaç kutu olur
+-- Burger kağıdı
+Config.KagitRengi = Color3.fromRGB(250, 242, 226)
+Config.KagitBaskiRengi = Color3.fromRGB(215, 45, 45) -- kağıdın üstündeki kırmızı baskı
+Config.AltinKagitRengi = Color3.fromRGB(255, 205, 60) -- ALTIN BURGER altın kağıda sarılır
+Config.YiginEnFazla = 6 -- tezgahın yanındaki paket kulesi en fazla kaç paket olur
 
 ----------------------------------------------------------------------
 -- GELİŞTİRMELER (Dükkan)

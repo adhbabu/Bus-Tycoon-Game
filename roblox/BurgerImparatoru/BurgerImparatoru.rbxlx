@@ -38,7 +38,8 @@ Config.HussZamanlari = { 0.04, 0.24, 0.44 }
 
 ----------------------------------------------------------------------
 -- KATLAMA VE PAKETLEME
--- Her burger açık bir kutunun içinde gelir. 3 katlamada kutu kapanır, burger paketlenir.
+-- Her burger açık bir burger kağıdının ortasında gelir. Her katlamada kağıdın bir kanadı
+-- burgerin üstüne katlanır: 1) sol, 2) sağ, 3) ön ve arka -> burger kağıda sarılır, paketlenir.
 ----------------------------------------------------------------------
 Config.KatlamaSayisi = 3 -- bir burger kaç katlamada paketlenir
 Config.KatlamaBeklemesi = 0.08 -- iki tıklama arası en az kaç saniye (hile koruması)
@@ -74,13 +75,11 @@ Config.AltinSansArtisi = 0.02 -- "Altın Şans" geliştirmesinin her seviyesi +%
 Config.AltEkmek = { Ad = "Alt Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 0.7, Cap = 4.5 }
 Config.UstEkmek = { Ad = "Üst Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 1.8, Cap = 4.6 }
 
--- Paket kutusu
-Config.KutuGenislik = 5.8
-Config.KutuYukseklik = 5.0
-Config.KutuRengi = Color3.fromRGB(250, 238, 214)
-Config.KapakRengi = Color3.fromRGB(215, 45, 45)
-Config.AltinKapakRengi = Color3.fromRGB(255, 200, 40)
-Config.YiginEnFazla = 6 -- tezgahın yanındaki paket kulesi en fazla kaç kutu olur
+-- Burger kağıdı
+Config.KagitRengi = Color3.fromRGB(250, 242, 226)
+Config.KagitBaskiRengi = Color3.fromRGB(215, 45, 45) -- kağıdın üstündeki kırmızı baskı
+Config.AltinKagitRengi = Color3.fromRGB(255, 205, 60) -- ALTIN BURGER altın kağıda sarılır
+Config.YiginEnFazla = 6 -- tezgahın yanındaki paket kulesi en fazla kaç paket olur
 
 ----------------------------------------------------------------------
 -- GELİŞTİRMELER (Dükkan)
@@ -529,12 +528,14 @@ local function kafaYazisiGuncelle(oyuncu)
 end
 
 ----------------------------------------------------------------------
--- Burger ve kutu
+-- Burger ve kağıt
 ----------------------------------------------------------------------
-local KATLAMA = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local KATLAMA = TweenInfo.new(0.17, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local PATLAMA = TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local UCUS = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-local KAPANMA_SURESI = 0.18 -- kapak kapandıktan sonra kutu bu kadar bekleyip uçar
-local KUTU_PARCALARI = { "Taban", "Sol", "Sag", "On", "Arka", "Kapak" }
+local SARMA_SURESI = 0.17 -- son kanatlar katlanınca bu kadar sonra burger pakete dönüşür
+local BEKLEME = 0.2 -- paket tezgahta bu kadar durup kuleye uçar
+local KAGIT_PARCALARI = { "Orta", "Sol", "Sag", "On", "Arka" }
 
 -- gecikme: önceki paket tezgahtan kalkana kadar yeni burger yukarıda bekler
 local function yeniBurger(oyuncu, gecikme)
@@ -547,66 +548,70 @@ local function yeniBurger(oyuncu, gecikme)
 
 	local klasor = Instance.new("Folder")
 	klasor.Name = "Burger"
-	local kutu = Dunya.KutuYap(t.KutuCFrame, altin)
 	local parcalar = {}
-	for _, ad in ipairs(KUTU_PARCALARI) do
-		table.insert(parcalar, kutu[ad])
-	end
-	-- Burger, kutunun tabanının üstünde
-	local cf = t.KutuCFrame * CFrame.new(0, kutu.Taban.Size.Y, 0)
+
+	-- Burger, kağıdın ortasında
+	local taban = t.KagitCFrame * CFrame.new(0, Dunya.KagitKalinligi(), 0)
+	local cf = taban
 	local katlar = { Config.AltEkmek }
 	for _, m in ipairs(liste) do
 		table.insert(katlar, m)
 	end
 	table.insert(katlar, Config.UstEkmek)
+	local yukseklik = 0
 	for _, m in ipairs(katlar) do
 		local yeni, k = Dunya.KatYap(m, cf, 1, rastgele)
 		for _, p in ipairs(yeni) do
 			table.insert(parcalar, p)
 		end
 		cf = cf * CFrame.new(0, k, 0)
+		yukseklik += k
 	end
-	-- Yukarıdan düşerek gelsin. Her parçanın kutuya göre yerini sakla (uçarken lazım)
+
+	local kagit = Dunya.KagitYap(t.KagitCFrame, altin, yukseklik)
+	for _, ad in ipairs(KAGIT_PARCALARI) do
+		table.insert(parcalar, kagit[ad])
+	end
+
+	-- Yukarıdan düşerek gelsin
 	local dusme = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, gecikme or 0)
-	local goreliYerler = {}
 	for _, p in ipairs(parcalar) do
 		local hedef = p.CFrame
-		goreliYerler[p] = t.KutuCFrame:ToObjectSpace(hedef)
 		p.CFrame = hedef + Vector3.new(0, 6, 0)
 		p.Parent = klasor
 		TweenService:Create(p, dusme, { CFrame = hedef }):Play()
 	end
 	klasor.Parent = t.PaketKlasoru
 
-	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kutu = kutu, Klasor = klasor, Goreli = goreliYerler }
+	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kagit = kagit, Klasor = klasor, Yukseklik = yukseklik }
 end
 
--- Paket kulesine bir kutu koyar
-local function kuleyeKoy(t, altin, nesil, sira, cf)
-	if t.Yigin.Nesil ~= nesil then
-		return -- bu arada kule boşaltıldı
+local function modelParcalari(model)
+	local liste = {}
+	for _, p in ipairs(model:GetDescendants()) do
+		if p:IsA("BasePart") then
+			table.insert(liste, p)
+		end
 	end
-	local kutu = Dunya.YiginKutusu(cf, altin)
-	kutu.Parent = t.YiginKlasoru
-	t.Yigin.Kutular[sira] = kutu
+	return liste
 end
 
 local function kuleyiBosalt(t)
 	t.Yigin.Nesil += 1
-	for _, kutu in pairs(t.Yigin.Kutular) do
-		local yukari = kutu.CFrame + Vector3.new(0, 25, 0)
-		TweenService:Create(kutu, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			CFrame = yukari,
-			Transparency = 1,
-		}):Play()
-		task.delay(0.65, function()
-			kutu:Destroy()
+	for _, paket in pairs(t.Yigin.Paketler) do
+		for _, p in ipairs(modelParcalari(paket)) do
+			TweenService:Create(p, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				CFrame = p.CFrame + Vector3.new(0, 25, 0),
+			}):Play()
+		end
+		task.delay(0.62, function()
+			paket:Destroy()
 		end)
 	end
-	t.Yigin.Kutular = {}
+	t.Yigin.Paketler = {}
 end
 
--- Kapalı kutuyu kuleye uçurur, yeni burger getirir
+-- Kağıda sarılan burgeri pakete çevirir, kuleye uçurur, yeni burger getirir
 local function paketle(oyuncu)
 	local v = veriler[oyuncu]
 	local t = v.Tezgah
@@ -621,34 +626,46 @@ local function paketle(oyuncu)
 	y.Sayac += 1
 	local sira = y.Sayac
 	local nesil = y.Nesil
-	local yukseklik = Dunya.KutuYuksekligi()
-	local hedefTaban = t.YiginCFrame
-		* CFrame.new(0, (sira - 1) * yukseklik, 0)
-		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-12, 12)), 0)
+	local boy = Dunya.PaketBoyu()
+	local hedef = t.YiginCFrame
+		* CFrame.new(0, (sira - 1) * Dunya.YiginAdimi() + boy.Y / 2, 0)
+		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-25, 25)), 0)
 
-	-- Kapak kapanınca kutuyu (ve içindeki burgeri) kuleye uçur
 	local klasor = b.Klasor
 	local altin = b.Altin
-	local kutuTaban = t.KutuCFrame
-	local kapali = Dunya.KutuPozu(kutuTaban, Config.KatlamaSayisi)
-	local goreli = b.Goreli
-	for ad, p in pairs(b.Kutu) do
-		goreli[p] = kutuTaban:ToObjectSpace(kapali[ad])
-	end
+	local merkez = t.KagitCFrame * CFrame.new(0, boy.Y / 2, 0)
 	klasor.Parent = ucanKlasor
-	task.delay(KAPANMA_SURESI, function()
-		for p, g in pairs(goreli) do
-			if p.Parent then
-				TweenService:Create(p, UCUS, { CFrame = hedefTaban * g }):Play()
+
+	task.delay(SARMA_SURESI, function()
+		-- Kanatlar kapandı: kağıt + burger yerine sarılmış paket "pof" diye belirir
+		klasor:Destroy()
+		local paket = Dunya.PaketliBurger(merkez, altin)
+		local govde = paket.PrimaryPart
+		local tamBoy = govde.Size
+		govde.Size = tamBoy * 0.75
+		paket.Parent = ucanKlasor
+		TweenService:Create(govde, PATLAMA, { Size = tamBoy }):Play()
+
+		task.delay(BEKLEME, function()
+			if not paket.Parent then
+				return
 			end
-		end
-		task.delay(UCUS.Time + 0.02, function()
-			klasor:Destroy()
-			kuleyeKoy(t, altin, nesil, sira, hedefTaban * CFrame.new(0, yukseklik / 2, 0))
+			for _, p in ipairs(modelParcalari(paket)) do
+				local goreli = merkez:ToObjectSpace(p.CFrame)
+				TweenService:Create(p, UCUS, { CFrame = hedef * goreli }):Play()
+			end
+			task.delay(UCUS.Time + 0.02, function()
+				if t.Yigin.Nesil ~= nesil or not paket.Parent then
+					paket:Destroy() -- bu arada kule boşaltıldı ya da oyuncu çıktı
+					return
+				end
+				paket.Parent = t.YiginKlasoru
+				t.Yigin.Paketler[sira] = paket
+			end)
 		end)
 	end)
 
-	yeniBurger(oyuncu, KAPANMA_SURESI + 0.1)
+	yeniBurger(oyuncu, SARMA_SURESI + BEKLEME + 0.05)
 end
 
 local function unvanKontrol(oyuncu, eskiIndex)
@@ -679,10 +696,10 @@ local function katla(oyuncu, adet, otomatik)
 		return
 	end
 
-	-- Kutunun kapaklarını yeni aşamaya katla
-	local poz = Dunya.KutuPozu(v.Tezgah.KutuCFrame, b.Asama)
-	for _, ad in ipairs(KUTU_PARCALARI) do
-		local p = b.Kutu[ad]
+	-- Kağıdın kanatlarını burgerin üstüne katla
+	local poz = Dunya.KagitPozu(v.Tezgah.KagitCFrame, b.Asama, b.Yukseklik)
+	for _, ad in ipairs(KAGIT_PARCALARI) do
+		local p = b.Kagit[ad]
 		if p.CFrame ~= poz[ad] then
 			TweenService:Create(p, KATLAMA, { CFrame = poz[ad] }):Play()
 		end
@@ -723,7 +740,7 @@ local function tezgahiBirak(t)
 	t.Sahip = nil
 	t.PaketKlasoru:ClearAllChildren()
 	t.YiginKlasoru:ClearAllChildren()
-	t.Yigin = { Kutular = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
+	t.Yigin = { Paketler = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
 	t.TabelaBaslik.Text = "🍔 Boş Tezgah"
 	t.TabelaAlt.Text = "Gel burger katla!"
 end
@@ -1203,9 +1220,11 @@ end
 
 local TEZGAH_EN = 14
 local TEZGAH_DERIN = 11
-local KUTU_KALINLIK = 0.15
-local YAN_ACIK = math.rad(40)
-local KAPAK_ACIK = math.rad(105)
+local KAGIT_K = 0.06 -- kağıt kalınlığı
+local KAGIT_ORTA = 5.4 -- burgerin oturduğu orta kare
+local KAGIT_KANAT = 2.8 -- dört yandaki katlanan kanatlar
+local PAKET_BOYU = Vector3.new(5.8, 3.4, 5.8) -- kağıda sarılmış burger
+local YIGIN_ADIM = 3.15 -- kulede paketler biraz iç içe dursun
 
 local function tezgahYap(i, adet, klasor)
 	local aci = (i - 1) / adet * math.pi * 2
@@ -1246,7 +1265,7 @@ local function tezgahYap(i, adet, klasor)
 		Parent = model,
 	})
 
-	-- Kutunun durduğu renkli tepsi
+	-- Burger kağıdının durduğu renkli tepsi
 	local tezgahUstY = ZEMIN_Y + TEZGAH_YUKSEKLIK + 0.3
 	local tepsiK = 0.12
 	local tabak = parca({
@@ -1270,7 +1289,7 @@ local function tezgahYap(i, adet, klasor)
 	local yiginCF = CFrame.new(merkez + YUKARI * ZEMIN_Y) * donus * CFrame.new(-(TEZGAH_EN / 2 + 3.6), 0, 0)
 	local yiginYeri = parca({
 		Name = "YiginYeri",
-		Size = Vector3.new(Config.KutuGenislik + 1.2, 0.1, Config.KutuGenislik + 1.2),
+		Size = Vector3.new(PAKET_BOYU.X + 0.8, 0.1, PAKET_BOYU.Z + 0.8),
 		CFrame = yiginCF * CFrame.new(0, 0.05, 0),
 		Color = renk:Lerp(Color3.new(1, 1, 1), 0.4),
 		CanCollide = false,
@@ -1297,37 +1316,20 @@ local function tezgahYap(i, adet, klasor)
 		YiginKlasoru = yigin,
 		Konfeti = konfeti,
 		Renk = renk,
-		-- Kutunun tabanı: tepsinin üstü, ön yüzü oyuncuya bakar
-		KutuCFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tepsiK)) * donus,
+		-- Kağıdın ortası: tepsinin üstü, ön yüzü oyuncuya bakar
+		KagitCFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tepsiK)) * donus,
 		YiginCFrame = yiginCF,
 		OyuncuCFrame = CFrame.lookAt(oyuncuNokta + YUKARI * (ZEMIN_Y + 3), merkez + YUKARI * (ZEMIN_Y + 3)),
 		TabelaBaslik = baslik,
 		TabelaAlt = alt,
-		Yigin = { Kutular = {}, Nesil = 0, Sayac = 0 },
+		Yigin = { Paketler = {}, Nesil = 0, Sayac = 0 },
 		Sahip = nil,
 	}
 end
 
 ----------------------------------------------------------------------
--- Paket kutusu
+-- Burger kağıdı ve paket
 ----------------------------------------------------------------------
-
--- Kutunun her parçasının, verilen aşamadaki yeri (0 = açık, 3 = kapalı)
-function Dunya.KutuPozu(taban, asama)
-	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
-	local yan = asama >= 1 and 0 or YAN_ACIK
-	local onArka = asama >= 2 and 0 or YAN_ACIK
-	local kapak = asama >= 3 and 0 or KAPAK_ACIK
-	local arkaMentese = taban * CFrame.new(0, 0, S / 2) * CFrame.Angles(onArka, 0, 0)
-	return {
-		Taban = taban * CFrame.new(0, t / 2, 0),
-		Sol = taban * CFrame.new(-S / 2, 0, 0) * CFrame.Angles(0, 0, yan) * CFrame.new(t / 2, H / 2, 0),
-		Sag = taban * CFrame.new(S / 2, 0, 0) * CFrame.Angles(0, 0, -yan) * CFrame.new(-t / 2, H / 2, 0),
-		On = taban * CFrame.new(0, 0, -S / 2) * CFrame.Angles(-onArka, 0, 0) * CFrame.new(0, H / 2, t / 2),
-		Arka = arkaMentese * CFrame.new(0, H / 2, -t / 2),
-		Kapak = arkaMentese * CFrame.new(0, H, 0) * CFrame.Angles(kapak, 0, 0) * CFrame.new(0, t / 2, -S / 2),
-	}
-end
 
 local function etiketYap(parcaNesnesi, yuz, altin)
 	local sg = Instance.new("SurfaceGui")
@@ -1339,8 +1341,8 @@ local function etiketYap(parcaNesnesi, yuz, altin)
 	local daire = Instance.new("Frame")
 	daire.AnchorPoint = Vector2.new(0.5, 0.5)
 	daire.Position = UDim2.fromScale(0.5, 0.5)
-	daire.Size = UDim2.fromScale(0.62, 0.62)
-	daire.BackgroundColor3 = altin and Color3.fromRGB(255, 240, 150) or Color3.fromRGB(255, 205, 40)
+	daire.Size = UDim2.fromScale(0.9, 0.9)
+	daire.BackgroundColor3 = altin and Color3.fromRGB(255, 240, 150) or Config.KagitBaskiRengi
 	daire.Parent = sg
 	local kose = Instance.new("UICorner")
 	kose.CornerRadius = UDim.new(1, 0)
@@ -1355,61 +1357,158 @@ local function etiketYap(parcaNesnesi, yuz, altin)
 	return sg
 end
 
--- Açık bir kutu yapar (parçalar yerinde ama Parent'ı yok)
-function Dunya.KutuYap(taban, altin)
-	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
-	local poz = Dunya.KutuPozu(taban, 0)
-	local boyut = {
-		Taban = Vector3.new(S, t, S),
-		Sol = Vector3.new(t, H, S),
-		Sag = Vector3.new(t, H, S),
-		On = Vector3.new(S - 2 * t, H, t),
-		Arka = Vector3.new(S - 2 * t, H, t),
-		Kapak = Vector3.new(S, t, S),
+-- Kağıdın üstündeki kırmızı çerçeve ve altındaki (katlanınca görünen) baskı
+local function kagitBaskisi(p, altin, ust, alt)
+	local baski = altin and Color3.fromRGB(190, 120, 0) or Config.KagitBaskiRengi
+	if ust then
+		local sg = Instance.new("SurfaceGui")
+		sg.Name = "Cerceve"
+		sg.Face = Enum.NormalId.Top
+		sg.LightInfluence = 0.5
+		sg.PixelsPerStud = 30
+		sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		sg.Parent = p
+		local f = Instance.new("Frame")
+		f.BackgroundTransparency = 1
+		f.AnchorPoint = Vector2.new(0.5, 0.5)
+		f.Position = UDim2.fromScale(0.5, 0.5)
+		f.Size = UDim2.new(1, -16, 1, -16)
+		f.Parent = sg
+		local c = Instance.new("UIStroke")
+		c.Color = baski
+		c.Thickness = 5
+		c.Parent = f
+	end
+	if alt then
+		local sg = Instance.new("SurfaceGui")
+		sg.Name = "Baski"
+		sg.Face = Enum.NormalId.Bottom
+		sg.LightInfluence = 0.5
+		sg.PixelsPerStud = 30
+		sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		sg.Parent = p
+		local yazi = Instance.new("TextLabel")
+		yazi.BackgroundTransparency = 1
+		yazi.Size = UDim2.fromScale(1, 1)
+		yazi.TextScaled = true
+		yazi.Font = Enum.Font.FredokaOne
+		yazi.TextColor3 = baski
+		yazi.Text = "👑"
+		yazi.Parent = sg
+	end
+end
+
+-- Kağıdın her parçasının, verilen aşamadaki yeri.
+-- 0 = kağıt açık, 1 = sol kanat burgerin üstünde, 2 = sağ da, 3 = ön ve arka da (paket!)
+-- yukseklik: burgerin kağıttan tepesine kadar boyu
+function Dunya.KagitPozu(taban, asama, yukseklik)
+	local yari = KAGIT_ORTA / 2
+	local kenar = yari + KAGIT_KANAT / 2
+	local y = KAGIT_K / 2
+	local h = KAGIT_K + yukseklik
+	local sark = math.rad(14) -- üstteki kanatlar kenara doğru biraz sarksın
+	local poz = {
+		Orta = taban * CFrame.new(0, y, 0),
+		Sol = taban * CFrame.new(-kenar, y, 0),
+		Sag = taban * CFrame.new(kenar, y, 0),
+		On = taban * CFrame.new(0, y, -kenar),
+		Arka = taban * CFrame.new(0, y, kenar),
 	}
-	local kutu = {}
+	if asama >= 1 then
+		poz.Sol = taban * CFrame.new(-yari / 2 + 0.1, h + 0.05, 0) * CFrame.Angles(0, 0, math.pi + sark)
+	end
+	if asama >= 2 then
+		poz.Sag = taban * CFrame.new(yari / 2 - 0.1, h + 0.11, 0) * CFrame.Angles(0, 0, math.pi - sark)
+	end
+	if asama >= 3 then
+		poz.On = taban * CFrame.new(0, h + 0.17, -yari / 2 + 0.1) * CFrame.Angles(math.pi - sark, 0, 0)
+		poz.Arka = taban * CFrame.new(0, h + 0.23, yari / 2 - 0.1) * CFrame.Angles(math.pi + sark, 0, 0)
+	end
+	return poz
+end
+
+-- Açık bir burger kağıdı yapar (parçalar yerinde ama Parent'ı yok)
+function Dunya.KagitYap(taban, altin, yukseklik)
+	local poz = Dunya.KagitPozu(taban, 0, yukseklik)
+	local boyut = {
+		Orta = Vector3.new(KAGIT_ORTA, KAGIT_K, KAGIT_ORTA),
+		Sol = Vector3.new(KAGIT_KANAT, KAGIT_K, KAGIT_ORTA),
+		Sag = Vector3.new(KAGIT_KANAT, KAGIT_K, KAGIT_ORTA),
+		On = Vector3.new(KAGIT_ORTA, KAGIT_K, KAGIT_KANAT),
+		Arka = Vector3.new(KAGIT_ORTA, KAGIT_K, KAGIT_KANAT),
+	}
+	local kagit = {}
 	for ad, cf in pairs(poz) do
 		local p = parca({
-			Name = "Kutu" .. ad,
+			Name = "Kagit" .. ad,
 			Size = boyut[ad],
 			CFrame = cf,
-			Color = Config.KutuRengi,
-			Material = Enum.Material.Cardboard,
+			Color = altin and Config.AltinKagitRengi or Config.KagitRengi,
+			Material = altin and Enum.Material.Foil or Enum.Material.Fabric,
 			CanCollide = false,
 			CanTouch = false,
 		})
-		kutu[ad] = p
+		kagitBaskisi(p, altin, true, ad ~= "Orta")
+		kagit[ad] = p
 	end
-	kutu.Kapak.Color = altin and Config.AltinKapakRengi or Config.KapakRengi
-	kutu.Kapak.Material = altin and Enum.Material.Foil or Enum.Material.SmoothPlastic
-	etiketYap(kutu.Kapak, Enum.NormalId.Top, altin)
-	return kutu
+	return kagit
 end
 
--- Kuledeki tek parça kapalı kutu
-function Dunya.YiginKutusu(cf, altin)
-	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
-	local p = parca({
-		Name = "PaketliBurger",
-		Size = Vector3.new(S, H + t, S),
+function Dunya.KagitKalinligi()
+	return KAGIT_K
+end
+
+-- Kağıda sarılmış burger (kulede durur). cf: paketin ortası
+function Dunya.PaketliBurger(cf, altin)
+	local model = Instance.new("Model")
+	model.Name = "PaketliBurger"
+	local govde = parca({
+		Name = "Govde",
+		Size = PAKET_BOYU,
 		CFrame = cf,
-		Color = Config.KutuRengi,
-		Material = Enum.Material.Cardboard,
+		Color = altin and Config.AltinKagitRengi or Config.KagitRengi,
+		Material = altin and Enum.Material.Foil or Enum.Material.Fabric,
 		CanCollide = false,
 		CanTouch = false,
+		Parent = model,
 	})
-	local sg = etiketYap(p, Enum.NormalId.Top, altin)
-	local kapak = Instance.new("Frame")
-	kapak.Size = UDim2.fromScale(1, 1)
-	kapak.BackgroundColor3 = altin and Config.AltinKapakRengi or Config.KapakRengi
-	kapak.ZIndex = 0
-	kapak.Parent = sg
-	etiketYap(p, Enum.NormalId.Front, altin)
-	return p
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = govde
+	-- Kağıdın katlandığı yerler: üstte çapraz iki kırmızı şerit
+	local baski = altin and Color3.fromRGB(190, 120, 0) or Config.KagitBaskiRengi
+	for i = 0, 1 do
+		parca({
+			Name = "Serit" .. i,
+			Size = Vector3.new(PAKET_BOYU.X * 0.42, 0.08, 0.35),
+			CFrame = cf * CFrame.new(0, PAKET_BOYU.Y / 2 - 0.12, 0) * CFrame.Angles(0, math.rad(45 + 90 * i), 0),
+			Color = baski,
+			CanCollide = false,
+			CanTouch = false,
+			Parent = model,
+		})
+	end
+	local etiket = parca({
+		Name = "Etiket",
+		Size = Vector3.new(1.8, 0.05, 1.8),
+		CFrame = cf * CFrame.new(0, PAKET_BOYU.Y / 2 + 0.01, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanTouch = false,
+		CanQuery = false,
+		Parent = model,
+	})
+	etiketYap(etiket, Enum.NormalId.Top, altin)
+	model.PrimaryPart = govde
+	return model
 end
 
-function Dunya.KutuYuksekligi()
-	return Config.KutuYukseklik + KUTU_KALINLIK
+function Dunya.PaketBoyu()
+	return PAKET_BOYU
+end
+
+function Dunya.YiginAdimi()
+	return YIGIN_ADIM
 end
 
 local function zeminYap(klasor)

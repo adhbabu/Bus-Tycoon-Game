@@ -565,8 +565,7 @@ if process.args[2] == "poz" then
 	-- local box frame: use the station tray orientation, origin on top of tray
 	local tabak = unwrap(st.Tabak)
 	local base = tabak.CFrame * roblox.CFrame.new(0, tabak.Size.Y / 2, 0)
-	local kutu = Dunya.KutuYap(base, false)
-	local out = { stages = {}, burger = {} }
+	local out = { stages = {}, burger = {}, paket = {} }
 	local function corners(cf, size)
 		local c = {}
 		for _, sx in ipairs({ -1, 1 }) do
@@ -579,24 +578,33 @@ if process.args[2] == "poz" then
 		end
 		return c
 	end
-	for asama = 0, 3 do
-		local poz = Dunya.KutuPozu(base, asama)
-		local panels = {}
-		for ad, cf in pairs(poz) do
-			panels[ad] = corners(cf, unwrap(kutu[ad]).Size)
-		end
-		out.stages[asama + 1] = panels
-	end
 	local Config = runScript(findScript(game:GetService("ReplicatedStorage"), "Config"))
-	local cf = base * roblox.CFrame.new(0, unwrap(kutu.Taban).Size.Y, 0)
-	local katlar = { Config.AltEkmek, Config.Malzemeler.Kofte, Config.Malzemeler.Peynir, Config.Malzemeler.Kofte, Config.Malzemeler.Marul, Config.Malzemeler.Domates, Config.Malzemeler.Sogan, Config.Malzemeler.Tursu, Config.UstEkmek }
+	local cf = base * roblox.CFrame.new(0, Dunya.KagitKalinligi(), 0)
+	local h = 0
+	local katlar = { Config.AltEkmek, Config.Malzemeler.Kofte, Config.Malzemeler.Peynir, Config.Malzemeler.Marul, Config.Malzemeler.Domates, Config.Malzemeler.Tursu, Config.UstEkmek }
 	for _, m in ipairs(katlar) do
 		local parts, k = Dunya.KatYap(m, cf, 1, Random.new(3))
 		for _, p in ipairs(parts) do
 			local r = unwrap(p)
-			table.insert(out.burger, { corners = corners(r.CFrame, r.Size), color = { r.Color.R, r.Color.G, r.Color.B }, shape = tostring(r.Shape) })
+			table.insert(out.burger, { corners = corners(r.CFrame, r.Size), color = { r.Color.R, r.Color.G, r.Color.B } })
 		end
 		cf = cf * roblox.CFrame.new(0, k, 0)
+		h += k
+	end
+	local kagit = Dunya.KagitYap(base, false, h)
+	for asama = 0, 3 do
+		local poz = Dunya.KagitPozu(base, asama, h)
+		local panels = {}
+		for ad, pcf in pairs(poz) do
+			panels[ad] = corners(pcf, unwrap(kagit[ad]).Size)
+		end
+		out.stages[asama + 1] = panels
+	end
+	local paket = Dunya.PaketliBurger(base * roblox.CFrame.new(0, Dunya.PaketBoyu().Y / 2, 0), false)
+	for _, d in ipairs(unwrap(paket):GetDescendants()) do
+		if d:IsA("BasePart") then
+			table.insert(out.paket, { name = d.Name, corners = corners(d.CFrame, d.Size), color = { d.Color.R, d.Color.G, d.Color.B }, transparent = d.Transparency > 0.5 })
+		end
 	end
 	local serde = require("@lune/serde")
 	fs.writeFile("poz.json", serde.encode("json", out))

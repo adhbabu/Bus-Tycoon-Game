@@ -214,12 +214,14 @@ local function kafaYazisiGuncelle(oyuncu)
 end
 
 ----------------------------------------------------------------------
--- Burger ve kutu
+-- Burger ve kağıt
 ----------------------------------------------------------------------
-local KATLAMA = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local KATLAMA = TweenInfo.new(0.17, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local PATLAMA = TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local UCUS = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-local KAPANMA_SURESI = 0.18 -- kapak kapandıktan sonra kutu bu kadar bekleyip uçar
-local KUTU_PARCALARI = { "Taban", "Sol", "Sag", "On", "Arka", "Kapak" }
+local SARMA_SURESI = 0.17 -- son kanatlar katlanınca bu kadar sonra burger pakete dönüşür
+local BEKLEME = 0.2 -- paket tezgahta bu kadar durup kuleye uçar
+local KAGIT_PARCALARI = { "Orta", "Sol", "Sag", "On", "Arka" }
 
 -- gecikme: önceki paket tezgahtan kalkana kadar yeni burger yukarıda bekler
 local function yeniBurger(oyuncu, gecikme)
@@ -232,66 +234,70 @@ local function yeniBurger(oyuncu, gecikme)
 
 	local klasor = Instance.new("Folder")
 	klasor.Name = "Burger"
-	local kutu = Dunya.KutuYap(t.KutuCFrame, altin)
 	local parcalar = {}
-	for _, ad in ipairs(KUTU_PARCALARI) do
-		table.insert(parcalar, kutu[ad])
-	end
-	-- Burger, kutunun tabanının üstünde
-	local cf = t.KutuCFrame * CFrame.new(0, kutu.Taban.Size.Y, 0)
+
+	-- Burger, kağıdın ortasında
+	local taban = t.KagitCFrame * CFrame.new(0, Dunya.KagitKalinligi(), 0)
+	local cf = taban
 	local katlar = { Config.AltEkmek }
 	for _, m in ipairs(liste) do
 		table.insert(katlar, m)
 	end
 	table.insert(katlar, Config.UstEkmek)
+	local yukseklik = 0
 	for _, m in ipairs(katlar) do
 		local yeni, k = Dunya.KatYap(m, cf, 1, rastgele)
 		for _, p in ipairs(yeni) do
 			table.insert(parcalar, p)
 		end
 		cf = cf * CFrame.new(0, k, 0)
+		yukseklik += k
 	end
-	-- Yukarıdan düşerek gelsin. Her parçanın kutuya göre yerini sakla (uçarken lazım)
+
+	local kagit = Dunya.KagitYap(t.KagitCFrame, altin, yukseklik)
+	for _, ad in ipairs(KAGIT_PARCALARI) do
+		table.insert(parcalar, kagit[ad])
+	end
+
+	-- Yukarıdan düşerek gelsin
 	local dusme = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, gecikme or 0)
-	local goreliYerler = {}
 	for _, p in ipairs(parcalar) do
 		local hedef = p.CFrame
-		goreliYerler[p] = t.KutuCFrame:ToObjectSpace(hedef)
 		p.CFrame = hedef + Vector3.new(0, 6, 0)
 		p.Parent = klasor
 		TweenService:Create(p, dusme, { CFrame = hedef }):Play()
 	end
 	klasor.Parent = t.PaketKlasoru
 
-	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kutu = kutu, Klasor = klasor, Goreli = goreliYerler }
+	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kagit = kagit, Klasor = klasor, Yukseklik = yukseklik }
 end
 
--- Paket kulesine bir kutu koyar
-local function kuleyeKoy(t, altin, nesil, sira, cf)
-	if t.Yigin.Nesil ~= nesil then
-		return -- bu arada kule boşaltıldı
+local function modelParcalari(model)
+	local liste = {}
+	for _, p in ipairs(model:GetDescendants()) do
+		if p:IsA("BasePart") then
+			table.insert(liste, p)
+		end
 	end
-	local kutu = Dunya.YiginKutusu(cf, altin)
-	kutu.Parent = t.YiginKlasoru
-	t.Yigin.Kutular[sira] = kutu
+	return liste
 end
 
 local function kuleyiBosalt(t)
 	t.Yigin.Nesil += 1
-	for _, kutu in pairs(t.Yigin.Kutular) do
-		local yukari = kutu.CFrame + Vector3.new(0, 25, 0)
-		TweenService:Create(kutu, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			CFrame = yukari,
-			Transparency = 1,
-		}):Play()
-		task.delay(0.65, function()
-			kutu:Destroy()
+	for _, paket in pairs(t.Yigin.Paketler) do
+		for _, p in ipairs(modelParcalari(paket)) do
+			TweenService:Create(p, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				CFrame = p.CFrame + Vector3.new(0, 25, 0),
+			}):Play()
+		end
+		task.delay(0.62, function()
+			paket:Destroy()
 		end)
 	end
-	t.Yigin.Kutular = {}
+	t.Yigin.Paketler = {}
 end
 
--- Kapalı kutuyu kuleye uçurur, yeni burger getirir
+-- Kağıda sarılan burgeri pakete çevirir, kuleye uçurur, yeni burger getirir
 local function paketle(oyuncu)
 	local v = veriler[oyuncu]
 	local t = v.Tezgah
@@ -306,34 +312,46 @@ local function paketle(oyuncu)
 	y.Sayac += 1
 	local sira = y.Sayac
 	local nesil = y.Nesil
-	local yukseklik = Dunya.KutuYuksekligi()
-	local hedefTaban = t.YiginCFrame
-		* CFrame.new(0, (sira - 1) * yukseklik, 0)
-		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-12, 12)), 0)
+	local boy = Dunya.PaketBoyu()
+	local hedef = t.YiginCFrame
+		* CFrame.new(0, (sira - 1) * Dunya.YiginAdimi() + boy.Y / 2, 0)
+		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-25, 25)), 0)
 
-	-- Kapak kapanınca kutuyu (ve içindeki burgeri) kuleye uçur
 	local klasor = b.Klasor
 	local altin = b.Altin
-	local kutuTaban = t.KutuCFrame
-	local kapali = Dunya.KutuPozu(kutuTaban, Config.KatlamaSayisi)
-	local goreli = b.Goreli
-	for ad, p in pairs(b.Kutu) do
-		goreli[p] = kutuTaban:ToObjectSpace(kapali[ad])
-	end
+	local merkez = t.KagitCFrame * CFrame.new(0, boy.Y / 2, 0)
 	klasor.Parent = ucanKlasor
-	task.delay(KAPANMA_SURESI, function()
-		for p, g in pairs(goreli) do
-			if p.Parent then
-				TweenService:Create(p, UCUS, { CFrame = hedefTaban * g }):Play()
+
+	task.delay(SARMA_SURESI, function()
+		-- Kanatlar kapandı: kağıt + burger yerine sarılmış paket "pof" diye belirir
+		klasor:Destroy()
+		local paket = Dunya.PaketliBurger(merkez, altin)
+		local govde = paket.PrimaryPart
+		local tamBoy = govde.Size
+		govde.Size = tamBoy * 0.75
+		paket.Parent = ucanKlasor
+		TweenService:Create(govde, PATLAMA, { Size = tamBoy }):Play()
+
+		task.delay(BEKLEME, function()
+			if not paket.Parent then
+				return
 			end
-		end
-		task.delay(UCUS.Time + 0.02, function()
-			klasor:Destroy()
-			kuleyeKoy(t, altin, nesil, sira, hedefTaban * CFrame.new(0, yukseklik / 2, 0))
+			for _, p in ipairs(modelParcalari(paket)) do
+				local goreli = merkez:ToObjectSpace(p.CFrame)
+				TweenService:Create(p, UCUS, { CFrame = hedef * goreli }):Play()
+			end
+			task.delay(UCUS.Time + 0.02, function()
+				if t.Yigin.Nesil ~= nesil or not paket.Parent then
+					paket:Destroy() -- bu arada kule boşaltıldı ya da oyuncu çıktı
+					return
+				end
+				paket.Parent = t.YiginKlasoru
+				t.Yigin.Paketler[sira] = paket
+			end)
 		end)
 	end)
 
-	yeniBurger(oyuncu, KAPANMA_SURESI + 0.1)
+	yeniBurger(oyuncu, SARMA_SURESI + BEKLEME + 0.05)
 end
 
 local function unvanKontrol(oyuncu, eskiIndex)
@@ -364,10 +382,10 @@ local function katla(oyuncu, adet, otomatik)
 		return
 	end
 
-	-- Kutunun kapaklarını yeni aşamaya katla
-	local poz = Dunya.KutuPozu(v.Tezgah.KutuCFrame, b.Asama)
-	for _, ad in ipairs(KUTU_PARCALARI) do
-		local p = b.Kutu[ad]
+	-- Kağıdın kanatlarını burgerin üstüne katla
+	local poz = Dunya.KagitPozu(v.Tezgah.KagitCFrame, b.Asama, b.Yukseklik)
+	for _, ad in ipairs(KAGIT_PARCALARI) do
+		local p = b.Kagit[ad]
 		if p.CFrame ~= poz[ad] then
 			TweenService:Create(p, KATLAMA, { CFrame = poz[ad] }):Play()
 		end
@@ -408,7 +426,7 @@ local function tezgahiBirak(t)
 	t.Sahip = nil
 	t.PaketKlasoru:ClearAllChildren()
 	t.YiginKlasoru:ClearAllChildren()
-	t.Yigin = { Kutular = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
+	t.Yigin = { Paketler = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
 	t.TabelaBaslik.Text = "🍔 Boş Tezgah"
 	t.TabelaAlt.Text = "Gel burger katla!"
 end
