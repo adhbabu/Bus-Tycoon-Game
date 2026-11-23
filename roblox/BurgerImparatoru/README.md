@@ -23,6 +23,10 @@ Meydanda **Hüsnü Usta**'dan görev al, **Huss Yarışması**'nda rekor kır, *
 
 ## 🔊 "Huss huss huss" sesini ekle
 
+✅ **Ses yüklendi ve oyuna kondu:** `rbxassetid://116644917042731` (senin hesabında, "Huss Huss Huss").
+Roblox yeni sesleri önce kontrol eder; kontrol bitince oyunda çalar. Aşağıdaki adımlar sadece sesi
+değiştirmek istersen lazım.
+
 **Neden ses çıkmıyor?** Roblox oyunun içine ses dosyası koymaya izin vermez; ses önce Roblox'a yüklenir,
 Roblox ona bir numara verir, oyun da o numarayla sesi çalar. Oyundaki `Config.HussSesId` şu an boş,
 bu yüzden şimdilik sadece HUSS! yazıları çıkıyor. Aşağıdaki adımları bir kere yapınca ses gelir.

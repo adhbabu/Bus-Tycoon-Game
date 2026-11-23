@@ -31,7 +31,7 @@ end
 if process.args[3] == "ses" then
 	for _, d in ipairs(game_real:GetDescendants()) do
 		if d.Name == "Config" and d:IsA("ModuleScript") then
-			d.Source = string.gsub(d.Source, 'Config.HussSesId = ""', 'Config.HussSesId = "rbxassetid://123"')
+			d.Source = string.gsub(d.Source, 'Config.HussSesId = "[^"]*"', 'Config.HussSesId = "rbxassetid://123"')
 		end
 	end
 end

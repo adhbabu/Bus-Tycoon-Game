@@ -11,7 +11,7 @@ local Config = {}
 --    Config.HussSesId = "rbxassetid://1234567890"
 -- Boş bırakırsan oyun yine çalışır, sadece ses yerine ekranda HUSS! yazıları çıkar.
 ----------------------------------------------------------------------
-Config.HussSesId = ""
+Config.HussSesId = "rbxassetid://116644917042731"
 
 ----------------------------------------------------------------------
 -- DİL: oyun Türkçe ve İngilizce. "otomatik" = Roblox dili Türkçe olan Türkçe, diğer herkes İngilizce görür.
