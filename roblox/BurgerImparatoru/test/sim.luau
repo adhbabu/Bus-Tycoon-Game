@@ -559,6 +559,51 @@ print("== Sunucu başlıyor")
 runScript(findScript(game:GetService("ServerScriptService"), "BurgerSunucu"))
 task.wait(0.3)
 
+if process.args[2] == "poz" then
+	local Dunya = runScript(findScript(game:GetService("ServerScriptService"), "Dunya"))
+	local st = Workspace.Tezgahlar.Tezgah1
+	-- local box frame: use the station tray orientation, origin on top of tray
+	local tabak = unwrap(st.Tabak)
+	local base = tabak.CFrame * roblox.CFrame.new(0, tabak.Size.Y / 2, 0)
+	local kutu = Dunya.KutuYap(base, false)
+	local out = { stages = {}, burger = {} }
+	local function corners(cf, size)
+		local c = {}
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sy in ipairs({ -1, 1 }) do
+				for _, sz in ipairs({ -1, 1 }) do
+					local p = (base:ToObjectSpace(cf * roblox.CFrame.new(sx * size.X / 2, sy * size.Y / 2, sz * size.Z / 2))).Position
+					table.insert(c, { p.X, p.Y, p.Z })
+				end
+			end
+		end
+		return c
+	end
+	for asama = 0, 3 do
+		local poz = Dunya.KutuPozu(base, asama)
+		local panels = {}
+		for ad, cf in pairs(poz) do
+			panels[ad] = corners(cf, unwrap(kutu[ad]).Size)
+		end
+		out.stages[asama + 1] = panels
+	end
+	local Config = runScript(findScript(game:GetService("ReplicatedStorage"), "Config"))
+	local cf = base * roblox.CFrame.new(0, unwrap(kutu.Taban).Size.Y, 0)
+	local katlar = { Config.AltEkmek, Config.Malzemeler.Kofte, Config.Malzemeler.Peynir, Config.Malzemeler.Kofte, Config.Malzemeler.Marul, Config.Malzemeler.Domates, Config.Malzemeler.Sogan, Config.Malzemeler.Tursu, Config.UstEkmek }
+	for _, m in ipairs(katlar) do
+		local parts, k = Dunya.KatYap(m, cf, 1, Random.new(3))
+		for _, p in ipairs(parts) do
+			local r = unwrap(p)
+			table.insert(out.burger, { corners = corners(r.CFrame, r.Size), color = { r.Color.R, r.Color.G, r.Color.B }, shape = tostring(r.Shape) })
+		end
+		cf = cf * roblox.CFrame.new(0, k, 0)
+	end
+	local serde = require("@lune/serde")
+	fs.writeFile("poz.json", serde.encode("json", out))
+	print("poz yazıldı")
+	process.exit(0)
+end
+
 local function makePlayer(name, userId)
 	local plr = wrap(roblox.Instance.new("Player"))
 	plr.Name = name
@@ -606,7 +651,6 @@ task.wait(0.2)
 local gui = p1.PlayerGui:WaitForChild("BurgerArayuz")
 local alt = gui.Alt
 local katla = alt.Katla
-local servis = alt.Servis
 local dukkanBtn = alt.Dukkan
 local ust = gui.Ust
 
@@ -624,64 +668,60 @@ local function heartbeat(seconds)
 end
 
 print("== Katlama testi")
+local station = Workspace.Tezgahlar.Tezgah1
+local remotes = game:GetService("ReplicatedStorage").Uzaklar
+local function pileCount(st)
+	return #unwrap(st.Yigin):GetChildren()
+end
+assert(#unwrap(station.Paket):GetChildren() == 1, "başta bir açık kutu olmalı")
 for i = 1, 12 do
 	katla.Activated:Fire()
 	task.wait(0.1)
 end
-task.wait(0.5)
-local station = Workspace.Tezgahlar.Tezgah1
-print("Tezgah1 parça sayısı:", #unwrap(station.Katlar):GetChildren(), "Kat (leaderstats):", stat(p1, "Kat"))
-assert(stat(p1, "Kat") == 12, "12 kat bekleniyordu, gelen " .. stat(p1, "Kat"))
+task.wait(1.0)
+print("Paket (leaderstats):", stat(p1, "Paket"), "Para:", stat(p1, "Para"), "Kule:", pileCount(station))
+assert(stat(p1, "Paket") == 4, "12 tıkta 4 paket bekleniyordu, gelen " .. stat(p1, "Paket"))
+assert(stat(p1, "Para") > 0, "paketleme para vermedi")
+assert(pileCount(station) == 4, "kulede 4 kutu olmalı")
+assert(#unwrap(station.Paket):GetChildren() == 1, "tezgahta yine tek açık kutu olmalı")
 print("Tabela:", station:FindFirstChild("TabelaNoktasi").Tabela:FindFirstChildOfClass("Frame").Alt.Text)
+print("Ekran burger:", gui.Ust:FindFirstChildOfClass("Frame") ~= nil)
 
--- Hile koruması: arka arkaya 20 istek → en fazla 4 geçmeli
-local remotes = game:GetService("ReplicatedStorage").Uzaklar
-local onceKat = stat(p1, "Kat")
+-- Hile koruması: arka arkaya 20 istek → en fazla 4 katlama geçmeli
+local onceP = stat(p1, "Paket")
 for _ = 1, 20 do
 	remotes.Katla.OnServerEvent:Fire(p1)
 end
-task.wait(0.3)
-local hile = stat(p1, "Kat") - onceKat
-print("Spam ile geçen kat:", hile)
-assert(hile <= 5, "rate limit çalışmıyor")
-
-print("== Servis testi")
-task.wait(0.2)
-servis.Activated:Fire()
-task.wait(1.8)
-print("Para:", stat(p1, "Para"), "Sunucuya göre yeni burger parça sayısı:", #unwrap(station.Katlar):GetChildren())
-assert(stat(p1, "Para") > 0, "servis para vermedi")
-print("Ekrandaki para:", ust:FindFirstChildOfClass("Frame") and "ok")
+task.wait(0.8)
+local hile = stat(p1, "Paket") - onceP
+print("Spam ile geçen paket:", hile)
+assert(hile <= 2, "rate limit çalışmıyor")
 
 print("== Dükkan testi")
 dukkanBtn.Activated:Fire()
 task.wait(0.1)
 local panel = gui.DukkanPaneli
 assert(panel.Visible == true, "dükkan açılmadı")
--- Para ver ve tüm geliştirmeleri satın almayı dene
 local paraOnce = stat(p1, "Para")
-remotes.SatinAl.OnServerEvent:Fire(p1, "HizliEller")
+remotes.SatinAl.OnServerEvent:Fire(p1, "Lezzet")
 remotes.SatinAl.OnServerEvent:Fire(p1, "YokBoyle")
 remotes.SatinAl.OnServerEvent:Fire(p1, 12345)
 task.wait(0.2)
 print("Para önce/sonra:", paraOnce, stat(p1, "Para"))
 
--- Çok para kazanmak için birçok burger yap
-for tur = 1, 6 do
+-- Çok para kazanmak için birçok burger paketle, her turda geliştirme al
+for tur = 1, 8 do
 	for _ = 1, 30 do
 		katla.Activated:Fire()
 		task.wait(0.095)
 	end
-	-- dolu tabakta katla → uyarı
-	katla.Activated:Fire()
-	task.wait(0.1)
-	servis.Activated:Fire()
-	task.wait(0.7)
-	for _, anahtar in ipairs({ "HizliEller", "Lezzet", "OtoAsci", "DevTabak" }) do
+	task.wait(0.3)
+	for _, anahtar in ipairs({ "HizliEller", "Lezzet", "OtoAsci", "AltinSans" }) do
 		remotes.SatinAl.OnServerEvent:Fire(p1, anahtar)
 	end
 	task.wait(0.2)
-	print(string.format("  tur %d: Para=%d Kat=%d Unvan=%s", tur, stat(p1, "Para"), stat(p1, "Kat"), stat(p1, "Unvan")))
+	print(string.format("  tur %d: Para=%d Paket=%d Unvan=%s Kule=%d", tur, stat(p1, "Para"), stat(p1, "Paket"), stat(p1, "Unvan"), pileCount(station)))
+	assert(pileCount(station) <= 6, "kule sınırı aşıldı")
 end
 
 -- Dükkan butonlarına tıkla (UI yolu)
@@ -699,23 +739,20 @@ gui.DukkanPaneli:FindFirstChildOfClass("TextButton").Activated:Fire() -- kapat
 task.wait(0.1)
 
 print("== Çırak Aşçı (otomatik) testi")
--- sunucu tarafında oto aşçı alınmış mı?
-local katOnce = stat(p1, "Kat")
+local paketOnce = stat(p1, "Paket")
 heartbeat(8)
-task.wait(0.3)
-print("Oto ile eklenen kat:", stat(p1, "Kat") - katOnce)
+task.wait(1)
+print("Oto ile eklenen paket:", stat(p1, "Paket") - paketOnce)
 
 print("== Klavye kısayolları")
-for name, b in pairs(BOUND_ACTIONS) do
+for name in pairs(BOUND_ACTIONS) do
 	print("  bağlı:", name)
 end
 local beginState = roblox.Enum.UserInputState.Begin
 BOUND_ACTIONS.BurgerDukkan.fn("BurgerDukkan", beginState)
 BOUND_ACTIONS.BurgerDukkan.fn("BurgerDukkan", beginState)
-BOUND_ACTIONS.BurgerServis.fn("BurgerServis", beginState)
-task.wait(0.8)
 BOUND_ACTIONS.BurgerKatla.fn("BurgerKatla", beginState)
-task.wait(0.3)
+task.wait(0.8)
 
 print("== Ses düğmesi")
 ust.Ses.Activated:Fire()
@@ -723,12 +760,13 @@ task.wait(0.05)
 ust.Ses.Activated:Fire()
 
 print("== Diğer oyuncu katlıyor")
-for _ = 1, 5 do
+for _ = 1, 7 do
 	remotes.Katla.OnServerEvent:Fire(p2)
 	task.wait(0.1)
 end
-remotes.ServisEt.OnServerEvent:Fire(p2)
-task.wait(1.6)
+task.wait(1)
+print("Oyuncu 2 paket:", stat(p2, "Paket"), "kule:", pileCount(Workspace.Tezgahlar.Tezgah2))
+assert(stat(p2, "Paket") == 2, "oyuncu 2 için 2 paket bekleniyordu")
 
 print("== Karakter yeniden doğuyor")
 makeCharacter(p1)
@@ -737,8 +775,9 @@ task.wait(0.3)
 print("== Oyuncu 2 çıkıyor")
 p2.Parent = nil
 Players.PlayerRemoving:Fire(p2)
-task.wait(0.3)
+task.wait(1)
 assert(Workspace.Tezgahlar.Tezgah2.TabelaNoktasi.Tabela:FindFirstChildOfClass("Frame").Baslik.Text == "🍔 Boş Tezgah", "tezgah boşalmadı")
+assert(pileCount(Workspace.Tezgahlar.Tezgah2) == 0, "boş tezgahın kulesi temizlenmeli")
 
 print("== Ekrandaki yazılar")
 for _, root in ipairs({ gui.Ust, gui.Alt }) do
@@ -777,7 +816,7 @@ pcall(function() local g = Players:FindFirstChild("Burgerci") end)
 
 print("== Kayıt")
 for k, v in pairs(DATASTORE) do
-	print("  " .. k, "Para=" .. tostring(v.Para), "ToplamKat=" .. tostring(v.ToplamKat), "Rekor=" .. tostring(v.Rekor))
+	print("  " .. k, "Para=" .. tostring(v.Para), "ToplamPaket=" .. tostring(v.ToplamPaket))
 	for gk, gv in pairs(v.Gelistirme) do
 		print("    " .. gk .. "=" .. gv)
 	end

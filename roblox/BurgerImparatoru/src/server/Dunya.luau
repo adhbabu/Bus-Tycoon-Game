@@ -131,7 +131,7 @@ function Dunya.KatYap(tur, altCFrame, olcek, rastgele)
 				Size = Vector3.new(1.3, k * 0.7, 1.1) * Vector3.new(olcek, 1, olcek),
 				CFrame = altCFrame
 					* CFrame.Angles(0, aci, 0)
-					* CFrame.new(cap * 0.47, k * 0.35, 0)
+					* CFrame.new(cap * 0.42, k * 0.35, 0)
 					* CFrame.Angles(0, 0, math.rad(-18)),
 				Color = tur.Renk:Lerp(Color3.new(1, 1, 1), 0.12),
 				Material = malzemeEnum(tur.Malzeme),
@@ -184,8 +184,7 @@ local function konfetiYap(tabak)
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 110, 255)),
 	})
 	e.LightEmission = 0.3
-	-- Silindir X ekseninde olduğu için "Right" yönü yukarı bakar
-	e.EmissionDirection = Enum.NormalId.Right
+	e.EmissionDirection = Enum.NormalId.Top
 	e.Parent = ek
 	return e
 end
@@ -245,6 +244,12 @@ local function tabelaYap(model, cf, renk)
 	return baslik, alt
 end
 
+local TEZGAH_EN = 14
+local TEZGAH_DERIN = 11
+local KUTU_KALINLIK = 0.15
+local YAN_ACIK = math.rad(40)
+local KAPAK_ACIK = math.rad(105)
+
 local function tezgahYap(i, adet, klasor)
 	local aci = (i - 1) / adet * math.pi * 2
 	local disari = Vector3.new(math.cos(aci), 0, math.sin(aci))
@@ -255,11 +260,13 @@ local function tezgahYap(i, adet, klasor)
 	model.Name = "Tezgah" .. i
 
 	-- Tezgahın ön yüzü (LookVector) oyuncunun durduğu yere, yani dışarı bakar
-	local tezgahCF = CFrame.lookAt(merkez + YUKARI * (ZEMIN_Y + TEZGAH_YUKSEKLIK / 2), merkez + disari * 10 + YUKARI * (ZEMIN_Y + TEZGAH_YUKSEKLIK / 2))
+	local ortaY = ZEMIN_Y + TEZGAH_YUKSEKLIK / 2
+	local tezgahCF = CFrame.lookAt(merkez + YUKARI * ortaY, merkez + disari * 10 + YUKARI * ortaY)
+	local donus = tezgahCF - tezgahCF.Position
 
 	parca({
 		Name = "Govde",
-		Size = Vector3.new(9, TEZGAH_YUKSEKLIK, 6),
+		Size = Vector3.new(TEZGAH_EN, TEZGAH_YUKSEKLIK, TEZGAH_DERIN),
 		CFrame = tezgahCF,
 		Color = Color3.fromRGB(150, 95, 55),
 		Material = Enum.Material.WoodPlanks,
@@ -268,45 +275,59 @@ local function tezgahYap(i, adet, klasor)
 	-- Önde renkli şerit
 	parca({
 		Name = "Serit",
-		Size = Vector3.new(9.05, 0.7, 0.2),
-		CFrame = tezgahCF * CFrame.new(0, 0.6, -3.05),
+		Size = Vector3.new(TEZGAH_EN + 0.05, 0.7, 0.2),
+		CFrame = tezgahCF * CFrame.new(0, 0.6, -TEZGAH_DERIN / 2 - 0.05),
 		Color = renk,
 		Parent = model,
 	})
 	parca({
 		Name = "Ust",
-		Size = Vector3.new(9.6, 0.3, 6.6),
+		Size = Vector3.new(TEZGAH_EN + 0.6, 0.3, TEZGAH_DERIN + 0.6),
 		CFrame = tezgahCF * CFrame.new(0, TEZGAH_YUKSEKLIK / 2 + 0.15, 0),
 		Color = Color3.fromRGB(245, 245, 240),
 		Material = Enum.Material.Marble,
 		Parent = model,
 	})
 
+	-- Kutunun durduğu renkli tepsi
 	local tezgahUstY = ZEMIN_Y + TEZGAH_YUKSEKLIK + 0.3
-	local tabakKalinlik = 0.3
-	local tabakMerkez = CFrame.new(merkez + YUKARI * (tezgahUstY + tabakKalinlik / 2))
-	local tabak = disk(tabakMerkez, tabakKalinlik, 6.6, Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic)
-	tabak.Name = "Tabak"
-	tabak.Parent = model
-	local tabakKenar = disk(tabakMerkez * CFrame.new(0, -0.02, 0), tabakKalinlik * 0.9, 7.2, renk, Enum.Material.SmoothPlastic)
-	tabakKenar.Name = "TabakKenar"
-	tabakKenar.Parent = model
-
+	local tepsiK = 0.12
+	local tabak = parca({
+		Name = "Tabak",
+		Size = Vector3.new(7.4, tepsiK, 7.4),
+		CFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tepsiK / 2)) * donus,
+		Color = renk,
+		Parent = model,
+	})
 	local konfeti = konfetiYap(tabak)
 
 	-- Oyuncunun durduğu renkli yuvarlak
-	local oyuncuNokta = merkez + disari * 7
+	local oyuncuNokta = merkez + disari * (TEZGAH_DERIN / 2 + 5)
 	local yer = disk(CFrame.new(oyuncuNokta + YUKARI * (ZEMIN_Y + 0.05)), 0.1, 5, renk, Enum.Material.Neon)
 	yer.Name = "OyuncuYeri"
 	yer.CanCollide = false
 	yer.Transparency = 0.35
 	yer.Parent = model
 
-	local baslik, alt = tabelaYap(model, tezgahCF * CFrame.new(0, -0.1, -3.7), renk)
+	-- Paket kulesinin duracağı yer (oyuncunun sağında, yerde)
+	local yiginCF = CFrame.new(merkez + YUKARI * ZEMIN_Y) * donus * CFrame.new(-(TEZGAH_EN / 2 + 3.6), 0, 0)
+	local yiginYeri = parca({
+		Name = "YiginYeri",
+		Size = Vector3.new(Config.KutuGenislik + 1.2, 0.1, Config.KutuGenislik + 1.2),
+		CFrame = yiginCF * CFrame.new(0, 0.05, 0),
+		Color = renk:Lerp(Color3.new(1, 1, 1), 0.4),
+		CanCollide = false,
+		Parent = model,
+	})
 
-	local katlar = Instance.new("Folder")
-	katlar.Name = "Katlar"
-	katlar.Parent = model
+	local baslik, alt = tabelaYap(model, tezgahCF * CFrame.new(0, -0.1, -TEZGAH_DERIN / 2 - 0.2), renk)
+
+	local paket = Instance.new("Folder")
+	paket.Name = "Paket"
+	paket.Parent = model
+	local yigin = Instance.new("Folder")
+	yigin.Name = "Yigin"
+	yigin.Parent = model
 
 	model.PrimaryPart = model:FindFirstChild("Govde")
 	model.Parent = klasor
@@ -315,21 +336,128 @@ local function tezgahYap(i, adet, klasor)
 		Index = i,
 		Model = model,
 		Tabak = tabak,
-		Katlar = katlar,
+		PaketKlasoru = paket,
+		YiginKlasoru = yigin,
 		Konfeti = konfeti,
 		Renk = renk,
-		-- Burgerin oturduğu yer: tabağın üst yüzü
-		TabanCFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tabakKalinlik)),
+		-- Kutunun tabanı: tepsinin üstü, ön yüzü oyuncuya bakar
+		KutuCFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tepsiK)) * donus,
+		YiginCFrame = yiginCF,
 		OyuncuCFrame = CFrame.lookAt(oyuncuNokta + YUKARI * (ZEMIN_Y + 3), merkez + YUKARI * (ZEMIN_Y + 3)),
 		TabelaBaslik = baslik,
 		TabelaAlt = alt,
+		Yigin = { Kutular = {}, Nesil = 0, Sayac = 0 },
 		Sahip = nil,
 	}
 end
 
+----------------------------------------------------------------------
+-- Paket kutusu
+----------------------------------------------------------------------
+
+-- Kutunun her parçasının, verilen aşamadaki yeri (0 = açık, 3 = kapalı)
+function Dunya.KutuPozu(taban, asama)
+	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
+	local yan = asama >= 1 and 0 or YAN_ACIK
+	local onArka = asama >= 2 and 0 or YAN_ACIK
+	local kapak = asama >= 3 and 0 or KAPAK_ACIK
+	local arkaMentese = taban * CFrame.new(0, 0, S / 2) * CFrame.Angles(onArka, 0, 0)
+	return {
+		Taban = taban * CFrame.new(0, t / 2, 0),
+		Sol = taban * CFrame.new(-S / 2, 0, 0) * CFrame.Angles(0, 0, yan) * CFrame.new(t / 2, H / 2, 0),
+		Sag = taban * CFrame.new(S / 2, 0, 0) * CFrame.Angles(0, 0, -yan) * CFrame.new(-t / 2, H / 2, 0),
+		On = taban * CFrame.new(0, 0, -S / 2) * CFrame.Angles(-onArka, 0, 0) * CFrame.new(0, H / 2, t / 2),
+		Arka = arkaMentese * CFrame.new(0, H / 2, -t / 2),
+		Kapak = arkaMentese * CFrame.new(0, H, 0) * CFrame.Angles(kapak, 0, 0) * CFrame.new(0, t / 2, -S / 2),
+	}
+end
+
+local function etiketYap(parcaNesnesi, yuz, altin)
+	local sg = Instance.new("SurfaceGui")
+	sg.Name = "Etiket"
+	sg.Face = yuz
+	sg.LightInfluence = 0.3
+	sg.CanvasSize = Vector2.new(200, 200)
+	sg.Parent = parcaNesnesi
+	local daire = Instance.new("Frame")
+	daire.AnchorPoint = Vector2.new(0.5, 0.5)
+	daire.Position = UDim2.fromScale(0.5, 0.5)
+	daire.Size = UDim2.fromScale(0.62, 0.62)
+	daire.BackgroundColor3 = altin and Color3.fromRGB(255, 240, 150) or Color3.fromRGB(255, 205, 40)
+	daire.Parent = sg
+	local kose = Instance.new("UICorner")
+	kose.CornerRadius = UDim.new(1, 0)
+	kose.Parent = daire
+	local yazi = Instance.new("TextLabel")
+	yazi.BackgroundTransparency = 1
+	yazi.Size = UDim2.fromScale(1, 1)
+	yazi.TextScaled = true
+	yazi.Font = Enum.Font.FredokaOne
+	yazi.Text = altin and "👑" or "🍔"
+	yazi.Parent = daire
+	return sg
+end
+
+-- Açık bir kutu yapar (parçalar yerinde ama Parent'ı yok)
+function Dunya.KutuYap(taban, altin)
+	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
+	local poz = Dunya.KutuPozu(taban, 0)
+	local boyut = {
+		Taban = Vector3.new(S, t, S),
+		Sol = Vector3.new(t, H, S),
+		Sag = Vector3.new(t, H, S),
+		On = Vector3.new(S - 2 * t, H, t),
+		Arka = Vector3.new(S - 2 * t, H, t),
+		Kapak = Vector3.new(S, t, S),
+	}
+	local kutu = {}
+	for ad, cf in pairs(poz) do
+		local p = parca({
+			Name = "Kutu" .. ad,
+			Size = boyut[ad],
+			CFrame = cf,
+			Color = Config.KutuRengi,
+			Material = Enum.Material.Cardboard,
+			CanCollide = false,
+			CanTouch = false,
+		})
+		kutu[ad] = p
+	end
+	kutu.Kapak.Color = altin and Config.AltinKapakRengi or Config.KapakRengi
+	kutu.Kapak.Material = altin and Enum.Material.Foil or Enum.Material.SmoothPlastic
+	etiketYap(kutu.Kapak, Enum.NormalId.Top, altin)
+	return kutu
+end
+
+-- Kuledeki tek parça kapalı kutu
+function Dunya.YiginKutusu(cf, altin)
+	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
+	local p = parca({
+		Name = "PaketliBurger",
+		Size = Vector3.new(S, H + t, S),
+		CFrame = cf,
+		Color = Config.KutuRengi,
+		Material = Enum.Material.Cardboard,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	local sg = etiketYap(p, Enum.NormalId.Top, altin)
+	local kapak = Instance.new("Frame")
+	kapak.Size = UDim2.fromScale(1, 1)
+	kapak.BackgroundColor3 = altin and Config.AltinKapakRengi or Config.KapakRengi
+	kapak.ZIndex = 0
+	kapak.Parent = sg
+	etiketYap(p, Enum.NormalId.Front, altin)
+	return p
+end
+
+function Dunya.KutuYuksekligi()
+	return Config.KutuYukseklik + KUTU_KALINLIK
+end
+
 local function zeminYap(klasor)
 	local karo = 8
-	local adet = 14
+	local adet = 17
 	local bas = -(adet * karo) / 2 + karo / 2
 	for x = 0, adet - 1 do
 		for z = 0, adet - 1 do
@@ -367,15 +495,10 @@ local function heykelYap(klasor)
 		end
 		cf = cf * CFrame.new(0, k, 0)
 	end
-	local M = {}
-	for _, m in ipairs(Config.Malzemeler) do
-		M[m.Ad] = m
-	end
+	local M = Config.Malzemeler
 	ekle(Config.AltEkmek)
-	for _, ad in ipairs({ "Köfte", "Peynir", "Marul", "Domates", "Köfte", "Peynir", "Turşu" }) do
-		if M[ad] then
-			ekle(M[ad])
-		end
+	for _, anahtar in ipairs({ "Kofte", "Peynir", "Marul", "Domates", "Kofte", "Peynir", "Tursu" }) do
+		ekle(M[anahtar])
 	end
 	ekle(Config.UstEkmek)
 	local tepeY = cf.Position.Y
@@ -467,7 +590,7 @@ function Dunya.Kur()
 	tezgahKlasoru.Parent = workspace
 
 	local ucanlar = Instance.new("Folder")
-	ucanlar.Name = "ServisEdilenler"
+	ucanlar.Name = "UcanPaketler"
 	ucanlar.Parent = workspace
 
 	return tezgahlar, ucanlar

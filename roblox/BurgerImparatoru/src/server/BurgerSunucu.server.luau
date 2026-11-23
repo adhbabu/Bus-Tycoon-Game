@@ -1,6 +1,6 @@
 -- BURGER İMPARATORU - Sunucu
--- Katlama, servis, dükkan, unvanlar ve kayıt burada. Oyuncunun ekranı (client) sadece
--- "katla", "servis et", "satın al" ister; her şeyi sunucu kontrol eder, böylece hile yapılamaz.
+-- Katlama, paketleme, dükkan, unvanlar ve kayıt burada. Oyuncunun ekranı (client) sadece
+-- "katla" ve "satın al" ister; her şeyi sunucu kontrol eder, böylece hile yapılamaz.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -25,20 +25,22 @@ local function olay(ad)
 	return e
 end
 local KatlaOlay = olay("Katla") -- oyuncu -> sunucu
-local ServisOlay = olay("ServisEt") -- oyuncu -> sunucu
 local SatinAlOlay = olay("SatinAl") -- oyuncu -> sunucu (anahtar)
-local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
-local KatlandiOlay = olay("Katlandi") -- sunucu -> herkes (kim, tezgah, kaç kat, altın sayısı, otomatik mi)
-local ServisEdildiOlay = olay("ServisEdildi") -- sunucu -> herkes (kim, tezgah, para, kat)
-local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
 local DurumIsteOlay = olay("DurumIste") -- oyuncu -> sunucu (ekran açılınca durumu ister)
+local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
+-- sunucu -> herkes: kim, tezgah, kaç katlama, paketlendi mi, kazanç, altın mı, otomatik mi
+local KatlandiOlay = olay("Katlandi")
+local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
 uzaklar.Parent = ReplicatedStorage
 
 ----------------------------------------------------------------------
 -- Dünya
 ----------------------------------------------------------------------
-local tezgahlar, servisKlasoru = Dunya.Kur()
+local tezgahlar, ucanKlasor = Dunya.Kur()
 local rastgele = Random.new()
+local function zar()
+	return rastgele:NextNumber()
+end
 
 ----------------------------------------------------------------------
 -- Kayıt (DataStore)
@@ -104,8 +106,7 @@ local function veriHazirla(ham)
 	ham = type(ham) == "table" and ham or {}
 	return {
 		Para = math.max(0, math.floor(sayiYap(ham.Para, 0))),
-		ToplamKat = math.max(0, math.floor(sayiYap(ham.ToplamKat, 0))),
-		Rekor = math.max(0, math.floor(sayiYap(ham.Rekor, 0))),
+		ToplamPaket = math.max(0, math.floor(sayiYap(ham.ToplamPaket, 0))),
 		Gelistirme = gelistirme,
 	}
 end
@@ -116,10 +117,9 @@ local function kaydet(oyuncu)
 		return
 	end
 	local paket = {
-		Surum = 1,
+		Surum = 2,
 		Para = v.Para,
-		ToplamKat = v.ToplamKat,
-		Rekor = v.Rekor,
+		ToplamPaket = v.ToplamPaket,
 		Gelistirme = v.Gelistirme,
 	}
 	for deneme = 1, 3 do
@@ -138,7 +138,7 @@ end
 -- Ekran güncellemeleri
 ----------------------------------------------------------------------
 local function unvan(v)
-	return Config.Unvanlar[Ekonomi.UnvanIndex(v.ToplamKat)]
+	return Config.Unvanlar[Ekonomi.UnvanIndex(v.ToplamPaket)]
 end
 
 local function durumGonder(oyuncu)
@@ -146,14 +146,14 @@ local function durumGonder(oyuncu)
 	if not v or not v.Hazir then
 		return
 	end
+	local b = v.Burger
 	DurumOlay:FireClient(oyuncu, {
 		Para = v.Para,
-		ToplamKat = v.ToplamKat,
-		Rekor = v.Rekor,
-		UnvanIndex = Ekonomi.UnvanIndex(v.ToplamKat),
-		BurgerKat = v.Burger.Kat,
-		BurgerDeger = v.Burger.Deger,
-		MaxKat = Ekonomi.MaxKat(v.Gelistirme),
+		ToplamPaket = v.ToplamPaket,
+		UnvanIndex = Ekonomi.UnvanIndex(v.ToplamPaket),
+		Asama = b and b.Asama or 0,
+		BurgerDegeri = b and Ekonomi.PaketDegeri(b.Deger, v.Gelistirme) or 0,
+		Altin = b ~= nil and b.Altin,
 		Gelistirme = v.Gelistirme,
 		TezgahVar = v.Tezgah ~= nil,
 		KayitAcik = v.KayitAcik,
@@ -167,7 +167,7 @@ local function tabelaGuncelle(oyuncu)
 	end
 	local t = v.Tezgah
 	t.TabelaBaslik.Text = "🍔 " .. oyuncu.DisplayName
-	t.TabelaAlt.Text = string.format("%d kat • %s", v.Burger.Kat, unvan(v).Ad)
+	t.TabelaAlt.Text = string.format("%s paket • %s", Ekonomi.Kisalt(v.ToplamPaket), unvan(v).Ad)
 end
 
 local function skorGuncelle(oyuncu)
@@ -175,7 +175,7 @@ local function skorGuncelle(oyuncu)
 	if not v or not v.Skor then
 		return
 	end
-	v.Skor.Kat.Value = v.ToplamKat
+	v.Skor.Paket.Value = v.ToplamPaket
 	v.Skor.Para.Value = v.Para
 	v.Skor.Unvan.Value = unvan(v).Ad
 end
@@ -214,135 +214,181 @@ local function kafaYazisiGuncelle(oyuncu)
 end
 
 ----------------------------------------------------------------------
--- Burger
+-- Burger ve kutu
 ----------------------------------------------------------------------
-local DUSME_BILGISI = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local KATLAMA = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local UCUS = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+local KAPANMA_SURESI = 0.18 -- kapak kapandıktan sonra kutu bu kadar bekleyip uçar
+local KUTU_PARCALARI = { "Taban", "Sol", "Sag", "On", "Arka", "Kapak" }
 
-local function katiYerlestir(v, tur, animasyon)
-	local t = v.Tezgah
-	local alt = t.TabanCFrame * CFrame.new(0, v.Burger.Yukseklik, 0)
-	local parcalar, k = Dunya.KatYap(tur, alt, 1, rastgele)
-	for _, p in ipairs(parcalar) do
-		if animasyon then
-			local hedef = p.CFrame
-			p.CFrame = hedef + Vector3.new(0, 3.5, 0)
-			p.Parent = t.Katlar
-			TweenService:Create(p, DUSME_BILGISI, { CFrame = hedef }):Play()
-		else
-			p.Parent = t.Katlar
-		end
-	end
-	v.Burger.Yukseklik += k
-end
-
-local function yeniBurger(oyuncu)
+-- gecikme: önceki paket tezgahtan kalkana kadar yeni burger yukarıda bekler
+local function yeniBurger(oyuncu, gecikme)
 	local v = veriler[oyuncu]
 	if not v or not v.Tezgah then
 		return
 	end
-	v.Tezgah.Katlar:ClearAllChildren()
-	v.Burger = { Kat = 0, Deger = 0, Yukseklik = 0 }
-	katiYerlestir(v, Config.AltEkmek, true)
+	local t = v.Tezgah
+	local liste, deger, altin = Ekonomi.BurgerTarifi(zar, v.Gelistirme)
+
+	local klasor = Instance.new("Folder")
+	klasor.Name = "Burger"
+	local kutu = Dunya.KutuYap(t.KutuCFrame, altin)
+	local parcalar = {}
+	for _, ad in ipairs(KUTU_PARCALARI) do
+		table.insert(parcalar, kutu[ad])
+	end
+	-- Burger, kutunun tabanının üstünde
+	local cf = t.KutuCFrame * CFrame.new(0, kutu.Taban.Size.Y, 0)
+	local katlar = { Config.AltEkmek }
+	for _, m in ipairs(liste) do
+		table.insert(katlar, m)
+	end
+	table.insert(katlar, Config.UstEkmek)
+	for _, m in ipairs(katlar) do
+		local yeni, k = Dunya.KatYap(m, cf, 1, rastgele)
+		for _, p in ipairs(yeni) do
+			table.insert(parcalar, p)
+		end
+		cf = cf * CFrame.new(0, k, 0)
+	end
+	-- Yukarıdan düşerek gelsin. Her parçanın kutuya göre yerini sakla (uçarken lazım)
+	local dusme = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, gecikme or 0)
+	local goreliYerler = {}
+	for _, p in ipairs(parcalar) do
+		local hedef = p.CFrame
+		goreliYerler[p] = t.KutuCFrame:ToObjectSpace(hedef)
+		p.CFrame = hedef + Vector3.new(0, 6, 0)
+		p.Parent = klasor
+		TweenService:Create(p, dusme, { CFrame = hedef }):Play()
+	end
+	klasor.Parent = t.PaketKlasoru
+
+	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kutu = kutu, Klasor = klasor, Goreli = goreliYerler }
+end
+
+-- Paket kulesine bir kutu koyar
+local function kuleyeKoy(t, altin, nesil, sira, cf)
+	if t.Yigin.Nesil ~= nesil then
+		return -- bu arada kule boşaltıldı
+	end
+	local kutu = Dunya.YiginKutusu(cf, altin)
+	kutu.Parent = t.YiginKlasoru
+	t.Yigin.Kutular[sira] = kutu
+end
+
+local function kuleyiBosalt(t)
+	t.Yigin.Nesil += 1
+	for _, kutu in pairs(t.Yigin.Kutular) do
+		local yukari = kutu.CFrame + Vector3.new(0, 25, 0)
+		TweenService:Create(kutu, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			CFrame = yukari,
+			Transparency = 1,
+		}):Play()
+		task.delay(0.65, function()
+			kutu:Destroy()
+		end)
+	end
+	t.Yigin.Kutular = {}
+end
+
+-- Kapalı kutuyu kuleye uçurur, yeni burger getirir
+local function paketle(oyuncu)
+	local v = veriler[oyuncu]
+	local t = v.Tezgah
+	local b = v.Burger
+
+	-- Kuledeki yerini şimdiden ayır
+	local y = t.Yigin
+	if y.Sayac >= Config.YiginEnFazla then
+		kuleyiBosalt(t)
+		y.Sayac = 0
+	end
+	y.Sayac += 1
+	local sira = y.Sayac
+	local nesil = y.Nesil
+	local yukseklik = Dunya.KutuYuksekligi()
+	local hedefTaban = t.YiginCFrame
+		* CFrame.new(0, (sira - 1) * yukseklik, 0)
+		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-12, 12)), 0)
+
+	-- Kapak kapanınca kutuyu (ve içindeki burgeri) kuleye uçur
+	local klasor = b.Klasor
+	local altin = b.Altin
+	local kutuTaban = t.KutuCFrame
+	local kapali = Dunya.KutuPozu(kutuTaban, Config.KatlamaSayisi)
+	local goreli = b.Goreli
+	for ad, p in pairs(b.Kutu) do
+		goreli[p] = kutuTaban:ToObjectSpace(kapali[ad])
+	end
+	klasor.Parent = ucanKlasor
+	task.delay(KAPANMA_SURESI, function()
+		for p, g in pairs(goreli) do
+			if p.Parent then
+				TweenService:Create(p, UCUS, { CFrame = hedefTaban * g }):Play()
+			end
+		end
+		task.delay(UCUS.Time + 0.02, function()
+			klasor:Destroy()
+			kuleyeKoy(t, altin, nesil, sira, hedefTaban * CFrame.new(0, yukseklik / 2, 0))
+		end)
+	end)
+
+	yeniBurger(oyuncu, KAPANMA_SURESI + 0.1)
 end
 
 local function unvanKontrol(oyuncu, eskiIndex)
 	local v = veriler[oyuncu]
-	local yeniIndex = Ekonomi.UnvanIndex(v.ToplamKat)
+	local yeniIndex = Ekonomi.UnvanIndex(v.ToplamPaket)
 	if yeniIndex > eskiIndex then
 		UnvanOlay:FireAllClients(oyuncu, yeniIndex)
 		kafaYazisiGuncelle(oyuncu)
 	end
 end
 
--- adet kadar kat ekler. Döndürür: eklenen kat sayısı
-local function katEkle(oyuncu, adet, otomatik)
+-- adet kadar katlama yapar (burger paketlenince durur)
+local function katla(oyuncu, adet, otomatik)
 	local v = veriler[oyuncu]
-	if not v or not v.Hazir or not v.Tezgah then
-		return 0
+	if not v or not v.Hazir or not v.Tezgah or not v.Burger then
+		return
 	end
-	local maxKat = Ekonomi.MaxKat(v.Gelistirme)
-	local carpan = Ekonomi.LezzetCarpani(v.Gelistirme)
-	local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamKat)
-	local eklenen, altinSayisi = 0, 0
-
+	local b = v.Burger
+	local eklenen = 0
 	for _ = 1, adet do
-		if v.Burger.Kat >= maxKat then
+		if b.Asama >= Config.KatlamaSayisi then
 			break
 		end
-		local _, m = Ekonomi.MalzemeSec(function()
-			return rastgele:NextNumber()
-		end)
-		katiYerlestir(v, m, true)
-		v.Burger.Kat += 1
-		v.Burger.Deger += m.Deger * carpan
-		v.ToplamKat += 1
+		b.Asama += 1
 		eklenen += 1
-		if m.Altin then
-			altinSayisi += 1
+	end
+	if eklenen == 0 then
+		return
+	end
+
+	-- Kutunun kapaklarını yeni aşamaya katla
+	local poz = Dunya.KutuPozu(v.Tezgah.KutuCFrame, b.Asama)
+	for _, ad in ipairs(KUTU_PARCALARI) do
+		local p = b.Kutu[ad]
+		if p.CFrame ~= poz[ad] then
+			TweenService:Create(p, KATLAMA, { CFrame = poz[ad] }):Play()
 		end
 	end
 
-	if eklenen > 0 then
-		KatlandiOlay:FireAllClients(oyuncu, v.Tezgah.Index, eklenen, altinSayisi, otomatik)
+	local paketlendi = b.Asama >= Config.KatlamaSayisi
+	local kazanc = 0
+	local altin = b.Altin
+	if paketlendi then
+		local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
+		kazanc = Ekonomi.PaketDegeri(b.Deger, v.Gelistirme)
+		v.Para += kazanc
+		v.ToplamPaket += 1
+		paketle(oyuncu)
 		tabelaGuncelle(oyuncu)
 		skorGuncelle(oyuncu)
 		unvanKontrol(oyuncu, eskiUnvan)
 	end
+
+	KatlandiOlay:FireAllClients(oyuncu, v.Tezgah.Index, eklenen, paketlendi, kazanc, altin, otomatik)
 	durumGonder(oyuncu)
-	return eklenen
-end
-
-local UCUS_BILGISI = TweenInfo.new(1.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-
--- Burgeri servis eder, parayı verir. sessiz = oyundan çıkarken (animasyon yok)
-local function servisEt(oyuncu, sessiz)
-	local v = veriler[oyuncu]
-	if not v or not v.Hazir or not v.Tezgah then
-		return
-	end
-	local kat = v.Burger.Kat
-	if kat < Config.ServisIcinEnAzKat then
-		return
-	end
-
-	local kazanc = Ekonomi.ServisParasi(v.Burger.Deger, kat)
-	v.Para += kazanc
-	if kat > v.Rekor then
-		v.Rekor = kat
-	end
-
-	if sessiz then
-		-- Aynı burger iki kez para vermesin (kapanışta hem BindToClose hem PlayerRemoving çalışır)
-		v.Burger = { Kat = 0, Deger = 0, Yukseklik = v.Burger.Yukseklik }
-	else
-		-- Üst ekmeği koy, burgeri havaya uçur
-		katiYerlestir(v, Config.UstEkmek, false)
-		local ucanKlasor = Instance.new("Folder")
-		ucanKlasor.Name = oyuncu.Name
-		for _, p in ipairs(v.Tezgah.Katlar:GetChildren()) do
-			p.Parent = ucanKlasor
-		end
-		ucanKlasor.Parent = servisKlasoru
-		local donus = CFrame.Angles(0, math.rad(rastgele:NextNumber(200, 520)), 0)
-		local merkez = v.Tezgah.TabanCFrame
-		for _, p in ipairs(ucanKlasor:GetChildren()) do
-			if p:IsA("BasePart") then
-				-- Burgerin ortası etrafında dönerek yukarı uçsun
-				local goreli = merkez:ToObjectSpace(p.CFrame)
-				local hedef = (merkez + Vector3.new(0, 40, 0)) * donus * goreli
-				TweenService:Create(p, UCUS_BILGISI, { CFrame = hedef, Transparency = 1 }):Play()
-			end
-		end
-		task.delay(UCUS_BILGISI.Time + 0.1, function()
-			ucanKlasor:Destroy()
-		end)
-
-		ServisEdildiOlay:FireAllClients(oyuncu, v.Tezgah.Index, kazanc, kat)
-		yeniBurger(oyuncu)
-		tabelaGuncelle(oyuncu)
-		skorGuncelle(oyuncu)
-		durumGonder(oyuncu)
-	end
 end
 
 ----------------------------------------------------------------------
@@ -360,7 +406,9 @@ end
 
 local function tezgahiBirak(t)
 	t.Sahip = nil
-	t.Katlar:ClearAllChildren()
+	t.PaketKlasoru:ClearAllChildren()
+	t.YiginKlasoru:ClearAllChildren()
+	t.Yigin = { Kutular = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
 	t.TabelaBaslik.Text = "🍔 Boş Tezgah"
 	t.TabelaAlt.Text = "Gel burger katla!"
 end
@@ -395,10 +443,9 @@ local function oyuncuGeldi(oyuncu)
 		Hazir = false,
 		KayitAcik = false,
 		Para = 0,
-		ToplamKat = 0,
-		Rekor = 0,
+		ToplamPaket = 0,
 		Gelistirme = Ekonomi.BosGelistirmeler(),
-		Burger = { Kat = 0, Deger = 0, Yukseklik = 0 },
+		Burger = nil,
 		Jeton = 4,
 		SonJeton = os.clock(),
 		OtoBirikim = 0,
@@ -408,9 +455,9 @@ local function oyuncuGeldi(oyuncu)
 	-- Skor tablosu (sağ üstteki liste)
 	local skorlar = Instance.new("Folder")
 	skorlar.Name = "leaderstats"
-	local katDeger = Instance.new("IntValue")
-	katDeger.Name = "Kat"
-	katDeger.Parent = skorlar
+	local paketDeger = Instance.new("IntValue")
+	paketDeger.Name = "Paket"
+	paketDeger.Parent = skorlar
 	local paraDeger = Instance.new("IntValue")
 	paraDeger.Name = "Para"
 	paraDeger.Parent = skorlar
@@ -419,7 +466,7 @@ local function oyuncuGeldi(oyuncu)
 	unvanDeger.Value = Config.Unvanlar[1].Ad
 	unvanDeger.Parent = skorlar
 	skorlar.Parent = oyuncu
-	v.Skor = { Kat = katDeger, Para = paraDeger, Unvan = unvanDeger }
+	v.Skor = { Paket = paketDeger, Para = paraDeger, Unvan = unvanDeger }
 
 	v.Tezgah = bosTezgahAl(oyuncu)
 
@@ -436,8 +483,7 @@ local function oyuncuGeldi(oyuncu)
 	end
 	local hazir = veriHazirla(ham)
 	v.Para = hazir.Para
-	v.ToplamKat = hazir.ToplamKat
-	v.Rekor = hazir.Rekor
+	v.ToplamPaket = hazir.ToplamPaket
 	v.Gelistirme = hazir.Gelistirme
 	v.KayitAcik = basarili
 	v.Hazir = true
@@ -454,9 +500,7 @@ local function oyuncuGitti(oyuncu)
 	if not v then
 		return
 	end
-	-- Yarım kalan burger boşa gitmesin: otomatik servis et
 	if v.Hazir then
-		servisEt(oyuncu, true)
 		kaydet(oyuncu)
 	end
 	if v.Tezgah then
@@ -491,7 +535,7 @@ end
 ----------------------------------------------------------------------
 -- Oyuncu istekleri
 ----------------------------------------------------------------------
--- Hile koruması: saniyede en fazla (1 / KatlamaBeklemesi) katlama, küçük patlamalara izin var
+-- Hile koruması: saniyede en fazla (1 / KatlamaBeklemesi) tıklama, küçük patlamalara izin var
 local JETON_KAPASITE = 4
 local function jetonHarca(v)
 	local simdi = os.clock()
@@ -514,24 +558,11 @@ KatlaOlay.OnServerEvent:Connect(function(oyuncu)
 		durumGonder(oyuncu) -- ekran fazladan saydıysa düzelsin
 		return
 	end
-	katEkle(oyuncu, Ekonomi.TikBasinaKat(v.Gelistirme), false)
+	katla(oyuncu, Ekonomi.TikBasinaKatlama(v.Gelistirme), false)
 end)
 
 DurumIsteOlay.OnServerEvent:Connect(function(oyuncu)
 	durumGonder(oyuncu)
-end)
-
-local sonServis = {}
-ServisOlay.OnServerEvent:Connect(function(oyuncu)
-	local simdi = os.clock()
-	if sonServis[oyuncu] and simdi - sonServis[oyuncu] < 0.5 then
-		return
-	end
-	sonServis[oyuncu] = simdi
-	servisEt(oyuncu, false)
-end)
-Players.PlayerRemoving:Connect(function(oyuncu)
-	sonServis[oyuncu] = nil
 end)
 
 SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
@@ -560,17 +591,13 @@ end)
 ----------------------------------------------------------------------
 RunService.Heartbeat:Connect(function(dt)
 	for oyuncu, v in pairs(veriler) do
-		if v.Hazir and v.Tezgah then
+		if v.Hazir and v.Tezgah and v.Burger then
 			local aralik = Ekonomi.OtoAralik(v.Gelistirme)
 			if aralik then
 				v.OtoBirikim += dt
 				if v.OtoBirikim >= aralik then
-					if v.Burger.Kat < Ekonomi.MaxKat(v.Gelistirme) then
-						v.OtoBirikim -= aralik
-						katEkle(oyuncu, 1, true)
-					else
-						v.OtoBirikim = aralik -- tabak dolu, servis bekleniyor
-					end
+					v.OtoBirikim -= aralik
+					katla(oyuncu, 1, true)
 				end
 			end
 		end
@@ -595,7 +622,6 @@ game:BindToClose(function()
 		if v.Hazir and v.KayitAcik then
 			bekleyen += 1
 			task.spawn(function()
-				servisEt(oyuncu, true)
 				kaydet(oyuncu)
 				bekleyen -= 1
 			end)

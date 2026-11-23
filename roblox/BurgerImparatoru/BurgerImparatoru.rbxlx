@@ -28,36 +28,59 @@ local Config = {}
 --    (Creator Hub > Creations > Development Items > Audio > Import).
 -- 2) Yüklenen sesin numarasını (Asset ID) aşağıya yaz, örnek:
 --    Config.HussSesId = "rbxassetid://1234567890"
--- Boş bırakırsan oyun yine çalışır, sadece ses yerine ekranda HUSS yazıları çıkar.
+-- Boş bırakırsan oyun yine çalışır, sadece ses yerine ekranda HUSS! yazıları çıkar.
 ----------------------------------------------------------------------
 Config.HussSesId = ""
 Config.HussSesSeviyesi = 0.9 -- kendi katlaman (0 ile 1 arası)
 Config.BaskasininSesSeviyesi = 0.35 -- başka oyuncuların katlaması (yakındaysan duyarsın)
 -- Seste her "huss" kaçıncı saniyede başlıyor? Ekrandaki HUSS! yazıları bu anlarda fırlar.
-Config.HussZamanlari = { 0, 0.67, 1.12 }
+Config.HussZamanlari = { 0.04, 0.24, 0.44 }
 
 ----------------------------------------------------------------------
--- KATLAMA
+-- KATLAMA VE PAKETLEME
+-- Her burger açık bir kutunun içinde gelir. 3 katlamada kutu kapanır, burger paketlenir.
 ----------------------------------------------------------------------
-Config.KatlamaBeklemesi = 0.08 -- iki katlama arası en az kaç saniye (hile koruması)
-Config.ServisIcinEnAzKat = 3 -- servis etmek için burgerde en az kaç kat olmalı
-Config.BoyBonusuBolen = 25 -- her 25 kat, servis parasını 1 kat daha artırır
+Config.KatlamaSayisi = 3 -- bir burger kaç katlamada paketlenir
+Config.KatlamaBeklemesi = 0.08 -- iki tıklama arası en az kaç saniye (hile koruması)
+Config.PaketTabanDegeri = 4 -- her paket en az bu kadar para eder (+ içindeki malzemeler)
 
--- Malzemeler: Agirlik ne kadar büyükse o kadar sık çıkar.
--- Deger = bu katın burgere kattığı para.
+-- Malzemeler: Deger = paketin değerine eklediği para.
 -- Sekil: "disk" (yuvarlak), "kare" (peynir gibi), "dalga" (marul gibi)
 Config.Malzemeler = {
-	{ Ad = "Köfte", Deger = 3, Agirlik = 30, Renk = Color3.fromRGB(110, 62, 38), Kalinlik = 0.55, Cap = 4.3, Sekil = "disk", Malzeme = "Slate" },
-	{ Ad = "Peynir", Deger = 2, Agirlik = 22, Renk = Color3.fromRGB(255, 196, 40), Kalinlik = 0.16, Cap = 4.7, Sekil = "kare", Malzeme = "SmoothPlastic" },
-	{ Ad = "Marul", Deger = 1, Agirlik = 18, Renk = Color3.fromRGB(110, 200, 70), Kalinlik = 0.22, Cap = 4.9, Sekil = "dalga", Malzeme = "Grass" },
-	{ Ad = "Domates", Deger = 1, Agirlik = 14, Renk = Color3.fromRGB(225, 45, 40), Kalinlik = 0.26, Cap = 3.9, Sekil = "disk", Malzeme = "SmoothPlastic" },
-	{ Ad = "Soğan", Deger = 1, Agirlik = 8, Renk = Color3.fromRGB(235, 215, 235), Kalinlik = 0.14, Cap = 3.7, Sekil = "disk", Malzeme = "SmoothPlastic" },
-	{ Ad = "Turşu", Deger = 2, Agirlik = 6, Renk = Color3.fromRGB(120, 140, 40), Kalinlik = 0.12, Cap = 3.4, Sekil = "disk", Malzeme = "SmoothPlastic" },
-	{ Ad = "ALTIN KÖFTE", Deger = 30, Agirlik = 2, Renk = Color3.fromRGB(255, 205, 50), Kalinlik = 0.6, Cap = 4.4, Sekil = "disk", Malzeme = "Foil", Altin = true },
+	Kofte = { Ad = "Köfte", Deger = 3, Renk = Color3.fromRGB(110, 62, 38), Kalinlik = 0.55, Cap = 4.3, Sekil = "disk", Malzeme = "Slate" },
+	Peynir = { Ad = "Peynir", Deger = 2, Renk = Color3.fromRGB(255, 196, 40), Kalinlik = 0.16, Cap = 4.7, Sekil = "kare", Malzeme = "SmoothPlastic" },
+	Marul = { Ad = "Marul", Deger = 1, Renk = Color3.fromRGB(110, 200, 70), Kalinlik = 0.22, Cap = 4.9, Sekil = "dalga", Malzeme = "Grass" },
+	Domates = { Ad = "Domates", Deger = 1, Renk = Color3.fromRGB(225, 45, 40), Kalinlik = 0.26, Cap = 3.9, Sekil = "disk", Malzeme = "SmoothPlastic" },
+	Sogan = { Ad = "Soğan", Deger = 1, Renk = Color3.fromRGB(235, 215, 235), Kalinlik = 0.14, Cap = 3.7, Sekil = "disk", Malzeme = "SmoothPlastic" },
+	Tursu = { Ad = "Turşu", Deger = 2, Renk = Color3.fromRGB(120, 140, 40), Kalinlik = 0.12, Cap = 3.4, Sekil = "disk", Malzeme = "SmoothPlastic" },
+	AltinKofte = { Ad = "ALTIN KÖFTE", Deger = 30, Renk = Color3.fromRGB(255, 205, 50), Kalinlik = 0.6, Cap = 4.4, Sekil = "disk", Malzeme = "Foil", Altin = true },
 }
+
+-- Burger tarifi, alttan üste. Sans = o malzemenin burgerde olma ihtimali (1 = hep var).
+-- İlk köfte bazen ALTIN KÖFTE olur (bkz. AltinTabanSansi).
+Config.Tarif = {
+	{ Malzeme = "Kofte", Sans = 1 },
+	{ Malzeme = "Peynir", Sans = 0.75 },
+	{ Malzeme = "Kofte", Sans = 0.2 },
+	{ Malzeme = "Marul", Sans = 0.6 },
+	{ Malzeme = "Domates", Sans = 0.5 },
+	{ Malzeme = "Sogan", Sans = 0.3 },
+	{ Malzeme = "Tursu", Sans = 0.3 },
+}
+
+Config.AltinTabanSansi = 0.03 -- %3 ihtimalle ALTIN BURGER
+Config.AltinSansArtisi = 0.02 -- "Altın Şans" geliştirmesinin her seviyesi +%2
 
 Config.AltEkmek = { Ad = "Alt Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 0.7, Cap = 4.5 }
 Config.UstEkmek = { Ad = "Üst Ekmek", Renk = Color3.fromRGB(222, 160, 80), Kalinlik = 1.8, Cap = 4.6 }
+
+-- Paket kutusu
+Config.KutuGenislik = 5.8
+Config.KutuYukseklik = 5.0
+Config.KutuRengi = Color3.fromRGB(250, 238, 214)
+Config.KapakRengi = Color3.fromRGB(215, 45, 45)
+Config.AltinKapakRengi = Color3.fromRGB(255, 200, 40)
+Config.YiginEnFazla = 6 -- tezgahın yanındaki paket kulesi en fazla kaç kutu olur
 
 ----------------------------------------------------------------------
 -- GELİŞTİRMELER (Dükkan)
@@ -68,65 +91,63 @@ Config.Gelistirmeler = {
 		Anahtar = "HizliEller",
 		Ad = "Hızlı Eller",
 		Ikon = "✋",
-		Aciklama = "Her tıkta daha çok kat",
-		TabanFiyat = 40,
-		Carpan = 1.9,
-		MaxSeviye = 9,
+		Aciklama = "Her tıkta daha çok katlama",
+		TabanFiyat = 75,
+		Carpan = 4,
+		MaxSeviye = 2,
 	},
 	{
 		Anahtar = "Lezzet",
 		Ad = "Lezzet Ustası",
 		Ikon = "🧂",
-		Aciklama = "Her kat daha çok para eder",
-		TabanFiyat = 60,
-		Carpan = 2.1,
-		MaxSeviye = 20,
+		Aciklama = "Her paket daha çok para eder",
+		TabanFiyat = 40,
+		Carpan = 1.9,
+		MaxSeviye = 25,
 	},
 	{
 		Anahtar = "OtoAsci",
 		Ad = "Çırak Aşçı",
 		Ikon = "👨‍🍳",
 		Aciklama = "Sen dururken o katlar",
-		TabanFiyat = 150,
-		Carpan = 2.4,
+		TabanFiyat = 120,
+		Carpan = 2.3,
 		MaxSeviye = 10,
 	},
 	{
-		Anahtar = "DevTabak",
-		Ad = "Dev Tabak",
-		Ikon = "🍽️",
-		Aciklama = "Burger daha yükseğe çıkar",
+		Anahtar = "AltinSans",
+		Ad = "Altın Şans",
+		Ikon = "✨",
+		Aciklama = "ALTIN BURGER daha sık çıkar",
 		TabanFiyat = 100,
-		Carpan = 2.0,
-		MaxSeviye = 8,
+		Carpan = 2.2,
+		MaxSeviye = 10,
 	},
 }
 
-Config.TemelMaxKat = 30 -- Dev Tabak almadan burger en fazla kaç kat olur
-Config.DevTabakArtisi = 25 -- Dev Tabak her seviyede kaç kat ekler
 Config.OtoAsciIlkAralik = 3.0 -- Çırak Aşçı 1. seviyede kaç saniyede bir katlar
 Config.OtoAsciHizlanma = 0.78 -- her seviyede aralık bu sayıyla çarpılır
 
 ----------------------------------------------------------------------
--- UNVANLAR (toplam katlanan kata göre)
+-- UNVANLAR (toplam paketlenen burgere göre)
 ----------------------------------------------------------------------
 Config.Unvanlar = {
 	{ Esik = 0, Ad = "Çırak", Renk = Color3.fromRGB(200, 200, 200) },
-	{ Esik = 100, Ad = "Aşçı", Renk = Color3.fromRGB(120, 220, 120) },
-	{ Esik = 500, Ad = "Şef", Renk = Color3.fromRGB(90, 170, 255) },
-	{ Esik = 2000, Ad = "Usta Şef", Renk = Color3.fromRGB(190, 110, 255) },
-	{ Esik = 8000, Ad = "Burger Lordu", Renk = Color3.fromRGB(255, 140, 50) },
-	{ Esik = 30000, Ad = "Burger Sultanı", Renk = Color3.fromRGB(255, 70, 90) },
-	{ Esik = 100000, Ad = "BURGER İMPARATORU", Renk = Color3.fromRGB(255, 215, 0) },
+	{ Esik = 20, Ad = "Aşçı", Renk = Color3.fromRGB(120, 220, 120) },
+	{ Esik = 100, Ad = "Şef", Renk = Color3.fromRGB(90, 170, 255) },
+	{ Esik = 400, Ad = "Usta Şef", Renk = Color3.fromRGB(190, 110, 255) },
+	{ Esik = 1500, Ad = "Burger Lordu", Renk = Color3.fromRGB(255, 140, 50) },
+	{ Esik = 5000, Ad = "Burger Sultanı", Renk = Color3.fromRGB(255, 70, 90) },
+	{ Esik = 20000, Ad = "BURGER İMPARATORU", Renk = Color3.fromRGB(255, 215, 0) },
 }
 
 ----------------------------------------------------------------------
 -- DÜNYA
 ----------------------------------------------------------------------
 Config.TezgahSayisi = 12 -- aynı sunucuda en fazla kaç oyuncu burger yapabilir
-Config.TezgahYaricapi = 40 -- tezgahlar ortadaki heykelin etrafında bu uzaklıkta dizilir
+Config.TezgahYaricapi = 46 -- tezgahlar ortadaki heykelin etrafında bu uzaklıkta dizilir
 
-Config.KayitAnahtari = "BurgerImparatoru_v1" -- DataStore adı (değiştirirsen herkesin kaydı sıfırlanır)
+Config.KayitAnahtari = "BurgerImparatoru_v2" -- DataStore adı (değiştirirsen herkesin kaydı sıfırlanır)
 
 return Config
 ]]></string>
@@ -146,11 +167,6 @@ local Ekonomi = {}
 local gelistirmeTablosu = {}
 for _, g in ipairs(Config.Gelistirmeler) do
 	gelistirmeTablosu[g.Anahtar] = g
-end
-
-local toplamAgirlik = 0
-for _, m in ipairs(Config.Malzemeler) do
-	toplamAgirlik += m.Agirlik
 end
 
 function Ekonomi.GelistirmeBul(anahtar)
@@ -178,16 +194,17 @@ function Ekonomi.Fiyat(anahtar, mevcutSeviye)
 	return math.floor(g.TabanFiyat * g.Carpan ^ mevcutSeviye)
 end
 
-function Ekonomi.MaxKat(gelistirmeler)
-	return Config.TemelMaxKat + Ekonomi.Seviye(gelistirmeler, "DevTabak") * Config.DevTabakArtisi
-end
-
-function Ekonomi.TikBasinaKat(gelistirmeler)
-	return 1 + Ekonomi.Seviye(gelistirmeler, "HizliEller")
+-- Bir tıklama kaç katlama yapar? (en fazla bir burgeri bitirecek kadar)
+function Ekonomi.TikBasinaKatlama(gelistirmeler)
+	return math.min(Config.KatlamaSayisi, 1 + Ekonomi.Seviye(gelistirmeler, "HizliEller"))
 end
 
 function Ekonomi.LezzetCarpani(gelistirmeler)
 	return 1 + Ekonomi.Seviye(gelistirmeler, "Lezzet")
+end
+
+function Ekonomi.AltinSansi(gelistirmeler)
+	return Config.AltinTabanSansi + Ekonomi.Seviye(gelistirmeler, "AltinSans") * Config.AltinSansArtisi
 end
 
 -- Çırak Aşçı kaç saniyede bir katlar? (hiç alınmadıysa nil)
@@ -202,46 +219,51 @@ end
 -- Geliştirmenin şu anki etkisini oyuncuya yazı olarak anlatır.
 function Ekonomi.EtkiYazisi(anahtar, seviye)
 	if anahtar == "HizliEller" then
-		return string.format("Tık başına %d kat", 1 + seviye)
+		return string.format("Tık başına %d katlama", math.min(Config.KatlamaSayisi, 1 + seviye))
 	elseif anahtar == "Lezzet" then
-		return string.format("Kat değeri x%d", 1 + seviye)
+		return string.format("Paket değeri x%d", 1 + seviye)
 	elseif anahtar == "OtoAsci" then
 		if seviye <= 0 then
 			return "Henüz yok"
 		end
-		return string.format("%.1f saniyede 1 kat", Config.OtoAsciIlkAralik * Config.OtoAsciHizlanma ^ (seviye - 1))
-	elseif anahtar == "DevTabak" then
-		return string.format("En fazla %d kat", Config.TemelMaxKat + seviye * Config.DevTabakArtisi)
+		return string.format("%.1f saniyede 1 katlama", Config.OtoAsciIlkAralik * Config.OtoAsciHizlanma ^ (seviye - 1))
+	elseif anahtar == "AltinSans" then
+		return string.format("Altın burger ihtimali %%%d", math.floor((Config.AltinTabanSansi + seviye * Config.AltinSansArtisi) * 100 + 0.5))
 	end
 	return ""
 end
 
-function Ekonomi.BoyBonusu(katSayisi)
-	return 1 + katSayisi / Config.BoyBonusuBolen
-end
-
--- Servis edilince kazanılacak para: burger değeri x boy bonusu
-function Ekonomi.ServisParasi(burgerDegeri, katSayisi)
-	return math.floor(burgerDegeri * Ekonomi.BoyBonusu(katSayisi))
-end
-
--- rastgele: 0 ile 1 arası sayı veren fonksiyon
-function Ekonomi.MalzemeSec(rastgele)
-	local r = rastgele() * toplamAgirlik
-	for i, m in ipairs(Config.Malzemeler) do
-		r -= m.Agirlik
-		if r < 0 then
-			return i, m
+--[[
+	Yeni bir burgerin içinde ne olacağına karar verir.
+	rastgele: 0 ile 1 arası sayı veren fonksiyon
+	Döndürür: malzeme listesi (alttan üste, ekmekler hariç), taban değer, altın mı
+]]
+function Ekonomi.BurgerTarifi(rastgele, gelistirmeler)
+	local altin = rastgele() < Ekonomi.AltinSansi(gelistirmeler)
+	local liste = {}
+	local deger = Config.PaketTabanDegeri
+	for i, adim in ipairs(Config.Tarif) do
+		if rastgele() < adim.Sans then
+			local m = Config.Malzemeler[adim.Malzeme]
+			if i == 1 and altin then
+				m = Config.Malzemeler.AltinKofte
+			end
+			table.insert(liste, m)
+			deger += m.Deger
 		end
 	end
-	local son = #Config.Malzemeler
-	return son, Config.Malzemeler[son]
+	return liste, deger, altin
 end
 
-function Ekonomi.UnvanIndex(toplamKat)
+-- Paketlenince kazanılacak para
+function Ekonomi.PaketDegeri(tabanDeger, gelistirmeler)
+	return math.floor(tabanDeger * Ekonomi.LezzetCarpani(gelistirmeler))
+end
+
+function Ekonomi.UnvanIndex(toplamPaket)
 	local idx = 1
 	for i, u in ipairs(Config.Unvanlar) do
-		if toplamKat >= u.Esik then
+		if toplamPaket >= u.Esik then
 			idx = i
 		end
 	end
@@ -292,8 +314,8 @@ return Ekonomi
           <string name="Name">BurgerSunucu</string>
           <token name="RunContext">0</token>
           <string name="Source"><![CDATA[-- BURGER İMPARATORU - Sunucu
--- Katlama, servis, dükkan, unvanlar ve kayıt burada. Oyuncunun ekranı (client) sadece
--- "katla", "servis et", "satın al" ister; her şeyi sunucu kontrol eder, böylece hile yapılamaz.
+-- Katlama, paketleme, dükkan, unvanlar ve kayıt burada. Oyuncunun ekranı (client) sadece
+-- "katla" ve "satın al" ister; her şeyi sunucu kontrol eder, böylece hile yapılamaz.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -318,20 +340,22 @@ local function olay(ad)
 	return e
 end
 local KatlaOlay = olay("Katla") -- oyuncu -> sunucu
-local ServisOlay = olay("ServisEt") -- oyuncu -> sunucu
 local SatinAlOlay = olay("SatinAl") -- oyuncu -> sunucu (anahtar)
-local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
-local KatlandiOlay = olay("Katlandi") -- sunucu -> herkes (kim, tezgah, kaç kat, altın sayısı, otomatik mi)
-local ServisEdildiOlay = olay("ServisEdildi") -- sunucu -> herkes (kim, tezgah, para, kat)
-local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
 local DurumIsteOlay = olay("DurumIste") -- oyuncu -> sunucu (ekran açılınca durumu ister)
+local DurumOlay = olay("Durum") -- sunucu -> oyuncu (durum tablosu)
+-- sunucu -> herkes: kim, tezgah, kaç katlama, paketlendi mi, kazanç, altın mı, otomatik mi
+local KatlandiOlay = olay("Katlandi")
+local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
 uzaklar.Parent = ReplicatedStorage
 
 ----------------------------------------------------------------------
 -- Dünya
 ----------------------------------------------------------------------
-local tezgahlar, servisKlasoru = Dunya.Kur()
+local tezgahlar, ucanKlasor = Dunya.Kur()
 local rastgele = Random.new()
+local function zar()
+	return rastgele:NextNumber()
+end
 
 ----------------------------------------------------------------------
 -- Kayıt (DataStore)
@@ -397,8 +421,7 @@ local function veriHazirla(ham)
 	ham = type(ham) == "table" and ham or {}
 	return {
 		Para = math.max(0, math.floor(sayiYap(ham.Para, 0))),
-		ToplamKat = math.max(0, math.floor(sayiYap(ham.ToplamKat, 0))),
-		Rekor = math.max(0, math.floor(sayiYap(ham.Rekor, 0))),
+		ToplamPaket = math.max(0, math.floor(sayiYap(ham.ToplamPaket, 0))),
 		Gelistirme = gelistirme,
 	}
 end
@@ -409,10 +432,9 @@ local function kaydet(oyuncu)
 		return
 	end
 	local paket = {
-		Surum = 1,
+		Surum = 2,
 		Para = v.Para,
-		ToplamKat = v.ToplamKat,
-		Rekor = v.Rekor,
+		ToplamPaket = v.ToplamPaket,
 		Gelistirme = v.Gelistirme,
 	}
 	for deneme = 1, 3 do
@@ -431,7 +453,7 @@ end
 -- Ekran güncellemeleri
 ----------------------------------------------------------------------
 local function unvan(v)
-	return Config.Unvanlar[Ekonomi.UnvanIndex(v.ToplamKat)]
+	return Config.Unvanlar[Ekonomi.UnvanIndex(v.ToplamPaket)]
 end
 
 local function durumGonder(oyuncu)
@@ -439,14 +461,14 @@ local function durumGonder(oyuncu)
 	if not v or not v.Hazir then
 		return
 	end
+	local b = v.Burger
 	DurumOlay:FireClient(oyuncu, {
 		Para = v.Para,
-		ToplamKat = v.ToplamKat,
-		Rekor = v.Rekor,
-		UnvanIndex = Ekonomi.UnvanIndex(v.ToplamKat),
-		BurgerKat = v.Burger.Kat,
-		BurgerDeger = v.Burger.Deger,
-		MaxKat = Ekonomi.MaxKat(v.Gelistirme),
+		ToplamPaket = v.ToplamPaket,
+		UnvanIndex = Ekonomi.UnvanIndex(v.ToplamPaket),
+		Asama = b and b.Asama or 0,
+		BurgerDegeri = b and Ekonomi.PaketDegeri(b.Deger, v.Gelistirme) or 0,
+		Altin = b ~= nil and b.Altin,
 		Gelistirme = v.Gelistirme,
 		TezgahVar = v.Tezgah ~= nil,
 		KayitAcik = v.KayitAcik,
@@ -460,7 +482,7 @@ local function tabelaGuncelle(oyuncu)
 	end
 	local t = v.Tezgah
 	t.TabelaBaslik.Text = "🍔 " .. oyuncu.DisplayName
-	t.TabelaAlt.Text = string.format("%d kat • %s", v.Burger.Kat, unvan(v).Ad)
+	t.TabelaAlt.Text = string.format("%s paket • %s", Ekonomi.Kisalt(v.ToplamPaket), unvan(v).Ad)
 end
 
 local function skorGuncelle(oyuncu)
@@ -468,7 +490,7 @@ local function skorGuncelle(oyuncu)
 	if not v or not v.Skor then
 		return
 	end
-	v.Skor.Kat.Value = v.ToplamKat
+	v.Skor.Paket.Value = v.ToplamPaket
 	v.Skor.Para.Value = v.Para
 	v.Skor.Unvan.Value = unvan(v).Ad
 end
@@ -507,135 +529,181 @@ local function kafaYazisiGuncelle(oyuncu)
 end
 
 ----------------------------------------------------------------------
--- Burger
+-- Burger ve kutu
 ----------------------------------------------------------------------
-local DUSME_BILGISI = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local KATLAMA = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local UCUS = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+local KAPANMA_SURESI = 0.18 -- kapak kapandıktan sonra kutu bu kadar bekleyip uçar
+local KUTU_PARCALARI = { "Taban", "Sol", "Sag", "On", "Arka", "Kapak" }
 
-local function katiYerlestir(v, tur, animasyon)
-	local t = v.Tezgah
-	local alt = t.TabanCFrame * CFrame.new(0, v.Burger.Yukseklik, 0)
-	local parcalar, k = Dunya.KatYap(tur, alt, 1, rastgele)
-	for _, p in ipairs(parcalar) do
-		if animasyon then
-			local hedef = p.CFrame
-			p.CFrame = hedef + Vector3.new(0, 3.5, 0)
-			p.Parent = t.Katlar
-			TweenService:Create(p, DUSME_BILGISI, { CFrame = hedef }):Play()
-		else
-			p.Parent = t.Katlar
-		end
-	end
-	v.Burger.Yukseklik += k
-end
-
-local function yeniBurger(oyuncu)
+-- gecikme: önceki paket tezgahtan kalkana kadar yeni burger yukarıda bekler
+local function yeniBurger(oyuncu, gecikme)
 	local v = veriler[oyuncu]
 	if not v or not v.Tezgah then
 		return
 	end
-	v.Tezgah.Katlar:ClearAllChildren()
-	v.Burger = { Kat = 0, Deger = 0, Yukseklik = 0 }
-	katiYerlestir(v, Config.AltEkmek, true)
+	local t = v.Tezgah
+	local liste, deger, altin = Ekonomi.BurgerTarifi(zar, v.Gelistirme)
+
+	local klasor = Instance.new("Folder")
+	klasor.Name = "Burger"
+	local kutu = Dunya.KutuYap(t.KutuCFrame, altin)
+	local parcalar = {}
+	for _, ad in ipairs(KUTU_PARCALARI) do
+		table.insert(parcalar, kutu[ad])
+	end
+	-- Burger, kutunun tabanının üstünde
+	local cf = t.KutuCFrame * CFrame.new(0, kutu.Taban.Size.Y, 0)
+	local katlar = { Config.AltEkmek }
+	for _, m in ipairs(liste) do
+		table.insert(katlar, m)
+	end
+	table.insert(katlar, Config.UstEkmek)
+	for _, m in ipairs(katlar) do
+		local yeni, k = Dunya.KatYap(m, cf, 1, rastgele)
+		for _, p in ipairs(yeni) do
+			table.insert(parcalar, p)
+		end
+		cf = cf * CFrame.new(0, k, 0)
+	end
+	-- Yukarıdan düşerek gelsin. Her parçanın kutuya göre yerini sakla (uçarken lazım)
+	local dusme = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, gecikme or 0)
+	local goreliYerler = {}
+	for _, p in ipairs(parcalar) do
+		local hedef = p.CFrame
+		goreliYerler[p] = t.KutuCFrame:ToObjectSpace(hedef)
+		p.CFrame = hedef + Vector3.new(0, 6, 0)
+		p.Parent = klasor
+		TweenService:Create(p, dusme, { CFrame = hedef }):Play()
+	end
+	klasor.Parent = t.PaketKlasoru
+
+	v.Burger = { Asama = 0, Deger = deger, Altin = altin, Kutu = kutu, Klasor = klasor, Goreli = goreliYerler }
+end
+
+-- Paket kulesine bir kutu koyar
+local function kuleyeKoy(t, altin, nesil, sira, cf)
+	if t.Yigin.Nesil ~= nesil then
+		return -- bu arada kule boşaltıldı
+	end
+	local kutu = Dunya.YiginKutusu(cf, altin)
+	kutu.Parent = t.YiginKlasoru
+	t.Yigin.Kutular[sira] = kutu
+end
+
+local function kuleyiBosalt(t)
+	t.Yigin.Nesil += 1
+	for _, kutu in pairs(t.Yigin.Kutular) do
+		local yukari = kutu.CFrame + Vector3.new(0, 25, 0)
+		TweenService:Create(kutu, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			CFrame = yukari,
+			Transparency = 1,
+		}):Play()
+		task.delay(0.65, function()
+			kutu:Destroy()
+		end)
+	end
+	t.Yigin.Kutular = {}
+end
+
+-- Kapalı kutuyu kuleye uçurur, yeni burger getirir
+local function paketle(oyuncu)
+	local v = veriler[oyuncu]
+	local t = v.Tezgah
+	local b = v.Burger
+
+	-- Kuledeki yerini şimdiden ayır
+	local y = t.Yigin
+	if y.Sayac >= Config.YiginEnFazla then
+		kuleyiBosalt(t)
+		y.Sayac = 0
+	end
+	y.Sayac += 1
+	local sira = y.Sayac
+	local nesil = y.Nesil
+	local yukseklik = Dunya.KutuYuksekligi()
+	local hedefTaban = t.YiginCFrame
+		* CFrame.new(0, (sira - 1) * yukseklik, 0)
+		* CFrame.Angles(0, math.rad(rastgele:NextNumber(-12, 12)), 0)
+
+	-- Kapak kapanınca kutuyu (ve içindeki burgeri) kuleye uçur
+	local klasor = b.Klasor
+	local altin = b.Altin
+	local kutuTaban = t.KutuCFrame
+	local kapali = Dunya.KutuPozu(kutuTaban, Config.KatlamaSayisi)
+	local goreli = b.Goreli
+	for ad, p in pairs(b.Kutu) do
+		goreli[p] = kutuTaban:ToObjectSpace(kapali[ad])
+	end
+	klasor.Parent = ucanKlasor
+	task.delay(KAPANMA_SURESI, function()
+		for p, g in pairs(goreli) do
+			if p.Parent then
+				TweenService:Create(p, UCUS, { CFrame = hedefTaban * g }):Play()
+			end
+		end
+		task.delay(UCUS.Time + 0.02, function()
+			klasor:Destroy()
+			kuleyeKoy(t, altin, nesil, sira, hedefTaban * CFrame.new(0, yukseklik / 2, 0))
+		end)
+	end)
+
+	yeniBurger(oyuncu, KAPANMA_SURESI + 0.1)
 end
 
 local function unvanKontrol(oyuncu, eskiIndex)
 	local v = veriler[oyuncu]
-	local yeniIndex = Ekonomi.UnvanIndex(v.ToplamKat)
+	local yeniIndex = Ekonomi.UnvanIndex(v.ToplamPaket)
 	if yeniIndex > eskiIndex then
 		UnvanOlay:FireAllClients(oyuncu, yeniIndex)
 		kafaYazisiGuncelle(oyuncu)
 	end
 end
 
--- adet kadar kat ekler. Döndürür: eklenen kat sayısı
-local function katEkle(oyuncu, adet, otomatik)
+-- adet kadar katlama yapar (burger paketlenince durur)
+local function katla(oyuncu, adet, otomatik)
 	local v = veriler[oyuncu]
-	if not v or not v.Hazir or not v.Tezgah then
-		return 0
+	if not v or not v.Hazir or not v.Tezgah or not v.Burger then
+		return
 	end
-	local maxKat = Ekonomi.MaxKat(v.Gelistirme)
-	local carpan = Ekonomi.LezzetCarpani(v.Gelistirme)
-	local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamKat)
-	local eklenen, altinSayisi = 0, 0
-
+	local b = v.Burger
+	local eklenen = 0
 	for _ = 1, adet do
-		if v.Burger.Kat >= maxKat then
+		if b.Asama >= Config.KatlamaSayisi then
 			break
 		end
-		local _, m = Ekonomi.MalzemeSec(function()
-			return rastgele:NextNumber()
-		end)
-		katiYerlestir(v, m, true)
-		v.Burger.Kat += 1
-		v.Burger.Deger += m.Deger * carpan
-		v.ToplamKat += 1
+		b.Asama += 1
 		eklenen += 1
-		if m.Altin then
-			altinSayisi += 1
+	end
+	if eklenen == 0 then
+		return
+	end
+
+	-- Kutunun kapaklarını yeni aşamaya katla
+	local poz = Dunya.KutuPozu(v.Tezgah.KutuCFrame, b.Asama)
+	for _, ad in ipairs(KUTU_PARCALARI) do
+		local p = b.Kutu[ad]
+		if p.CFrame ~= poz[ad] then
+			TweenService:Create(p, KATLAMA, { CFrame = poz[ad] }):Play()
 		end
 	end
 
-	if eklenen > 0 then
-		KatlandiOlay:FireAllClients(oyuncu, v.Tezgah.Index, eklenen, altinSayisi, otomatik)
+	local paketlendi = b.Asama >= Config.KatlamaSayisi
+	local kazanc = 0
+	local altin = b.Altin
+	if paketlendi then
+		local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
+		kazanc = Ekonomi.PaketDegeri(b.Deger, v.Gelistirme)
+		v.Para += kazanc
+		v.ToplamPaket += 1
+		paketle(oyuncu)
 		tabelaGuncelle(oyuncu)
 		skorGuncelle(oyuncu)
 		unvanKontrol(oyuncu, eskiUnvan)
 	end
+
+	KatlandiOlay:FireAllClients(oyuncu, v.Tezgah.Index, eklenen, paketlendi, kazanc, altin, otomatik)
 	durumGonder(oyuncu)
-	return eklenen
-end
-
-local UCUS_BILGISI = TweenInfo.new(1.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-
--- Burgeri servis eder, parayı verir. sessiz = oyundan çıkarken (animasyon yok)
-local function servisEt(oyuncu, sessiz)
-	local v = veriler[oyuncu]
-	if not v or not v.Hazir or not v.Tezgah then
-		return
-	end
-	local kat = v.Burger.Kat
-	if kat < Config.ServisIcinEnAzKat then
-		return
-	end
-
-	local kazanc = Ekonomi.ServisParasi(v.Burger.Deger, kat)
-	v.Para += kazanc
-	if kat > v.Rekor then
-		v.Rekor = kat
-	end
-
-	if sessiz then
-		-- Aynı burger iki kez para vermesin (kapanışta hem BindToClose hem PlayerRemoving çalışır)
-		v.Burger = { Kat = 0, Deger = 0, Yukseklik = v.Burger.Yukseklik }
-	else
-		-- Üst ekmeği koy, burgeri havaya uçur
-		katiYerlestir(v, Config.UstEkmek, false)
-		local ucanKlasor = Instance.new("Folder")
-		ucanKlasor.Name = oyuncu.Name
-		for _, p in ipairs(v.Tezgah.Katlar:GetChildren()) do
-			p.Parent = ucanKlasor
-		end
-		ucanKlasor.Parent = servisKlasoru
-		local donus = CFrame.Angles(0, math.rad(rastgele:NextNumber(200, 520)), 0)
-		local merkez = v.Tezgah.TabanCFrame
-		for _, p in ipairs(ucanKlasor:GetChildren()) do
-			if p:IsA("BasePart") then
-				-- Burgerin ortası etrafında dönerek yukarı uçsun
-				local goreli = merkez:ToObjectSpace(p.CFrame)
-				local hedef = (merkez + Vector3.new(0, 40, 0)) * donus * goreli
-				TweenService:Create(p, UCUS_BILGISI, { CFrame = hedef, Transparency = 1 }):Play()
-			end
-		end
-		task.delay(UCUS_BILGISI.Time + 0.1, function()
-			ucanKlasor:Destroy()
-		end)
-
-		ServisEdildiOlay:FireAllClients(oyuncu, v.Tezgah.Index, kazanc, kat)
-		yeniBurger(oyuncu)
-		tabelaGuncelle(oyuncu)
-		skorGuncelle(oyuncu)
-		durumGonder(oyuncu)
-	end
 end
 
 ----------------------------------------------------------------------
@@ -653,7 +721,9 @@ end
 
 local function tezgahiBirak(t)
 	t.Sahip = nil
-	t.Katlar:ClearAllChildren()
+	t.PaketKlasoru:ClearAllChildren()
+	t.YiginKlasoru:ClearAllChildren()
+	t.Yigin = { Kutular = {}, Nesil = t.Yigin.Nesil + 1, Sayac = 0 }
 	t.TabelaBaslik.Text = "🍔 Boş Tezgah"
 	t.TabelaAlt.Text = "Gel burger katla!"
 end
@@ -688,10 +758,9 @@ local function oyuncuGeldi(oyuncu)
 		Hazir = false,
 		KayitAcik = false,
 		Para = 0,
-		ToplamKat = 0,
-		Rekor = 0,
+		ToplamPaket = 0,
 		Gelistirme = Ekonomi.BosGelistirmeler(),
-		Burger = { Kat = 0, Deger = 0, Yukseklik = 0 },
+		Burger = nil,
 		Jeton = 4,
 		SonJeton = os.clock(),
 		OtoBirikim = 0,
@@ -701,9 +770,9 @@ local function oyuncuGeldi(oyuncu)
 	-- Skor tablosu (sağ üstteki liste)
 	local skorlar = Instance.new("Folder")
 	skorlar.Name = "leaderstats"
-	local katDeger = Instance.new("IntValue")
-	katDeger.Name = "Kat"
-	katDeger.Parent = skorlar
+	local paketDeger = Instance.new("IntValue")
+	paketDeger.Name = "Paket"
+	paketDeger.Parent = skorlar
 	local paraDeger = Instance.new("IntValue")
 	paraDeger.Name = "Para"
 	paraDeger.Parent = skorlar
@@ -712,7 +781,7 @@ local function oyuncuGeldi(oyuncu)
 	unvanDeger.Value = Config.Unvanlar[1].Ad
 	unvanDeger.Parent = skorlar
 	skorlar.Parent = oyuncu
-	v.Skor = { Kat = katDeger, Para = paraDeger, Unvan = unvanDeger }
+	v.Skor = { Paket = paketDeger, Para = paraDeger, Unvan = unvanDeger }
 
 	v.Tezgah = bosTezgahAl(oyuncu)
 
@@ -729,8 +798,7 @@ local function oyuncuGeldi(oyuncu)
 	end
 	local hazir = veriHazirla(ham)
 	v.Para = hazir.Para
-	v.ToplamKat = hazir.ToplamKat
-	v.Rekor = hazir.Rekor
+	v.ToplamPaket = hazir.ToplamPaket
 	v.Gelistirme = hazir.Gelistirme
 	v.KayitAcik = basarili
 	v.Hazir = true
@@ -747,9 +815,7 @@ local function oyuncuGitti(oyuncu)
 	if not v then
 		return
 	end
-	-- Yarım kalan burger boşa gitmesin: otomatik servis et
 	if v.Hazir then
-		servisEt(oyuncu, true)
 		kaydet(oyuncu)
 	end
 	if v.Tezgah then
@@ -784,7 +850,7 @@ end
 ----------------------------------------------------------------------
 -- Oyuncu istekleri
 ----------------------------------------------------------------------
--- Hile koruması: saniyede en fazla (1 / KatlamaBeklemesi) katlama, küçük patlamalara izin var
+-- Hile koruması: saniyede en fazla (1 / KatlamaBeklemesi) tıklama, küçük patlamalara izin var
 local JETON_KAPASITE = 4
 local function jetonHarca(v)
 	local simdi = os.clock()
@@ -807,24 +873,11 @@ KatlaOlay.OnServerEvent:Connect(function(oyuncu)
 		durumGonder(oyuncu) -- ekran fazladan saydıysa düzelsin
 		return
 	end
-	katEkle(oyuncu, Ekonomi.TikBasinaKat(v.Gelistirme), false)
+	katla(oyuncu, Ekonomi.TikBasinaKatlama(v.Gelistirme), false)
 end)
 
 DurumIsteOlay.OnServerEvent:Connect(function(oyuncu)
 	durumGonder(oyuncu)
-end)
-
-local sonServis = {}
-ServisOlay.OnServerEvent:Connect(function(oyuncu)
-	local simdi = os.clock()
-	if sonServis[oyuncu] and simdi - sonServis[oyuncu] < 0.5 then
-		return
-	end
-	sonServis[oyuncu] = simdi
-	servisEt(oyuncu, false)
-end)
-Players.PlayerRemoving:Connect(function(oyuncu)
-	sonServis[oyuncu] = nil
 end)
 
 SatinAlOlay.OnServerEvent:Connect(function(oyuncu, anahtar)
@@ -853,17 +906,13 @@ end)
 ----------------------------------------------------------------------
 RunService.Heartbeat:Connect(function(dt)
 	for oyuncu, v in pairs(veriler) do
-		if v.Hazir and v.Tezgah then
+		if v.Hazir and v.Tezgah and v.Burger then
 			local aralik = Ekonomi.OtoAralik(v.Gelistirme)
 			if aralik then
 				v.OtoBirikim += dt
 				if v.OtoBirikim >= aralik then
-					if v.Burger.Kat < Ekonomi.MaxKat(v.Gelistirme) then
-						v.OtoBirikim -= aralik
-						katEkle(oyuncu, 1, true)
-					else
-						v.OtoBirikim = aralik -- tabak dolu, servis bekleniyor
-					end
+					v.OtoBirikim -= aralik
+					katla(oyuncu, 1, true)
 				end
 			end
 		end
@@ -888,7 +937,6 @@ game:BindToClose(function()
 		if v.Hazir and v.KayitAcik then
 			bekleyen += 1
 			task.spawn(function()
-				servisEt(oyuncu, true)
 				kaydet(oyuncu)
 				bekleyen -= 1
 			end)
@@ -1040,7 +1088,7 @@ function Dunya.KatYap(tur, altCFrame, olcek, rastgele)
 				Size = Vector3.new(1.3, k * 0.7, 1.1) * Vector3.new(olcek, 1, olcek),
 				CFrame = altCFrame
 					* CFrame.Angles(0, aci, 0)
-					* CFrame.new(cap * 0.47, k * 0.35, 0)
+					* CFrame.new(cap * 0.42, k * 0.35, 0)
 					* CFrame.Angles(0, 0, math.rad(-18)),
 				Color = tur.Renk:Lerp(Color3.new(1, 1, 1), 0.12),
 				Material = malzemeEnum(tur.Malzeme),
@@ -1093,8 +1141,7 @@ local function konfetiYap(tabak)
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 110, 255)),
 	})
 	e.LightEmission = 0.3
-	-- Silindir X ekseninde olduğu için "Right" yönü yukarı bakar
-	e.EmissionDirection = Enum.NormalId.Right
+	e.EmissionDirection = Enum.NormalId.Top
 	e.Parent = ek
 	return e
 end
@@ -1154,6 +1201,12 @@ local function tabelaYap(model, cf, renk)
 	return baslik, alt
 end
 
+local TEZGAH_EN = 14
+local TEZGAH_DERIN = 11
+local KUTU_KALINLIK = 0.15
+local YAN_ACIK = math.rad(40)
+local KAPAK_ACIK = math.rad(105)
+
 local function tezgahYap(i, adet, klasor)
 	local aci = (i - 1) / adet * math.pi * 2
 	local disari = Vector3.new(math.cos(aci), 0, math.sin(aci))
@@ -1164,11 +1217,13 @@ local function tezgahYap(i, adet, klasor)
 	model.Name = "Tezgah" .. i
 
 	-- Tezgahın ön yüzü (LookVector) oyuncunun durduğu yere, yani dışarı bakar
-	local tezgahCF = CFrame.lookAt(merkez + YUKARI * (ZEMIN_Y + TEZGAH_YUKSEKLIK / 2), merkez + disari * 10 + YUKARI * (ZEMIN_Y + TEZGAH_YUKSEKLIK / 2))
+	local ortaY = ZEMIN_Y + TEZGAH_YUKSEKLIK / 2
+	local tezgahCF = CFrame.lookAt(merkez + YUKARI * ortaY, merkez + disari * 10 + YUKARI * ortaY)
+	local donus = tezgahCF - tezgahCF.Position
 
 	parca({
 		Name = "Govde",
-		Size = Vector3.new(9, TEZGAH_YUKSEKLIK, 6),
+		Size = Vector3.new(TEZGAH_EN, TEZGAH_YUKSEKLIK, TEZGAH_DERIN),
 		CFrame = tezgahCF,
 		Color = Color3.fromRGB(150, 95, 55),
 		Material = Enum.Material.WoodPlanks,
@@ -1177,45 +1232,59 @@ local function tezgahYap(i, adet, klasor)
 	-- Önde renkli şerit
 	parca({
 		Name = "Serit",
-		Size = Vector3.new(9.05, 0.7, 0.2),
-		CFrame = tezgahCF * CFrame.new(0, 0.6, -3.05),
+		Size = Vector3.new(TEZGAH_EN + 0.05, 0.7, 0.2),
+		CFrame = tezgahCF * CFrame.new(0, 0.6, -TEZGAH_DERIN / 2 - 0.05),
 		Color = renk,
 		Parent = model,
 	})
 	parca({
 		Name = "Ust",
-		Size = Vector3.new(9.6, 0.3, 6.6),
+		Size = Vector3.new(TEZGAH_EN + 0.6, 0.3, TEZGAH_DERIN + 0.6),
 		CFrame = tezgahCF * CFrame.new(0, TEZGAH_YUKSEKLIK / 2 + 0.15, 0),
 		Color = Color3.fromRGB(245, 245, 240),
 		Material = Enum.Material.Marble,
 		Parent = model,
 	})
 
+	-- Kutunun durduğu renkli tepsi
 	local tezgahUstY = ZEMIN_Y + TEZGAH_YUKSEKLIK + 0.3
-	local tabakKalinlik = 0.3
-	local tabakMerkez = CFrame.new(merkez + YUKARI * (tezgahUstY + tabakKalinlik / 2))
-	local tabak = disk(tabakMerkez, tabakKalinlik, 6.6, Color3.fromRGB(255, 255, 255), Enum.Material.SmoothPlastic)
-	tabak.Name = "Tabak"
-	tabak.Parent = model
-	local tabakKenar = disk(tabakMerkez * CFrame.new(0, -0.02, 0), tabakKalinlik * 0.9, 7.2, renk, Enum.Material.SmoothPlastic)
-	tabakKenar.Name = "TabakKenar"
-	tabakKenar.Parent = model
-
+	local tepsiK = 0.12
+	local tabak = parca({
+		Name = "Tabak",
+		Size = Vector3.new(7.4, tepsiK, 7.4),
+		CFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tepsiK / 2)) * donus,
+		Color = renk,
+		Parent = model,
+	})
 	local konfeti = konfetiYap(tabak)
 
 	-- Oyuncunun durduğu renkli yuvarlak
-	local oyuncuNokta = merkez + disari * 7
+	local oyuncuNokta = merkez + disari * (TEZGAH_DERIN / 2 + 5)
 	local yer = disk(CFrame.new(oyuncuNokta + YUKARI * (ZEMIN_Y + 0.05)), 0.1, 5, renk, Enum.Material.Neon)
 	yer.Name = "OyuncuYeri"
 	yer.CanCollide = false
 	yer.Transparency = 0.35
 	yer.Parent = model
 
-	local baslik, alt = tabelaYap(model, tezgahCF * CFrame.new(0, -0.1, -3.7), renk)
+	-- Paket kulesinin duracağı yer (oyuncunun sağında, yerde)
+	local yiginCF = CFrame.new(merkez + YUKARI * ZEMIN_Y) * donus * CFrame.new(-(TEZGAH_EN / 2 + 3.6), 0, 0)
+	local yiginYeri = parca({
+		Name = "YiginYeri",
+		Size = Vector3.new(Config.KutuGenislik + 1.2, 0.1, Config.KutuGenislik + 1.2),
+		CFrame = yiginCF * CFrame.new(0, 0.05, 0),
+		Color = renk:Lerp(Color3.new(1, 1, 1), 0.4),
+		CanCollide = false,
+		Parent = model,
+	})
 
-	local katlar = Instance.new("Folder")
-	katlar.Name = "Katlar"
-	katlar.Parent = model
+	local baslik, alt = tabelaYap(model, tezgahCF * CFrame.new(0, -0.1, -TEZGAH_DERIN / 2 - 0.2), renk)
+
+	local paket = Instance.new("Folder")
+	paket.Name = "Paket"
+	paket.Parent = model
+	local yigin = Instance.new("Folder")
+	yigin.Name = "Yigin"
+	yigin.Parent = model
 
 	model.PrimaryPart = model:FindFirstChild("Govde")
 	model.Parent = klasor
@@ -1224,21 +1293,128 @@ local function tezgahYap(i, adet, klasor)
 		Index = i,
 		Model = model,
 		Tabak = tabak,
-		Katlar = katlar,
+		PaketKlasoru = paket,
+		YiginKlasoru = yigin,
 		Konfeti = konfeti,
 		Renk = renk,
-		-- Burgerin oturduğu yer: tabağın üst yüzü
-		TabanCFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tabakKalinlik)),
+		-- Kutunun tabanı: tepsinin üstü, ön yüzü oyuncuya bakar
+		KutuCFrame = CFrame.new(merkez + YUKARI * (tezgahUstY + tepsiK)) * donus,
+		YiginCFrame = yiginCF,
 		OyuncuCFrame = CFrame.lookAt(oyuncuNokta + YUKARI * (ZEMIN_Y + 3), merkez + YUKARI * (ZEMIN_Y + 3)),
 		TabelaBaslik = baslik,
 		TabelaAlt = alt,
+		Yigin = { Kutular = {}, Nesil = 0, Sayac = 0 },
 		Sahip = nil,
 	}
 end
 
+----------------------------------------------------------------------
+-- Paket kutusu
+----------------------------------------------------------------------
+
+-- Kutunun her parçasının, verilen aşamadaki yeri (0 = açık, 3 = kapalı)
+function Dunya.KutuPozu(taban, asama)
+	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
+	local yan = asama >= 1 and 0 or YAN_ACIK
+	local onArka = asama >= 2 and 0 or YAN_ACIK
+	local kapak = asama >= 3 and 0 or KAPAK_ACIK
+	local arkaMentese = taban * CFrame.new(0, 0, S / 2) * CFrame.Angles(onArka, 0, 0)
+	return {
+		Taban = taban * CFrame.new(0, t / 2, 0),
+		Sol = taban * CFrame.new(-S / 2, 0, 0) * CFrame.Angles(0, 0, yan) * CFrame.new(t / 2, H / 2, 0),
+		Sag = taban * CFrame.new(S / 2, 0, 0) * CFrame.Angles(0, 0, -yan) * CFrame.new(-t / 2, H / 2, 0),
+		On = taban * CFrame.new(0, 0, -S / 2) * CFrame.Angles(-onArka, 0, 0) * CFrame.new(0, H / 2, t / 2),
+		Arka = arkaMentese * CFrame.new(0, H / 2, -t / 2),
+		Kapak = arkaMentese * CFrame.new(0, H, 0) * CFrame.Angles(kapak, 0, 0) * CFrame.new(0, t / 2, -S / 2),
+	}
+end
+
+local function etiketYap(parcaNesnesi, yuz, altin)
+	local sg = Instance.new("SurfaceGui")
+	sg.Name = "Etiket"
+	sg.Face = yuz
+	sg.LightInfluence = 0.3
+	sg.CanvasSize = Vector2.new(200, 200)
+	sg.Parent = parcaNesnesi
+	local daire = Instance.new("Frame")
+	daire.AnchorPoint = Vector2.new(0.5, 0.5)
+	daire.Position = UDim2.fromScale(0.5, 0.5)
+	daire.Size = UDim2.fromScale(0.62, 0.62)
+	daire.BackgroundColor3 = altin and Color3.fromRGB(255, 240, 150) or Color3.fromRGB(255, 205, 40)
+	daire.Parent = sg
+	local kose = Instance.new("UICorner")
+	kose.CornerRadius = UDim.new(1, 0)
+	kose.Parent = daire
+	local yazi = Instance.new("TextLabel")
+	yazi.BackgroundTransparency = 1
+	yazi.Size = UDim2.fromScale(1, 1)
+	yazi.TextScaled = true
+	yazi.Font = Enum.Font.FredokaOne
+	yazi.Text = altin and "👑" or "🍔"
+	yazi.Parent = daire
+	return sg
+end
+
+-- Açık bir kutu yapar (parçalar yerinde ama Parent'ı yok)
+function Dunya.KutuYap(taban, altin)
+	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
+	local poz = Dunya.KutuPozu(taban, 0)
+	local boyut = {
+		Taban = Vector3.new(S, t, S),
+		Sol = Vector3.new(t, H, S),
+		Sag = Vector3.new(t, H, S),
+		On = Vector3.new(S - 2 * t, H, t),
+		Arka = Vector3.new(S - 2 * t, H, t),
+		Kapak = Vector3.new(S, t, S),
+	}
+	local kutu = {}
+	for ad, cf in pairs(poz) do
+		local p = parca({
+			Name = "Kutu" .. ad,
+			Size = boyut[ad],
+			CFrame = cf,
+			Color = Config.KutuRengi,
+			Material = Enum.Material.Cardboard,
+			CanCollide = false,
+			CanTouch = false,
+		})
+		kutu[ad] = p
+	end
+	kutu.Kapak.Color = altin and Config.AltinKapakRengi or Config.KapakRengi
+	kutu.Kapak.Material = altin and Enum.Material.Foil or Enum.Material.SmoothPlastic
+	etiketYap(kutu.Kapak, Enum.NormalId.Top, altin)
+	return kutu
+end
+
+-- Kuledeki tek parça kapalı kutu
+function Dunya.YiginKutusu(cf, altin)
+	local S, H, t = Config.KutuGenislik, Config.KutuYukseklik, KUTU_KALINLIK
+	local p = parca({
+		Name = "PaketliBurger",
+		Size = Vector3.new(S, H + t, S),
+		CFrame = cf,
+		Color = Config.KutuRengi,
+		Material = Enum.Material.Cardboard,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	local sg = etiketYap(p, Enum.NormalId.Top, altin)
+	local kapak = Instance.new("Frame")
+	kapak.Size = UDim2.fromScale(1, 1)
+	kapak.BackgroundColor3 = altin and Config.AltinKapakRengi or Config.KapakRengi
+	kapak.ZIndex = 0
+	kapak.Parent = sg
+	etiketYap(p, Enum.NormalId.Front, altin)
+	return p
+end
+
+function Dunya.KutuYuksekligi()
+	return Config.KutuYukseklik + KUTU_KALINLIK
+end
+
 local function zeminYap(klasor)
 	local karo = 8
-	local adet = 14
+	local adet = 17
 	local bas = -(adet * karo) / 2 + karo / 2
 	for x = 0, adet - 1 do
 		for z = 0, adet - 1 do
@@ -1276,15 +1452,10 @@ local function heykelYap(klasor)
 		end
 		cf = cf * CFrame.new(0, k, 0)
 	end
-	local M = {}
-	for _, m in ipairs(Config.Malzemeler) do
-		M[m.Ad] = m
-	end
+	local M = Config.Malzemeler
 	ekle(Config.AltEkmek)
-	for _, ad in ipairs({ "Köfte", "Peynir", "Marul", "Domates", "Köfte", "Peynir", "Turşu" }) do
-		if M[ad] then
-			ekle(M[ad])
-		end
+	for _, anahtar in ipairs({ "Kofte", "Peynir", "Marul", "Domates", "Kofte", "Peynir", "Tursu" }) do
+		ekle(M[anahtar])
 	end
 	ekle(Config.UstEkmek)
 	local tepeY = cf.Position.Y
@@ -1376,7 +1547,7 @@ function Dunya.Kur()
 	tezgahKlasoru.Parent = workspace
 
 	local ucanlar = Instance.new("Folder")
-	ucanlar.Name = "ServisEdilenler"
+	ucanlar.Name = "UcanPaketler"
 	ucanlar.Parent = workspace
 
 	return tezgahlar, ucanlar
@@ -1405,7 +1576,7 @@ return Dunya
           <Properties>
             <string name="Name">BurgerEkran</string>
             <string name="Source"><![CDATA[-- BURGER İMPARATORU - Oyuncunun ekranı
--- KATLA butonu, "huss huss huss" sesi, HUSS! yazıları, para/unvan göstergeleri ve dükkan.
+-- KATLA butonu, "huss huss huss" sesi, HUSS! yazıları, para/paket/unvan göstergeleri ve dükkan.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1423,24 +1594,15 @@ local Config = require(Ortak:WaitForChild("Config"))
 local Ekonomi = require(Ortak:WaitForChild("Ekonomi"))
 local Uzaklar = ReplicatedStorage:WaitForChild("Uzaklar")
 local KatlaOlay = Uzaklar:WaitForChild("Katla")
-local ServisOlay = Uzaklar:WaitForChild("ServisEt")
 local SatinAlOlay = Uzaklar:WaitForChild("SatinAl")
+local DurumIsteOlay = Uzaklar:WaitForChild("DurumIste")
 local DurumOlay = Uzaklar:WaitForChild("Durum")
 local KatlandiOlay = Uzaklar:WaitForChild("Katlandi")
-local ServisEdildiOlay = Uzaklar:WaitForChild("ServisEdildi")
 local UnvanOlay = Uzaklar:WaitForChild("YeniUnvan")
-local DurumIsteOlay = Uzaklar:WaitForChild("DurumIste")
 
 local FONT = Enum.Font.FredokaOne
 local rastgele = Random.new()
 local K = Ekonomi.Kisalt
-
-local ALTIN_DEGER = 0
-for _, m in ipairs(Config.Malzemeler) do
-	if m.Altin then
-		ALTIN_DEGER = m.Deger
-	end
-end
 
 local durum = nil -- sunucudan gelen son durum
 local sesAcik = true
@@ -1512,6 +1674,15 @@ local function uzakHuss(tezgahIndex)
 	Debris:AddItem(s, 3)
 end
 
+local function konfetiPatlat(tezgahIndex, adet)
+	local tabak = tezgahTabagi(tezgahIndex)
+	local nokta = tabak and tabak:FindFirstChild("KonfetiNoktasi")
+	local konfeti = nokta and nokta:FindFirstChild("Konfeti")
+	if konfeti then
+		konfeti:Emit(adet)
+	end
+end
+
 ----------------------------------------------------------------------
 -- Arayüz yardımcıları
 ----------------------------------------------------------------------
@@ -1567,6 +1738,7 @@ end
 
 local KOYU = Color3.fromRGB(45, 28, 18)
 local PANEL = Color3.fromRGB(38, 26, 20)
+local HUSS_SARI = Color3.fromRGB(255, 214, 20) -- videodaki HUSS! yazısının rengi
 
 local ekran = yap("ScreenGui", {
 	Name = "BurgerArayuz",
@@ -1595,7 +1767,7 @@ end
 local klavyeVar = UserInputService.KeyboardEnabled
 
 ----------------------------------------------------------------------
--- Üst panel: para, burger, servis değeri, unvan çubuğu
+-- Üst panel: para, paket, şu anki burger, unvan çubuğu
 ----------------------------------------------------------------------
 local ust = yap("Frame", {
 	Name = "Ust",
@@ -1648,10 +1820,10 @@ local function hap(sira, ikon, renk, genislik)
 end
 
 local paraYazi, paraAlt = hap(1, "💰", Color3.fromRGB(255, 210, 60), 200)
-local burgerYazi, burgerAlt = hap(2, "🍔", Color3.fromRGB(255, 140, 50), 200)
-local servisDegerYazi, servisDegerAlt = hap(3, "🛎️", Color3.fromRGB(90, 220, 110), 200)
+local paketYazi, paketAlt = hap(2, "📦", Color3.fromRGB(255, 140, 50), 200)
+local burgerYazi, burgerAlt = hap(3, "🍔", Color3.fromRGB(90, 220, 110), 200)
 paraAlt.Text = "Para"
-servisDegerAlt.Text = "Servis edince"
+paketAlt.Text = "Paketlenen burger"
 
 local unvanCubuk = yap("Frame", {
 	Position = UDim2.fromOffset(10, 64),
@@ -1701,7 +1873,7 @@ local sesButonu = yap("TextButton", {
 }, { kose(UDim.new(1, 0)), cizgi(Color3.fromRGB(255, 255, 255), 2) })
 
 ----------------------------------------------------------------------
--- Alt bölüm: KATLA, SERVİS ET, DÜKKAN
+-- Alt bölüm: KATLA ve DÜKKAN
 ----------------------------------------------------------------------
 local alt = yap("Frame", {
 	Name = "Alt",
@@ -1748,51 +1920,65 @@ yazi({
 	Parent = katlaButonu,
 })
 
-local function yanButon(ad, metin, kisayol, renk1, renk2, solda)
-	local b = yap("TextButton", {
-		Name = ad,
-		AnchorPoint = Vector2.new(solda and 1 or 0, 1),
-		Position = UDim2.new(0.5, solda and -110 or 110, 1, -24),
-		Size = UDim2.fromOffset(176, 82),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		AutoButtonColor = false,
-		Text = "",
-		Parent = alt,
-	}, {
-		kose(UDim.new(0, 20)),
-		cizgi(KOYU, 4),
-		yap("UIGradient", { Color = ColorSequence.new(renk1, renk2), Rotation = 90 }),
-	})
-	local ana = yazi({ Text = metin, Size = UDim2.new(0.9, 0, 0.44, 0), Position = UDim2.fromScale(0.05, 0.1), Parent = b })
-	yaziCizgisi(KOYU, 2.5).Parent = ana
-	local altYazi = yazi({
-		Text = kisayol and ("[" .. kisayol .. "]") or "",
-		Visible = true,
-		Size = UDim2.new(0.9, 0, 0.3, 0),
-		Position = UDim2.fromScale(0.05, 0.58),
-		TextColor3 = Color3.fromRGB(255, 255, 235),
-		Parent = b,
-	})
-	yaziCizgisi(KOYU, 1.5).Parent = altYazi
-	local olcek = yap("UIScale", { Parent = b })
-	local gradyan = b:FindFirstChildOfClass("UIGradient")
-	return b, altYazi, olcek, gradyan
+-- KATLA'nın üstünde 3 nokta: kaçıncı katlamadasın
+local noktaSirasi = yap("Frame", {
+	Name = "Katlamalar",
+	AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 0, 1, -192),
+	Size = UDim2.fromOffset(150, 34),
+	BackgroundTransparency = 1,
+	Parent = alt,
+}, {
+	yap("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 12),
+	}),
+})
+local noktalar = {}
+for i = 1, Config.KatlamaSayisi do
+	local n = yap("Frame", {
+		LayoutOrder = i,
+		Size = UDim2.fromOffset(30, 30),
+		BackgroundColor3 = PANEL,
+		Parent = noktaSirasi,
+	}, { kose(UDim.new(1, 0)), cizgi(KOYU, 3) })
+	noktalar[i] = { Cerceve = n, Olcek = yap("UIScale", { Parent = n }) }
 end
 
-local servisButonu, servisAlt, servisOlcek, servisGradyan =
-	yanButon("Servis", "🛎️ SERVİS ET", klavyeVar and "Q" or nil, Color3.fromRGB(120, 230, 110), Color3.fromRGB(40, 160, 70), false)
-local dukkanButonu, dukkanAlt, dukkanOlcek =
-	yanButon("Dukkan", "🛒 DÜKKAN", klavyeVar and "B" or nil, Color3.fromRGB(120, 180, 255), Color3.fromRGB(50, 100, 230), true)
-if not klavyeVar then
-	dukkanAlt.Text = "Geliştir!"
-end
+local dukkanButonu = yap("TextButton", {
+	Name = "Dukkan",
+	AnchorPoint = Vector2.new(1, 1),
+	Position = UDim2.new(0.5, -110, 1, -24),
+	Size = UDim2.fromOffset(176, 82),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+	AutoButtonColor = false,
+	Text = "",
+	Parent = alt,
+}, {
+	kose(UDim.new(0, 20)),
+	cizgi(KOYU, 4),
+	yap("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(120, 180, 255), Color3.fromRGB(50, 100, 230)), Rotation = 90 }),
+})
+local dukkanOlcek = yap("UIScale", { Parent = dukkanButonu })
+local dukkanYazi = yazi({ Text = "🛒 DÜKKAN", Size = UDim2.new(0.9, 0, 0.44, 0), Position = UDim2.fromScale(0.05, 0.1), Parent = dukkanButonu })
+yaziCizgisi(KOYU, 2.5).Parent = dukkanYazi
+local dukkanAlt = yazi({
+	Text = klavyeVar and "[B]" or "Geliştir!",
+	Size = UDim2.new(0.9, 0, 0.3, 0),
+	Position = UDim2.fromScale(0.05, 0.58),
+	TextColor3 = Color3.fromRGB(255, 255, 235),
+	Parent = dukkanButonu,
+})
+yaziCizgisi(KOYU, 1.5).Parent = dukkanAlt
 
 local komboYazi = yazi({
 	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -196),
+	Position = UDim2.new(0.5, 0, 1, -232),
 	Size = UDim2.fromOffset(300, 46),
 	Text = "",
-	TextColor3 = Color3.fromRGB(255, 240, 90),
+	TextColor3 = HUSS_SARI,
 	Visible = false,
 	ZIndex = 4,
 	Parent = alt,
@@ -1861,19 +2047,11 @@ local function duyuru(metin, renk, sure, altMetin)
 end
 
 ----------------------------------------------------------------------
--- HUSS! yazıları
+-- Uçan yazılar: HUSS! ve +para
 ----------------------------------------------------------------------
-local HUSS_RENKLERI = {
-	Color3.fromRGB(255, 230, 80),
-	Color3.fromRGB(255, 130, 60),
-	Color3.fromRGB(255, 90, 150),
-	Color3.fromRGB(110, 220, 255),
-	Color3.fromRGB(150, 255, 120),
-	Color3.fromRGB(255, 255, 255),
-}
 local aktifYazi = 0
 
-local function hussYazisi(metin, buyukluk)
+local function ucanYazi(metin, renk, buyukluk, x, y)
 	if aktifYazi > 24 then
 		return
 	end
@@ -1881,11 +2059,11 @@ local function hussYazisi(metin, buyukluk)
 	buyukluk = buyukluk or 1
 	local l = yazi({
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, rastgele:NextInteger(-230, 230), 1, rastgele:NextInteger(-300, -190)),
+		Position = UDim2.new(0.5, x, 1, y),
 		Size = UDim2.fromOffset(230 * buyukluk, 66 * buyukluk),
-		Text = metin or "HUSS!",
-		TextColor3 = HUSS_RENKLERI[rastgele:NextInteger(1, #HUSS_RENKLERI)],
-		Rotation = rastgele:NextInteger(-20, 20),
+		Text = metin,
+		TextColor3 = renk,
+		Rotation = rastgele:NextInteger(-14, 14),
 		ZIndex = 5,
 		Parent = alt,
 	})
@@ -1893,8 +2071,8 @@ local function hussYazisi(metin, buyukluk)
 	c.Parent = l
 	local olcek = yap("UIScale", { Scale = 0.3, Parent = l })
 	gecis(olcek, 0.14, { Scale = 1.15 }, Enum.EasingStyle.Back)
-	task.delay(0.18, function()
-		local sure = 0.55
+	task.delay(0.2, function()
+		local sure = 0.5
 		gecis(l, sure, { Position = l.Position - UDim2.fromOffset(0, 50), TextTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		gecis(c, sure, { Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		gecis(olcek, sure, { Scale = 0.8 })
@@ -1904,10 +2082,14 @@ local function hussYazisi(metin, buyukluk)
 	end)
 end
 
--- Sesteki her "huss" anında bir HUSS! yazısı fırlat
+local function hussYazisi(buyukluk)
+	ucanYazi("HUSS!", HUSS_SARI, buyukluk, rastgele:NextInteger(-230, 230), rastgele:NextInteger(-310, -200))
+end
+
+-- Sesteki her "huss" anında bir HUSS! yazısı fırlat (videodaki gibi üç kez)
 local function hussSerisi(hiz, buyukluk)
 	for _, t in ipairs(Config.HussZamanlari) do
-		task.delay(t / (hiz or 1), hussYazisi, "HUSS!", buyukluk)
+		task.delay(t / (hiz or 1), hussYazisi, buyukluk)
 	end
 end
 
@@ -2014,12 +2196,16 @@ for i, g in ipairs(Config.Gelistirmeler) do
 		TextColor3 = Color3.new(1, 1, 1),
 		ZIndex = 12,
 		Parent = satir,
-	}, { kose(UDim.new(0, 16)), cizgi(KOYU, 3), yap("UIPadding", {
-		PaddingLeft = UDim.new(0, 8),
-		PaddingRight = UDim.new(0, 8),
-		PaddingTop = UDim.new(0, 8),
-		PaddingBottom = UDim.new(0, 8),
-	}) })
+	}, {
+		kose(UDim.new(0, 16)),
+		cizgi(KOYU, 3),
+		yap("UIPadding", {
+			PaddingLeft = UDim.new(0, 8),
+			PaddingRight = UDim.new(0, 8),
+			PaddingTop = UDim.new(0, 8),
+			PaddingBottom = UDim.new(0, 8),
+		}),
+	})
 	satirlar[g.Anahtar] = { Satir = satir, Ad = ad, Aciklama = aciklama, Etki = etki, Al = al, Gelistirme = g }
 
 	al.Activated:Connect(function()
@@ -2033,7 +2219,7 @@ for i, g in ipairs(Config.Gelistirmeler) do
 		end
 		if durum.Para < fiyat then
 			salla(al)
-			duyuru("Paran yetmiyor! 🍔", Color3.fromRGB(255, 120, 120), 1.2, "Biraz daha katla, servis et.")
+			duyuru("Paran yetmiyor! 🍔", Color3.fromRGB(255, 120, 120), 1.2, "Biraz daha burger paketle.")
 			return
 		end
 		SatinAlOlay:FireServer(g.Anahtar)
@@ -2079,58 +2265,39 @@ end
 ----------------------------------------------------------------------
 -- Ekranı güncelle
 ----------------------------------------------------------------------
-local servisNabzi = nil
+local function noktalariGuncelle()
+	local asama = durum and durum.Asama or 0
+	for i, n in ipairs(noktalar) do
+		local dolu = i <= asama
+		n.Cerceve.BackgroundColor3 = dolu and HUSS_SARI or PANEL
+	end
+end
 
 local function arayuzGuncelle()
 	if not durum then
 		return
 	end
 	paraYazi.Text = K(durum.Para)
-	burgerYazi.Text = string.format("%d / %d kat", durum.BurgerKat, durum.MaxKat)
-	burgerAlt.Text = "Rekor: " .. tostring(durum.Rekor) .. " kat"
-	local servisParasi = Ekonomi.ServisParasi(durum.BurgerDeger, durum.BurgerKat)
-	servisDegerYazi.Text = "+" .. K(servisParasi)
-	servisDegerAlt.Text = string.format("Boy bonusu x%.1f", Ekonomi.BoyBonusu(durum.BurgerKat))
+	paketYazi.Text = K(durum.ToplamPaket)
+	burgerYazi.Text = string.format("%d / %d katlama", durum.Asama, Config.KatlamaSayisi)
+	burgerAlt.Text = (durum.Altin and "✨ ALTIN! " or "Değeri: ") .. "+" .. K(durum.BurgerDegeri) .. " 💰"
+	noktalariGuncelle()
 
 	-- Unvan çubuğu
-	local idx = Ekonomi.UnvanIndex(durum.ToplamKat)
+	local idx = Ekonomi.UnvanIndex(durum.ToplamPaket)
 	local u = Config.Unvanlar[idx]
 	local sonraki = Config.Unvanlar[idx + 1]
 	if sonraki then
-		local oran = (durum.ToplamKat - u.Esik) / (sonraki.Esik - u.Esik)
+		local oran = (durum.ToplamPaket - u.Esik) / (sonraki.Esik - u.Esik)
 		unvanDolgu.Size = UDim2.fromScale(math.clamp(oran, 0, 1), 1)
-		unvanYazi.Text = string.format("👑 %s   •   %s / %s kat  →  %s", u.Ad, K(durum.ToplamKat), K(sonraki.Esik), sonraki.Ad)
+		unvanYazi.Text = string.format("👑 %s   •   %s / %s paket  →  %s", u.Ad, K(durum.ToplamPaket), K(sonraki.Esik), sonraki.Ad)
 	else
 		unvanDolgu.Size = UDim2.fromScale(1, 1)
-		unvanYazi.Text = "👑 " .. u.Ad .. "   •   EN TEPEDESİN!   •   " .. K(durum.ToplamKat) .. " kat"
+		unvanYazi.Text = "👑 " .. u.Ad .. "   •   EN TEPEDESİN!   •   " .. K(durum.ToplamPaket) .. " paket"
 	end
 	unvanDolgu.BackgroundColor3 = u.Renk
 
-	-- Tabak dolu mu?
-	local dolu = durum.BurgerKat >= durum.MaxKat
-	katlaYazi.Text = (not durum.TezgahVar) and "BEKLE" or (dolu and "DOLU!" or "KATLA!")
-
-	local servisOlur = durum.BurgerKat >= Config.ServisIcinEnAzKat
-	servisGradyan.Color = servisOlur and ColorSequence.new(Color3.fromRGB(120, 230, 110), Color3.fromRGB(40, 160, 70))
-		or ColorSequence.new(Color3.fromRGB(150, 150, 150), Color3.fromRGB(100, 100, 100))
-	if servisOlur then
-		servisAlt.Text = "+" .. K(servisParasi) .. " 💰" .. (klavyeVar and "  [Q]" or "")
-	else
-		servisAlt.Text = "En az " .. Config.ServisIcinEnAzKat .. " kat"
-	end
-
-	if dolu and not servisNabzi then
-		servisNabzi = TweenService:Create(
-			servisOlcek,
-			TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-			{ Scale = 1.12 }
-		)
-		servisNabzi:Play()
-	elseif not dolu and servisNabzi then
-		servisNabzi:Cancel()
-		servisNabzi = nil
-		servisOlcek.Scale = 1
-	end
+	katlaYazi.Text = durum.TezgahVar and "KATLA!" or "BEKLE"
 
 	if durum.KayitAcik then
 		kayitYazi.Visible = false
@@ -2160,13 +2327,8 @@ local function katla()
 	if simdi - sonKatlama < KATLAMA_ARALIGI then
 		return
 	end
-	if durum.BurgerKat >= durum.MaxKat then
-		salla(katlaButonu)
-		duyuru("TABAK DOLDU!", Color3.fromRGB(255, 220, 80), 1.3, "🛎️ SERVİS ET, parayı kap!")
-		return
-	end
 
-	-- Kombo: hızlı katladıkça ses incelir, yazı büyür
+	-- Kombo: hızlı katladıkça ses hızlanır, yazılar büyür
 	if simdi - sonKatlama < 0.9 then
 		kombo += 1
 	else
@@ -2175,13 +2337,15 @@ local function katla()
 	sonKatlama = simdi
 
 	-- Sunucunun cevabını beklemeden ekranı hemen güncelle (cevap gelince düzelir)
-	local eklenen = math.min(Ekonomi.TikBasinaKat(durum.Gelistirme), durum.MaxKat - durum.BurgerKat)
-	durum.BurgerKat += eklenen
-	durum.ToplamKat += eklenen
+	durum.Asama += Ekonomi.TikBasinaKatlama(durum.Gelistirme)
+	if durum.Asama >= Config.KatlamaSayisi then
+		durum.Asama = 0
+		durum.ToplamPaket += 1
+	end
 
 	KatlaOlay:FireServer()
 
-	local hiz = 1 + math.min(kombo, 40) * 0.01
+	local hiz = 1 + math.min(kombo, 40) * 0.008
 	hussCal(hiz, 1)
 	hussSerisi(hiz, 1 + math.min(kombo, 30) * 0.012)
 	zipla(katlaOlcek, 0.86)
@@ -2189,27 +2353,12 @@ local function katla()
 	if kombo >= 3 then
 		komboYazi.Visible = true
 		komboYazi.Text = "KOMBO x" .. kombo
-		komboYazi.TextColor3 = Color3.fromHSV((kombo * 0.03) % 1, 0.7, 1)
 		zipla(komboOlcek, 1.3)
 	end
 	arayuzGuncelle()
 end
 
-local function servisIste()
-	if not durum then
-		return
-	end
-	if durum.BurgerKat < Config.ServisIcinEnAzKat then
-		salla(servisButonu)
-		duyuru("Burger çok küçük!", Color3.fromRGB(255, 180, 120), 1.2, "En az " .. Config.ServisIcinEnAzKat .. " kat katla.")
-		return
-	end
-	zipla(servisOlcek, 0.85)
-	ServisOlay:FireServer()
-end
-
 katlaButonu.Activated:Connect(katla)
-servisButonu.Activated:Connect(servisIste)
 dukkanButonu.Activated:Connect(function()
 	zipla(dukkanOlcek, 0.85)
 	dukkanAcKapa()
@@ -2233,13 +2382,6 @@ ContextActionService:BindAction("BurgerKatla", function(_, girdi)
 	end
 	return Enum.ContextActionResult.Sink
 end, false, Enum.KeyCode.E, Enum.KeyCode.ButtonR2)
-
-ContextActionService:BindAction("BurgerServis", function(_, girdi)
-	if girdi == Enum.UserInputState.Begin then
-		servisIste()
-	end
-	return Enum.ContextActionResult.Sink
-end, false, Enum.KeyCode.Q, Enum.KeyCode.ButtonL2)
 
 ContextActionService:BindAction("BurgerDukkan", function(_, girdi)
 	if girdi == Enum.UserInputState.Begin then
@@ -2284,14 +2426,13 @@ DurumOlay.OnClientEvent:Connect(function(yeni)
 					s.Satir.BackgroundColor3 = Color3.fromRGB(80, 170, 90)
 					gecis(s.Satir, 0.5, { BackgroundColor3 = Color3.fromRGB(64, 46, 36) })
 				end
-				hussCal(1.15, 0.8)
 			end
 		end
 	end
 	if ilkDurum then
 		ilkDurum = false
 		if yeni.TezgahVar then
-			duyuru("🍔 BURGER İMPARATORU 👑", Color3.fromRGB(255, 215, 80), 2.6, "KATLA'ya bas, burgeri göklere çıkar!")
+			duyuru("🍔 BURGER İMPARATORU 👑", Color3.fromRGB(255, 215, 80), 2.6, "KATLA'ya bas: 3 katlamada burger paketlenir!")
 		else
 			duyuru("Bütün tezgahlar dolu!", Color3.fromRGB(255, 150, 120), 3, "Biri çıkınca sıra sende.")
 		end
@@ -2299,39 +2440,21 @@ DurumOlay.OnClientEvent:Connect(function(yeni)
 	arayuzGuncelle()
 end)
 
-KatlandiOlay.OnClientEvent:Connect(function(kim, tezgahIndex, eklenen, altinSayisi, otomatik)
+KatlandiOlay.OnClientEvent:Connect(function(kim, tezgahIndex, eklenen, paketlendi, kazanc, altin, otomatik)
+	if paketlendi then
+		konfetiPatlat(tezgahIndex, altin and 70 or 14)
+	end
 	if kim == ben then
 		if otomatik then
 			hussCal(rastgele:NextNumber(0.95, 1.05), 0.45)
-			hussYazisi("👨‍🍳 huss", 0.7)
+			ucanYazi("👨‍🍳 huss", HUSS_SARI, 0.6, rastgele:NextInteger(-230, 230), rastgele:NextInteger(-300, -220))
 		end
-		if altinSayisi and altinSayisi > 0 then
-			local deger = ALTIN_DEGER * Ekonomi.LezzetCarpani(durum and durum.Gelistirme) * altinSayisi
-			duyuru("✨ ALTIN KÖFTE! ✨", Color3.fromRGB(255, 215, 60), 1.5, "Burgerine +" .. K(deger) .. " değer kattı!")
-			hussCal(1.3, 1)
+		if paketlendi then
+			ucanYazi("📦 +" .. K(kazanc) .. " 💰", Color3.fromRGB(140, 255, 120), 0.9, rastgele:NextInteger(-60, 60), -250)
+			if altin then
+				duyuru("✨ ALTIN BURGER! ✨", HUSS_SARI, 1.6, "+" .. K(kazanc) .. " 💰")
+			end
 		end
-	else
-		uzakHuss(tezgahIndex)
-	end
-end)
-
-ServisEdildiOlay.OnClientEvent:Connect(function(kim, tezgahIndex, para, kat)
-	local tabak = tezgahTabagi(tezgahIndex)
-	local nokta = tabak and tabak:FindFirstChild("KonfetiNoktasi")
-	local konfeti = nokta and nokta:FindFirstChild("Konfeti")
-	if konfeti then
-		konfeti:Emit(math.clamp(30 + kat, 40, 160))
-	end
-	if kim == ben then
-		local rekor = durum and kat > durum.Rekor
-		duyuru(
-			"🛎️ SERVİS! +" .. K(para) .. " 💰",
-			Color3.fromRGB(140, 255, 120),
-			1.8,
-			rekor and ("🏆 YENİ REKOR: " .. kat .. " kat!") or (kat .. " katlı burger servis edildi!")
-		)
-		hussCal(0.85, 1)
-		hussSerisi(0.85, 1.3)
 	else
 		uzakHuss(tezgahIndex)
 	end
@@ -2344,8 +2467,7 @@ UnvanOlay.OnClientEvent:Connect(function(kim, index)
 	end
 	if kim == ben then
 		duyuru("👑 YENİ UNVAN: " .. u.Ad .. "!", u.Renk, 2.6, "Burger İmparatorluğuna bir adım daha!")
-		hussCal(1.2, 1)
-		hussSerisi(1.2, 1.5)
+		hussSerisi(1, 1.5)
 	end
 	if kim then
 		sohbetMesaji("👑 " .. kim.DisplayName .. " artık " .. u.Ad .. "!")
