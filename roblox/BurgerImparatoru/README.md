@@ -150,15 +150,15 @@ oyuncunun o anki kazancına göre verilir, 2 kat para süreli, geçişler oyunu 
 
 | Tür | Ad | Ne yapar | Önerilen fiyat |
 |---|---|---|---|
-| Geçiş | 💰 2x Cash | Bütün paketler hep 2 kat para | 199 R$ |
-| Geçiş | ⭐ VIP | +%25 para, başında ve sohbette VIP yazısı | 249 R$ |
-| Geçiş | ✨ Golden Luck x2 | Altın burger 2 kat sık | 99 R$ |
-| Geçiş | 🔁 Auto Fold | 🔁 butonuyla KATLA'ya otomatik basar | 149 R$ |
-| Ürün | 💵 Cash Pouch | 10 dakikalık kazanç kadar para (en az 2.000) | 49 R$ |
-| Ürün | 💰 Cash Sack | 45 dakikalık kazanç (en az 10.000) | 149 R$ |
-| Ürün | 🏦 Cash Vault | 3 saatlik kazanç (en az 50.000) | 399 R$ |
-| Ürün | 🔥 15 Min Double Cash | 15 dakika 2 kat para (kayıtla devam eder) | 79 R$ |
-| Ürün | ⏰ Golden Hour for Everyone | Bütün sunucuya hemen Altın Saat | 99 R$ |
+| Geçiş | 💰 2x Cash | Bütün paketler hep 2 kat para | 79 R$ |
+| Geçiş | ⭐ VIP | +%25 para, başında ve sohbette VIP yazısı | 99 R$ |
+| Geçiş | ✨ Golden Luck x2 | Altın burger 2 kat sık | 39 R$ |
+| Geçiş | 🔁 Auto Fold | 🔁 butonuyla KATLA'ya otomatik basar | 49 R$ |
+| Ürün | 💵 Cash Pouch | 10 dakikalık kazanç kadar para (en az 2.000) | 15 R$ |
+| Ürün | 💰 Cash Sack | 45 dakikalık kazanç (en az 10.000) | 39 R$ |
+| Ürün | 🏦 Cash Vault | 3 saatlik kazanç (en az 50.000) | 99 R$ |
+| Ürün | 🔥 15 Min Double Cash | 15 dakika 2 kat para (kayıtla devam eder) | 25 R$ |
+| Ürün | ⏰ Golden Hour for Everyone | Bütün sunucuya hemen Altın Saat | 29 R$ |
 
 Geçiş simgeleri: `magaza/robux/`. Her geçişin ve ürünün Roblox'taki numarası (Id)
 **ReplicatedStorage ▸ Ortak ▸ Config** içinde `Config.Robux` bölümüne yazılır; Id'si 0 olanlar satılmaz,
