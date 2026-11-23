@@ -160,10 +160,13 @@ oyuncunun o anki kazancına göre verilir, 2 kat para süreli, geçişler oyunu 
 | Ürün | 🔥 15 Min Double Cash | 15 dakika 2 kat para (kayıtla devam eder) | 25 R$ |
 | Ürün | ⏰ Golden Hour for Everyone | Bütün sunucuya hemen Altın Saat | 29 R$ |
 
+✅ Hepsi Roblox'ta oluşturuldu ve numaraları oyunda. Fiyatı değiştirmek için: Creator Hub ▸ oyunun ▸
+**Monetization ▸ Passes** (geçişler) ya da **Developer Products** (ürünler) ▸ ürüne tıkla ▸ fiyatı değiştir.
+Oyun gerçek fiyatı Roblox'tan okur, kodu değiştirmeye gerek yok.
+
 Geçiş simgeleri: `magaza/robux/`. Her geçişin ve ürünün Roblox'taki numarası (Id)
 **ReplicatedStorage ▸ Ortak ▸ Config** içinde `Config.Robux` bölümüne yazılır; Id'si 0 olanlar satılmaz,
 hiçbiri yoksa 💎 butonu görünmez. Aynı alım iki kere verilmez (alım numaraları kayda yazılır).
-API anahtarına **game-pass** ve **developer-product** (Write) izinlerini eklersen hepsini ben oluştururum.
 
 ## 🌍 İki dil: Türkçe + İngilizce
 

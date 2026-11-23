@@ -297,18 +297,18 @@ Config.Butonlar = {
 Config.Robux = {
 	-- Geçişler (bir kere alınır, hep geçerli)
 	Gecisler = {
-		{ Anahtar = "IkiKatPara", Id = 0, Fiyat = 79, Ikon = "💰", Ad = "2 Kat Para", Aciklama = "Bütün paketler hep 2 kat para eder" },
-		{ Anahtar = "VIP", Id = 0, Fiyat = 99, Ikon = "⭐", Ad = "VIP", Aciklama = "+%25 para, başında ve sohbette VIP yazısı" },
-		{ Anahtar = "AltinSans", Id = 0, Fiyat = 39, Ikon = "✨", Ad = "Altın Şans x2", Aciklama = "ALTIN BURGER 2 kat daha sık çıkar" },
-		{ Anahtar = "OtoKatla", Id = 0, Fiyat = 49, Ikon = "🔁", Ad = "Otomatik Katlama", Aciklama = "Açınca KATLA'ya senin yerine basar" },
+		{ Anahtar = "IkiKatPara", Id = 2092999785, Fiyat = 79, Ikon = "💰", Ad = "2 Kat Para", Aciklama = "Bütün paketler hep 2 kat para eder" },
+		{ Anahtar = "VIP", Id = 2093191786, Fiyat = 99, Ikon = "⭐", Ad = "VIP", Aciklama = "+%25 para, başında ve sohbette VIP yazısı" },
+		{ Anahtar = "AltinSans", Id = 2092753876, Fiyat = 39, Ikon = "✨", Ad = "Altın Şans x2", Aciklama = "ALTIN BURGER 2 kat daha sık çıkar" },
+		{ Anahtar = "OtoKatla", Id = 2094361721, Fiyat = 49, Ikon = "🔁", Ad = "Otomatik Katlama", Aciklama = "Açınca KATLA'ya senin yerine basar" },
 	},
 	-- Ürünler (istediğin kadar alınır)
 	Urunler = {
-		{ Anahtar = "ParaKucuk", Id = 0, Fiyat = 15, Ikon = "💵", Ad = "Para Kesesi", Aciklama = "10 dakikalık kazancın kadar para", Saniye = 600, EnAz = 2000 },
-		{ Anahtar = "ParaOrta", Id = 0, Fiyat = 39, Ikon = "💰", Ad = "Para Çuvalı", Aciklama = "45 dakikalık kazancın kadar para", Saniye = 2700, EnAz = 10000 },
-		{ Anahtar = "ParaBuyuk", Id = 0, Fiyat = 99, Ikon = "🏦", Ad = "Para Kasası", Aciklama = "3 saatlik kazancın kadar para", Saniye = 10800, EnAz = 50000 },
-		{ Anahtar = "IkiKat15", Id = 0, Fiyat = 25, Ikon = "🔥", Ad = "15 Dakika 2 Kat Para", Aciklama = "15 dakika boyunca bütün paketler 2 kat", Sure = 900 },
-		{ Anahtar = "AltinSaat", Id = 0, Fiyat = 29, Ikon = "⏰", Ad = "Herkese Altın Saat", Aciklama = "Bütün sunucuya hemen Altın Saat başlat" },
+		{ Anahtar = "ParaKucuk", Id = 3735411282, Fiyat = 15, Ikon = "💵", Ad = "Para Kesesi", Aciklama = "10 dakikalık kazancın kadar para", Saniye = 600, EnAz = 2000 },
+		{ Anahtar = "ParaOrta", Id = 3735411312, Fiyat = 39, Ikon = "💰", Ad = "Para Çuvalı", Aciklama = "45 dakikalık kazancın kadar para", Saniye = 2700, EnAz = 10000 },
+		{ Anahtar = "ParaBuyuk", Id = 3735411315, Fiyat = 99, Ikon = "🏦", Ad = "Para Kasası", Aciklama = "3 saatlik kazancın kadar para", Saniye = 10800, EnAz = 50000 },
+		{ Anahtar = "IkiKat15", Id = 3735411317, Fiyat = 25, Ikon = "🔥", Ad = "15 Dakika 2 Kat Para", Aciklama = "15 dakika boyunca bütün paketler 2 kat", Sure = 900 },
+		{ Anahtar = "AltinSaat", Id = 3735411319, Fiyat = 29, Ikon = "⏰", Ad = "Herkese Altın Saat", Aciklama = "Bütün sunucuya hemen Altın Saat başlat" },
 	},
 	VipCarpani = 1.25,
 	OtoKatlaAraligi = 0.3, -- otomatik katlama kaç saniyede bir basar
