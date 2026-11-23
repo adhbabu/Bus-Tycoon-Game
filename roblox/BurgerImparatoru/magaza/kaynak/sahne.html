@@ -1,0 +1,176 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: "Fredoka"; font-weight: 700; src: url("node_modules/@fontsource/fredoka/files/fredoka-latin-ext-700-normal.woff2") format("woff2"); unicode-range: U+0100-024F, U+1E00-1EFF; }
+@font-face { font-family: "Fredoka"; font-weight: 700; src: url("node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2") format("woff2"); }
+html, body { margin: 0; padding: 0; overflow: hidden; }
+body { font-family: "Fredoka", sans-serif; font-weight: 700; }
+.sahne { position: relative; overflow: hidden; display: none; }
+.sahne.aktif { display: block; }
+.isinlar { position: absolute; inset: -50%; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,230,120,0.35) 0deg 10deg, rgba(255,255,255,0) 10deg 20deg); }
+.yazi { position: absolute; color: #fff; text-align: center; -webkit-text-stroke: 0; paint-order: stroke fill;
+  text-shadow: 0 6px 0 #6b2a0e, 0 0 0 #6b2a0e, 4px 4px 0 #6b2a0e, -4px 4px 0 #6b2a0e, 4px -4px 0 #6b2a0e, -4px -4px 0 #6b2a0e, 0 4px 0 #6b2a0e, 0 -4px 0 #6b2a0e, 4px 0 0 #6b2a0e, -4px 0 0 #6b2a0e; }
+.huss { position: absolute; color: #ffd614; font-size: 90px; transform: rotate(-8deg);
+  text-shadow: 5px 5px 0 #3b1d0c, -5px 5px 0 #3b1d0c, 5px -5px 0 #3b1d0c, -5px -5px 0 #3b1d0c, 0 5px 0 #3b1d0c, 0 -5px 0 #3b1d0c, 5px 0 0 #3b1d0c, -5px 0 0 #3b1d0c, 0 12px 0 rgba(0,0,0,0.25); }
+.rozet { position: absolute; background: #fff; color: #c83a24; border: 6px solid #3b1d0c; border-radius: 28px; padding: 10px 26px; font-size: 44px; box-shadow: 0 8px 0 rgba(0,0,0,0.25); }
+svg { position: absolute; overflow: visible; }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="ekmekUst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7c46d"/><stop offset="1" stop-color="#d98a38"/></linearGradient>
+    <linearGradient id="ekmekAlt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaa955"/><stop offset="1" stop-color="#c97a2c"/></linearGradient>
+    <linearGradient id="kofte" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4126"/><stop offset="1" stop-color="#4e2814"/></linearGradient>
+    <linearGradient id="altin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe37a"/><stop offset="1" stop-color="#e8a412"/></linearGradient>
+    <linearGradient id="kutuKapak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f04a3a"/><stop offset="1" stop-color="#c22f24"/></linearGradient>
+    <symbol id="burger" viewBox="0 0 400 360">
+      <!-- alt ekmek -->
+      <rect x="45" y="288" width="310" height="52" rx="26" fill="url(#ekmekAlt)" stroke="#6b3412" stroke-width="7"/>
+      <!-- sos -->
+      <path d="M50 286 Q120 300 200 288 Q280 300 350 286 L350 280 L50 280 Z" fill="#f4a675"/>
+      <!-- marul -->
+      <path d="M30 278 Q55 258 80 278 Q105 258 130 278 Q155 258 180 278 Q205 258 230 278 Q255 258 280 278 Q305 258 330 278 Q355 258 372 278 L360 262 L40 262 Z" fill="#6cc443" stroke="#2f7a20" stroke-width="6" stroke-linejoin="round"/>
+      <!-- peynir -->
+      <path d="M40 256 L360 256 L360 236 L40 236 Z M80 256 L100 286 L120 256 Z M250 256 L272 290 L294 256 Z" fill="#ffc22e" stroke="#c98a10" stroke-width="6" stroke-linejoin="round"/>
+      <!-- köfte 1 -->
+      <rect x="38" y="198" width="324" height="48" rx="22" fill="url(#kofte)" stroke="#2e170a" stroke-width="7"/>
+      <circle cx="110" cy="218" r="4" fill="#9b5a36"/><circle cx="200" cy="224" r="4" fill="#9b5a36"/><circle cx="290" cy="216" r="4" fill="#9b5a36"/>
+      <!-- orta ekmek -->
+      <rect x="45" y="168" width="310" height="36" rx="16" fill="url(#ekmekAlt)" stroke="#6b3412" stroke-width="7"/>
+      <!-- marul 2 -->
+      <path d="M30 168 Q55 148 80 168 Q105 148 130 168 Q155 148 180 168 Q205 148 230 168 Q255 148 280 168 Q305 148 330 168 Q355 148 372 168 L360 152 L40 152 Z" fill="#6cc443" stroke="#2f7a20" stroke-width="6" stroke-linejoin="round"/>
+      <!-- köfte 2 -->
+      <rect x="38" y="112" width="324" height="48" rx="22" fill="url(#kofte)" stroke="#2e170a" stroke-width="7"/>
+      <circle cx="140" cy="132" r="4" fill="#9b5a36"/><circle cx="250" cy="138" r="4" fill="#9b5a36"/>
+      <!-- peynir 2 -->
+      <path d="M44 120 L356 120 L356 104 L44 104 Z M300 120 L318 146 L336 120 Z M70 120 L86 140 L102 120 Z" fill="#ffc22e" stroke="#c98a10" stroke-width="6" stroke-linejoin="round"/>
+      <!-- üst ekmek -->
+      <path d="M40 108 Q40 6 200 6 Q360 6 360 108 Z" fill="url(#ekmekUst)" stroke="#6b3412" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M90 40 Q140 18 200 18" stroke="#ffe0a0" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.7"/>
+      <g fill="#fff6dc" stroke="#d9a050" stroke-width="2">
+        <ellipse cx="120" cy="60" rx="9" ry="5" transform="rotate(-20 120 60)"/><ellipse cx="170" cy="38" rx="9" ry="5" transform="rotate(10 170 38)"/>
+        <ellipse cx="230" cy="40" rx="9" ry="5" transform="rotate(-15 230 40)"/><ellipse cx="285" cy="62" rx="9" ry="5" transform="rotate(20 285 62)"/>
+        <ellipse cx="200" cy="72" rx="9" ry="5"/><ellipse cx="145" cy="85" rx="9" ry="5" transform="rotate(15 145 85)"/>
+        <ellipse cx="260" cy="88" rx="9" ry="5" transform="rotate(-10 260 88)"/><ellipse cx="320" cy="92" rx="8" ry="5" transform="rotate(30 320 92)"/>
+        <ellipse cx="85" cy="92" rx="8" ry="5" transform="rotate(-30 85 92)"/>
+      </g>
+    </symbol>
+    <symbol id="tac" viewBox="0 0 200 130">
+      <path d="M15 120 L5 30 L55 70 L100 8 L145 70 L195 30 L185 120 Z" fill="url(#altin)" stroke="#7a4a05" stroke-width="7" stroke-linejoin="round"/>
+      <rect x="15" y="100" width="170" height="22" rx="6" fill="#f2b51c" stroke="#7a4a05" stroke-width="6"/>
+      <circle cx="100" cy="62" r="11" fill="#ff3d5f" stroke="#7a1022" stroke-width="4"/>
+      <circle cx="50" cy="88" r="8" fill="#3d9dff" stroke="#0e3f7a" stroke-width="4"/><circle cx="150" cy="88" r="8" fill="#3d9dff" stroke="#0e3f7a" stroke-width="4"/>
+      <circle cx="5" cy="30" r="8" fill="#ffe37a" stroke="#7a4a05" stroke-width="4"/><circle cx="100" cy="8" r="9" fill="#ffe37a" stroke="#7a4a05" stroke-width="4"/><circle cx="195" cy="30" r="8" fill="#ffe37a" stroke="#7a4a05" stroke-width="4"/>
+    </symbol>
+    <!-- kapalı karton kutu (yandan 3B) -->
+    <symbol id="kutuKapali" viewBox="0 0 300 260">
+      <path d="M30 120 L150 160 L270 120 L270 220 L150 258 L30 220 Z" fill="#e9d6ac" stroke="#5a3a18" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M150 160 L150 258" stroke="#5a3a18" stroke-width="6"/>
+      <path d="M30 120 L150 80 L270 120 L150 160 Z" fill="url(#kutuKapak)" stroke="#5a1a12" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M30 120 L150 160 L270 120 L270 150 L150 190 L30 150 Z" fill="#e0453a" stroke="#5a1a12" stroke-width="6" stroke-linejoin="round"/>
+      <ellipse cx="150" cy="120" rx="44" ry="20" fill="#fff" stroke="#5a1a12" stroke-width="5"/>
+      <text x="150" y="132" font-size="30" text-anchor="middle">👑</text>
+    </symbol>
+    <!-- blok karakter -->
+    <symbol id="kisi" viewBox="0 0 100 200">
+      <rect x="30" y="140" width="18" height="56" rx="3" fill="var(--pantolon,#2f3e6e)" stroke="#222" stroke-width="3"/>
+      <rect x="52" y="140" width="18" height="56" rx="3" fill="var(--pantolon,#2f3e6e)" stroke="#222" stroke-width="3"/>
+      <rect x="28" y="80" width="44" height="62" rx="4" fill="var(--gomlek,#e64646)" stroke="#222" stroke-width="3"/>
+      <rect x="8" y="82" width="18" height="56" rx="3" fill="var(--ten,#f5c89b)" stroke="#222" stroke-width="3"/>
+      <rect x="74" y="82" width="18" height="56" rx="3" fill="var(--ten,#f5c89b)" stroke="#222" stroke-width="3"/>
+      <rect x="30" y="38" width="40" height="40" rx="10" fill="var(--ten,#f5c89b)" stroke="#222" stroke-width="3"/>
+      <circle cx="42" cy="54" r="3.5" fill="#222"/><circle cx="58" cy="54" r="3.5" fill="#222"/>
+      <path d="M40 64 Q50 72 60 64" stroke="#222" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- 1) İKON 512x512 -->
+<div id="ikon" class="sahne" style="width:512px;height:512px;background:radial-gradient(circle at 50% 45%, #ff9a3c 0%, #f05a28 55%, #b8261b 100%);">
+  <div class="isinlar"></div>
+  <svg style="left:96px;top:58px" width="320" height="208"><use href="#tac"/></svg>
+  <svg style="left:91px;top:160px" width="330" height="248"><use href="#burger"/></svg>
+  <div class="huss" style="left:300px;top:96px;font-size:54px;transform:rotate(14deg)">HUSS!</div>
+  <div class="yazi" style="left:0;right:0;bottom:16px;font-size:52px;line-height:1">BURGER<br><span style="font-size:40px;color:#ffd614">İMPARATORU</span></div>
+</div>
+
+<!-- 2) TANITIM 1: başlık -->
+<div id="tanitim1" class="sahne" style="width:1920px;height:1080px;background:radial-gradient(circle at 30% 45%, #ffb347 0%, #f26a2e 50%, #b5231a 100%);">
+  <div class="isinlar" style="inset:-60% 0 -60% -60%"></div>
+  <svg style="left:200px;top:120px" width="420" height="273"><use href="#tac"/></svg>
+  <svg style="left:120px;top:360px" width="600" height="540"><use href="#burger"/></svg>
+  <div class="yazi" style="left:760px;right:60px;top:150px;font-size:150px;line-height:0.95">BURGER<br><span style="color:#ffd614;font-size:128px">İMPARATORU</span></div>
+  <div class="yazi" style="left:760px;right:60px;top:480px;font-size:58px">Kendi burger dükkanını kur!</div>
+  <div class="huss" style="left:820px;top:640px">HUSS!</div>
+  <div class="huss" style="left:1150px;top:700px;transform:rotate(6deg)">HUSS!</div>
+  <div class="huss" style="left:1480px;top:630px;transform:rotate(-14deg)">HUSS!</div>
+  <div class="rozet" style="left:820px;top:880px">🍔 KATLA • PAKETLE • ZENGİN OL</div>
+</div>
+
+<!-- 3) TANITIM 2: katla -->
+<div id="tanitim2" class="sahne" style="width:1920px;height:1080px;background:linear-gradient(160deg,#4fb3ff 0%,#2f7fe0 60%,#1d4fa8 100%);">
+  <div class="isinlar" style="opacity:0.5"></div>
+  <div class="yazi" style="left:0;right:0;top:50px;font-size:120px">KATLA! <span style="color:#ffd614">3 KATLAMADA PAKET</span></div>
+  <!-- aşama 1: açık kutu + burger -->
+  <svg style="left:110px;top:330px" width="460" height="420" viewBox="0 0 460 420">
+    <path d="M30 300 L230 360 L430 300 L230 240 Z" fill="#e9d6ac" stroke="#5a3a18" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M230 240 L230 60 L430 120 L430 300 Z" fill="#e0453a" stroke="#5a1a12" stroke-width="7" stroke-linejoin="round"/>
+    <use href="#burger" x="105" y="150" width="250" height="225"/>
+  </svg>
+  <div class="yazi" style="left:110px;top:780px;width:460px;font-size:64px">1. KATLA</div>
+  <div class="huss" style="left:560px;top:420px;font-size:110px">➜</div>
+  <!-- aşama 2: kenarlar kalktı -->
+  <svg style="left:730px;top:330px" width="460" height="420" viewBox="0 0 460 420">
+    <path d="M60 230 L230 280 L400 230 L400 320 L230 372 L60 320 Z" fill="#e9d6ac" stroke="#5a3a18" stroke-width="7" stroke-linejoin="round"/>
+    <use href="#burger" x="105" y="110" width="250" height="225"/>
+    <path d="M230 200 L230 40 L400 90 L400 230 Z" fill="#e0453a" stroke="#5a1a12" stroke-width="7" stroke-linejoin="round"/>
+  </svg>
+  <div class="yazi" style="left:730px;top:780px;width:460px;font-size:64px">2. KATLA</div>
+  <div class="huss" style="left:1180px;top:420px;font-size:110px">➜</div>
+  <!-- aşama 3: kapalı paket -->
+  <svg style="left:1380px;top:360px" width="420" height="364"><use href="#kutuKapali"/></svg>
+  <div class="yazi" style="left:1350px;top:780px;width:480px;font-size:64px;color:#ffd614">PAKET! +💰</div>
+  <div class="huss" style="left:240px;top:200px;font-size:80px">HUSS!</div>
+  <div class="huss" style="left:860px;top:200px;font-size:80px;transform:rotate(7deg)">HUSS!</div>
+  <div class="huss" style="left:1460px;top:200px;font-size:80px;transform:rotate(-10deg)">HUSS!</div>
+  <div class="rozet" style="left:560px;top:920px;font-size:48px">Her katlamada “huss huss huss” sesi! 🔊</div>
+</div>
+
+<!-- 4) TANITIM 3: dükkan -->
+<div id="tanitim3" class="sahne" style="width:1920px;height:1080px;background:linear-gradient(180deg,#8fd3ff 0%,#c9ecff 55%,#7cc95a 55%,#5aa83e 100%);">
+  <!-- güneş ve bulut -->
+  <div style="position:absolute;left:1640px;top:60px;width:180px;height:180px;border-radius:50%;background:#ffe066;box-shadow:0 0 80px #ffe066"></div>
+  <div style="position:absolute;left:120px;top:90px;width:260px;height:80px;border-radius:40px;background:#fff;opacity:0.9"></div>
+  <!-- dükkan binası -->
+  <svg style="left:420px;top:170px" width="1080" height="540" viewBox="0 0 1080 540">
+    <rect x="40" y="170" width="1000" height="350" fill="#7fa8ff" stroke="#1d3a7a" stroke-width="10"/>
+    <rect x="20" y="140" width="1040" height="50" fill="#3d4a66" stroke="#1d3a7a" stroke-width="8"/>
+    <rect x="300" y="40" width="480" height="110" rx="14" fill="#2449b8" stroke="#0e1f5a" stroke-width="8"/>
+    <text x="540" y="114" font-size="56" text-anchor="middle" fill="#fff" font-family="Fredoka">🔥 HUSS BURGER</text>
+    <rect x="90" y="230" width="300" height="190" fill="#bfe6ff" stroke="#1d3a7a" stroke-width="8"/>
+    <rect x="690" y="230" width="300" height="190" fill="#bfe6ff" stroke="#1d3a7a" stroke-width="8"/>
+    <rect x="470" y="300" width="140" height="220" fill="#2449b8" stroke="#1d3a7a" stroke-width="8"/>
+    <g fill="#ff5a5a"><circle cx="80" cy="200" r="9"/><circle cx="220" cy="200" r="9" fill="#ffd23c"/><circle cx="360" cy="200" r="9" fill="#5ad0ff"/><circle cx="500" cy="200" r="9" fill="#78ff78"/><circle cx="640" cy="200" r="9"/><circle cx="780" cy="200" r="9" fill="#ffd23c"/><circle cx="920" cy="200" r="9" fill="#5ad0ff"/><circle cx="1010" cy="200" r="9" fill="#78ff78"/></g>
+    <use href="#burger" x="440" y="-150" width="200" height="180"/>
+  </svg>
+  <!-- tezgah ve kutu -->
+  <svg style="left:560px;top:600px" width="300" height="140" viewBox="0 0 300 140"><rect x="0" y="40" width="300" height="100" fill="#9b6236" stroke="#4a2a10" stroke-width="7"/><rect x="-8" y="28" width="316" height="22" fill="#fff" stroke="#4a2a10" stroke-width="6"/></svg>
+  <svg style="left:640px;top:520px" width="140" height="122"><use href="#kutuKapali"/></svg>
+  <!-- aşçı -->
+  <svg style="left:420px;top:540px;--gomlek:#ffffff;--pantolon:#3a3a44" width="120" height="240"><use href="#kisi"/></svg>
+  <div style="position:absolute;left:452px;top:540px;width:56px;height:40px;background:#fff;border:4px solid #222;border-radius:14px 14px 4px 4px"></div>
+  <!-- müşteri kuyruğu -->
+  <svg style="left:1100px;top:640px;--gomlek:#ffd23c;--ten:#c98b5a" width="120" height="240"><use href="#kisi"/></svg>
+  <svg style="left:1240px;top:650px;--gomlek:#5ad07a;--pantolon:#553a28" width="120" height="240"><use href="#kisi"/></svg>
+  <svg style="left:1380px;top:660px;--gomlek:#b06cff;--ten:#8a5a3a" width="120" height="240"><use href="#kisi"/></svg>
+  <div class="rozet" style="left:60px;top:40px;font-size:56px">👷 Çalışan al</div>
+  <div class="rozet" style="left:60px;top:150px;font-size:56px">🤖 Makineler</div>
+  <div class="rozet" style="left:1400px;top:300px;font-size:56px;color:#b8860b;white-space:nowrap">⏰ Altın Saat x2</div>
+  <div class="rozet" style="left:1500px;top:440px;font-size:56px;color:#2a7a2a">📜 Görevler</div>
+  <div class="yazi" style="left:0;right:0;top:930px;font-size:74px;white-space:nowrap">DÜKKANINI BÜYÜT! <span style="color:#ffd614">MÜŞTERİLER AKIN ETSİN!</span></div>
+</div>
+<script>
+const id = location.hash.slice(1) || "ikon";
+document.getElementById(id).classList.add("aktif");
+</script>
+</body></html>

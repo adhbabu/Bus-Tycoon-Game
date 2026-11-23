@@ -6,6 +6,8 @@ kutu kapanır ve paket banttan satış penceresine gider; **müşteriler** sıra
 yer, kimi alıp gider. Parayla dükkanını büyüt: **çalışanlar** (aşçı, kasiyer, teknisyen, temizlikçi),
 paketleme makineleri, bantlar, duvarlar, neon tabela, masalar, çatıda dev burger. Bir süre sonra işi aşçın ve
 makinelerin yapar. Sonra **Yeni Şube** aç, baştan başla, kalıcı çarpanla daha hızlı büyü.
+Meydanda **Hüsnü Usta**'dan görev al, **Huss Yarışması**'nda rekor kır, **Hediyeci Hasan**'dan bedava hediye kap,
+**Altın Saat**'te 2 kat kazan. Kasabada gezen, konuşan ve huss dansı yapan insanlar var.
 
 ## Hızlı başlangıç
 
@@ -49,6 +51,7 @@ ekrandaki üç sarı HUSS! yazısı da sesteki üç "huss"a denk gelir. Makinele
 |---|---|---|---|
 | Kutuyu katla | **E** ya da KATLA | KATLA butonu | R2 |
 | Dükkan menüsü | **B** ya da DÜKKAN | DÜKKAN butonu | Y |
+| NPC ile konuş | **F** | NPC'nin yanındaki düğmeye dokun | X |
 | Dükkanıma dön | 🏠 butonu | 🏠 butonu | |
 | Logo/renk/ad değiştir | 🎨 butonu | 🎨 butonu | |
 | Sesi kapat/aç | 🔊 butonu | 🔊 butonu | |
@@ -74,6 +77,19 @@ Burger Sultanı (30.000) ▸ **BURGER İMPARATORU** (150.000)
 
 **Tahmini süreler** (saniyede 4 tıklayan biri için): ilk makine ~2 dk, 6 makine ~45 dk,
 çatıda dev burger ~1,5 saat, ilk yeni şube ~2 saat.
+
+**Meydandaki NPC'ler** (yanlarına gidip **F**'ye bas):
+
+| NPC | Ne yapar |
+|---|---|
+| 🧔 Hüsnü Usta | Görev verir: "KATLA'ya 30 kez bas", "Elle 10 paket yap", "Altın burger bul"... Bitirince ödül. Görev sol tarafta da görünür, oradan da ödülünü alabilirsin |
+| 😎 Hakem Hülya | **Huss Yarışması**: 3-2-1, sonra 15 saniye boyunca KATLA'ya basabildiğin kadar bas. Her tık para! Rekorun kaydedilir, kasaba rekorunu kırarsan herkes duyar |
+| 🥳 Hediyeci Hasan | 10 dakikada bir **bedava hediye**: para ya da 60 saniye 2 kat para |
+
+**Altın Saat ⏰:** Arada bir bütün kasabada 45 saniye boyunca paketler 2 kat para eder.
+
+**Kasaba halkı:** Meydanda ve kaldırımlarda gezen, durup konuşan ("Altın burger gören var mı? ✨") insanlar ve
+heykelin önünde huss dansı yapan ekip.
 
 **Müşteriler:** Kaldırımdan gelir, satış penceresinde sıraya girer, paketini alıp kucağında taşır. Masaların
 varsa bazıları oturup yer. Dükkanın ünü (duvar, çatı, kasiyer...) ve makinelerin arttıkça daha sık gelirler.
@@ -102,6 +118,28 @@ Gün ve gece döngüsü var (10 dakikada bir gün): gece neon tabelalar, lambala
    - Sol menüde **Audience ▸ Maturity & Compliance** anketini doldur (Roblox herkese açmadan önce ister).
    - Oyun sayfasında **Privacy / Access** kısmını **Public** yap.
 6. Oyunun linkini (roblox.com/games/...) arkadaşlarına at. 🎉
+
+## 🖼️ Roblox sayfası: logo, açıklama, tanıtım resimleri
+
+Hepsi `magaza/` klasöründe (indirdiğin zip'te de var):
+
+1. https://create.roblox.com/dashboard/creations ▸ oyununa tıkla ▸ **Configure** (ya da **Basic Info**).
+2. **Name:** `🍔 Burger İmparatoru 👑`
+3. **Description:** `magaza/aciklama.md` içindeki Türkçe açıklamayı kopyala yapıştır.
+4. **Icon:** `magaza/ikon-512.png` yükle.
+5. **Thumbnails:** `magaza/tanitim-1.png`, `tanitim-2.png`, `tanitim-3.png` yükle.
+6. **Genre:** `Simulation`. **Save Changes**.
+
+## 👶 Yaş sınırı: herkes oynayabilsin
+
+Roblox'ta yaş sınırını sen elle koymazsın; **olgunluk anketi** (Maturity & Compliance) belirler. Anket
+doldurulmamış oyunları Roblox küçük yaştaki oyunculara göstermez, yaş sınırı gibi görünen şey budur.
+
+1. https://create.roblox.com/dashboard/creations ▸ oyununa tıkla ▸ sol menüde **Audience ▸ Maturity & Compliance**.
+2. **Start Questionnaire**. Oyunumuzda şiddet, kan, korku, kötü söz, romantik içerik, alkol ve kumar (Robux ile
+   rastgele ödül) **yok**; bu sorulara dürüstçe **No** de.
+3. Sonuç **Minimal** çıkar = **her yaş** oynayabilir. **Submit**.
+4. Sonra oyunu **Public** yap (sol menü ▸ Access / Privacy).
 
 ## 🔄 Yayınladıktan sonra güncelleme
 
@@ -146,6 +184,9 @@ src/server/HaritaUretici.luau        ← haritayı kodla kurar
 src/client/BurgerEkran.client.luau   ← butonlar, menüler, HUSS! yazıları, ses
 src/client/PaketGorsel.luau          ← kutunun katlanması, bantta giden paketler, makine presi
 src/client/Musteriler.luau           ← müşteriler (gelir, sıra, paket, masa, gider) ve çalışanların hareketi
+src/client/KasabaHalki.luau          ← meydanda gezen/konuşan/dans eden insanlar, NPC'lerin el sallaması
+magaza/                              ← Roblox sayfası: ikon, tanıtım resimleri, açıklama metni
+magaza/kaynak/                       ← resimlerin çizim dosyası (HTML/SVG, Playwright ile PNG'ye çevrilir)
 araclar/harita-uret.luau             ← haritayı harita/Harita.rbxm dosyasına yazar
 test/sim.luau                        ← Studio açmadan hızlı test
 ```
@@ -169,12 +210,13 @@ rojo build -o BurgerImparatoru.rbxlx
 İndirme zip'ini yenile:
 
 ```bash
-rm -f BurgerImparatoru-indir.zip && zip -j BurgerImparatoru-indir.zip BurgerImparatoru.rbxlx sesler/huss.mp3
+rm -f BurgerImparatoru-indir.zip && zip -j BurgerImparatoru-indir.zip BurgerImparatoru.rbxlx sesler/huss.mp3 magaza/*.png magaza/aciklama.md
 ```
 
 Studio açmadan test: sunucu ve ekran kodunu sahte bir Roblox ortamında çalıştırır; dükkan kurma ekranı,
-katlama, hile koruması, bütün geliştirmeler ve çalışanlar, aşçı ve makineler, müşteriler, arazi, yeni şube,
-isim filtresi, ikinci oyuncu, kayıt ve tekrar giriş denenir.
+katlama, hile koruması, NPC'ler (görev, yarışma, hediye), Altın Saat, kasaba halkı, bütün geliştirmeler ve
+çalışanlar, aşçı ve makineler, müşteriler, arazi, yeni şube, isim filtresi, ikinci oyuncu, kayıt ve tekrar giriş
+denenir.
 
 ```bash
 lune run test/sim.luau BurgerImparatoru.rbxlx ok        # kayıt açık

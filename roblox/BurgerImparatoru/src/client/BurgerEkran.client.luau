@@ -19,6 +19,7 @@ local Ekonomi = require(Ortak:WaitForChild("Ekonomi"))
 local Gorsel = require(Ortak:WaitForChild("Gorsel"))
 local PaketGorsel = require(script.Parent:WaitForChild("PaketGorsel"))
 local Musteriler = require(script.Parent:WaitForChild("Musteriler"))
+local KasabaHalki = require(script.Parent:WaitForChild("KasabaHalki"))
 local Uzaklar = ReplicatedStorage:WaitForChild("Uzaklar")
 local KatlaOlay = Uzaklar:WaitForChild("Katla")
 local SatinAlOlay = Uzaklar:WaitForChild("SatinAl")
@@ -31,6 +32,9 @@ local KatlandiOlay = Uzaklar:WaitForChild("Katlandi")
 local UretimOlay = Uzaklar:WaitForChild("Uretim")
 local UnvanOlay = Uzaklar:WaitForChild("YeniUnvan")
 local DuyuruOlay = Uzaklar:WaitForChild("Duyuru")
+local GorevAlOlay = Uzaklar:WaitForChild("GorevAl")
+local NPCOlay = Uzaklar:WaitForChild("NPC")
+local YarismaOlay = Uzaklar:WaitForChild("Yarisma")
 
 local FONT = Font.fromEnum(Enum.Font.FredokaOne)
 local rastgele = Random.new()
@@ -209,7 +213,7 @@ local ust = yap("Frame", {
 	Name = "Ust",
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 6),
-	Size = UDim2.fromOffset(480, 92),
+	Size = UDim2.fromOffset(480, 118),
 	BackgroundTransparency = 1,
 	Parent = ekran,
 })
@@ -1004,12 +1008,194 @@ stilKapat.Activated:Connect(function()
 end)
 
 ----------------------------------------------------------------------
+-- Görev takipçisi (sol), Hüsnü Usta penceresi, yarışma ve etkinlik göstergeleri
+----------------------------------------------------------------------
+local gorevKutusu = yap("Frame", {
+	Name = "Gorev",
+	AnchorPoint = Vector2.new(0, 0.5),
+	Position = UDim2.new(0, 10, 0.42, 0),
+	Size = UDim2.fromOffset(230, 92),
+	BackgroundColor3 = PANEL,
+	BackgroundTransparency = 0.12,
+	Visible = false,
+	Parent = ekran,
+}, { kose(UDim.new(0, 14)), cizgi(Color3.fromRGB(255, 200, 80), 2) })
+olcekEkle(gorevKutusu)
+local gorevBaslik = yazi({ Text = "📜 Görev", Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 18), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 215, 90), Parent = gorevKutusu })
+local gorevYazi = yazi({ Text = "", Position = UDim2.fromOffset(10, 26), Size = UDim2.new(1, -20, 0, 18), TextXAlignment = Enum.TextXAlignment.Left, Parent = gorevKutusu })
+local gorevCubuk = yap("Frame", { Position = UDim2.fromOffset(10, 50), Size = UDim2.new(1, -20, 0, 14), BackgroundColor3 = Color3.fromRGB(70, 55, 45), Parent = gorevKutusu }, { kose(UDim.new(1, 0)) })
+local gorevDolgu = yap("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = YESIL, Parent = gorevCubuk }, { kose(UDim.new(1, 0)) })
+local gorevSayi = yazi({ Text = "", Size = UDim2.fromScale(1, 1), ZIndex = 2, TextScaled = false, TextSize = 12, Parent = gorevCubuk })
+local gorevOdulYazi = yazi({ Text = "", Position = UDim2.fromOffset(10, 68), Size = UDim2.new(1, -20, 0, 16), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 220, 90), Parent = gorevKutusu })
+local gorevAlButonu = buton({
+	AnchorPoint = Vector2.new(1, 1),
+	Position = UDim2.new(1, -8, 1, -6),
+	Size = UDim2.fromOffset(104, 26),
+	BackgroundColor3 = YESIL,
+	Text = "🎁 ÖDÜLÜ AL",
+	Visible = false,
+	Parent = gorevKutusu,
+}, { kose(UDim.new(0, 8)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }) })
+gorevAlButonu.Activated:Connect(function()
+	GorevAlOlay:FireServer()
+end)
+
+-- Hüsnü Usta ile konuşma penceresi
+local gorevPenceresi = yap("Frame", {
+	Name = "HusnuUsta",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.55),
+	Size = UDim2.fromOffset(440, 210),
+	BackgroundColor3 = PANEL,
+	BackgroundTransparency = 0.03,
+	Visible = false,
+	ZIndex = 15,
+	Parent = ekran,
+}, { kose(UDim.new(0, 18)), cizgi(Color3.fromRGB(255, 200, 80), 3) })
+olcekEkle(gorevPenceresi)
+yazi({ Text = Config.NPCler.Gorev.Yuz, Position = UDim2.fromOffset(14, 14), Size = UDim2.fromOffset(70, 70), ZIndex = 16, Parent = gorevPenceresi })
+yazi({ Text = Config.NPCler.Gorev.Ad, Position = UDim2.fromOffset(92, 14), Size = UDim2.new(1, -110, 0, 26), TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 215, 90), ZIndex = 16, Parent = gorevPenceresi })
+local husnuKonusma = yazi({
+	Text = "",
+	Position = UDim2.fromOffset(92, 44),
+	Size = UDim2.new(1, -108, 0, 96),
+	TextScaled = false,
+	TextSize = 17,
+	TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	ZIndex = 16,
+	Parent = gorevPenceresi,
+})
+local husnuAl = buton({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -140, 1, -14), Size = UDim2.fromOffset(150, 42), BackgroundColor3 = YESIL, Text = "🎁 ÖDÜLÜ AL", ZIndex = 16, Parent = gorevPenceresi }, { kose(UDim.new(0, 12)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 7), PaddingBottom = UDim.new(0, 7) }) })
+local husnuTamam = buton({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -14), Size = UDim2.fromOffset(116, 42), BackgroundColor3 = Color3.fromRGB(90, 120, 200), Text = "Tamam", ZIndex = 16, Parent = gorevPenceresi }, { kose(UDim.new(0, 12)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 7), PaddingBottom = UDim.new(0, 7) }) })
+husnuAl.Activated:Connect(function()
+	GorevAlOlay:FireServer()
+	gorevPenceresi.Visible = false
+end)
+husnuTamam.Activated:Connect(function()
+	gorevPenceresi.Visible = false
+end)
+
+local function gorevGuncelle()
+	if not durum or not durum.Gorev then
+		return
+	end
+	local g = durum.Gorev
+	local bitti = g.Ilerleme >= g.Hedef
+	gorevKutusu.Visible = true
+	gorevBaslik.Text = "📜 Görev " .. g.N .. (bitti and "  ✅" or "")
+	gorevYazi.Text = Ekonomi.GorevYazisi(g.Tip, g.Hedef)
+	gorevDolgu.Size = UDim2.fromScale(math.clamp(g.Ilerleme / g.Hedef, 0, 1), 1)
+	gorevSayi.Text = K(g.Ilerleme) .. " / " .. K(g.Hedef)
+	gorevOdulYazi.Text = bitti and "" or ("Ödül: 💰 " .. K(g.Odul))
+	gorevAlButonu.Visible = bitti
+	husnuAl.Visible = bitti
+	if bitti then
+		husnuKonusma.Text = "Aferin evlat! Görevini bitirdin. 👏\nİşte ödülün: 💰 " .. K(g.Odul)
+	else
+		husnuKonusma.Text = "Merhaba evlat! Sana bir görevim var:\n" .. Ekonomi.GorevYazisi(g.Tip, g.Hedef)
+			.. " (" .. K(g.Ilerleme) .. "/" .. K(g.Hedef) .. ")\nBitirirsen sana 💰 " .. K(g.Odul) .. " veririm!"
+	end
+end
+
+-- Yarışma göstergesi
+local yarismaKutusu = yap("Frame", {
+	Name = "Yarisma",
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 132),
+	Size = UDim2.fromOffset(360, 84),
+	BackgroundColor3 = Color3.fromRGB(30, 30, 36),
+	BackgroundTransparency = 0.1,
+	Visible = false,
+	Parent = ekran,
+}, { kose(UDim.new(0, 16)), cizgi(SARI, 3) })
+olcekEkle(yarismaKutusu)
+local yarismaUst = yazi({ Text = "", Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 40), TextColor3 = SARI, Parent = yarismaKutusu })
+yaziCizgisi(KOYU, 2).Parent = yarismaUst
+local yarismaAlt = yazi({ Text = "", Position = UDim2.fromOffset(10, 50), Size = UDim2.new(1, -20, 0, 26), Parent = yarismaKutusu })
+local yarisma = nil -- { Baslangic, Bitis, Sayac } (bu ekranın saatine göre)
+
+-- Etkinlik göstergeleri (unvan çubuğunun altında)
+local etkinlikSirasi = yap("Frame", {
+	Position = UDim2.fromOffset(16, 92),
+	Size = UDim2.fromOffset(448, 24),
+	BackgroundTransparency = 1,
+	Parent = ust,
+}, { yap("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }) })
+local function etkinlikHapi(renk)
+	local l = yazi({
+		Size = UDim2.fromOffset(0, 24),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundTransparency = 0.05,
+		BackgroundColor3 = renk,
+		TextScaled = false,
+		TextSize = 15,
+		Visible = false,
+		Parent = etkinlikSirasi,
+	}, nil)
+	kose(UDim.new(0, 10)).Parent = l
+	yap("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }).Parent = l
+	yaziCizgisi(KOYU, 1.5).Parent = l
+	return l
+end
+local ikiKatHap = etkinlikHapi(Color3.fromRGB(230, 90, 40))
+local altinSaatHap = etkinlikHapi(Color3.fromRGB(220, 170, 20))
+local hediyeHap = etkinlikHapi(Color3.fromRGB(200, 50, 80))
+local hediyeHazirZamani = 0
+
+local function sureYazi(sn)
+	sn = math.max(0, math.floor(sn))
+	return string.format("%d:%02d", sn // 60, sn % 60)
+end
+
+task.spawn(function()
+	while true do
+		task.wait(0.2)
+		local simdi = workspace:GetServerTimeNow()
+		local ikiKat = (ben:GetAttribute("IkiKatBitis") or 0) - simdi
+		ikiKatHap.Visible = ikiKat > 0
+		if ikiKat > 0 then
+			ikiKatHap.Text = "🔥 2 KAT PARA " .. sureYazi(ikiKat)
+		end
+		local altinSaat = (ReplicatedStorage:GetAttribute("AltinSaatBitis") or 0) - simdi
+		altinSaatHap.Visible = altinSaat > 0
+		if altinSaat > 0 then
+			altinSaatHap.Text = "⏰ ALTIN SAAT x2 " .. sureYazi(altinSaat)
+		end
+		if durum then
+			local kalan = hediyeHazirZamani - os.clock()
+			hediyeHap.Visible = true
+			hediyeHap.Text = kalan > 0 and ("🎁 Hediye " .. sureYazi(kalan)) or "🎁 Hediye hazır! Meydana gel"
+		end
+		-- yarışma
+		if yarisma then
+			local t = os.clock()
+			yarismaKutusu.Visible = true
+			if t < yarisma.Baslangic then
+				yarismaUst.Text = "⏱️ " .. math.ceil(yarisma.Baslangic - t) .. "..."
+				yarismaAlt.Text = "Hazır ol! KATLA'ya hızlı hızlı bas!"
+			elseif t < yarisma.Bitis then
+				yarismaUst.Text = string.format("⏱️ %.1f  •  %d TIK", yarisma.Bitis - t, yarisma.Sayac)
+				yarismaAlt.Text = "HUSS! HUSS! HUSS!"
+			else
+				yarismaUst.Text = string.format("⏱️ BİTTİ  •  %d TIK", yarisma.Sayac)
+				yarismaAlt.Text = "Hakem sayıyor..."
+			end
+		elseif yarismaKutusu.Visible and not yarismaKutusu:GetAttribute("Sonuc") then
+			yarismaKutusu.Visible = false
+		end
+	end
+end)
+
+----------------------------------------------------------------------
 -- Ekranı güncelle
 ----------------------------------------------------------------------
 local function arayuzGuncelle()
 	if not durum then
 		return
 	end
+	gorevGuncelle()
 	paraYazi.Text = K(durum.Para)
 	paketYazi.Text = K(durum.ToplamPaket)
 	local gelir = Ekonomi.MakineGeliri(durum.Gelistirme, durum.Sube)
@@ -1072,6 +1258,9 @@ local function katla()
 		durum.ToplamPaket += 1
 	end
 	KatlaOlay:FireServer()
+	if yarisma and simdi >= yarisma.Baslangic and simdi < yarisma.Bitis then
+		yarisma.Sayac += 1
+	end
 
 	local hiz = 1 + math.min(kombo, 40) * 0.008
 	hussCal(hiz)
@@ -1137,6 +1326,7 @@ local ilkDurum = true
 DurumOlay.OnClientEvent:Connect(function(yeni)
 	local eski = durum
 	durum = yeni
+	hediyeHazirZamani = os.clock() + (yeni.HediyeKalan or 0)
 	if eski then
 		for _, g in ipairs(Config.Gelistirmeler) do
 			local once = Ekonomi.Seviye(eski.Gelistirme, g.Anahtar)
@@ -1226,6 +1416,38 @@ UnvanOlay.OnClientEvent:Connect(function(kim, index)
 	end
 end)
 
+NPCOlay.OnClientEvent:Connect(function(ne)
+	if ne == "Gorev" then
+		gorevGuncelle()
+		gorevPenceresi.Visible = true
+	end
+end)
+
+YarismaOlay.OnClientEvent:Connect(function(bilgi)
+	if type(bilgi) ~= "table" then
+		return
+	end
+	if bilgi.Durum == "basladi" then
+		local simdi = os.clock()
+		yarisma = { Baslangic = simdi + (bilgi.GeriSayim or 3), Bitis = simdi + (bilgi.GeriSayim or 3) + (bilgi.Sure or 15), Sayac = 0 }
+		yarismaKutusu:SetAttribute("Sonuc", false)
+		duyuru("⏱️ HUSS YARIŞMASI!", SARI, 2, "Rekorun: " .. tostring(bilgi.Rekor or 0) .. " tık")
+	elseif bilgi.Durum == "bitti" then
+		yarisma = nil
+		yarismaKutusu.Visible = true
+		yarismaKutusu:SetAttribute("Sonuc", true)
+		yarismaUst.Text = string.format("🏁 %d TIK  •  +%s 💰", bilgi.Sayac or 0, K(bilgi.Odul or 0))
+		yarismaAlt.Text = bilgi.YeniRekor and "🏆 YENİ REKOR!" or ("Rekorun: " .. tostring(bilgi.Rekor or 0) .. " tık")
+		hussSerisi(1.1, 1.3)
+		task.delay(3.5, function()
+			if not yarisma then
+				yarismaKutusu:SetAttribute("Sonuc", false)
+				yarismaKutusu.Visible = false
+			end
+		end)
+	end
+end)
+
 DuyuruOlay.OnClientEvent:Connect(function(metin)
 	if type(metin) ~= "string" then
 		return
@@ -1239,6 +1461,9 @@ end)
 ----------------------------------------------------------------------
 task.spawn(function()
 	Musteriler.Baslat(Config, Gorsel)
+end)
+task.spawn(function()
+	KasabaHalki.Baslat(Config, Gorsel)
 end)
 PaketGorsel.SatisaGeldi = Musteriler.PaketGeldi
 task.spawn(function()

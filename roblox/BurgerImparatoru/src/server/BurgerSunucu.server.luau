@@ -39,6 +39,9 @@ local KatlandiOlay = olay("Katlandi")
 local UretimOlay = olay("Uretim") -- sunucu -> herkes: { {arsa, makine, altin}, ... }
 local UnvanOlay = olay("YeniUnvan") -- sunucu -> herkes (kim, unvan sırası)
 local DuyuruOlay = olay("Duyuru") -- sunucu -> herkes ya da bir oyuncu (yazı)
+local GorevAlOlay = olay("GorevAl") -- oyuncu -> sunucu (görev ödülünü al)
+local NPCOlay = olay("NPC") -- sunucu -> oyuncu (NPC ile konuştu: hangi pencere açılsın)
+local YarismaOlay = olay("Yarisma") -- sunucu -> oyuncu (yarışma başladı / bitti)
 uzaklar.Parent = ReplicatedStorage
 
 local rastgele = Random.new()
@@ -183,6 +186,10 @@ local function veriHazirla(ham)
 		Sube = tamSayi(ham.Sube, 0, 1000, 0),
 		Gelistirme = gelistirme,
 		Stil = stil,
+		GorevN = tamSayi(ham.GorevN, 1, 1000000, 1),
+		GorevIlerleme = math.max(0, math.floor(sayi(ham.GorevIlerleme, 0))),
+		YarismaRekor = tamSayi(ham.YarismaRekor, 0, 100000, 0),
+		SonHediye = math.floor(sayi(ham.SonHediye, 0)),
 	}
 end
 
@@ -198,6 +205,10 @@ local function kaydet(oyuncu)
 		Sube = v.Sube,
 		Gelistirme = v.Gelistirme,
 		Stil = v.Stil,
+		GorevN = v.GorevN,
+		GorevIlerleme = v.GorevIlerleme,
+		YarismaRekor = v.YarismaRekor,
+		SonHediye = v.SonHediye,
 	}
 	for deneme = 1, 3 do
 		local ok, hata = pcall(function()
@@ -235,12 +246,43 @@ local function yeniBurger(v)
 	v.Burger = { Asama = 0, Altin = rastgele:NextNumber() < Ekonomi.AltinSansi(v.Gelistirme) }
 end
 
+-- Geçici çarpanlar: Altın Saat (herkes) ve hediyeden gelen 2 kat para (tek oyuncu)
+local altinSaatBitis = 0
+local function ekstraCarpan(v)
+	local c = 1
+	if os.clock() < altinSaatBitis then
+		c *= Config.AltinSaat.Carpan
+	end
+	if v.IkiKatBitis and os.clock() < v.IkiKatBitis then
+		c *= 2
+	end
+	return c
+end
+
+local function gorevOdulu(v)
+	local gelir = Ekonomi.MakineGeliri(v.Gelistirme, v.Sube)
+	local paket = Ekonomi.PaketDegeri(false, v.Gelistirme, v.Sube)
+	return math.max(Config.Gorev.EnAzOdul, math.floor(gelir * Config.Gorev.OdulSaniye), paket * 12)
+end
+
+local function gorevIlerle(v, tip, miktar)
+	local gTip, hedef = Ekonomi.Gorev(v.GorevN)
+	if gTip == tip and v.GorevIlerleme < hedef then
+		v.GorevIlerleme = math.min(hedef, v.GorevIlerleme + miktar)
+	end
+end
+
 local function durumGonder(oyuncu)
 	local v = veriler[oyuncu]
 	if not v or not v.Hazir then
 		return
 	end
+	local gTip, gHedef = Ekonomi.Gorev(v.GorevN)
 	DurumOlay:FireClient(oyuncu, {
+		Gorev = { N = v.GorevN, Tip = gTip, Hedef = gHedef, Ilerleme = v.GorevIlerleme, Odul = gorevOdulu(v) },
+		YarismaRekor = v.YarismaRekor,
+		HediyeKalan = math.max(0, v.SonHediye + Config.Hediye.Bekleme - os.time()),
+		Ekstra = ekstraCarpan(v),
 		Para = v.Para,
 		ToplamPaket = v.ToplamPaket,
 		Sube = v.Sube,
@@ -354,11 +396,21 @@ local function katla(oyuncu, adet, otomatik)
 	end
 	local paketlendi = b.Asama >= Config.KatlamaSayisi
 	local kazanc = 0
+	if not otomatik then
+		gorevIlerle(v, "Katla", 1)
+	end
 	if paketlendi then
 		local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
-		kazanc = Ekonomi.PaketDegeri(b.Altin, v.Gelistirme, v.Sube)
+		kazanc = Ekonomi.PaketDegeri(b.Altin, v.Gelistirme, v.Sube, ekstraCarpan(v))
 		v.Para += kazanc
 		v.ToplamPaket += 1
+		if not otomatik then
+			gorevIlerle(v, "Paket", 1)
+		end
+		if b.Altin then
+			gorevIlerle(v, "Altin", 1)
+		end
+		gorevIlerle(v, "Para", kazanc)
 		yeniBurger(v)
 		skorGuncelle(oyuncu)
 		unvanKontrol(oyuncu, eskiUnvan)
@@ -415,6 +467,10 @@ local function oyuncuGeldi(oyuncu)
 		SonJeton = os.clock(),
 		MakineBirikim = {},
 		AsciBirikim = 0,
+		GorevN = 1,
+		GorevIlerleme = 0,
+		YarismaRekor = 0,
+		SonHediye = 0,
 		Son = {},
 	}
 	veriler[oyuncu] = v
@@ -453,6 +509,10 @@ local function oyuncuGeldi(oyuncu)
 	v.Sube = hazir.Sube
 	v.Gelistirme = hazir.Gelistirme
 	v.Stil = hazir.Stil
+	v.GorevN = hazir.GorevN
+	v.GorevIlerleme = hazir.GorevIlerleme
+	v.YarismaRekor = hazir.YarismaRekor
+	v.SonHediye = hazir.SonHediye
 	v.KayitAcik = basarili
 	yeniBurger(v)
 	v.Hazir = true
@@ -536,6 +596,10 @@ KatlaOlay.OnServerEvent:Connect(function(oyuncu)
 	if not jetonHarca(v) then
 		durumGonder(oyuncu) -- ekran fazladan saydıysa düzelsin
 		return
+	end
+	local y = v.Yarisma
+	if y and os.clock() >= y.Baslangic and os.clock() < y.Bitis then
+		y.Sayac += 1
 	end
 	katla(oyuncu, Ekonomi.TikBasinaKatlama(v.Gelistirme))
 end)
@@ -689,14 +753,20 @@ task.spawn(function()
 				local sans = Ekonomi.AltinSansi(v.Gelistirme)
 				local eskiUnvan = Ekonomi.UnvanIndex(v.ToplamPaket)
 				local uretti = false
+				local ekstra = ekstraCarpan(v)
 				for m = 1, adet do
 					-- makineler aynı anda değil, sırayla çalışsın
 					local birikim = (v.MakineBirikim[m] or (m - 1) / adet * sure) + dt
 					while birikim >= sure do
 						birikim -= sure
 						local altin = rastgele:NextNumber() < sans
-						v.Para += Ekonomi.PaketDegeri(altin, v.Gelistirme, v.Sube)
+						local deger = Ekonomi.PaketDegeri(altin, v.Gelistirme, v.Sube, ekstra)
+						v.Para += deger
 						v.ToplamPaket += 1
+						gorevIlerle(v, "Para", deger)
+						if altin then
+							gorevIlerle(v, "Altin", 1)
+						end
 						uretti = true
 						if #liste < EN_FAZLA_GORUNTU then
 							table.insert(liste, { v.Arsa.Index, m, altin })
@@ -713,6 +783,201 @@ task.spawn(function()
 		end
 		if #liste > 0 then
 			UretimOlay:FireAllClients(liste)
+		end
+	end
+end)
+
+----------------------------------------------------------------------
+-- Meydandaki NPC'ler: görev ustası, huss yarışması hakemi, hediyeci
+----------------------------------------------------------------------
+local npcKlasoru = Instance.new("Folder")
+npcKlasoru.Name = "NPCler"
+npcKlasoru.Parent = harita
+
+local function npcYap(anahtar, bilgi, eylem, tetik)
+	local konum = bilgi.Yer
+	local cf = CFrame.lookAt(konum, Vector3.new(0, konum.Y, 0)) -- meydanın ortasına bakar
+	local insan = Gorsel.Insan(cf, {
+		Gomlek = bilgi.Gomlek,
+		Pantolon = Color3.fromRGB(50, 50, 60),
+		Ten = Gorsel.Tenler[2],
+		Yuz = bilgi.Yuz,
+		Sapka = anahtar == "Gorev" and "sef" or "kep",
+		SapkaRenk = Color3.fromRGB(250, 205, 50),
+	})
+	local m = Instance.new("Model")
+	m.Name = "NPC_" .. anahtar
+	for _, p in ipairs(insan.Liste) do
+		p.CanCollide = true
+		p.Parent = m
+	end
+	m.PrimaryPart = insan.Govde
+	m:SetAttribute("Rol", "NPC")
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(9, 0, 2.2, 0)
+	bb.StudsOffset = Vector3.new(0, 2.9, 0)
+	bb.MaxDistance = 90
+	bb.LightInfluence = 0
+	bb.Parent = insan.Bas
+	local ad = Instance.new("TextLabel")
+	ad.BackgroundTransparency = 1
+	ad.Size = UDim2.fromScale(1, 0.5)
+	ad.FontFace = Font.fromEnum(Enum.Font.FredokaOne)
+	ad.TextScaled = true
+	ad.TextColor3 = Color3.new(1, 1, 1)
+	ad.TextStrokeTransparency = 0.2
+	ad.Text = bilgi.Ad
+	ad.Parent = bb
+	local unvanYazi = ad:Clone()
+	unvanYazi.Position = UDim2.fromScale(0, 0.5)
+	unvanYazi.TextColor3 = Color3.fromRGB(255, 220, 80)
+	unvanYazi.Text = bilgi.Unvan
+	unvanYazi.Parent = bb
+	local pr = Instance.new("ProximityPrompt")
+	pr.ActionText = eylem
+	pr.ObjectText = bilgi.Ad
+	pr.KeyboardKeyCode = Enum.KeyCode.F
+	pr.GamepadKeyCode = Enum.KeyCode.ButtonX
+	pr.HoldDuration = 0
+	pr.MaxActivationDistance = 12
+	pr.RequiresLineOfSight = false
+	pr.Parent = insan.Govde
+	pr.Triggered:Connect(function(oyuncu)
+		tetik(oyuncu)
+	end)
+	m.Parent = npcKlasoru
+	return m, cf
+end
+
+-- Görev ustası: görev penceresini açar
+npcYap("Gorev", Config.NPCler.Gorev, "Konuş", function(oyuncu)
+	local v = veriler[oyuncu]
+	if v and v.Hazir then
+		durumGonder(oyuncu)
+		NPCOlay:FireClient(oyuncu, "Gorev")
+	end
+end)
+
+GorevAlOlay.OnServerEvent:Connect(function(oyuncu)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or cokSik(v, "Gorev", 0.5) then
+		return
+	end
+	local _, hedef = Ekonomi.Gorev(v.GorevN)
+	if v.GorevIlerleme < hedef then
+		return
+	end
+	local odul = gorevOdulu(v)
+	v.Para += odul
+	v.GorevN += 1
+	v.GorevIlerleme = 0
+	DuyuruOlay:FireClient(oyuncu, "📜 Görev tamam! +" .. Ekonomi.Kisalt(odul) .. " para")
+	skorGuncelle(oyuncu)
+	durumGonder(oyuncu)
+end)
+
+-- Huss Yarışması: 3-2-1, sonra 15 saniye boyunca KATLA'ya basabildiğin kadar bas
+local sunucuRekoru = 0
+local function yarismaBaslat(oyuncu)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or not v.Arsa or v.Yarisma then
+		return
+	end
+	local kalan = (v.YarismaSon or -1e9) + Config.Yarisma.Bekleme - os.clock()
+	if kalan > 0 then
+		DuyuruOlay:FireClient(oyuncu, string.format("Hakem Hülya: Biraz dinlen! %d saniye sonra tekrar gel.", math.ceil(kalan)))
+		return
+	end
+	local simdi = os.clock()
+	v.Yarisma = { Baslangic = simdi + 3, Bitis = simdi + 3 + Config.Yarisma.Sure, Sayac = 0 }
+	YarismaOlay:FireClient(oyuncu, { Durum = "basladi", GeriSayim = 3, Sure = Config.Yarisma.Sure, Rekor = v.YarismaRekor })
+end
+npcYap("Yarisma", Config.NPCler.Yarisma, "Yarış!", yarismaBaslat)
+
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		local simdi = os.clock()
+		for oyuncu, v in pairs(veriler) do
+			local y = v.Yarisma
+			if y and simdi >= y.Bitis then
+				v.Yarisma = nil
+				v.YarismaSon = simdi
+				local paket = Ekonomi.PaketDegeri(false, v.Gelistirme, v.Sube, ekstraCarpan(v))
+				local odul = math.floor(y.Sayac * paket * Config.Yarisma.TikOdulu)
+				v.Para += odul
+				local yeniRekor = y.Sayac > v.YarismaRekor
+				if yeniRekor then
+					v.YarismaRekor = y.Sayac
+				end
+				YarismaOlay:FireClient(oyuncu, { Durum = "bitti", Sayac = y.Sayac, Odul = odul, Rekor = v.YarismaRekor, YeniRekor = yeniRekor })
+				if y.Sayac > sunucuRekoru and y.Sayac > 0 then
+					sunucuRekoru = y.Sayac
+					DuyuruOlay:FireAllClients(string.format("🏆 %s Huss Yarışmasında %d tık! Kasaba rekoru!", oyuncu.DisplayName, y.Sayac))
+				end
+				skorGuncelle(oyuncu)
+				durumGonder(oyuncu)
+			end
+		end
+	end
+end)
+
+-- Hediyeci: her 10 dakikada bir bedava hediye
+local function hediyeVer(oyuncu)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or cokSik(v, "Hediye", 1) then
+		return
+	end
+	local kalan = v.SonHediye + Config.Hediye.Bekleme - os.time()
+	if kalan > 0 then
+		DuyuruOlay:FireClient(oyuncu, string.format("Hediyeci Hasan: Sıradaki hediye %d:%02d sonra! 🎁", kalan // 60, kalan % 60))
+		return
+	end
+	v.SonHediye = os.time()
+	if rastgele:NextNumber() < 0.3 then
+		v.IkiKatBitis = os.clock() + Config.Hediye.IkiKatSuresi
+		oyuncu:SetAttribute("IkiKatBitis", workspace:GetServerTimeNow() + Config.Hediye.IkiKatSuresi)
+		DuyuruOlay:FireClient(oyuncu, "🎁 Hediye: " .. Config.Hediye.IkiKatSuresi .. " saniye boyunca 2 KAT PARA! 🔥")
+	else
+		local para = math.max(
+			Config.Hediye.EnAzPara,
+			math.floor(Ekonomi.MakineGeliri(v.Gelistirme, v.Sube) * Config.Hediye.ParaSaniye),
+			Ekonomi.PaketDegeri(false, v.Gelistirme, v.Sube) * 20
+		)
+		para = math.floor(para * rastgele:NextNumber(1, 2))
+		v.Para += para
+		DuyuruOlay:FireClient(oyuncu, "🎁 Hediye: +" .. Ekonomi.Kisalt(para) .. " para!")
+	end
+	skorGuncelle(oyuncu)
+	durumGonder(oyuncu)
+end
+local hediyeNpc, hediyeCf = npcYap("Hediye", Config.NPCler.Hediye, "Hediyeni Al", hediyeVer)
+do
+	-- NPC'nin yanında kocaman bir hediye kutusu
+	local kutuCf = hediyeCf * CFrame.new(3.6, 1.8, 0)
+	local kutu = Gorsel.Parca({ Name = "HediyeKutusu", Size = Vector3.new(3.4, 3.4, 3.4), CFrame = kutuCf, Color = Color3.fromRGB(220, 50, 70), CanCollide = true })
+	kutu.Parent = hediyeNpc
+	for _, boy in ipairs({ Vector3.new(3.5, 3.5, 0.6), Vector3.new(0.6, 3.5, 3.5) }) do
+		local serit = Gorsel.Parca({ Name = "Kurdele", Size = boy, CFrame = kutuCf, Color = Color3.fromRGB(255, 215, 60) })
+		serit.Parent = hediyeNpc
+	end
+	local fiyonk = Gorsel.Parca({ Name = "Fiyonk", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), CFrame = kutuCf * CFrame.new(0, 2.1, 0), Color = Color3.fromRGB(255, 215, 60) })
+	fiyonk.Parent = hediyeNpc
+end
+
+-- Altın Saat: arada bir bütün kasabada paketler 2 kat para eder
+task.spawn(function()
+	while true do
+		task.wait(rastgele:NextNumber(Config.AltinSaat.EnAz, Config.AltinSaat.EnCok))
+		altinSaatBitis = os.clock() + Config.AltinSaat.Sure
+		ReplicatedStorage:SetAttribute("AltinSaatBitis", workspace:GetServerTimeNow() + Config.AltinSaat.Sure)
+		DuyuruOlay:FireAllClients(string.format("⏰ ALTIN SAAT! %d saniye boyunca bütün paketler 2 kat para! 🔥", Config.AltinSaat.Sure))
+		for oyuncu in pairs(veriler) do
+			task.spawn(durumGonder, oyuncu)
+		end
+		task.wait(Config.AltinSaat.Sure + 0.2)
+		for oyuncu in pairs(veriler) do
+			task.spawn(durumGonder, oyuncu)
 		end
 	end
 end)

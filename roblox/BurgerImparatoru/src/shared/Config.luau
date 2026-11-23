@@ -102,6 +102,44 @@ Config.Musteri = {
 
 Config.GunSuresi = 600 -- bir gün (sabah -> gece -> sabah) kaç saniye sürer
 
+----------------------------------------------------------------------
+-- MEYDANDAKİ NPC'LER VE ETKİNLİKLER
+----------------------------------------------------------------------
+-- Konuşulabilen NPC'ler (yanına gidip F'ye bas ya da dokun)
+Config.NPCler = {
+	Gorev = { Ad = "Hüsnü Usta", Unvan = "📜 Görevler", Yer = Vector3.new(-17, 0.4, -24), Yuz = "🧔", Gomlek = Color3.fromRGB(150, 60, 40) },
+	Yarisma = { Ad = "Hakem Hülya", Unvan = "⏱️ Huss Yarışması", Yer = Vector3.new(17, 0.4, -24), Yuz = "😎", Gomlek = Color3.fromRGB(40, 40, 45) },
+	Hediye = { Ad = "Hediyeci Hasan", Unvan = "🎁 Bedava Hediye", Yer = Vector3.new(-17, 0.4, 24), Yuz = "🥳", Gomlek = Color3.fromRGB(200, 40, 60) },
+}
+
+-- Görevler: her görev bitince ödül, sonra bir sonraki görev (gittikçe büyür)
+Config.Gorev = {
+	-- Tip: "Paket" = elle paket yap, "Katla" = KATLA'ya bas, "Altin" = altın burger bul, "Para" = para kazan
+	Sira = { "Katla", "Paket", "Para", "Paket", "Altin", "Katla", "Para", "Paket" },
+	IlkHedef = { Katla = 30, Paket = 10, Para = 500, Altin = 1 },
+	Buyume = 1.35, -- her turda hedef bu kadar büyür
+	OdulSaniye = 45, -- ödül: makine gelirinin bu kadar saniyesi (en az aşağıdaki kadar)
+	EnAzOdul = 150,
+}
+
+-- Huss Yarışması: süre içinde olabildiğince çok KATLA'ya bas
+Config.Yarisma = { Sure = 15, Bekleme = 45, TikOdulu = 1.0 } -- ödül = tık sayısı x paket parası x TikOdulu
+
+-- Hediye: her 10 dakikada bir bedava
+Config.Hediye = { Bekleme = 600, IkiKatSuresi = 60, ParaSaniye = 60, EnAzPara = 200 }
+
+-- Altın Saat: arada bir bütün kasabada paketler 2 kat para eder, müşteriler akın eder
+Config.AltinSaat = { EnAz = 300, EnCok = 480, Sure = 45, Carpan = 2 }
+
+-- Kasabada gezen insanların söyledikleri
+Config.KasabaSozleri = {
+	"Huss huss huss! 🍔", "Bu kasabanın en iyi burgeri kimde?", "İmparator Burger yemeden gitmem!",
+	"Altın burger gören var mı? ✨", "Ketçap mı hardal mı? İkisi! 😋", "Bugün 3 burger yedim, hâlâ açım!",
+	"Şu dev balon da ne öyle? 🎈", "Hüsnü Usta görev veriyormuş!", "Huss yarışmasında rekor kıracağım!",
+	"Kasabanın yeni imparatoru kim olacak? 👑", "Patatesler de bedava mı? 🍟", "Kuyruk çok uzun ama değer!",
+}
+Config.KasabaHalkiSayisi = 16
+
 -- Yeni Şube: her şeyi sıfırlar (stilin ve paket sayın kalır), kalıcı para çarpanı verir
 Config.SubeTabanFiyat = 2500000
 Config.SubeCarpan = 4 -- her yeni şube öncekinin 4 katı pahalı

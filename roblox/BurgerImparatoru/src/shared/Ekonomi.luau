@@ -72,14 +72,40 @@ function Ekonomi.AltinSansi(gelistirmeler)
 	return Config.AltinTabanSansi + Ekonomi.Seviye(gelistirmeler, "AltinSans") * Config.AltinSansArtisi
 end
 
--- Bir paketin parası
-function Ekonomi.PaketDegeri(altin, gelistirmeler, sube)
+-- Bir paketin parası. ekstra: Altın Saat, hediye gibi geçici çarpanlar (yoksa 1)
+function Ekonomi.PaketDegeri(altin, gelistirmeler, sube, ekstra)
 	local d = Config.PaketTabanDegeri
 		* (altin and Config.AltinCarpani or 1)
 		* Ekonomi.TarifCarpani(gelistirmeler)
 		* Ekonomi.UnCarpani(gelistirmeler)
 		* Ekonomi.SubeCarpani(sube)
+		* (ekstra or 1)
 	return math.floor(d)
+end
+
+-- n. görevin tipi ve hedefi (n 1'den başlar)
+function Ekonomi.Gorev(n)
+	local g = Config.Gorev
+	local tip = g.Sira[(n - 1) % #g.Sira + 1]
+	local tur = math.floor((n - 1) / #g.Sira)
+	local hedef = math.max(1, math.floor(g.IlkHedef[tip] * g.Buyume ^ (n - 1) + 0.5))
+	if tip == "Altin" then
+		hedef = 1 + tur
+	end
+	return tip, hedef
+end
+
+function Ekonomi.GorevYazisi(tip, hedef)
+	if tip == "Katla" then
+		return string.format("KATLA'ya %s kez bas", Ekonomi.Kisalt(hedef))
+	elseif tip == "Paket" then
+		return string.format("Elle %s paket yap", Ekonomi.Kisalt(hedef))
+	elseif tip == "Altin" then
+		return string.format("%d altın burger bul ✨", hedef)
+	elseif tip == "Para" then
+		return string.format("%s para kazan", Ekonomi.Kisalt(hedef))
+	end
+	return "?"
 end
 
 -- Bir makine kaç saniyede bir paket yapar

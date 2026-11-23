@@ -10,6 +10,12 @@ local process = require("@lune/process")
 local placePath = process.args[1]
 local DATASTORE_MODE = process.args[2] or "ok" -- "ok" | "studio"
 local game_real = roblox.deserializePlace(fs.readFile(placePath))
+-- testte Altın Saat beklemesin
+for _, d in ipairs(game_real:GetDescendants()) do
+	if d.Name == "Config" and d:IsA("ModuleScript") then
+		d.Source = string.gsub(d.Source, "Config.AltinSaat = { EnAz = 300, EnCok = 480,", "Config.AltinSaat = { EnAz = 2, EnCok = 3,")
+	end
+end
 if process.args[3] == "ses" then
 	for _, d in ipairs(game_real:GetDescendants()) do
 		if d.Name == "Config" and d:IsA("ModuleScript") then
@@ -104,6 +110,7 @@ local EVENT_NAMES = {
 	Changed = true,
 	MouseButton1Click = true,
 	ChildAdded = true,
+	Triggered = true,
 }
 
 -- Runtime-only properties that exist in Roblox but are not in the serialized DOM
@@ -303,6 +310,11 @@ customMethods["*"] = {
 		if eski ~= deger and ex.attr and ex.attr[ad] then
 			ex.attr[ad]:Fire()
 		end
+	end,
+}
+customMethods.Workspace = {
+	GetServerTimeNow = function()
+		return os.clock()
 	end,
 }
 customMethods.Terrain = {
@@ -720,6 +732,55 @@ assert(stat(p1, "Paket") - p0 == 4, "12 tıkta 4 paket bekleniyordu")
 local gorsel = Workspace:FindFirstChild("BurgerGorselleri")
 assert(gorsel and #unwrap(gorsel):GetChildren() > 0, "tezgahta kutu görseli yok")
 
+print("== Görev, NPC'ler")
+local npcler = harita:WaitForChild("NPCler")
+assert(npcler:FindFirstChild("NPC_Gorev") and npcler:FindFirstChild("NPC_Yarisma") and npcler:FindFirstChild("NPC_Hediye"), "meydanda 3 NPC olmalı")
+local function npcKonus(ad, kim)
+	local prompt = npcler[ad].Govde:FindFirstChildOfClass("ProximityPrompt")
+	assert(prompt, ad .. " için konuşma düğmesi yok")
+	prompt.Triggered:Fire(kim or p1)
+end
+npcKonus("NPC_Gorev")
+task.wait(0.3)
+assert(gui.HusnuUsta.Visible == true, "Hüsnü Usta penceresi açılmalı")
+print("Görev yazısı:", gui.Gorev:FindFirstChildOfClass("TextLabel").Text)
+for _ = 1, 30 do
+	katlaB.Activated:Fire()
+	task.wait(0.1)
+end
+task.wait(0.4)
+local paraGorevOnce = stat(p1, "Para")
+assert(butonBul(gui.Gorev, "🎁 ÖDÜLÜ AL").Visible == true, "görev bitince ödül butonu çıkmalı")
+butonBul(gui.Gorev, "🎁 ÖDÜLÜ AL").Activated:Fire()
+task.wait(0.4)
+print("Görev ödülü:", stat(p1, "Para") - paraGorevOnce, "Yeni görev:", gui.Gorev:FindFirstChildOfClass("TextLabel").Text)
+assert(stat(p1, "Para") - paraGorevOnce >= 150, "görev ödülü verilmedi")
+
+print("== Huss Yarışması")
+npcKonus("NPC_Yarisma")
+task.wait(3.2)
+for _ = 1, 40 do
+	katlaB.Activated:Fire()
+	task.wait(0.1)
+end
+task.wait(9)
+print("Yarışma sonucu:", gui.Yarisma:FindFirstChildOfClass("TextLabel").Text)
+npcKonus("NPC_Yarisma") -- hemen tekrar: beklemeli
+task.wait(0.2)
+
+print("== Hediye")
+local paraHediyeOnce = stat(p1, "Para")
+npcKonus("NPC_Hediye")
+task.wait(0.3)
+print("Hediye:", stat(p1, "Para") - paraHediyeOnce, "2 kat:", tostring(p1:GetAttribute("IkiKatBitis")))
+assert(stat(p1, "Para") > paraHediyeOnce or p1:GetAttribute("IkiKatBitis") ~= nil, "hediye verilmedi")
+npcKonus("NPC_Hediye") -- tekrar: beklemeli
+task.wait(0.2)
+print("Altın Saat bitişi:", tostring(game:GetService("ReplicatedStorage"):GetAttribute("AltinSaatBitis")))
+local halk = Workspace:FindFirstChild("KasabaHalki")
+print("Kasaba halkı parçası:", halk and #unwrap(halk):GetChildren() or 0)
+assert(halk and #unwrap(halk):GetChildren() > 50, "kasaba halkı yok")
+
 local onceP = stat(p1, "Paket")
 for _ = 1, 20 do
 	remotes.Katla.OnServerEvent:Fire(p1)
@@ -935,7 +996,7 @@ end
 
 print("== Kayıt")
 for k, v in pairs(DATASTORE) do
-	print("  " .. k, "Para=" .. tostring(v.Para), "ToplamPaket=" .. tostring(v.ToplamPaket))
+	print("  " .. k, "Para=" .. tostring(v.Para), "ToplamPaket=" .. tostring(v.ToplamPaket), "YarismaRekor=" .. tostring(v.YarismaRekor), "GorevN=" .. tostring(v.GorevN), "SonHediye>0=" .. tostring((v.SonHediye or 0) > 0))
 	for gk, gv in pairs(v.Gelistirme) do
 		print("    " .. gk .. "=" .. gv)
 	end
