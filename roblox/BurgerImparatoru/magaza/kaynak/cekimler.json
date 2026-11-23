@@ -1,0 +1,163 @@
+{
+ "tanitim1": {
+  "w": 1920,
+  "h": 1080,
+  "goz": [
+   -12,
+   15,
+   -44
+  ],
+  "bak": [
+   -40,
+   9,
+   -92
+  ],
+  "fov": 50,
+  "golgeAlani": 90,
+  "gunesYukseklik": 48,
+  "yazilar": [
+   {
+    "html": "BURGER<br><span style='color:#ffd614'>İMPARATORU</span> 👑",
+    "stil": {
+     "left": "70px",
+     "top": "40px",
+     "fontSize": "120px",
+     "lineHeight": "0.95",
+     "textAlign": "left"
+    }
+   }
+  ],
+  "gunesKamera": 35
+ },
+ "tanitim2": {
+  "w": 1920,
+  "h": 1080,
+  "goz": [
+   44,
+   24,
+   66
+  ],
+  "bak": [
+   0,
+   8,
+   0
+  ],
+  "fov": 50,
+  "golgeAlani": 120,
+  "gunesYukseklik": 48,
+  "yazilar": [
+   {
+    "sinif": "etiket",
+    "html": "🏙️ Burger Kasabası: görevler, Huss Yarışması, hediyeler!",
+    "stil": {
+     "left": "50%",
+     "transform": "translateX(-50%)",
+     "bottom": "40px",
+     "fontSize": "54px"
+    }
+   }
+  ],
+  "gunesKamera": 35
+ },
+ "tanitim3": {
+  "w": 1920,
+  "h": 1080,
+  "goz": [
+   -37.5,
+   9.6,
+   -77.5
+  ],
+  "bak": [
+   -27.4,
+   4.9,
+   -87.0
+  ],
+  "fov": 40,
+  "golgeAlani": 45,
+  "gunesYukseklik": 48,
+  "yazilar": [
+   {
+    "html": "HUSS!",
+    "stil": {
+     "left": "5%",
+     "top": "7%",
+     "fontSize": "130px",
+     "transform": "rotate(-10deg)",
+     "color": "#ffd614"
+    }
+   },
+   {
+    "html": "HUSS!",
+    "stil": {
+     "left": "14%",
+     "top": "24%",
+     "fontSize": "105px",
+     "transform": "rotate(6deg)"
+    }
+   },
+   {
+    "html": "HUSS!",
+    "stil": {
+     "left": "7%",
+     "top": "40%",
+     "fontSize": "88px",
+     "transform": "rotate(-6deg)",
+     "color": "#ff8a3d"
+    }
+   },
+   {
+    "sinif": "etiket",
+    "html": "🍔 Katla, paketle, zengin ol! 🔊",
+    "stil": {
+     "left": "50%",
+     "transform": "translateX(-50%)",
+     "bottom": "40px",
+     "fontSize": "58px"
+    }
+   }
+  ],
+  "gunesKamera": 40,
+  "yakinGizle": 8
+ },
+ "ikon": {
+  "w": 512,
+  "h": 512,
+  "dsf": 2,
+  "goz": [
+   11,
+   9,
+   39
+  ],
+  "bak": [
+   0,
+   13.8,
+   0
+  ],
+  "fov": 42,
+  "golgeAlani": 40,
+  "gunesYukseklik": 42,
+  "parlama": 0.3,
+  "yazilar": [
+   {
+    "sinif": "golge",
+    "html": "",
+    "stil": {
+     "height": "40%"
+    }
+   },
+   {
+    "html": "BURGER<br><span style='color:#ffd614'>İMPARATORU</span>",
+    "stil": {
+     "left": "0",
+     "right": "0",
+     "bottom": "14px",
+     "fontSize": "56px",
+     "lineHeight": "0.95"
+    }
+   }
+  ],
+  "gunesKamera": -40,
+  "panolar": false,
+  "yakinGizle": 36
+ }
+}

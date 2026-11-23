@@ -1,0 +1,270 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource/fredoka/700.css">
+<style>
+html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+#kap { position: relative; }
+canvas { display: block; }
+.ust { position: absolute; inset: 0; pointer-events: none; font-family: "Fredoka", "Noto Color Emoji"; font-weight: 700; }
+.baslik { position: absolute; color: #fff; text-align: center; letter-spacing: 1px;
+  -webkit-text-stroke: 0; text-shadow: 0 0.06em 0 #5a200a, 0.04em 0.04em 0 #5a200a, -0.04em 0.04em 0 #5a200a, 0.04em -0.04em 0 #5a200a, -0.04em -0.04em 0 #5a200a, 0 0.04em 0 #5a200a, 0 -0.04em 0 #5a200a, 0.04em 0 0 #5a200a, -0.04em 0 0 #5a200a, 0 0.12em 0.18em rgba(0,0,0,0.35); }
+.golge { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(40,15,5,0.55), rgba(40,15,5,0)); }
+.etiket { position: absolute; background: rgba(255,255,255,0.94); color: #c8341f; border: 0.12em solid #3b1d0c; border-radius: 0.7em; padding: 0.15em 0.6em; box-shadow: 0 0.18em 0 rgba(0,0,0,0.28); white-space: nowrap; }
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><div id="kap"><div class="ust" id="ust"></div></div>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { HueSaturationShader } from 'three/addons/shaders/HueSaturationShader.js';
+import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js';
+import { VignetteShader } from 'three/addons/shaders/VignetteShader.js';
+
+const prm = new URLSearchParams(location.search);
+const cek = JSON.parse(prm.get('c'));
+const W = cek.w, H = cek.h, SS = window.devicePixelRatio || 1;
+
+await document.fonts.load('700 40px Fredoka', 'BURGER İMPARATORU ğşıöüç');
+await document.fonts.load('40px "Noto Color Emoji"', '🍔👑🔥🐉💎🙂😀😋🤩😎🥳😊🤗😄😜🧔😆🍟🏙️🔊🎁🏆⚡🤖');
+const sahne = await (await fetch('sahne.json')).json();
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(SS);
+renderer.setSize(W, H);
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = cek.pozlama ?? 0.9;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('kap').prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(cek.ufuk || 0xcfe8ff, cek.sisYakin || 300, cek.sisUzak || 1600);
+
+// güneş: kameranın arkasından (gunesKamera derece sapma) ya da sabit yön
+const hedef = new THREE.Vector3(...cek.bak);
+const gozV = new THREE.Vector3(...cek.goz);
+const kutup = THREE.MathUtils.degToRad(90 - (cek.gunesYukseklik ?? 45));
+let azimut;
+if (cek.gunesKamera !== undefined) { const v = gozV.clone().sub(hedef); azimut = Math.atan2(v.x, v.z) + THREE.MathUtils.degToRad(cek.gunesKamera); }
+else azimut = THREE.MathUtils.degToRad(cek.gunesYon ?? 30);
+const gunes = new THREE.Vector3().setFromSphericalCoords(1, kutup, azimut);
+
+// gökyüzü: Roblox gibi canlı mavi degrade + yumuşak bulutlar
+const UFUK = new THREE.Color(cek.ufuk || 0xcfe8ff), UST = new THREE.Color(cek.zirve || 0x2f86e8);
+function gokYap() {
+  const m = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { ust: { value: UST }, ufuk: { value: UFUK }, gy: { value: gunes } },
+    vertexShader: 'varying vec3 vY; void main(){ vY = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 ust, ufuk, gy; varying vec3 vY; void main(){ float h = clamp(vY.y, 0.0, 1.0); vec3 c = mix(ufuk, ust, pow(h, 0.5)); float s = max(dot(normalize(vY), normalize(gy)), 0.0); c += vec3(1.0, 0.95, 0.85) * (pow(s, 600.0) * 4.0 + pow(s, 12.0) * 0.18); gl_FragColor = vec4(c, 1.0); }' });
+  const g = new THREE.Mesh(new THREE.SphereGeometry(5000, 48, 24), m); g.renderOrder = -10; return g;
+}
+scene.add(gokYap());
+const pmrem = new THREE.PMREMGenerator(renderer);
+const gokSahne = new THREE.Scene(); gokSahne.add(gokYap());
+const zemin = new THREE.Mesh(new THREE.CircleGeometry(4000, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x6f9a55 })); zemin.position.y = -5; gokSahne.add(zemin);
+scene.environment = pmrem.fromScene(gokSahne, 0.03).texture;
+scene.environmentIntensity = cek.ortam ?? 0.55;
+// bulutlar
+const bulutDoku = (() => { const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
+  for (let i = 0; i < 14; i++) { const px = 90 + Math.random() * 332, py = 140 + (Math.random() - 0.5) * 50 - Math.sin((px - 90) / 332 * Math.PI) * 40, r = 40 + Math.random() * 45;
+    const gr = x.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, 'rgba(255,255,255,0.95)'); gr.addColorStop(0.6, 'rgba(255,255,255,0.75)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.beginPath(); x.arc(px, py, r, 0, 7); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+let tohum = cek.tohum || 7; const rnd = () => { tohum = (tohum * 16807) % 2147483647; return tohum / 2147483647; };
+for (let i = 0; i < (cek.bulut ?? 26); i++) {
+  const a = rnd() * Math.PI * 2, uz = 1700 + rnd() * 1300, yuk = 120 + rnd() * 520;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: bulutDoku, fog: false, depthWrite: false, transparent: true, opacity: 0.85 }));
+  sp.material.color.setScalar(1.25);
+  const en = 380 + rnd() * 420; sp.scale.set(en, en / 2, 1); sp.position.set(Math.cos(a) * uz, yuk, Math.sin(a) * uz); sp.renderOrder = -9; scene.add(sp);
+}
+
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x7a8f5a, cek.gok ?? 1.6));
+const isik = new THREE.DirectionalLight(0xfff3e0, cek.gunesGucu ?? 3.4);
+isik.position.copy(hedef).addScaledVector(gunes, 400);
+isik.target.position.copy(hedef);
+isik.castShadow = true;
+isik.shadow.mapSize.set(4096, 4096);
+const gR = cek.golgeAlani || 90;
+Object.assign(isik.shadow.camera, { left: -gR, right: gR, top: gR, bottom: -gR, near: 1, far: 1200 });
+isik.shadow.bias = -0.0003; isik.shadow.normalBias = 0.04; isik.shadow.radius = 3;
+scene.add(isik, isik.target);
+
+// --- desen dokuları (gri tonlu, rengi parça verir) ---
+function doku(ciz, n = 256) {
+  const c = document.createElement('canvas'); c.width = c.height = n;
+  const x = c.getContext('2d'); ciz(x, n);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+function gurultu(x, n, a, b, adet) { x.fillStyle = `rgb(${b},${b},${b})`; x.fillRect(0, 0, n, n); for (let i = 0; i < adet; i++) { const v = a + Math.random() * (b - a); x.fillStyle = `rgba(${v},${v},${v},0.5)`; const r = 1 + Math.random() * 3; x.fillRect(Math.random() * n, Math.random() * n, r, r); } }
+const D = {
+  cimen: doku((x, n) => { gurultu(x, n, 175, 255, 9000); for (let i = 0; i < 1400; i++) { const v = 150 + Math.random() * 105; x.strokeStyle = `rgba(${v},${v},${v},0.6)`; const px = Math.random() * n, py = Math.random() * n; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (Math.random() - 0.5) * 3, py - 4 - Math.random() * 5); x.stroke(); } }),
+  ince: doku((x, n) => gurultu(x, n, 200, 255, 6000)),
+  asfalt: doku((x, n) => gurultu(x, n, 150, 235, 14000)),
+  tugla: doku((x, n) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, n, n); x.fillStyle = '#b8b8b8'; const h = n / 8; for (let r = 0; r < 8; r++) { x.fillRect(0, r * h, n, 3); for (let k = 0; k < 4; k++) x.fillRect(((k + (r % 2) * 0.5) * n / 4) % n, r * h, 3, h); } }),
+  tahta: doku((x, n) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, n, n); for (let i = 0; i < 60; i++) { const v = 200 + Math.random() * 55; x.strokeStyle = `rgba(${v - 40},${v - 40},${v - 40},0.35)`; x.beginPath(); const y = Math.random() * n; x.moveTo(0, y); x.bezierCurveTo(n / 3, y + 4, 2 * n / 3, y - 4, n, y); x.stroke(); } x.fillStyle = '#c8c8c8'; for (let r = 0; r < 4; r++) x.fillRect(0, r * n / 4, n, 2); }),
+  karton: doku((x, n) => { gurultu(x, n, 215, 255, 5000); x.strokeStyle = 'rgba(180,180,180,0.25)'; for (let i = 0; i < n; i += 6) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, n); x.stroke(); } }),
+  kumas: doku((x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.strokeStyle = 'rgba(190,190,190,0.5)'; for (let i = 0; i < n; i += 4) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, n); x.stroke(); x.beginPath(); x.moveTo(0, i); x.lineTo(n, i); x.stroke(); } }),
+  tas: doku((x, n) => { x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, n, n); for (let i = 0; i < 90; i++) { const v = 205 + Math.random() * 50; x.fillStyle = `rgb(${v},${v},${v})`; x.beginPath(); x.ellipse(Math.random() * n, Math.random() * n, 10 + Math.random() * 14, 8 + Math.random() * 10, Math.random() * 3, 0, 7); x.fill(); } }),
+};
+const DOKU = { Grass: ['cimen', 6], Asphalt: ['asfalt', 6], Concrete: ['ince', 6], Brick: ['tugla', 6], WoodPlanks: ['tahta', 8], Wood: ['tahta', 4], Cardboard: ['karton', 3], Fabric: ['kumas', 2], Cobblestone: ['tas', 6], Slate: ['ince', 3], Sand: ['ince', 4], Marble: ['ince', 8], DiamondPlate: ['kumas', 2] };
+
+const malzemeler = new Map();
+function malzeme(p) {
+  const anahtar = p.c.join(',') + p.m + p.a.toFixed(2) + (p.r || 0).toFixed(2);
+  if (malzemeler.has(anahtar)) return malzemeler.get(anahtar);
+  const renk = new THREE.Color().setRGB(p.c[0], p.c[1], p.c[2], THREE.SRGBColorSpace);
+  const oz = { color: renk, roughness: 0.6, metalness: 0, envMapIntensity: 0.6 };
+  const d = DOKU[p.m]; if (d) { oz.map = D[d[0]]; }
+  switch (p.m) {
+    case 'Neon': Object.assign(oz, { emissive: renk, emissiveIntensity: 2.6, roughness: 0.4 }); break;
+    case 'Glass': Object.assign(oz, { transparent: true, opacity: Math.max(0.25, Math.min(0.75, p.a)), roughness: 0.05, metalness: 0.2, envMapIntensity: 1.4 }); break;
+    case 'Foil': Object.assign(oz, { metalness: 0.45, roughness: 0.28, envMapIntensity: 1.6, emissive: renk, emissiveIntensity: 0.12 }); break;
+    case 'Metal': case 'DiamondPlate': Object.assign(oz, { metalness: 0.55, roughness: 0.38, envMapIntensity: 1.0 }); break;
+    case 'Marble': Object.assign(oz, { roughness: 0.18, envMapIntensity: 0.9 }); break;
+    case 'Grass': case 'Asphalt': case 'Concrete': case 'Brick': case 'Sand': case 'Cobblestone': case 'Slate': Object.assign(oz, { roughness: 0.92 }); break;
+    case 'Fabric': case 'Cardboard': Object.assign(oz, { roughness: 0.85 }); break;
+    case 'Wood': case 'WoodPlanks': Object.assign(oz, { roughness: 0.75 }); break;
+    default: Object.assign(oz, { roughness: 0.45, envMapIntensity: 0.55 });
+  }
+  if (p.r > 0) { oz.metalness = Math.max(oz.metalness, p.r * 0.8); oz.roughness = Math.min(oz.roughness, 0.3); }
+  if (p.m !== 'Glass' && p.a < 0.98) Object.assign(oz, { transparent: true, opacity: p.a });
+  const m = new THREE.MeshStandardMaterial(oz);
+  malzemeler.set(anahtar, m);
+  return m;
+}
+
+function uvOlcek(g, ou, ov) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * ou, uv.getY(i) * ov); }
+function kutuGeo(sx, sy, sz, tile) {
+  const g = new THREE.BoxGeometry(sx, sy, sz);
+  if (tile) { const uv = g.attributes.uv; const yuz = [[sz, sy], [sz, sy], [sx, sz], [sx, sz], [sx, sy], [sx, sy]];
+    for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) { const i = f * 4 + k; uv.setXY(i, uv.getX(i) * yuz[f][0] / tile, uv.getY(i) * yuz[f][1] / tile); } }
+  return g;
+}
+function kamaGeo(sx, sy, sz) {
+  const x = sx / 2, y = sy / 2, z = sz / 2;
+  const v = [ -x,-y,-z,  x,-y,-z,  x,-y,z,  -x,-y,z,  -x,y,z,  x,y,z ];
+  const i = [ 0,2,1, 0,3,2,  3,5,2, 3,4,5,  0,1,5, 0,5,4,  0,4,3,  1,2,5 ];
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.setIndex(i); g.computeVertexNormals(); return g;
+}
+const mat4 = new THREE.Matrix4();
+function cfMatris(cf) { return new THREE.Matrix4().set(cf[3], cf[4], cf[5], cf[0], cf[6], cf[7], cf[8], cf[1], cf[9], cf[10], cf[11], cf[2], 0, 0, 0, 1); }
+
+const parcaMeshleri = [];
+for (const p of sahne.parcalar) {
+  if (p.a < 0.02) { parcaMeshleri.push(null); continue; }
+  if (cek.gizle && cek.gizle.includes(p.n)) { parcaMeshleri.push(null); continue; }
+  if (cek.yakinGizle && Math.hypot(p.cf[0] - cek.goz[0], p.cf[1] - cek.goz[1], p.cf[2] - cek.goz[2]) < cek.yakinGizle && ['Bas','Govde','SagKol','SolKol','SagBacak','SolBacak','Sapka','Siper'].includes(p.n)) { parcaMeshleri.push(null); continue; }
+  const [sx, sy, sz] = p.s; const d = DOKU[p.m]; const tile = d ? d[1] : 0;
+  let g;
+  if (p.sh === 'Cylinder') { const r = Math.min(sy, sz) / 2; g = new THREE.CylinderGeometry(r, r, sx, 40, 1); if (tile) uvOlcek(g, (2 * Math.PI * r) / tile, sx / tile); g.rotateZ(-Math.PI / 2); }
+  else if (p.sh === 'Ball') { const r = Math.min(sx, sy, sz) / 2; g = new THREE.SphereGeometry(r, 36, 20); if (tile) uvOlcek(g, (2 * Math.PI * r) / tile, (Math.PI * r) / tile); }
+  else if (p.sh === 'Sphere') { g = new THREE.SphereGeometry(0.5, 40, 22); g.scale(sx, sy, sz); }
+  else if (p.sh === 'Head') { g = new RoundedBoxGeometry(sx, sy, sz, 4, Math.min(sx, sy, sz) * 0.32); }
+  else if (p.sh === 'Wedge') { g = kamaGeo(sx, sy, sz); }
+  else { g = kutuGeo(sx, sy, sz, tile); }
+  const mesh = new THREE.Mesh(g, malzeme(p));
+  mesh.matrixAutoUpdate = false; mesh.matrix.copy(cfMatris(p.cf));
+  const buyuk = sx * sz > 4000;
+  mesh.castShadow = !buyuk && p.m !== 'Glass'; mesh.receiveShadow = true;
+  scene.add(mesh); parcaMeshleri.push(mesh);
+}
+// tepeler: yumuşak çimen kubbeler
+for (const t of (sahne.tepeler || [])) {
+  const g = new THREE.SphereGeometry(t[3] / 2, 48, 24); uvOlcek(g, Math.PI * t[3] / 10, Math.PI * t[3] / 20);
+  const m = malzeme({ c: [t[4], t[5], t[6]], m: 'Grass', a: 1, r: 0 });
+  const mesh = new THREE.Mesh(g, m); mesh.position.set(t[0], t[1], t[2]); mesh.receiveShadow = true; scene.add(mesh);
+}
+
+// --- tabela yazıları ---
+function yuvarlakDikdortgen(x, a, b, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+function rgb(c, a = 1) { return `rgba(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)},${a})`; }
+function ciz(x, el, X, Y, Wp, Hp, k) {
+  const sirali = [...el].sort((a, b) => (a.z || 1) - (b.z || 1));
+  for (const e of sirali) {
+    const w = e.size[0] * Wp + e.size[1] * k, h = e.size[2] * Hp + e.size[3] * k;
+    const a = X + e.pos[0] * Wp + e.pos[1] * k - e.anchor[0] * w, b = Y + e.pos[2] * Hp + e.pos[3] * k - e.anchor[1] * h;
+    const r = e.kose ? e.kose[0] * Math.min(w, h) + e.kose[1] * k : 0;
+    if (e.bgA > 0.01 && e.tip !== 'TextLabel' || (e.tip === 'TextLabel' && e.bgA > 0.01)) { x.fillStyle = rgb(e.bg, e.bgA); yuvarlakDikdortgen(x, a, b, w, h, r); x.fill(); }
+    if (e.cizgi && !e.cizgi[2].includes('Contextual')) { x.strokeStyle = rgb(e.cizgi[0]); x.lineWidth = Math.max(2, e.cizgi[1] * k * 1.2); yuvarlakDikdortgen(x, a, b, w, h, r); x.stroke(); }
+    if (e.yazi && e.yA > 0.01) {
+      const satirlar = e.yazi.split('\n');
+      let boy = e.olcekli ? h / satirlar.length * 0.92 : e.boy * k;
+      x.font = `700 ${boy}px Fredoka, "Noto Color Emoji"`;
+      const enGenis = () => Math.max(...satirlar.map(s => x.measureText(s).width));
+      if (e.olcekli) while (boy > 6 && enGenis() > w * 0.98) { boy *= 0.93; x.font = `700 ${boy}px Fredoka, "Noto Color Emoji"`; }
+      x.textBaseline = 'middle';
+      const sol = (e.hiza || '').includes('Left');
+      x.textAlign = sol ? 'left' : 'center';
+      const tx = sol ? a : a + w / 2;
+      satirlar.forEach((s, i) => {
+        const ty = b + h / 2 + (i - (satirlar.length - 1) / 2) * boy * 1.05;
+        const cizgili = (e.cizgi && e.cizgi[2].includes('Contextual')) || e.kenar > 0.3;
+        if (cizgili) { x.lineJoin = 'round'; x.strokeStyle = e.cizgi ? rgb(e.cizgi[0]) : 'rgba(20,10,5,0.9)'; x.lineWidth = Math.max(3, boy * 0.12); x.strokeText(s, tx, ty); }
+        x.fillStyle = rgb(e.yr, e.yA); x.fillText(s, tx, ty);
+      });
+    }
+    if (e.cocuk && e.cocuk.length) ciz(x, e.cocuk, a, b, w, h, k);
+  }
+}
+function guiDokusu(el, wS, hS, pps) {
+  const c = document.createElement('canvas');
+  const k = Math.min(1, 1600 / Math.max(wS * pps, hS * pps));
+  c.width = Math.max(8, Math.round(wS * pps * k)); c.height = Math.max(8, Math.round(hS * pps * k));
+  const x = c.getContext('2d'); ciz(x, el, 0, 0, c.width, c.height, c.width / (wS * 40));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+const YUZ = { Front: [[-1,0,0],[0,1,0],[0,0,-1]], Back: [[1,0,0],[0,1,0],[0,0,1]], Right: [[0,0,-1],[0,1,0],[1,0,0]], Left: [[0,0,1],[0,1,0],[-1,0,0]], Top: [[1,0,0],[0,0,-1],[0,1,0]], Bottom: [[1,0,0],[0,0,1],[0,-1,0]] };
+for (const gui of sahne.guiler) {
+  if (gui.tur === 'yuzey') {
+    const p = sahne.parcalar[gui.parca - 1]; if (!p) continue;
+    if (cek.gizle && cek.gizle.includes(p.n)) continue;
+    const [sx, sy, sz] = p.s; const [R, U, N] = YUZ[gui.yuz];
+    const boyut = { Front: [sx, sy, sz], Back: [sx, sy, sz], Right: [sz, sy, sx], Left: [sz, sy, sx], Top: [sx, sz, sy], Bottom: [sx, sz, sy] }[gui.yuz];
+    const t = guiDokusu(gui.el, boyut[0], boyut[1], 70);
+    const m = gui.parlak ? new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false }) : new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.6 });
+    if (gui.parlak) { m.color.setScalar(1.6); }
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(boyut[0], boyut[1]), m);
+    const temel = new THREE.Matrix4().makeBasis(new THREE.Vector3(...R), new THREE.Vector3(...U), new THREE.Vector3(...N));
+    const kay = new THREE.Matrix4().makeTranslation(N[0] * (sx / 2 + 0.03), N[1] * (sy / 2 + 0.03), N[2] * (sz / 2 + 0.03));
+    mesh.matrixAutoUpdate = false; mesh.matrix.copy(cfMatris(p.cf)).multiply(kay).multiply(temel);
+    scene.add(mesh);
+  } else if (gui.tur === 'pano') {
+    if (cek.panolar === false) continue;
+    const wS = gui.size[0], hS = gui.size[2]; if (wS <= 0 || hS <= 0) continue;
+    const t = guiDokusu(gui.el, wS, hS, 60);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, toneMapped: false, fog: true }));
+    sp.position.set(...gui.yer); sp.scale.set(wS, hS, 1); scene.add(sp);
+  }
+}
+
+// kamera
+const kamera = new THREE.PerspectiveCamera(cek.fov || 45, W / H, 0.3, 8000);
+kamera.position.set(...cek.goz); kamera.lookAt(hedef);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, kamera));
+if (cek.ao !== 0) { const ao = new GTAOPass(scene, kamera, W, H); ao.updateGtaoMaterial({ radius: cek.aoYaricap ?? 1.6, distanceExponent: 1, thickness: 1, scale: 1, samples: 12 }); ao.blendIntensity = cek.ao ?? 0.9;
+  const aoRender = ao.render.bind(ao);
+  ao.render = (...a) => { const gizli = []; scene.traverse(o => { if ((o.isSprite || o.renderOrder < 0) && o.visible) { o.visible = false; gizli.push(o); } }); aoRender(...a); for (const o of gizli) o.visible = true; };
+  composer.addPass(ao); }
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), cek.parlama ?? 0.35, 0.5, 0.95));
+composer.addPass(new OutputPass());
+const doy = new ShaderPass(HueSaturationShader); doy.uniforms.saturation.value = cek.doygunluk ?? 0.22; composer.addPass(doy);
+const kon = new ShaderPass(BrightnessContrastShader); kon.uniforms.contrast.value = cek.kontrast ?? 0.08; kon.uniforms.brightness.value = cek.parlaklik ?? 0.0; composer.addPass(kon);
+const vin = new ShaderPass(VignetteShader); vin.uniforms.offset.value = 1.05; vin.uniforms.darkness.value = cek.vinyet ?? 0.9; composer.addPass(vin);
+composer.render();
+
+// üst yazılar
+const ust = document.getElementById('ust');
+document.getElementById('kap').style.width = W + 'px'; document.getElementById('kap').style.height = H + 'px';
+for (const y of (cek.yazilar || [])) { const d = document.createElement('div'); d.className = y.sinif || 'baslik'; d.innerHTML = y.html; Object.assign(d.style, y.stil || {}); ust.appendChild(d); }
+await document.fonts.ready;
+await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+document.title = 'HAZIR';
+</script></body></html>

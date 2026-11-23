@@ -157,9 +157,35 @@ kayıtları aynı kalır.
 yayınlamadan önce bana söyle; ben de koda eklerim. Yoksa yeni sürüm senin değişikliğinin üstüne yazar.
 En kolayı: ses numarasını bana yaz, koda kalıcı koyayım.
 
-**İleri seviye (isteğe bağlı):** Roblox'un Open Cloud API anahtarıyla güncellemeleri doğrudan ben de
-yayınlayabilirim; sen hiçbir şey indirmeden oyun güncellenir. İstersen adım adım kurarız
-(anahtarı sohbete yazmazsın, güvenli bir form açılır).
+**İleri seviye (isteğe bağlı):** Roblox'un Open Cloud API anahtarıyla sesi yükleme ve güncellemeleri
+yayınlama işini doğrudan ben yapabilirim; sen hiçbir şey indirmeden oyun güncellenir. Anahtarın nasıl
+oluşturulacağı hemen aşağıda.
+
+## 🔑 Roblox API anahtarı (Open Cloud) nasıl oluşturulur
+
+Bu anahtar, benim senin yerine Roblox'a ses yüklememi ve oyunu yayınlamamı sağlar.
+Roblox menü adlarını arada değiştiriyor; düğme adları biraz farklı olabilir.
+
+1. https://create.roblox.com/dashboard/credentials adresine git
+   (Creator Hub ▸ soldaki menü ▸ **Open Cloud** ▸ **API Keys**).
+2. **Create API Key**'e bas. **Name:** `burger-imparatoru`.
+3. **Access Permissions** ▸ **Select API System** listesinden **Assets**'i seç ▸ **Add API System**.
+   Altında **Read** ve **Write** kutularını işaretle (ses yüklemek için).
+4. Oyunu da benim yayınlamamı istiyorsan: yine **Select API System** ▸ **universe-places**
+   (eski adı *Place Management*) ▸ **Add API System** ▸ oyun olarak **Burger İmparatoru**'nu seç ▸ **Write**.
+5. **Security** ▸ **Accepted IP Addresses** kutusuna `0.0.0.0/0` yaz ▸ **Add**
+   (benim bilgisayarımın adresi sabit değil; anahtarı istediğin zaman silebilirsin).
+6. **Expiration** varsa bir tarih seç (ör. 30 gün sonra), daha güvenli olur.
+7. **Save & Generate Key** ▸ **Copy Key to Clipboard**. Anahtar sadece bir kere gösterilir.
+
+> 🔒 Anahtarı **sohbete yapıştırma**, kimseyle paylaşma. Bana sadece "anahtar hazır" yaz; güvenli bir form
+> açarım, anahtarı oraya yapıştırırsın, ben anahtarı hiç görmem. İstersen kendin de ekleyebilirsin:
+> oturumun başlığındaki bulut ortamı menüsü ▸ **Edit** ▸ **Network secrets** ▸ host `apis.roblox.com`,
+> header `x-api-key`.
+
+Bir de bana şunları yaz (gizli değiller):
+- Profil linkin (`roblox.com/users/123456789/profile`): ses senin hesabına yüklensin diye.
+- Oyunun linki (`roblox.com/games/...`): oyunu yayınlamamı istiyorsan.
 
 ## Kendin değiştir
 
@@ -186,7 +212,7 @@ src/client/PaketGorsel.luau          ← kutunun katlanması, bantta giden paket
 src/client/Musteriler.luau           ← müşteriler (gelir, sıra, paket, masa, gider) ve çalışanların hareketi
 src/client/KasabaHalki.luau          ← meydanda gezen/konuşan/dans eden insanlar, NPC'lerin el sallaması
 magaza/                              ← Roblox sayfası: ikon, tanıtım resimleri, açıklama metni
-magaza/kaynak/                       ← resimlerin çizim dosyası (HTML/SVG, Playwright ile PNG'ye çevrilir)
+magaza/kaynak/                       ← ikon ve tanıtım resimlerini oyunun kendi haritasından 3D çeken araç (three.js)
 araclar/harita-uret.luau             ← haritayı harita/Harita.rbxm dosyasına yazar
 test/sim.luau                        ← Studio açmadan hızlı test
 ```
@@ -225,3 +251,15 @@ lune run test/sim.luau BurgerImparatoru.rbxlx ok ses    # ses numarası girilmi�
 ```
 
 Kodu VS Code'da yazıp Studio'ya canlı aktarmak için `rojo serve` ve Studio'daki Rojo eklentisi.
+
+İkon ve tanıtım resimlerini yeniden çek (Node.js, Playwright ve Python Pillow gerekir). `foto` modu 4 oyunculu
+dolu bir kasaba kurup bütün sahneyi `sahne.json`'a yazar; `cek.js` onu three.js ile çizer
+(çekim açıları `cekimler.json`'da), `kucult.py` de Roblox boyutlarına küçültür:
+
+```bash
+cd magaza/kaynak
+npm install
+lune run ../../test/sim.luau ../../BurgerImparatoru.rbxlx foto
+node cek.js
+python3 kucult.py
+```

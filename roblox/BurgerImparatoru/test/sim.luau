@@ -620,6 +620,153 @@ CAMERA.Parent = Workspace
 Workspace.CurrentCamera = CAMERA
 game:GetService("UserInputService").KeyboardEnabled = true
 
+-- "foto" modu: 4 oyunculu dolu bir kasaba kurar, birkaç saniye oynatır ve bütün sahneyi
+-- (parçalar + tabela yazıları) çalıştırıldığı klasördeki sahne.json'a yazar (magaza/kaynak). Tanıtım resimleri bundan çizilir.
+local function fotoSenaryo()
+	local serde = require("@lune/serde")
+	-- tepeler oyun başında araziye dönüşür; fotoğraf için önce yerlerini al
+	local tepeler = {}
+	for _, t in ipairs(unwrap(Workspace.Harita.Tepeler):GetChildren()) do
+		table.insert(tepeler, { t.CFrame.Position.X, t.CFrame.Position.Y, t.CFrame.Position.Z, t.Size.X, t.Color.R, t.Color.G, t.Color.B })
+	end
+	runScript(findScript(game:GetService("ServerScriptService"), "BurgerSunucu"))
+	task.wait(0.4)
+	local Cfg = runScript(findScript(game:GetService("ReplicatedStorage"), "Config"))
+	local Gor = runScript(findScript(game:GetService("ReplicatedStorage"), "Gorsel"))
+	local harita = Workspace:WaitForChild("Harita")
+	local function hepsi()
+		local g = {}
+		for _, x in ipairs(Cfg.Gelistirmeler) do
+			g[x.Anahtar] = x.MaxSeviye
+		end
+		return g
+	end
+	DATASTORE["oyuncu_1001"] = { Surum = 3, Para = 5e9, ToplamPaket = 160000, Sube = 2, Gelistirme = hepsi(), Stil = { Logo = 3, Renk = 6, Ad = "Huss Burger" } }
+	DATASTORE["oyuncu_1002"] = { Surum = 3, Para = 1e6, ToplamPaket = 9000, Sube = 0, Stil = { Logo = 2, Renk = 1, Ad = "Kral Burger" },
+		Gelistirme = { Duvar = 1, Cati = 1, Oturma = 1, Dekor = 1, DevTabela = 1, Makine = 4, Asci = 3, Kasiyer = 1, Temizlikci = 1, HizliEller = 1 } }
+	DATASTORE["oyuncu_1003"] = { Surum = 3, Para = 1e5, ToplamPaket = 1200, Sube = 0, Stil = { Logo = 5, Renk = 4, Ad = "Ejder Burger" },
+		Gelistirme = { Duvar = 1, Cati = 1, Makine = 2, Asci = 1, Kasiyer = 1 } }
+	DATASTORE["oyuncu_1004"] = { Surum = 3, Para = 5000, ToplamPaket = 80, Sube = 0, Stil = { Logo = 8, Renk = 8, Ad = "Elmas Burger" },
+		Gelistirme = { Makine = 1, Asci = 1 } }
+	local oyuncular = {}
+	for i, ad in ipairs({ "Burgerci", "Kral", "Ejder", "Elmas" }) do
+		local plr = wrap(roblox.Instance.new("Player"))
+		plr.Name = ad
+		plr.DisplayName = ad
+		plr.UserId = 1000 + i
+		local g = wrap(roblox.Instance.new("PlayerGui"))
+		g.Parent = plr
+		plr.Parent = Players
+		if i == 1 then
+			LOCAL_PLAYER = plr
+			Players.LocalPlayer = plr
+		end
+		Players.PlayerAdded:Fire(plr)
+		oyuncular[i] = plr
+	end
+	task.wait(0.6)
+	runScript(findScript(game:GetService("StarterPlayer"), "BurgerEkran"))
+	task.wait(1)
+	-- kasaba canlansın: müşteriler gelsin, bantlar dolsun
+	for _ = 1, 260 do
+		RunService.Heartbeat:FireSync(0.05)
+		RunService.RenderStepped:FireSync(0.05)
+		task.wait(0.05)
+	end
+	-- oyuncunun kutusu açık dursun ki burger görünsün (1 katlama)
+	local remotes = game:GetService("ReplicatedStorage").Uzaklar
+	task.wait(0.4)
+
+	-- oyuncu karakterleri (fotoğrafta görünsünler): tezgahın önünde katlayan biri
+	local insanlar = {}
+	local function arsaCf(n)
+		local t = unwrap(harita.Arsalar["Arsa" .. n].Taban)
+		return t.CFrame * roblox.CFrame.new(0, t.Size.Y / 2, 0)
+	end
+	local F1 = arsaCf(1)
+	local oy = Cfg.Yerlesim.OyuncuYeri
+	local at = Cfg.Yerlesim.AnaTezgah
+	local p = (F1 * roblox.CFrame.new(oy.X, 0.3, oy.Z + 4)).Position
+	local h = (F1 * roblox.CFrame.new(at.X, 0.3, at.Z)).Position
+	local kahraman = Gor.Insan(roblox.CFrame.lookAt(p, roblox.Vector3.new(h.X, p.Y, h.Z)), {
+		Gomlek = roblox.Color3.fromRGB(255, 200, 40), Pantolon = roblox.Color3.fromRGB(40, 60, 120),
+		Ten = Gor.Tenler[2], Yuz = "😆", Sapka = "kep", SapkaRenk = roblox.Color3.fromRGB(60, 120, 230),
+	})
+	Gor.InsanTasi(kahraman, roblox.CFrame.lookAt(p, roblox.Vector3.new(h.X, p.Y, h.Z)), 0, false, 1.4)
+	local kk = wrap(roblox.Instance.new("Folder"))
+	kk.Name = "Kahraman"
+	kk.Parent = Workspace
+	for _, x in ipairs(kahraman.Liste) do
+		x.Parent = kk
+	end
+
+	-- dışa aktar
+	local parcalar, guiler = {}, {}
+	local sira = {}
+	local function renk(c)
+		return { c.R, c.G, c.B }
+	end
+	local function udim2(u)
+		return { u.X.Scale, u.X.Offset, u.Y.Scale, u.Y.Offset }
+	end
+	local function elemanlar(kok)
+		local liste = {}
+		for _, c in ipairs(kok:GetChildren()) do
+			if c:IsA("GuiObject") and c.Visible then
+				local e = { tip = c.ClassName, pos = udim2(c.Position), size = udim2(c.Size), anchor = { c.AnchorPoint.X, c.AnchorPoint.Y },
+					bg = renk(c.BackgroundColor3), bgA = 1 - c.BackgroundTransparency, rot = c.Rotation, z = c.ZIndex }
+				local k = c:FindFirstChildOfClass("UICorner")
+				if k then
+					e.kose = { k.CornerRadius.Scale, k.CornerRadius.Offset }
+				end
+				local st = c:FindFirstChildOfClass("UIStroke")
+				if st then
+					e.cizgi = { renk(st.Color), st.Thickness, tostring(st.ApplyStrokeMode) }
+				end
+				if c:IsA("TextLabel") or c:IsA("TextButton") then
+					e.yazi = c.Text
+					e.yr = renk(c.TextColor3)
+					e.yA = 1 - c.TextTransparency
+					e.olcekli = c.TextScaled
+					e.boy = c.TextSize
+					e.hiza = tostring(c.TextXAlignment)
+					e.kenar = 1 - c.TextStrokeTransparency
+				end
+				e.cocuk = elemanlar(c)
+				table.insert(liste, e)
+			end
+		end
+		return liste
+	end
+	for _, d in ipairs(unwrap(Workspace):GetDescendants()) do
+		if d:IsA("BasePart") and d.Name ~= "GorunmezDuvar" and d.Name ~= "HumanoidRootPart" and d.Name ~= "Head" then
+			local mesh = d:FindFirstChildOfClass("SpecialMesh")
+			local sekil = d.ClassName == "WedgePart" and "Wedge" or "Block"
+			if d:IsA("Part") then
+				sekil = tostring(d.Shape):gsub("Enum.PartType.", "")
+			end
+			if mesh then
+				sekil = tostring(mesh.MeshType):gsub("Enum.MeshType.", "")
+			end
+			local kayit = { cf = { d.CFrame:GetComponents() }, s = { d.Size.X, d.Size.Y, d.Size.Z }, c = renk(d.Color),
+				m = tostring(d.Material):gsub("Enum.Material.", ""), a = 1 - d.Transparency, r = d.Reflectance, sh = sekil, n = d.Name }
+			table.insert(parcalar, kayit)
+			sira[d] = #parcalar
+			for _, sg in ipairs(d:GetChildren()) do
+				if sg:IsA("SurfaceGui") and sg.Enabled then
+					table.insert(guiler, { tur = "yuzey", parca = #parcalar, yuz = tostring(sg.Face):gsub("Enum.NormalId.", ""),
+						parlak = sg.LightInfluence < 0.2, el = elemanlar(sg) })
+				elseif sg:IsA("BillboardGui") and sg.Enabled then
+					local yer = d.CFrame.Position + sg.StudsOffset
+					table.insert(guiler, { tur = "pano", yer = { yer.X, yer.Y, yer.Z }, size = udim2(sg.Size), el = elemanlar(sg) })
+				end
+			end
+		end
+	end
+	fs.writeFile("sahne.json", serde.encode("json", { parcalar = parcalar, guiler = guiler, tepeler = tepeler }))
+	print(string.format("sahne.json: %d parça, %d yazı", #parcalar, #guiler))
+end
+
 local function senaryo()
 print("== Sunucu başlıyor")
 local ConfigS = nil
@@ -977,7 +1124,7 @@ if zengin then
 	task.wait(0.3)
 end
 end
-local okS, errS = xpcall(senaryo, debug.traceback)
+local okS, errS = xpcall(DATASTORE_MODE == "foto" and fotoSenaryo or senaryo, debug.traceback)
 if not okS then
 	reportError("SENARYO: " .. tostring(errS))
 end
