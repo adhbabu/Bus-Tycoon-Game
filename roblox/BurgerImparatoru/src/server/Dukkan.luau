@@ -134,10 +134,10 @@ function Dukkan.Kur(arsa, veri)
 	local solX, sagX = bm.X - bb.X / 2, bm.X + bb.X / 2
 
 	-- Zemin (dükkan renginde, kenarı beyaz)
-	blok("Zemin", Vector3.new(bb.X, 0.3, bb.Z), CFrame.new(bm.X, 0.15, bm.Z), acik, Enum.Material.SmoothPlastic)
+	blok("Zemin", Vector3.new(bb.X, 0.3, bb.Z), CFrame.new(bm.X, 0.15, bm.Z), acik, Enum.Material.CeramicTiles)
 	blok("ZeminKenar", Vector3.new(bb.X + 1, 0.2, bb.Z + 1), CFrame.new(bm.X, 0.1, bm.Z), BEYAZ, Enum.Material.SmoothPlastic)
 	-- Önde kaldırım taşı (oyuncunun durduğu yer)
-	blok("OnAvlu", Vector3.new(bb.X, 0.25, 15), CFrame.new(0, 0.125, onZ - 7.5), Color3.fromRGB(215, 210, 200), Enum.Material.Concrete)
+	blok("OnAvlu", Vector3.new(bb.X, 0.25, 15), CFrame.new(0, 0.125, onZ - 7.5), Color3.fromRGB(215, 210, 200), Enum.Material.Pavement)
 
 	-- Ana tezgah (KATLA kutusu burada)
 	local at = Y.AnaTezgah
@@ -168,10 +168,11 @@ function Dukkan.Kur(arsa, veri)
 
 	-- Ön tabela: logo + dükkan adı (iki yüzü de yazılı)
 	local tp = Y.TabelaYeri
-	for _, x in ipairs({ -6, 6 }) do
-		blok("TabelaDirek", Vector3.new(0.6, 9, 0.6), CFrame.new(tp.X + x, 4.5, tp.Z), KOYU_METAL, Enum.Material.Metal)
+	for _, x in ipairs({ -8, 8 }) do
+		blok("TabelaDirek", Vector3.new(0.7, 11.5, 0.7), CFrame.new(tp.X + x, 5.75, tp.Z), KOYU_METAL, Enum.Material.Metal)
 	end
-	local pano = blok("Tabela", Vector3.new(14, 5, 0.6), CFrame.new(tp.X, 7.5, tp.Z), renk)
+	local pano = blok("Tabela", Vector3.new(18, 6, 0.6), CFrame.new(tp.X, 9, tp.Z), renk)
+	blok("TabelaCerceve", Vector3.new(18.8, 6.8, 0.4), CFrame.new(tp.X, 9, tp.Z), BEYAZ, Enum.Material.SmoothPlastic)
 	local ust = stil.Logo .. " " .. stil.Ad
 	local alt = "Sahibi: " .. veri.SahipAdi
 	tabelaYazisi(pano, Enum.NormalId.Front, ust, alt, renk)
@@ -222,6 +223,7 @@ function Dukkan.Kur(arsa, veri)
 	-- Duvarlar ve camlar
 	if var("Duvar") then
 		local H = bb.Y
+		local CAM_UST = H - 4 -- camların üst kenarı
 		local duvarRenk = renk:Lerp(Color3.new(1, 1, 1), 0.35)
 		local cam = Color3.fromRGB(170, 215, 240)
 		local function duvar(x0, x1, z, y0, y1)
@@ -235,6 +237,14 @@ function Dukkan.Kur(arsa, veri)
 				Transparency = 0.55,
 				Reflectance = 0.15,
 			})
+			-- beyaz cam çerçeveleri (dışarıdan bakınca vitrin gibi)
+			local adet = math.max(1, math.floor((x1 - x0) / 6 + 0.5))
+			for i = 1, adet - 1 do
+				local x = x0 + (x1 - x0) * i / adet
+				blok("CamCerceve", Vector3.new(0.35, y1 - y0, 0.5), CFrame.new(x, (y0 + y1) / 2, z - 0.1), BEYAZ, Enum.Material.SmoothPlastic)
+			end
+			blok("CamCerceve", Vector3.new(x1 - x0, 0.35, 0.5), CFrame.new((x0 + x1) / 2, y1, z - 0.1), BEYAZ, Enum.Material.SmoothPlastic)
+			blok("CamCerceve", Vector3.new(x1 - x0, 0.35, 0.5), CFrame.new((x0 + x1) / 2, y0, z - 0.1), BEYAZ, Enum.Material.SmoothPlastic)
 		end
 		-- ön duvar: [sol cam] [kapı] [orta] [satış penceresi] [sağ cam]
 		local fz = onZ + 0.5
@@ -243,13 +253,13 @@ function Dukkan.Kur(arsa, veri)
 		-- alt bant (cam altı) ve üst bant (cam üstü) ile camlı bölümler
 		local function camliBolum(x0, x1)
 			duvar(x0, x1, fz, 0, 3)
-			camPanel(x0, x1, fz, 3, 9)
-			duvar(x0, x1, fz, 9, H)
+			camPanel(x0, x1, fz, 3, CAM_UST)
+			duvar(x0, x1, fz, CAM_UST, H)
 		end
 		duvar(solX, solX + 2, fz, 0, H)
 		camliBolum(solX + 2, kapi0 - 1)
 		duvar(kapi0 - 1, kapi0, fz, 0, H)
-		duvar(kapi0, kapi1, fz, 8, H) -- kapının üstü
+		duvar(kapi0, kapi1, fz, 9, H) -- kapının üstü
 		duvar(kapi1, kapi1 + 1, fz, 0, H)
 		camliBolum(kapi1 + 1, pen0)
 		duvar(pen0, pen1, fz, 0, TEPE - 0.3) -- pencerenin altı
@@ -265,11 +275,15 @@ function Dukkan.Kur(arsa, veri)
 			blok("Duvar", Vector3.new(1, H, c0 - z0), CFrame.new(x, H / 2, (z0 + c0) / 2), duvarRenk, Enum.Material.Brick)
 			blok("Duvar", Vector3.new(1, H, z1 - c1), CFrame.new(x, H / 2, (c1 + z1) / 2), duvarRenk, Enum.Material.Brick)
 			blok("Duvar", Vector3.new(1, 3, c1 - c0), CFrame.new(x, 1.5, (c0 + c1) / 2), duvarRenk, Enum.Material.Brick)
-			blok("Duvar", Vector3.new(1, H - 9, c1 - c0), CFrame.new(x, (9 + H) / 2, (c0 + c1) / 2), duvarRenk, Enum.Material.Brick)
-			blok("Cam", Vector3.new(0.3, 6, c1 - c0), CFrame.new(x, 6, (c0 + c1) / 2), cam, Enum.Material.Glass, { Transparency = 0.55, Reflectance = 0.15 })
+			blok("Duvar", Vector3.new(1, H - CAM_UST, c1 - c0), CFrame.new(x, (CAM_UST + H) / 2, (c0 + c1) / 2), duvarRenk, Enum.Material.Brick)
+			blok("Cam", Vector3.new(0.3, CAM_UST - 3, c1 - c0), CFrame.new(x, (3 + CAM_UST) / 2, (c0 + c1) / 2), cam, Enum.Material.Glass, { Transparency = 0.55, Reflectance = 0.15 })
 		end
 		-- beyaz üst şerit
 		blok("UstSerit", Vector3.new(bb.X + 0.6, 0.8, 1.4), CFrame.new(bm.X, H - 0.4, fz), BEYAZ)
+		-- içeride, arka duvarda menü panosu (logo ve menü: her dilde aynı)
+		local menu = blok("MenuPano", Vector3.new(26, 6, 0.4), CFrame.new(bm.X, H - 4.5, arkaZ - 1.2), Color3.fromRGB(45, 38, 36), Enum.Material.SmoothPlastic)
+		tabelaYazisi(menu, Enum.NormalId.Front, stil.Logo .. "  🍔  🍟  🥤  " .. stil.Logo, nil, Color3.fromRGB(45, 38, 36), true)
+		blok("MenuCerceve", Vector3.new(27, 7, 0.3), CFrame.new(bm.X, H - 4.5, arkaZ - 1.05), renk, Enum.Material.SmoothPlastic)
 	end
 
 	-- Çatı ve neon tabela
@@ -277,9 +291,30 @@ function Dukkan.Kur(arsa, veri)
 		local H = bb.Y
 		blok("Cati", Vector3.new(bb.X + 2, 1, bb.Z + 2), CFrame.new(bm.X, H + 0.5, bm.Z), Color3.fromRGB(90, 90, 98), Enum.Material.Concrete)
 		blok("CatiKenar", Vector3.new(bb.X + 2.4, 1.4, 0.6), CFrame.new(bm.X, H + 1.2, onZ - 1), renk)
-		local neon = blok("NeonTabela", Vector3.new(26, 6, 0.8), CFrame.new(0, H + 4.5, onZ - 0.6), renk:Lerp(Color3.new(0, 0, 0), 0.25))
+		-- çatının yan ve arka kenarları (bina daha toplu görünsün)
+		blok("CatiKenar", Vector3.new(bb.X + 2.4, 1.4, 0.6), CFrame.new(bm.X, H + 1.2, arkaZ + 1), renk)
+		blok("CatiKenar", Vector3.new(0.6, 1.4, bb.Z + 2.6), CFrame.new(solX - 1, H + 1.2, bm.Z), renk)
+		blok("CatiKenar", Vector3.new(0.6, 1.4, bb.Z + 2.6), CFrame.new(sagX + 1, H + 1.2, bm.Z), renk)
+		-- çatıda klima kutuları
+		for _, x in ipairs({ -bb.X / 2 + 7, bb.X / 2 - 7 }) do
+			blok("Klima", Vector3.new(5, 2.6, 4), CFrame.new(bm.X + x, H + 2.3, arkaZ - 6), Color3.fromRGB(200, 202, 208), Enum.Material.Metal)
+			dikDisk("KlimaPervane", 0.3, 3, CFrame.new(bm.X + x, H + 3.7, arkaZ - 6), Color3.fromRGB(70, 72, 80), Enum.Material.DiamondPlate)
+		end
+		-- tavan ışıkları
+		for _, x in ipairs({ -bb.X / 4, bb.X / 4 }) do
+			local lamba = blok("TavanIsigi", Vector3.new(8, 0.3, 2), CFrame.new(bm.X + x, H - 0.2, bm.Z), Color3.fromRGB(255, 245, 220), Enum.Material.Neon)
+			lamba.CanCollide = false
+			local tl = Instance.new("SurfaceLight")
+			tl.Face = Enum.NormalId.Bottom
+			tl.Range = 18
+			tl.Angle = 120
+			tl.Brightness = 1.2
+			tl.Color = Color3.fromRGB(255, 240, 210)
+			tl.Parent = lamba
+		end
+		local neon = blok("NeonTabela", Vector3.new(36, 7, 0.8), CFrame.new(0, H + 5, onZ - 0.6), renk:Lerp(Color3.new(0, 0, 0), 0.25))
 		tabelaYazisi(neon, Enum.NormalId.Front, stil.Logo .. " " .. stil.Ad, nil, renk:Lerp(Color3.new(0, 0, 0), 0.25), true)
-		local serit = blok("NeonSerit", Vector3.new(26.4, 0.4, 0.4), CFrame.new(0, H + 1.4, onZ - 1.1), renk, Enum.Material.Neon)
+		local serit = blok("NeonSerit", Vector3.new(36.4, 0.4, 0.4), CFrame.new(0, H + 1.4, onZ - 1.1), renk, Enum.Material.Neon)
 		serit.CanCollide = false
 		local isik = Instance.new("SurfaceLight")
 		isik.Face = Enum.NormalId.Front
@@ -367,8 +402,8 @@ function Dukkan.Kur(arsa, veri)
 	-- Çatıda dev burger
 	if var("DevTabela") and var("Cati") then
 		local tabanY = bb.Y + 1
-		dikDisk("DevBurgerKaide", 1.2, 13, CFrame.new(0, tabanY + 0.6, bm.Z + 2), renk, Enum.Material.SmoothPlastic)
-		local parcalar = Gorsel.Burger(F * CFrame.new(0, tabanY + 1.2, bm.Z + 2), 2.4, false, false)
+		dikDisk("DevBurgerKaide", 1.2, 17, CFrame.new(0, tabanY + 0.6, bm.Z + 2), renk, Enum.Material.SmoothPlastic)
+		local parcalar = Gorsel.Burger(F * CFrame.new(0, tabanY + 1.2, bm.Z + 2), 3.2, false, false)
 		for _, p in ipairs(parcalar) do
 			p.CanCollide = true
 			p.Parent = klasor

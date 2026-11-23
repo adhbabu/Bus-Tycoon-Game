@@ -111,9 +111,10 @@ const D = {
   tahta: doku((x, n) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, n, n); for (let i = 0; i < 60; i++) { const v = 200 + Math.random() * 55; x.strokeStyle = `rgba(${v - 40},${v - 40},${v - 40},0.35)`; x.beginPath(); const y = Math.random() * n; x.moveTo(0, y); x.bezierCurveTo(n / 3, y + 4, 2 * n / 3, y - 4, n, y); x.stroke(); } x.fillStyle = '#c8c8c8'; for (let r = 0; r < 4; r++) x.fillRect(0, r * n / 4, n, 2); }),
   karton: doku((x, n) => { gurultu(x, n, 215, 255, 5000); x.strokeStyle = 'rgba(180,180,180,0.25)'; for (let i = 0; i < n; i += 6) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, n); x.stroke(); } }),
   kumas: doku((x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.strokeStyle = 'rgba(190,190,190,0.5)'; for (let i = 0; i < n; i += 4) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, n); x.stroke(); x.beginPath(); x.moveTo(0, i); x.lineTo(n, i); x.stroke(); } }),
+  karo: doku((x, n) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, n, n); x.fillStyle = '#cfcfcf'; const h = n / 4; for (let r = 0; r < 4; r++) { x.fillRect(0, r * h, n, 3); x.fillRect(r * h, 0, 3, n); } }),
   tas: doku((x, n) => { x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, n, n); for (let i = 0; i < 90; i++) { const v = 205 + Math.random() * 50; x.fillStyle = `rgb(${v},${v},${v})`; x.beginPath(); x.ellipse(Math.random() * n, Math.random() * n, 10 + Math.random() * 14, 8 + Math.random() * 10, Math.random() * 3, 0, 7); x.fill(); } }),
 };
-const DOKU = { Grass: ['cimen', 6], Asphalt: ['asfalt', 6], Concrete: ['ince', 6], Brick: ['tugla', 6], WoodPlanks: ['tahta', 8], Wood: ['tahta', 4], Cardboard: ['karton', 3], Fabric: ['kumas', 2], Cobblestone: ['tas', 6], Slate: ['ince', 3], Sand: ['ince', 4], Marble: ['ince', 8], DiamondPlate: ['kumas', 2] };
+const DOKU = { Grass: ['cimen', 6], Asphalt: ['asfalt', 6], Concrete: ['ince', 6], Brick: ['tugla', 6], WoodPlanks: ['tahta', 8], Wood: ['tahta', 4], Cardboard: ['karton', 3], Fabric: ['kumas', 2], Cobblestone: ['tas', 6], CeramicTiles: ['karo', 8], Pavement: ['tas', 10], Slate: ['ince', 3], Sand: ['ince', 4], Marble: ['ince', 8], DiamondPlate: ['kumas', 2] };
 
 const malzemeler = new Map();
 function malzeme(p) {
@@ -128,7 +129,7 @@ function malzeme(p) {
     case 'Foil': Object.assign(oz, { metalness: 0.45, roughness: 0.28, envMapIntensity: 1.6, emissive: renk, emissiveIntensity: 0.12 }); break;
     case 'Metal': case 'DiamondPlate': Object.assign(oz, { metalness: 0.55, roughness: 0.38, envMapIntensity: 1.0 }); break;
     case 'Marble': Object.assign(oz, { roughness: 0.18, envMapIntensity: 0.9 }); break;
-    case 'Grass': case 'Asphalt': case 'Concrete': case 'Brick': case 'Sand': case 'Cobblestone': case 'Slate': Object.assign(oz, { roughness: 0.92 }); break;
+    case 'Grass': case 'Asphalt': case 'Concrete': case 'Brick': case 'Sand': case 'Cobblestone': case 'Slate': case 'Pavement': Object.assign(oz, { roughness: 0.92 }); break;
     case 'Fabric': case 'Cardboard': Object.assign(oz, { roughness: 0.85 }); break;
     case 'Wood': case 'WoodPlanks': Object.assign(oz, { roughness: 0.75 }); break;
     default: Object.assign(oz, { roughness: 0.45, envMapIntensity: 0.55 });

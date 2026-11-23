@@ -57,7 +57,8 @@ if not harita then
 end
 local arsaKlasoru = harita:WaitForChild("Arsalar")
 
--- Oyun başlayınca tepeler ve göl gerçek araziye (Terrain) dönüşür: yumuşak çimen tepeler, dalgalı su.
+-- Oyun başlayınca tepeler, kasabanın dışındaki çayırlar ve göl gerçek araziye (Terrain) dönüşür:
+-- rüzgârda sallanan çimenler, yumuşak tepeler, dalgalı su.
 -- (Studio'da düzenlerken bloklar olarak görünürler.)
 task.spawn(function()
 	local arazi = workspace:FindFirstChildOfClass("Terrain")
@@ -65,6 +66,15 @@ task.spawn(function()
 		return
 	end
 	local ok, hata = pcall(function()
+		local cayirlar = harita:FindFirstChild("Cayirlar")
+		if cayirlar then
+			for _, c in ipairs(cayirlar:GetChildren()) do
+				if c:IsA("BasePart") then
+					arazi:FillBlock(c.CFrame, c.Size, Enum.Material.Grass)
+					c:Destroy()
+				end
+			end
+		end
 		local tepeler = harita:FindFirstChild("Tepeler")
 		if tepeler then
 			for _, t in ipairs(tepeler:GetChildren()) do

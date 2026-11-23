@@ -6,12 +6,15 @@
 
 local HaritaUretici = {}
 
-local YOL_IC = 48 -- meydanın kenarı
-local YOL_DIS = 66 -- yolun dış kenarı
-local KALDIRIM = 72 -- kaldırımın dış kenarı (arsalar buradan başlar)
-local ARSA_MERKEZ = 102 -- arsanın merkezi (meydanın ortasına uzaklık)
-local ARSA_KAYMA = 40 -- bir kenardaki iki arsa bu kadar sağa/sola kayık
-local HARITA = 360 -- yarım genişlik
+local YOL_IC = 60 -- meydanın kenarı
+local YOL_DIS = 80 -- yolun dış kenarı
+local KALDIRIM = 88 -- kaldırımın dış kenarı (arsalar buradan başlar)
+local ARSA_MERKEZ = 130 -- arsanın merkezi (meydanın ortasına uzaklık) = KALDIRIM + arsa derinliği / 2
+local ARSA_KAYMA = 56 -- bir kenardaki iki arsa bu kadar sağa/sola kayık (arsa eni / 2 + 6)
+local PARK = 140 -- köşe parklarının merkezi
+local PARK_BOY = 60
+local CEKIRDEK = 176 -- kasabanın parça zemini bu kadar; dışı oyunda gerçek çimene (Terrain) döner
+local HARITA = 480 -- yarım genişlik
 
 function HaritaUretici.Uret(Config, Gorsel)
 	local rastgele = Random.new(2026)
@@ -62,7 +65,16 @@ function HaritaUretici.Uret(Config, Gorsel)
 	-- Zemin
 	------------------------------------------------------------------
 	local zemin = klasor("Zemin")
-	blok(zemin, "Cimen", Vector3.new(HARITA * 2, 4, HARITA * 2), CFrame.new(0, -2, 0), Color3.fromRGB(96, 168, 72), Enum.Material.Grass)
+	local cimenRenk = Color3.fromRGB(96, 168, 72)
+	blok(zemin, "Cimen", Vector3.new(CEKIRDEK * 2, 4, CEKIRDEK * 2), CFrame.new(0, -2, 0), cimenRenk, Enum.Material.Grass)
+	-- Kasabanın dışı: oyun başlayınca sunucu bunları rüzgârda sallanan gerçek çimene çevirir
+	local cayirlar = klasor("Cayirlar")
+	local disEn = HARITA - CEKIRDEK
+	local disOrta = (HARITA + CEKIRDEK) / 2
+	blok(cayirlar, "Cayir", Vector3.new(HARITA * 2, 4, disEn), CFrame.new(0, -2, -disOrta), cimenRenk, Enum.Material.Grass)
+	blok(cayirlar, "Cayir", Vector3.new(HARITA * 2, 4, disEn), CFrame.new(0, -2, disOrta), cimenRenk, Enum.Material.Grass)
+	blok(cayirlar, "Cayir", Vector3.new(disEn, 4, CEKIRDEK * 2), CFrame.new(-disOrta, -2, 0), cimenRenk, Enum.Material.Grass)
+	blok(cayirlar, "Cayir", Vector3.new(disEn, 4, CEKIRDEK * 2), CFrame.new(disOrta, -2, 0), cimenRenk, Enum.Material.Grass)
 	-- Haritadan düşmesinler
 	for _, d in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
 		local boy = d[1] ~= 0 and Vector3.new(2, 80, HARITA * 2) or Vector3.new(HARITA * 2, 80, 2)
@@ -181,12 +193,12 @@ function HaritaUretici.Uret(Config, Gorsel)
 		pipet.Parent = m
 		return m
 	end
-	devPatates(Vector3.new(30, 0.4, 30)).Parent = meydan
-	devKola(Vector3.new(-30, 0.4, 30)).Parent = meydan
+	devPatates(Vector3.new(38, 0.4, 38)).Parent = meydan
+	devKola(Vector3.new(-38, 0.4, 38)).Parent = meydan
 
 	-- Fıskiyeler
 	for _, k in ipairs({ { 1, -1 }, { -1, -1 } }) do
-		local m = Vector3.new(k[1] * 30, 0, k[2] * 30)
+		local m = Vector3.new(k[1] * 38, 0, k[2] * 38)
 		local havuz = disk(CFrame.new(m + Vector3.new(0, 0.9, 0)), 1.4, 13, Color3.fromRGB(190, 190, 195), Enum.Material.Concrete)
 		havuz.CanCollide = true
 		havuz.Parent = meydan
@@ -305,9 +317,14 @@ function HaritaUretici.Uret(Config, Gorsel)
 	for _, k in ipairs({ { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } }) do
 		local yon = Vector3.new(k[1], 0, k[2])
 		local yan = Vector3.new(-k[2], 0, k[1])
-		for t = -60, 60, 30 do
+		for t = -75, 75, 25 do
 			local p = yon * (YOL_DIS + 1.2) + yan * t + Vector3.new(0, 0.5, 0)
 			lamba(p, -yon).Parent = yol
+		end
+		-- meydanın içinde de lambalar (heykele giden yolda)
+		for _, t in ipairs({ -12, 12 }) do
+			local p = yon * 34 + yan * t + Vector3.new(0, 0.4, 0)
+			lamba(p, yan * (t > 0 and -1 or 1)).Parent = yol
 		end
 	end
 
@@ -332,18 +349,18 @@ function HaritaUretici.Uret(Config, Gorsel)
 	end
 	-- meydanın köşelerinde ağaçlar
 	for _, k in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
-		agac(Vector3.new(k[1] * 41, 0.4, k[2] * 41), 1)
-		agac(Vector3.new(k[1] * 41, 0.4, k[2] * 18), 0.9)
-		agac(Vector3.new(k[1] * 18, 0.4, k[2] * 41), 0.9)
+		agac(Vector3.new(k[1] * 54, 0.4, k[2] * 54), 1.1)
+		agac(Vector3.new(k[1] * 54, 0.4, k[2] * 26), 0.95)
+		agac(Vector3.new(k[1] * 26, 0.4, k[2] * 54), 0.95)
 	end
 	-- köşe parkları (arsaların arasındaki köşeler)
 	local parklar = klasor("Parklar")
 	for _, k in ipairs({ { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } }) do
-		local merkez = Vector3.new(k[1] * 110, 0, k[2] * 110)
-		local cimen = blok(parklar, "ParkCimeni", Vector3.new(66, 0.3, 66), CFrame.new(merkez + Vector3.new(0, 0.15, 0)), Color3.fromRGB(110, 185, 80), Enum.Material.Grass)
+		local merkez = Vector3.new(k[1] * PARK, 0, k[2] * PARK)
+		local cimen = blok(parklar, "ParkCimeni", Vector3.new(PARK_BOY, 0.3, PARK_BOY), CFrame.new(merkez + Vector3.new(0, 0.15, 0)), Color3.fromRGB(110, 185, 80), Enum.Material.Grass)
 		cimen.CanCollide = true
 		local yolCf = CFrame.lookAt(merkez, Vector3.new(0, 0, 0))
-		blok(parklar, "ParkYolu", Vector3.new(4, 0.32, 70), yolCf * CFrame.new(0, 0.2, 0), Color3.fromRGB(225, 205, 160), Enum.Material.Sand)
+		blok(parklar, "ParkYolu", Vector3.new(4, 0.32, PARK_BOY * 1.35), yolCf * CFrame.new(0, 0.2, 0), Color3.fromRGB(225, 205, 160), Enum.Material.Sand)
 		if k[1] == 1 and k[2] == -1 then
 			-- göl
 			local gol = disk(CFrame.new(merkez + Vector3.new(8, 0.35, -8)), 0.2, 34, Color3.fromRGB(60, 150, 220), Enum.Material.Glass)
@@ -355,7 +372,7 @@ function HaritaUretici.Uret(Config, Gorsel)
 			kiyi.Parent = parklar
 		end
 		for _ = 1, 9 do
-			local p = merkez + Vector3.new(rastgele:NextNumber(-28, 28), 0.3, rastgele:NextNumber(-28, 28))
+			local p = merkez + Vector3.new(rastgele:NextNumber(-25, 25), 0.3, rastgele:NextNumber(-25, 25))
 			if (p - merkez).Magnitude > 8 then
 				agac(p)
 			end
@@ -364,9 +381,9 @@ function HaritaUretici.Uret(Config, Gorsel)
 		saksi(parklar, merkez + Vector3.new(6, 0.3, 6))
 	end
 	-- dış halka: arsaların arkasında sık ağaçlar
-	for i = 1, 70 do
-		local a = i / 70 * math.pi * 2 + rastgele:NextNumber(-0.03, 0.03)
-		local r = rastgele:NextNumber(150, 175)
+	for i = 1, 90 do
+		local a = i / 90 * math.pi * 2 + rastgele:NextNumber(-0.03, 0.03)
+		local r = rastgele:NextNumber(190, 215)
 		local x, z = math.cos(a) * r, math.sin(a) * r
 		-- kare haritada köşelere doğru daha uzağa
 		local olcek = 1 / math.max(math.abs(math.cos(a)), math.abs(math.sin(a)))
@@ -383,11 +400,11 @@ function HaritaUretici.Uret(Config, Gorsel)
 		Color3.fromRGB(190, 225, 180), Color3.fromRGB(220, 190, 235), Color3.fromRGB(235, 235, 225),
 	}
 	local cam = Color3.fromRGB(150, 200, 235)
-	for i = 1, 22 do
-		local a = i / 22 * math.pi * 2 + 0.07
-		local r = rastgele:NextNumber(225, 265)
+	for i = 1, 30 do
+		local a = i / 30 * math.pi * 2 + 0.07
+		local r = rastgele:NextNumber(275, 325)
 		local p = Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
-		local en, boy, derin = rastgele:NextNumber(18, 30), rastgele:NextNumber(22, 60), rastgele:NextNumber(16, 24)
+		local en, boy, derin = rastgele:NextNumber(20, 34), rastgele:NextNumber(26, 72), rastgele:NextNumber(18, 26)
 		local cf = CFrame.lookAt(p, Vector3.new(0, 0, 0))
 		local m = Instance.new("Model")
 		m.Name = "Bina"
@@ -401,10 +418,10 @@ function HaritaUretici.Uret(Config, Gorsel)
 		m.Parent = sehir
 	end
 	local tepeler = klasor("Tepeler")
-	for i = 1, 26 do
-		local a = i / 26 * math.pi * 2
-		local cap = rastgele:NextNumber(70, 130)
-		local r = rastgele:NextNumber(300, 345)
+	for i = 1, 32 do
+		local a = i / 32 * math.pi * 2
+		local cap = rastgele:NextNumber(80, 150)
+		local r = rastgele:NextNumber(390, 440)
 		local p = Vector3.new(math.cos(a) * r, -cap * 0.28, math.sin(a) * r)
 		top(tepeler, "Tepe", cap, CFrame.new(p), Color3.fromRGB(85, 155, 65):Lerp(Color3.fromRGB(120, 175, 80), rastgele:NextNumber()))
 	end
@@ -458,7 +475,8 @@ function HaritaUretici.Uret(Config, Gorsel)
 
 	-- Meydanın kenarında bayrak süsü: köşe direkleri ile kemerler arasında
 	local bayrakRenk = { KIRMIZI, SARI, Color3.fromRGB(70, 170, 90), Color3.fromRGB(60, 130, 230), Color3.fromRGB(245, 130, 40) }
-	local koseler = { Vector3.new(-46, 0, -46), Vector3.new(46, 0, -46), Vector3.new(46, 0, 46), Vector3.new(-46, 0, 46) }
+	local kk = YOL_IC - 2
+	local koseler = { Vector3.new(-kk, 0, -kk), Vector3.new(kk, 0, -kk), Vector3.new(kk, 0, kk), Vector3.new(-kk, 0, kk) }
 	for _, kp in ipairs(koseler) do
 		local direk = disk(CFrame.new(kp + Vector3.new(0, 5.5, 0)), 11, 0.6, BEYAZ, Enum.Material.Metal)
 		direk.CanCollide = true
@@ -513,9 +531,9 @@ function HaritaUretici.Uret(Config, Gorsel)
 		yazili(etiket, Enum.NormalId.Front, yazi, renk, BEYAZ)
 		return m
 	end
-	sise(Vector3.new(-122, 0.3, 98), Color3.fromRGB(205, 35, 35), BEYAZ, "KETÇAP").Parent = sus
-	sise(Vector3.new(-116, 0.3, 104), Color3.fromRGB(245, 200, 30), Color3.fromRGB(205, 35, 35), "HARDAL").Parent = sus
-	sise(Vector3.new(118, 0.3, 122), Color3.fromRGB(205, 35, 35), BEYAZ, "KETÇAP").Parent = sus
+	sise(Vector3.new(-PARK - 12, 0.3, PARK - 12), Color3.fromRGB(205, 35, 35), BEYAZ, "KETÇAP").Parent = sus
+	sise(Vector3.new(-PARK - 6, 0.3, PARK - 6), Color3.fromRGB(245, 200, 30), Color3.fromRGB(205, 35, 35), "HARDAL").Parent = sus
+	sise(Vector3.new(PARK + 8, 0.3, PARK + 12), Color3.fromRGB(205, 35, 35), BEYAZ, "KETÇAP").Parent = sus
 
 	-- Yemek kamyonları
 	local function kamyon(cf, renk, yazi)
@@ -535,13 +553,13 @@ function HaritaUretici.Uret(Config, Gorsel)
 		end
 		return m
 	end
-	kamyon(CFrame.lookAt(Vector3.new(-96, 0.3, -122), Vector3.new(-96, 0.3, -140)), Color3.fromRGB(240, 120, 170), "🍦 DONDURMA").Parent = sus
-	kamyon(CFrame.lookAt(Vector3.new(124, 0.3, 92), Vector3.new(140, 0.3, 92)), Color3.fromRGB(70, 160, 230), "🌭 SOSİSLİ").Parent = sus
+	kamyon(CFrame.lookAt(Vector3.new(-PARK + 14, 0.3, -PARK - 12), Vector3.new(-PARK + 14, 0.3, -PARK - 30)), Color3.fromRGB(240, 120, 170), "🍦 DONDURMA").Parent = sus
+	kamyon(CFrame.lookAt(Vector3.new(PARK + 14, 0.3, PARK - 18), Vector3.new(PARK + 30, 0.3, PARK - 18)), Color3.fromRGB(70, 160, 230), "🌭 SOSİSLİ").Parent = sus
 
 	-- Gökyüzünde burger balon
 	local balon = Instance.new("Model")
 	balon.Name = "BurgerBalon"
-	local balonCf = CFrame.new(-110, 52, -105) * CFrame.Angles(math.rad(6), 0, math.rad(-4))
+	local balonCf = CFrame.new(-PARK, 62, -PARK + 5) * CFrame.Angles(math.rad(6), 0, math.rad(-4))
 	local bParcalar = Gorsel.Burger(balonCf, 3, false, true)
 	for _, p in ipairs(bParcalar) do
 		p.Parent = balon
@@ -607,7 +625,7 @@ function HaritaUretici.Uret(Config, Gorsel)
 	spawn.Neutral = true
 	spawn.Duration = 0
 	spawn.Size = Vector3.new(10, 0.4, 10)
-	spawn.CFrame = CFrame.new(0, 0.6, 32)
+	spawn.CFrame = CFrame.new(0, 0.6, 36)
 	spawn.Color = Color3.fromRGB(255, 200, 50)
 	spawn.Material = Enum.Material.Neon
 	spawn.Transparency = 0.5

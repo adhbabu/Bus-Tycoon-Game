@@ -82,13 +82,13 @@ end
 
 local function musteriYap(st, F)
 	local giris = Y.MusteriGiris
-	local sx = rastgele:NextNumber(-28, 32)
+	local sx = rastgele:NextNumber(-Y.ArsaBoyu.X * 0.4, Y.ArsaBoyu.X * 0.46)
 	local m = {
 		Arsa = st,
 		Konum = F * Vector3.new(sx, 0, giris),
 		Faz = rastgele:NextNumber(0, 6),
 		Durum = "geliyor",
-		Yol = { F * Vector3.new(Y.SatisNoktasi.X + rastgele:NextNumber(-4, 4), 0, -27) },
+		Yol = { F * Vector3.new(Y.SatisNoktasi.X + rastgele:NextNumber(-4, 4), 0, Y.SatisNoktasi.Z - 11.5) },
 	}
 	m.Insan = Gorsel.Insan(CFrame.new(m.Konum), {
 		Gomlek = sec(GOMLEKLER),
@@ -150,9 +150,9 @@ local function cikisYolu(F, m)
 	local s = Y.SatisNoktasi
 	local yon = rastgele:NextNumber() < 0.5 and -1 or 1
 	return {
-		F * Vector3.new(s.X + 6, 0, -27),
+		F * Vector3.new(s.X + 6, 0, s.Z - 11.5),
 		F * Vector3.new(s.X + 8, 0, Y.MusteriGiris),
-		F * Vector3.new(yon * 48, 0, Y.MusteriGiris),
+		F * Vector3.new(yon * (Y.ArsaBoyu.X / 2 + 13), 0, Y.MusteriGiris),
 	}
 end
 

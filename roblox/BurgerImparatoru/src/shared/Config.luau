@@ -173,28 +173,28 @@ Config.Unvanlar = {
 -- Hem sunucu (binayı kurar) hem oyuncu ekranı (kutuları oynatır) bunu kullanır.
 ----------------------------------------------------------------------
 Config.Yerlesim = {
-	ArsaBoyu = Vector3.new(70, 1, 60),
-	BinaMerkez = Vector3.new(0, 0, 5), -- binanın tabanının ortası
-	BinaBoyu = Vector3.new(50, 12, 34), -- en, yükseklik, derinlik
+	ArsaBoyu = Vector3.new(100, 1, 84),
+	BinaMerkez = Vector3.new(0, 0, 8), -- binanın tabanının ortası
+	BinaBoyu = Vector3.new(70, 16, 46), -- en, yükseklik, derinlik
 	TezgahYuksekligi = 3.4,
-	AnaTezgah = Vector3.new(-12, 0, -16), -- KATLA kutusunun durduğu tezgah (binanın önünde)
-	OyuncuYeri = Vector3.new(-12, 0, -24), -- oyuncu buraya ışınlanır, tezgaha bakar
-	SatisNoktasi = Vector3.new(14, 0, -15.5), -- paketler burada satılır
-	MakineZ = 17, -- makineler arka duvarın önünde
-	MakineX = { -21, -15, -9, -3, 3, 9 },
-	BantZ = 10, -- makinelerin önündeki ana bant
-	BantX = 14, -- bant buradan öne, satış penceresine döner
-	Masalar = { Vector3.new(-28.5, 0, -26), Vector3.new(-28.5, 0, -18), Vector3.new(27, 0, -27), Vector3.new(28.5, 0, -19) },
+	AnaTezgah = Vector3.new(-17, 0, -19.5), -- KATLA kutusunun durduğu tezgah (binanın önünde)
+	OyuncuYeri = Vector3.new(-17, 0, -27.5), -- oyuncu buraya ışınlanır, tezgaha bakar
+	SatisNoktasi = Vector3.new(20, 0, -19), -- paketler burada satılır
+	MakineZ = 25, -- makineler arka duvarın önünde
+	MakineX = { -29, -21, -13, -5, 3, 11 },
+	BantZ = 17, -- makinelerin önündeki ana bant
+	BantX = 20, -- bant buradan öne, satış penceresine döner
+	Masalar = { Vector3.new(-41, 0, -35), Vector3.new(-41, 0, -25), Vector3.new(39, 0, -36), Vector3.new(41, 0, -26) },
 	-- çalışanların durduğu yerler ve baktıkları yön
 	Calisanlar = {
-		Asci = { Yer = Vector3.new(-18.6, 0, -16), Bakis = Vector3.new(1, 0, 0) },
-		Kasiyer = { Yer = Vector3.new(10.4, 0, -9.6), Bakis = Vector3.new(0, 0, -1) },
-		Teknisyen = { Yer = Vector3.new(0, 0, 13.2), Bakis = Vector3.new(0, 0, 1) },
-		Temizlikci = { Yer = Vector3.new(5, 0, -21), Bakis = Vector3.new(-1, 0, -0.4) },
+		Asci = { Yer = Vector3.new(-23.6, 0, -19.5), Bakis = Vector3.new(1, 0, 0) },
+		Kasiyer = { Yer = Vector3.new(16.4, 0, -12.6), Bakis = Vector3.new(0, 0, -1) },
+		Teknisyen = { Yer = Vector3.new(0, 0, 21), Bakis = Vector3.new(0, 0, 1) },
+		Temizlikci = { Yer = Vector3.new(6, 0, -25), Bakis = Vector3.new(-1, 0, -0.4) },
 	},
-	MusteriGiris = -33, -- müşteriler bu çizgiden (kaldırımdan) gelir
+	MusteriGiris = -45, -- müşteriler bu çizgiden (kaldırımdan) gelir
 	KuyrukAralik = 2.6, -- satış penceresinde sıradaki müşteriler arası
-	TabelaYeri = Vector3.new(0, 0, -28),
+	TabelaYeri = Vector3.new(0, 0, -37),
 }
 
 Config.ArsaSayisi = 8

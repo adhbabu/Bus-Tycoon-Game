@@ -367,6 +367,10 @@ customMethods.Terrain = {
 		assert(typeof(merkez) == "Vector3" and type(yaricap) == "number" and typeof(malzeme) == "EnumItem", "FillBall args")
 		STATS.arazi = (STATS.arazi or 0) + 1
 	end,
+	FillBlock = function(self, cf, boyut, malzeme)
+		assert(typeof(cf) == "CFrame" and typeof(boyut) == "Vector3" and typeof(malzeme) == "EnumItem", "FillBlock args")
+		STATS.arazi = (STATS.arazi or 0) + 1
+	end,
 	FillCylinder = function(self, cf, boy, yaricap, malzeme)
 		assert(typeof(cf) == "CFrame" and type(boy) == "number" and type(yaricap) == "number" and typeof(malzeme) == "EnumItem", "FillCylinder args")
 		STATS.arazi = (STATS.arazi or 0) + 1
@@ -724,8 +728,6 @@ local function fotoSenaryo()
 		RunService.RenderStepped:FireSync(0.05)
 		task.wait(0.05)
 	end
-	-- oyuncunun kutusu açık dursun ki burger görünsün (1 katlama)
-	local remotes = game:GetService("ReplicatedStorage").Uzaklar
 	task.wait(0.4)
 
 	-- oyuncu karakterleri (fotoğrafta görünsünler): tezgahın önünde katlayan biri
@@ -750,6 +752,20 @@ local function fotoSenaryo()
 	for _, x in ipairs(kahraman.Liste) do
 		x.Parent = kk
 	end
+
+	-- tezgahtaki kutu açık dursun ki burger görünsün (aşçı arada katlıyor, en son açık kutuya çevir)
+	-- (testte tween'ler parçaları hareket ettirmez; paketlenip banda giden kutular tezgahta kalır, onları kaldır)
+	for _, d in ipairs(unwrap(Workspace.BurgerGorselleri):GetDescendants()) do
+		if d:IsA("BasePart") then
+			local pp = d.CFrame.Position
+			if pp.Y > 2.5 and roblox.Vector3.new(pp.X - h.X, 0, pp.Z - h.Z).Magnitude < 6 then
+				d.Parent = nil
+			end
+		end
+	end
+	local PG = runScript(findScript(game:GetService("StarterPlayer"), "PaketGorsel"))
+	PG.Esitle(1, 1, false)
+	PG.Esitle(1, 0, false)
 
 	-- dışa aktar
 	local parcalar, guiler = {}, {}

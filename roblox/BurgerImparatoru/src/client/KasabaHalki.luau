@@ -15,7 +15,7 @@ local gezenler = {}
 local dansedenler = {}
 local npcKayit = setmetatable({}, { __mode = "k" })
 local zaman = 0
-local GORUS = 320
+local GORUS = 420
 
 local GOMLEKLER = {
 	Color3.fromRGB(230, 70, 70), Color3.fromRGB(70, 130, 230), Color3.fromRGB(250, 200, 60),
@@ -192,7 +192,7 @@ function KasabaHalki.Baslat(config, gorsel)
 	-- gezenler: yarısı meydanda, yarısı kaldırımda
 	for i = 1, Config.KasabaHalkiSayisi do
 		local meydanda = i % 2 == 0
-		local R = meydanda and rastgele:NextNumber(36, 42) or rastgele:NextNumber(68, 70)
+		local R = meydanda and rastgele:NextNumber(45, 49) or rastgele:NextNumber(85, 87)
 		local g = {
 			R = R,
 			Y = meydanda and 0.4 or 0.5,
