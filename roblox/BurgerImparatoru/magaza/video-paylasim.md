@@ -38,6 +38,3 @@ Burger Tycoon but every fold goes HUSS HUSS HUSS 🍔 #roblox #shorts
 5. **Videonun sonunda yaz:** "Roblox'ta BURGER TYCOON ara" ve "Kod: HUSS".
 6. **Yorumlara cevap ver**, yeni kodlar ver: "1000 beğeni olursa yeni kod geliyor!" (Yeni kodu
    `Config.Kodlar`'a eklemek yeterli.)
-
-⚠️ Hesap açarken yaş kurallarına dikkat: TikTok 13 yaş ve üstü içindir. Gerekirse videoları ailenin
-hesabından paylaşın.
