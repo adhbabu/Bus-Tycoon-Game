@@ -14,6 +14,16 @@ local game_real = roblox.deserializePlace(fs.readFile(placePath))
 for _, d in ipairs(game_real:GetDescendants()) do
 	if d.Name == "Config" and d:IsA("ModuleScript") then
 		d.Source = string.gsub(d.Source, "Config.AltinSaat = { EnAz = 300, EnCok = 480,", "Config.AltinSaat = { EnAz = 2, EnCok = 3,")
+		-- testte: sıralama tahtası sık güncellensin, favori sorusu 3 saniyede gelsin, grup açık olsun,
+		-- rozetlere test numaraları
+		d.Source = string.gsub(d.Source, "Guncelleme = 120,", "Guncelleme = 1,")
+		d.Source = string.gsub(d.Source, "Config.FavoriSoruDakika = 8", "Config.FavoriSoruDakika = 0.05")
+		d.Source = string.gsub(d.Source, "Config.GrupId = 0", "Config.GrupId = 4242")
+		local rozetNo = 0
+		d.Source = string.gsub(d.Source, "Id = 0,", function()
+			rozetNo += 1
+			return "Id = " .. (9100 + rozetNo) .. ","
+		end)
 	end
 end
 -- dil: "tr" (varsayılan) ya da "en" argümanı; foto modu İngilizce çeker
@@ -124,12 +134,14 @@ local EVENT_NAMES = {
 	ChildAdded = true,
 	DescendantAdded = true,
 	Touched = true,
+	FocusLost = true,
 	PromptGamePassPurchaseFinished = true,
 	Triggered = true,
 }
 
 -- Runtime-only properties that exist in Roblox but are not in the serialized DOM
 local RUNTIME_PROPS = {
+	PlaceId = true,
 	ProcessReceipt = true,
 	OnIncomingMessage = true,
 	Character = true,
@@ -441,6 +453,48 @@ customMethods.DataModel = {
 		table.insert(CLOSE_HANDLERS, fn)
 	end,
 }
+-- Sahte sıralama deposu, rozetler, davetler, favoriler, arkadaşlıklar
+SIRALAMA = {}
+local ROZETLER = {} -- "userId:rozetId" = true
+local DAVETLER = 0
+local FAVORI_ISTEKLERI = 0
+local ARKADASLAR = {} -- "a:b" (a<b) = true
+customMethods.BadgeService = {
+	UserHasBadgeAsync = function(self, userId, id)
+		assert(type(userId) == "number" and type(id) == "number", "UserHasBadgeAsync args")
+		return ROZETLER[userId .. ":" .. id] == true
+	end,
+	AwardBadge = function(self, userId, id)
+		assert(type(userId) == "number" and type(id) == "number" and id > 0, "AwardBadge args")
+		assert(not ROZETLER[userId .. ":" .. id], "aynı rozet iki kere verilmemeli")
+		ROZETLER[userId .. ":" .. id] = true
+		return true
+	end,
+}
+customMethods.SocialService = {
+	CanSendGameInviteAsync = function(self, plr)
+		return true
+	end,
+	PromptGameInvite = function(self, plr)
+		DAVETLER += 1
+	end,
+}
+customMethods.AvatarEditorService = {
+	PromptSetFavorite = function(self, id, tur, favori)
+		assert(type(id) == "number" and typeof(tur) == "EnumItem" and favori == true, "PromptSetFavorite args")
+		FAVORI_ISTEKLERI += 1
+	end,
+}
+customMethods.Player = {
+	IsFriendsWith = function(self, digerId)
+		local a, b = math.min(self.UserId, digerId), math.max(self.UserId, digerId)
+		return ARKADASLAR[a .. ":" .. b] == true
+	end,
+	IsInGroup = function(self, grupId)
+		return grupId == 4242 and self.UserId == 1001
+	end,
+}
+
 -- Sahte Robux mağazası: sahip olunan geçişler ve açılan satın alma pencereleri
 local SAHIP_GECISLER = {}
 local ROBUX_ISTEKLERI = {}
@@ -462,6 +516,9 @@ customMethods.MarketplaceService = {
 	end,
 }
 customMethods.Players = {
+	GetNameFromUserIdAsync = function(self, userId)
+		return "Oyuncu" .. tostring(userId)
+	end,
 	GetPlayerByUserId = function(self, userId)
 		for _, c in ipairs(unwrap(self):GetChildren()) do
 			if c:IsA("Player") and wrap(c).UserId == userId then
@@ -502,6 +559,41 @@ customMethods.Debris = {
 	AddItem = function() end,
 }
 customMethods.DataStoreService = {
+	GetOrderedDataStore = function(self, name)
+		return {
+			SetAsync = function(_, key, value)
+				if DATASTORE_MODE == "studio" then
+					error("StudioAccessToApisNotAllowed")
+				end
+				assert(type(key) == "string" and type(value) == "number", "OrderedDataStore SetAsync args")
+				SIRALAMA[key] = value
+			end,
+			GetSortedAsync = function(_, artan, adet)
+				if DATASTORE_MODE == "studio" then
+					error("StudioAccessToApisNotAllowed")
+				end
+				local liste = {}
+				for k, v in pairs(SIRALAMA) do
+					table.insert(liste, { key = k, value = v })
+				end
+				table.sort(liste, function(a, b)
+					if artan then
+						return a.value < b.value
+					end
+					return a.value > b.value
+				end)
+				local sayfa = {}
+				for i = 1, math.min(adet, #liste) do
+					sayfa[i] = liste[i]
+				end
+				return {
+					GetCurrentPage = function()
+						return sayfa
+					end,
+				}
+			end,
+		}
+	end,
 	GetDataStore = function(self, name)
 		return {
 			GetAsync = function(_, key)
@@ -593,6 +685,7 @@ local safeTask = {
 }
 
 local game = wrap(game_real)
+game.PlaceId = 123155676960190
 local Workspace = game:GetService("Workspace")
 
 local moduleCache = {}
@@ -1277,6 +1370,94 @@ for _, root in ipairs({ gui.Ust, gui.Alt }) do
 	end
 end
 
+print("== Ödüller, kodlar, arkadaşlar, grup, sıralama, rozetler")
+do
+	local durumSon = nil
+	remotes.Durum.OnClientEvent:Connect(function(d)
+		durumSon = d
+	end)
+	task.wait(0.6)
+	remotes.DurumIste.OnServerEvent:Fire(p1)
+	task.wait(0.3)
+	local panelAc = butonBul(gui, "🎉")
+	assert(panelAc, "🎉 Ödüller butonu olmalı")
+	panelAc.Activated:Fire()
+	task.wait(0.2)
+	local op = gui.OdulPaneli
+	assert(op.Visible == true, "🎉 Ödüller paneli açılmalı")
+	local gb = wrap(unwrap(op):FindFirstChild("GunlukAl", true))
+	print("Günlük buton:", gb.Text)
+	assert(gb.Text == DilT("AL!"), "ilk girişte günlük ödül hazır olmalı")
+	local para0 = stat(p1, "💰")
+	gb.Activated:Fire()
+	task.wait(0.3)
+	local para1 = stat(p1, "💰")
+	remotes.GunlukAl.OnServerEvent:Fire(p1) -- tekrar: verilmemeli
+	task.wait(1.2)
+	remotes.GunlukAl.OnServerEvent:Fire(p1)
+	task.wait(0.3)
+	local para2 = stat(p1, "💰")
+	print("Günlük ödül:", para1 - para0, "tekrar:", para2 - para1, "buton:", gb.Text)
+	assert(para1 - para0 >= 500, "günlük ödül verilmeli")
+	assert(para2 == para1, "günlük ödül aynı gün iki kere verilmemeli")
+	assert(string.find(gb.Text, "⏳", 1, true), "ödül alınınca geri sayım görünmeli")
+
+	-- kodlar
+	local kutu = wrap(unwrap(op):FindFirstChild("KodKutusu", true))
+	local kb = wrap(unwrap(op):FindFirstChild("KodKullan", true))
+	kutu.Text = " huss "
+	kb.Activated:Fire()
+	task.wait(0.3)
+	local para3 = stat(p1, "💰")
+	task.wait(1.1)
+	kutu.Text = "HUSS"
+	kb.Activated:Fire() -- aynı kod
+	task.wait(1.2)
+	kutu.Text = "YOKBOYLEKOD"
+	kb.Activated:Fire()
+	task.wait(1.2)
+	remotes.KodKullan.OnServerEvent:Fire(p1, { "kötü" })
+	remotes.KodKullan.OnServerEvent:Fire(p1, string.rep("A", 5000))
+	task.wait(0.3)
+	local para4 = stat(p1, "💰")
+	print("Kod HUSS:", para3 - para2, "tekrar/yanlış:", para4 - para3)
+	assert(para3 - para2 >= 1000, "HUSS kodu para vermeli")
+	assert(para4 == para3, "kod iki kere ya da yanlış kod para vermemeli")
+
+	-- davet ve favori
+	wrap(unwrap(op):FindFirstChild("Davet", true)).Activated:Fire()
+	task.wait(0.1)
+	assert(DAVETLER == 1, "DAVET ET, Roblox davet penceresini açmalı")
+	assert(p1:GetAttribute("FavoriSoruldu") == true and FAVORI_ISTEKLERI >= 1, "birkaç dakika sonra favori sorusu gelmeli")
+
+	-- grup bonusu (testte p1 grupta)
+	assert(durumSon and durumSon.Grupta == true, "gruptaki oyuncu tanınmalı")
+
+	-- arkadaş bonusu: p1'in arkadaşı oyuna girer
+	ARKADASLAR["1001:1003"] = true
+	local ekstra0 = durumSon.Ekstra
+	local p3 = makePlayer("Dost", 1003)
+	Players.PlayerAdded:Fire(p3)
+	task.wait(0.8)
+	print("Arkadaş sayısı:", p1:GetAttribute("ArkadasSayisi"), "çarpan:", ekstra0, "->", durumSon.Ekstra)
+	assert(p1:GetAttribute("ArkadasSayisi") == 1, "sunucudaki arkadaş sayılmalı")
+	assert(durumSon.Ekstra > ekstra0 * 1.09, "arkadaş bonusu para çarpanını artırmalı")
+	p3.Parent = nil
+	Players.PlayerRemoving:Fire(p3)
+	task.wait(0.5)
+	assert(p1:GetAttribute("ArkadasSayisi") == 0, "arkadaş çıkınca bonus gitmeli")
+
+	-- sıralama tahtası ve rozetler
+	task.wait(1.5)
+	local tahta = harita:FindFirstChild("SiralamaTahtasi")
+	assert(tahta, "meydanda sıralama tahtası olmalı")
+	local ilk = tahta.Pano.SurfaceGui.Sira1.Text
+	print("Sıralama 1.:", ilk)
+	assert(string.find(ilk, "📦", 1, true), "sıralamada en az bir oyuncu görünmeli")
+	assert(ROZETLER["1001:9101"] and ROZETLER["1001:9102"], "Hoşgeldin ve İlk Burger rozetleri verilmeli")
+	butonBul(op, "✕").Activated:Fire()
+end
+
 print("== Robux mağazası")
 do
 	local Mps = game:GetService("MarketplaceService")
@@ -1379,6 +1560,8 @@ if zengin then
 	assert(stat(p1b, "📦") == paketOnce, "tekrar girişte paket sayısı gelmeli")
 	task.wait(0.2)
 	assert(p1b:GetAttribute("Gecis_VIP") == true, "VIP geçişi tekrar girişte tanınmalı")
+	assert(k.SonGunluk and k.SonGunluk > 0 and table.find(k.Kodlar, "HUSS"), "günlük ödül ve kullanılan kod kayda yazılmalı")
+	assert(SIRALAMA["1001"] and SIRALAMA["1001"] > 0, "sıralamaya paket sayısı yazılmalı")
 	assert((p1b:GetAttribute("IkiKatBitis") or 0) > Workspace:GetServerTimeNow() + 600, "alınan 2 kat para süresi kayıtla devam etmeli")
 	print("Tekrar girişte VIP:", tostring(p1b:GetAttribute("Gecis_VIP")))
 	print("Tekrar giriş tamam:", a.Name, a:GetAttribute("Ad"), stat(p1b, "📦"))

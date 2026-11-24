@@ -234,6 +234,43 @@ Config.Robux = {
 	OtoKatlaAraligi = 0.3, -- otomatik katlama kaç saniyede bir basar
 }
 
+----------------------------------------------------------------------
+-- OYUNCULARI GERİ GETİREN ŞEYLER (🎉 Ödüller paneli)
+-- Para ödülleri hep oyuncunun o anki kazancına göre: saniyede makinelerden ya da elle katlayarak
+-- kazandığı (hangisi büyükse) x Saniye, en az EnAz.
+----------------------------------------------------------------------
+-- Günlük ödül: her gün gel, seri büyüsün (7. günden sonra hep 7. günün ödülü)
+Config.Gunluk = {
+	Bekleme = 20 * 3600, -- yeni ödül için kaç saniye geçmeli
+	SeriBozulma = 48 * 3600, -- bu kadar gelmezsen seri 1'e döner
+	EnUzunSeri = 7,
+	Saniye = 120, -- ödül = gün x bu kadar saniyelik kazanç
+	EnAz = 500, -- ödül = gün x en az bu kadar
+}
+-- Aynı sunucudaki her Roblox arkadaşın: +%10 para (en çok +%30). Arkadaşınla oyna!
+Config.ArkadasBonusu = { Kisi = 0.1, EnCok = 0.3 }
+-- Roblox grubu: numarasını yaz (0 = kapalı). Gruptakiler +%10 para alır.
+Config.GrupId = 0
+Config.GrupBonusu = 0.1
+-- Oyunda bu kadar dakika oynayınca bir kere "oyunu favorile" penceresi çıkar
+Config.FavoriSoruDakika = 8
+-- Kodlar (videolarda paylaş!): büyük harfle yaz. Her oyuncu her kodu bir kere kullanır.
+Config.Kodlar = {
+	HUSS = { Saniye = 300, EnAz = 1000 },
+	BURGER = { Saniye = 300, EnAz = 1000 },
+	TYCOON = { Saniye = 600, EnAz = 2500 },
+}
+-- Rozetler (Id = Roblox'taki rozet numarası, 0 = kapalı)
+Config.Rozetler = {
+	{ Anahtar = "Hosgeldin", Id = 0, Ad = "Welcome to Burger Town!", Aciklama = "You joined Burger Tycoon. Huss huss huss!" },
+	{ Anahtar = "IlkPaket", Id = 0, Paket = 1, Ad = "First Burger", Aciklama = "Pack your first Emperor Burger." },
+	{ Anahtar = "Paket1000", Id = 0, Paket = 1000, Ad = "Burger Machine", Aciklama = "Pack 1,000 burgers." },
+	{ Anahtar = "IlkSube", Id = 0, Sube = 1, Ad = "New Branch", Aciklama = "Open your first new branch." },
+	{ Anahtar = "Imparator", Id = 0, Paket = 150000, Ad = "BURGER EMPEROR", Aciklama = "Become the BURGER EMPEROR (150,000 burgers)." },
+}
+-- Meydandaki dünya sıralaması tahtası (en çok paket yapanlar)
+Config.Siralama = { Ad = "BurgerImparatoru_Siralama_v1", Yer = Vector3.new(-30, 0.4, 0), Guncelleme = 120, Kisi = 10 }
+
 Config.ArsaSayisi = 8
 Config.KayitAnahtari = "BurgerImparatoru_v3" -- DataStore adı (değiştirirsen herkesin kaydı sıfırlanır)
 

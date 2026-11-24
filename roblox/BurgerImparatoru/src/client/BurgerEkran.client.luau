@@ -1267,8 +1267,11 @@ local function butonlariBoya()
 	end
 end
 
+local odulGuncelle = function() end -- aşağıda (🎉 Ödüller) doldurulur
+
 local function arayuzGuncelle()
 	butonlariBoya()
+	odulGuncelle()
 	if not durum then
 		return
 	end
@@ -1579,6 +1582,245 @@ task.spawn(function()
 		end
 	end
 end)
+
+----------------------------------------------------------------------
+-- 🎉 Ödüller: günlük ödül, kodlar, arkadaş daveti, grup; "favorile" sorusu
+----------------------------------------------------------------------
+local function odulBolumunuKur() -- (ayrı fonksiyon: Luau tek yerde en çok 200 yerel değişken tutar)
+	local SocialService = game:GetService("SocialService")
+	local AvatarEditorService = game:GetService("AvatarEditorService")
+	local GunlukAlOlay = Uzaklar:WaitForChild("GunlukAl")
+	local KodOlay = Uzaklar:WaitForChild("KodKullan")
+	local FavoriOlay = Uzaklar:WaitForChild("FavoriSoruldu")
+
+	kucukSira.Size = UDim2.fromOffset(266, 40)
+	local odulButonu = kucukButon("🎉")
+	odulButonu.Name = "Oduller"
+	local odulNokta = yap("Frame", {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 2, 0, -2),
+		Size = UDim2.fromOffset(14, 14),
+		BackgroundColor3 = Color3.fromRGB(255, 60, 60),
+		Visible = false,
+		Parent = odulButonu,
+	}, { kose(UDim.new(1, 0)), cizgi(Color3.new(1, 1, 1), 1.5) })
+
+	local odulPanel = yap("Frame", {
+		Name = "OdulPaneli",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(540, 380),
+		BackgroundColor3 = PANEL,
+		BackgroundTransparency = 0.04,
+		Visible = false,
+		ZIndex = 30,
+		Parent = ekran,
+	}, { kose(UDim.new(0, 18)), cizgi(Color3.fromRGB(255, 120, 200), 3) })
+	olcekEkle(odulPanel)
+	local odulBaslikYazi = yazi({
+		Text = "🎉 ÖDÜLLER",
+		Position = UDim2.fromOffset(16, 10),
+		Size = UDim2.new(1, -80, 0, 34),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(255, 170, 220),
+		ZIndex = 31,
+		Parent = odulPanel,
+	})
+	yaziCizgisi(KOYU, 2).Parent = odulBaslikYazi
+	local odulKapat = buton({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -12, 0, 10),
+		Size = UDim2.fromOffset(34, 34),
+		BackgroundColor3 = Color3.fromRGB(230, 70, 70),
+		Text = "✕",
+		ZIndex = 31,
+		Parent = odulPanel,
+	}, { kose(UDim.new(1, 0)), cizgi(KOYU, 2) })
+	local odulIcerik = yap("Frame", {
+		Position = UDim2.fromOffset(16, 56),
+		Size = UDim2.new(1, -32, 1, -68),
+		BackgroundTransparency = 1,
+		ZIndex = 31,
+		Parent = odulPanel,
+	}, { yap("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }) })
+
+	local function odulSatiri(sira, ikon, baslik)
+		local satir = yap("Frame", {
+			LayoutOrder = sira,
+			Size = UDim2.new(1, 0, 0, 66),
+			BackgroundColor3 = SATIR,
+			ZIndex = 32,
+			Parent = odulIcerik,
+		}, { kose(UDim.new(0, 12)) })
+		yazi({ Text = ikon, Position = UDim2.fromOffset(6, 11), Size = UDim2.fromOffset(44, 44), ZIndex = 33, Parent = satir })
+		local b = yazi({ Text = baslik, Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -206, 0, 26), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 33, Parent = satir })
+		local a = yazi({
+			Text = "",
+			Position = UDim2.fromOffset(58, 37),
+			Size = UDim2.new(1, -206, 0, 20),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = Color3.fromRGB(220, 200, 180),
+			ZIndex = 33,
+			Parent = satir,
+		})
+		local bt = buton({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Size = UDim2.fromOffset(134, 44),
+			BackgroundColor3 = YESIL,
+			Text = "",
+			ZIndex = 33,
+			Parent = satir,
+		}, { kose(UDim.new(0, 12)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }) })
+		return satir, b, a, bt
+	end
+
+	local _, gunlukBaslik, gunlukAlt, gunlukBtn = odulSatiri(1, "📅", "Günlük ödül")
+	gunlukBtn.Name = "GunlukAl"
+	local kodSatir, _, kodAlt, kodBtn = odulSatiri(2, "🎟️", "Kod gir")
+	kodAlt.Visible = false
+	kodBtn.Name = "KodKullan"
+	kodBtn.Text = T("KULLAN")
+	kodBtn.BackgroundColor3 = Color3.fromRGB(240, 140, 40)
+	local kodKutusu = yap("TextBox", {
+		Name = "KodKutusu",
+		Position = UDim2.fromOffset(58, 35),
+		Size = UDim2.new(1, -206, 0, 24),
+		BackgroundColor3 = Color3.fromRGB(250, 245, 235),
+		TextColor3 = KOYU,
+		PlaceholderText = T("Kodu buraya yaz"),
+		Text = "",
+		FontFace = FONT,
+		TextScaled = true,
+		ClearTextOnFocus = false,
+		ZIndex = 33,
+		Parent = kodSatir,
+	}, { kose(UDim.new(0, 8)) })
+	local _, _, davetAlt, davetBtn = odulSatiri(3, "👥", "Arkadaşlarınla oyna")
+	davetBtn.Name = "Davet"
+	davetBtn.Text = T("DAVET ET")
+	davetBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 230)
+	local grupSatir, _, grupAlt, grupBtn = odulSatiri(4, "⭐", "Grubumuza katıl")
+	grupSatir.Visible = false
+	grupBtn.Visible = false
+	grupAlt.Size = UDim2.new(1, -66, 0, 20)
+
+	local arkadasHap = etkinlikHapi(Color3.fromRGB(60, 140, 230))
+
+	local function saatYazi(sn)
+		sn = math.max(0, math.floor(sn))
+		return string.format("%d:%02d:%02d", sn // 3600, (sn % 3600) // 60, sn % 60)
+	end
+	local gunlukHazirZamani = nil
+	local gunlukHaberVerildi = false
+	local function gunlukButonuGuncelle()
+		if not gunlukHazirZamani then
+			return
+		end
+		local kalan = gunlukHazirZamani - os.clock()
+		if kalan <= 0 then
+			gunlukBtn.Text = T("AL!")
+			gunlukBtn.BackgroundColor3 = YESIL
+			odulNokta.Visible = true
+		else
+			gunlukBtn.Text = "⏳ " .. saatYazi(kalan)
+			gunlukBtn.BackgroundColor3 = Color3.fromRGB(110, 110, 120)
+			odulNokta.Visible = false
+		end
+	end
+	odulGuncelle = function()
+		if not durum or type(durum.Gunluk) ~= "table" then
+			return
+		end
+		local g = durum.Gunluk
+		gunlukHazirZamani = os.clock() + (g.Kalan or 0)
+		gunlukBaslik.Text = T("Günlük ödül: %d. gün", g.Seri or 1)
+		gunlukAlt.Text = T("💰 %s  •  Her gün gel, ödül büyüsün!", K(g.Odul or 0))
+		gunlukButonuGuncelle()
+		if (g.Kalan or 0) <= 0 and not gunlukHaberVerildi and durum.ArsaIndex > 0 then
+			gunlukHaberVerildi = true
+			task.delay(3, function()
+				duyuru(T("📅 Günlük ödülün hazır!"), Color3.fromRGB(255, 170, 220), 2.4, T("🎉 butonuna bas"))
+			end)
+		end
+		local kisi = math.floor(Config.ArkadasBonusu.Kisi * 100 + 0.5)
+		local simdi = math.floor(math.min(Config.ArkadasBonusu.EnCok, Config.ArkadasBonusu.Kisi * (durum.Arkadas or 0)) * 100 + 0.5)
+		davetAlt.Text = T("Her arkadaş +%%%d para (şu an +%%%d)", kisi, simdi)
+		arkadasHap.Visible = simdi > 0
+		arkadasHap.Text = T("👥 ARKADAŞ +%%%d", simdi)
+		grupSatir.Visible = durum.GrupVar == true
+		local grupYuzde = math.floor(Config.GrupBonusu * 100 + 0.5)
+		grupAlt.Text = durum.Grupta and T("✓ Gruptasın: +%%%d para", grupYuzde) or T("Oyun sayfasındaki gruba katıl, sonra tekrar gir: +%%%d para", grupYuzde)
+	end
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			gunlukButonuGuncelle()
+		end
+	end)
+
+	local function odulAcKapa(ac)
+		odulPanel.Visible = ac
+		if ac then
+			odulGuncelle()
+			dukkanAcKapa(false)
+			robuxAcKapa(false)
+		end
+	end
+	odulButonu.Activated:Connect(function()
+		odulAcKapa(not odulPanel.Visible)
+	end)
+	odulKapat.Activated:Connect(function()
+		odulAcKapa(false)
+	end)
+	gunlukBtn.Activated:Connect(function()
+		if gunlukHazirZamani and gunlukHazirZamani <= os.clock() then
+			gunlukHazirZamani = os.clock() + 5 -- sunucunun cevabını beklerken tekrar basılmasın
+			GunlukAlOlay:FireServer()
+		else
+			salla(gunlukBtn)
+		end
+	end)
+	local function koduGonder()
+		local metin = kodKutusu.Text
+		if metin == nil or string.gsub(metin, "%s", "") == "" then
+			salla(kodBtn)
+			return
+		end
+		KodOlay:FireServer(metin)
+		kodKutusu.Text = ""
+	end
+	kodBtn.Activated:Connect(koduGonder)
+	kodKutusu.FocusLost:Connect(function(enter)
+		if enter then
+			koduGonder()
+		end
+	end)
+	davetBtn.Activated:Connect(function()
+		local ok, olur = pcall(function()
+			return SocialService:CanSendGameInviteAsync(ben)
+		end)
+		if ok and olur then
+			pcall(function()
+				SocialService:PromptGameInvite(ben)
+			end)
+		else
+			duyuru(T("Şu an davet gönderilemiyor"), Color3.fromRGB(255, 150, 120), 1.4)
+		end
+	end)
+
+	-- Birkaç dakika oynayınca bir kere "oyunu favorile" penceresi
+	task.delay(Config.FavoriSoruDakika * 60, function()
+		if ben:GetAttribute("FavoriSoruldu") then
+			return
+		end
+		FavoriOlay:FireServer()
+		pcall(function()
+			AvatarEditorService:PromptSetFavorite(game.PlaceId, Enum.AvatarItemType.Asset, true)
+		end)
+	end)
+end
+odulBolumunuKur()
 
 -- Sohbette VIP yazısı
 pcall(function()

@@ -314,6 +314,43 @@ Config.Robux = {
 	OtoKatlaAraligi = 0.3, -- otomatik katlama kaç saniyede bir basar
 }
 
+----------------------------------------------------------------------
+-- OYUNCULARI GERİ GETİREN ŞEYLER (🎉 Ödüller paneli)
+-- Para ödülleri hep oyuncunun o anki kazancına göre: saniyede makinelerden ya da elle katlayarak
+-- kazandığı (hangisi büyükse) x Saniye, en az EnAz.
+----------------------------------------------------------------------
+-- Günlük ödül: her gün gel, seri büyüsün (7. günden sonra hep 7. günün ödülü)
+Config.Gunluk = {
+	Bekleme = 20 * 3600, -- yeni ödül için kaç saniye geçmeli
+	SeriBozulma = 48 * 3600, -- bu kadar gelmezsen seri 1'e döner
+	EnUzunSeri = 7,
+	Saniye = 120, -- ödül = gün x bu kadar saniyelik kazanç
+	EnAz = 500, -- ödül = gün x en az bu kadar
+}
+-- Aynı sunucudaki her Roblox arkadaşın: +%10 para (en çok +%30). Arkadaşınla oyna!
+Config.ArkadasBonusu = { Kisi = 0.1, EnCok = 0.3 }
+-- Roblox grubu: numarasını yaz (0 = kapalı). Gruptakiler +%10 para alır.
+Config.GrupId = 0
+Config.GrupBonusu = 0.1
+-- Oyunda bu kadar dakika oynayınca bir kere "oyunu favorile" penceresi çıkar
+Config.FavoriSoruDakika = 8
+-- Kodlar (videolarda paylaş!): büyük harfle yaz. Her oyuncu her kodu bir kere kullanır.
+Config.Kodlar = {
+	HUSS = { Saniye = 300, EnAz = 1000 },
+	BURGER = { Saniye = 300, EnAz = 1000 },
+	TYCOON = { Saniye = 600, EnAz = 2500 },
+}
+-- Rozetler (Id = Roblox'taki rozet numarası, 0 = kapalı)
+Config.Rozetler = {
+	{ Anahtar = "Hosgeldin", Id = 0, Ad = "Welcome to Burger Town!", Aciklama = "You joined Burger Tycoon. Huss huss huss!" },
+	{ Anahtar = "IlkPaket", Id = 0, Paket = 1, Ad = "First Burger", Aciklama = "Pack your first Emperor Burger." },
+	{ Anahtar = "Paket1000", Id = 0, Paket = 1000, Ad = "Burger Machine", Aciklama = "Pack 1,000 burgers." },
+	{ Anahtar = "IlkSube", Id = 0, Sube = 1, Ad = "New Branch", Aciklama = "Open your first new branch." },
+	{ Anahtar = "Imparator", Id = 0, Paket = 150000, Ad = "BURGER EMPEROR", Aciklama = "Become the BURGER EMPEROR (150,000 burgers)." },
+}
+-- Meydandaki dünya sıralaması tahtası (en çok paket yapanlar)
+Config.Siralama = { Ad = "BurgerImparatoru_Siralama_v1", Yer = Vector3.new(-30, 0.4, 0), Guncelleme = 120, Kisi = 10 }
+
 Config.ArsaSayisi = 8
 Config.KayitAnahtari = "BurgerImparatoru_v3" -- DataStore adı (değiştirirsen herkesin kaydı sıfırlanır)
 
@@ -567,6 +604,34 @@ local EN = {
 	["15 dakika boyunca bütün paketler 2 kat"] = "Every package earns double for 15 minutes",
 	["Herkese Altın Saat"] = "Golden Hour for Everyone",
 	["Bütün sunucuya hemen Altın Saat başlat"] = "Start a Golden Hour for the whole server now",
+
+	------------------------------------------------------------------
+	-- Ödüller, kodlar, arkadaşlar, grup, sıralama
+	------------------------------------------------------------------
+	["🎉 ÖDÜLLER"] = "🎉 REWARDS",
+	["Günlük ödül"] = "Daily reward",
+	["Kod gir"] = "Enter a code",
+	["Arkadaşlarınla oyna"] = "Play with friends",
+	["Grubumuza katıl"] = "Join our group",
+	["Kodu buraya yaz"] = "Type the code here",
+	["KULLAN"] = "REDEEM",
+	["DAVET ET"] = "INVITE",
+	["AL!"] = "CLAIM!",
+	["Günlük ödül: %d. gün"] = "Daily reward: day %d",
+	["💰 %s  •  Her gün gel, ödül büyüsün!"] = "💰 %s  •  Come back daily, it grows!",
+	["Her arkadaş +%%%d para (şu an +%%%d)"] = "Each friend +%d%% cash (now +%d%%)",
+	["👥 ARKADAŞ +%%%d"] = "👥 FRIENDS +%d%%",
+	["✓ Gruptasın: +%%%d para"] = "✓ You're in the group: +%d%% cash",
+	["Oyun sayfasındaki gruba katıl, sonra tekrar gir: +%%%d para"] = "Join the group on the game page, then rejoin: +%d%% cash",
+	["📅 Günlük ödülün hazır!"] = "📅 Your daily reward is ready!",
+	["🎉 butonuna bas"] = "Tap the 🎉 button",
+	["Şu an davet gönderilemiyor"] = "Can't send invites right now",
+	["📅 %d. gün ödülü: +%s para!"] = "📅 Day %d reward: +%s cash!",
+	["🎟️ Böyle bir kod yok."] = "🎟️ That code doesn't exist.",
+	["🎟️ Bu kodu zaten kullandın."] = "🎟️ You already used this code.",
+	["🎟️ %s kodu: +%s para!"] = "🎟️ Code %s: +%s cash!",
+	["🏆 DÜNYA SIRALAMASI"] = "🏆 WORLD LEADERBOARD",
+	["En çok paket yapanlar"] = "Most burgers packed",
 }
 Dil.EN = EN
 
@@ -1373,6 +1438,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local TextService = game:GetService("TextService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local BadgeService = game:GetService("BadgeService")
 
 local Ortak = ReplicatedStorage:WaitForChild("Ortak")
 local Config = require(Ortak:WaitForChild("Config"))
@@ -1407,6 +1473,9 @@ local DuyuruOlay = olay("Duyuru") -- sunucu -> herkes ya da bir oyuncu (Türkçe
 local GorevAlOlay = olay("GorevAl") -- oyuncu -> sunucu (görev ödülünü al)
 local NPCOlay = olay("NPC") -- sunucu -> oyuncu (NPC ile konuştu: hangi pencere açılsın)
 local YarismaOlay = olay("Yarisma") -- sunucu -> oyuncu (yarışma başladı / bitti)
+local GunlukAlOlay = olay("GunlukAl") -- oyuncu -> sunucu (günlük ödülü al)
+local KodOlay = olay("KodKullan") -- oyuncu -> sunucu (kod yazısı)
+local FavoriOlay = olay("FavoriSoruldu") -- oyuncu -> sunucu ("favorile" penceresi gösterildi)
 uzaklar.Parent = ReplicatedStorage
 
 local rastgele = Random.new()
@@ -1501,6 +1570,12 @@ do
 	end
 end
 
+-- Dünya sıralaması için ayrı, sıralı depo
+local siralamaDeposu = nil
+pcall(function()
+	siralamaDeposu = DataStoreService:GetOrderedDataStore(Config.Siralama.Ad)
+end)
+
 local function kayitAnahtari(oyuncu)
 	return "oyuncu_" .. oyuncu.UserId
 end
@@ -1555,6 +1630,19 @@ local function alimListesi(x)
 	return liste
 end
 
+-- Kullanılmış kodlar (sadece Config'te olanlar saklanır)
+local function kodListesi(x)
+	local liste = {}
+	if type(x) == "table" then
+		for _, k in ipairs(x) do
+			if type(k) == "string" and Config.Kodlar[k] and not table.find(liste, k) then
+				table.insert(liste, k)
+			end
+		end
+	end
+	return liste
+end
+
 local function veriHazirla(ham)
 	ham = type(ham) == "table" and ham or {}
 	local gelistirme = Ekonomi.BosGelistirmeler()
@@ -1583,6 +1671,10 @@ local function veriHazirla(ham)
 		SonHediye = math.floor(sayi(ham.SonHediye, 0)),
 		Alimlar = alimListesi(ham.Alimlar),
 		IkiKatKalan = math.clamp(sayi(ham.IkiKatKalan, 0), 0, 86400),
+		SonGunluk = math.max(0, math.floor(sayi(ham.SonGunluk, 0))),
+		GunlukSeri = tamSayi(ham.GunlukSeri, 0, 100000, 0),
+		Kodlar = kodListesi(ham.Kodlar),
+		FavoriSoruldu = ham.FavoriSoruldu == true,
 	}
 end
 
@@ -1604,7 +1696,17 @@ local function kaydet(oyuncu)
 		SonHediye = v.SonHediye,
 		Alimlar = v.Alimlar,
 		IkiKatKalan = v.IkiKatBitis and math.max(0, math.floor(v.IkiKatBitis - os.clock())) or 0,
+		SonGunluk = v.SonGunluk,
+		GunlukSeri = v.GunlukSeri,
+		Kodlar = v.Kodlar,
+		FavoriSoruldu = v.FavoriSoruldu,
 	}
+	-- dünya sıralaması (ayrı depo; olmazsa oyun yine çalışır)
+	if siralamaDeposu then
+		pcall(function()
+			siralamaDeposu:SetAsync(tostring(oyuncu.UserId), math.floor(v.ToplamPaket))
+		end)
+	end
 	for deneme = 1, 3 do
 		local ok, hata = pcall(function()
 			kayitDeposu:SetAsync(kayitAnahtari(oyuncu), paket, { oyuncu.UserId })
@@ -1652,6 +1754,12 @@ end
 local altinSaatBitis = 0
 local function ekstraCarpan(v)
 	local c = 1
+	if (v.Arkadas or 0) > 0 then
+		c *= 1 + math.min(Config.ArkadasBonusu.EnCok, Config.ArkadasBonusu.Kisi * v.Arkadas)
+	end
+	if v.Grupta then
+		c *= 1 + Config.GrupBonusu
+	end
 	if v.Gecis then
 		if v.Gecis.IkiKatPara then
 			c *= 2
@@ -1682,6 +1790,33 @@ local function gorevIlerle(v, tip, miktar)
 	end
 end
 
+-- Oyuncunun saniyelik kazancı: makinelerden ya da elle katlayarak (hangisi büyükse).
+-- Bütün para ödülleri (günlük, kod, para paketleri) buna göre, böylece hep işe yarar ama oyunu bitirmez.
+local function saniyelikKazanc(v)
+	return math.max(Ekonomi.MakineGeliri(v.Gelistirme, v.Sube), Ekonomi.PaketDegeri(false, v.Gelistirme, v.Sube))
+end
+
+-- Günlük ödül: alınabilir mi, kaçıncı gün, ne kadar
+local function gunlukSonrakiSeri(v)
+	local gecen = os.time() - v.SonGunluk
+	if v.SonGunluk == 0 or gecen > Config.Gunluk.SeriBozulma then
+		return 1
+	end
+	return v.GunlukSeri + 1
+end
+local function gunlukOdul(v, seri)
+	local gun = math.min(seri, Config.Gunluk.EnUzunSeri)
+	return math.max(Config.Gunluk.EnAz * gun, math.floor(saniyelikKazanc(v) * Config.Gunluk.Saniye * gun))
+end
+local function gunlukDurumu(v)
+	local seri = gunlukSonrakiSeri(v)
+	return {
+		Kalan = math.max(0, v.SonGunluk + Config.Gunluk.Bekleme - os.time()),
+		Seri = seri,
+		Odul = gunlukOdul(v, seri),
+	}
+end
+
 local function durumGonder(oyuncu)
 	local v = veriler[oyuncu]
 	if not v or not v.Hazir then
@@ -1704,7 +1839,44 @@ local function durumGonder(oyuncu)
 		KayitAcik = v.KayitAcik,
 		StilVar = v.Stil ~= nil,
 		Stil = v.Stil or { Logo = 1, Renk = 1, Ad = varsayilanAd(oyuncu) },
+		Gunluk = gunlukDurumu(v),
+		Arkadas = v.Arkadas,
+		Grupta = v.Grupta,
+		GrupVar = Config.GrupId ~= 0,
+		Kodlar = v.Kodlar,
 	})
+end
+
+-- Rozetler: hak edilince bir kere verilir (Roblox'ta zaten varsa tekrar denenmez)
+local function rozetVer(oyuncu, r)
+	local v = veriler[oyuncu]
+	if not v or r.Id == 0 or v.Rozet[r.Anahtar] then
+		return
+	end
+	v.Rozet[r.Anahtar] = true
+	task.spawn(function()
+		local ok, var = pcall(function()
+			return BadgeService:UserHasBadgeAsync(oyuncu.UserId, r.Id)
+		end)
+		if ok and not var then
+			pcall(function()
+				BadgeService:AwardBadge(oyuncu.UserId, r.Id)
+			end)
+		end
+	end)
+end
+local function rozetKontrol(oyuncu)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir then
+		return
+	end
+	for _, r in ipairs(Config.Rozetler) do
+		if r.Id ~= 0 and not v.Rozet[r.Anahtar] then
+			if (r.Paket == nil or v.ToplamPaket >= r.Paket) and (r.Sube == nil or v.Sube >= r.Sube) then
+				rozetVer(oyuncu, r)
+			end
+		end
+	end
 end
 
 local function skorGuncelle(oyuncu)
@@ -1715,6 +1887,7 @@ local function skorGuncelle(oyuncu)
 	v.Skor.Paket.Value = v.ToplamPaket
 	v.Skor.Para.Value = v.Para
 	v.Skor.Unvan.Value = unvan(v).Ikon
+	rozetKontrol(oyuncu)
 end
 
 local function kafaYazisiGuncelle(oyuncu)
@@ -1869,6 +2042,54 @@ local function karakterGeldi(oyuncu, karakter)
 	kafaYazisiGuncelle(oyuncu)
 end
 
+-- Roblox grubu: gruptakiler +%10 para (Config.GrupId)
+local function grupKontrolEt(oyuncu)
+	if Config.GrupId == 0 then
+		return
+	end
+	local ok, ici = pcall(function()
+		return oyuncu:IsInGroup(Config.GrupId)
+	end)
+	local v = veriler[oyuncu]
+	if ok and ici and v then
+		v.Grupta = true
+		durumGonder(oyuncu)
+	end
+end
+
+-- Arkadaş bonusu: aynı sunucudaki her Roblox arkadaşın +%10 para (en çok +%30)
+local arkadaslikOnbellek = {}
+local function arkadasMi(a, b)
+	local k = math.min(a.UserId, b.UserId) .. ":" .. math.max(a.UserId, b.UserId)
+	if arkadaslikOnbellek[k] == nil then
+		local ok, sonuc = pcall(function()
+			return a:IsFriendsWith(b.UserId)
+		end)
+		arkadaslikOnbellek[k] = ok and sonuc == true
+	end
+	return arkadaslikOnbellek[k]
+end
+local function arkadaslariSay()
+	local liste = {}
+	for oyuncu in pairs(veriler) do
+		table.insert(liste, oyuncu)
+	end
+	for _, oyuncu in ipairs(liste) do
+		local n = 0
+		for _, diger in ipairs(liste) do
+			if diger ~= oyuncu and diger.Parent and veriler[diger] and arkadasMi(oyuncu, diger) then
+				n += 1
+			end
+		end
+		local v = veriler[oyuncu]
+		if v and n ~= v.Arkadas then
+			v.Arkadas = n
+			oyuncu:SetAttribute("ArkadasSayisi", n)
+			durumGonder(oyuncu)
+		end
+	end
+end
+
 -- Robux geçişleri: oyuna girerken hangilerine sahip olduğuna bak
 local function gecisBul(id)
 	for _, g in ipairs(Config.Robux.Gecisler) do
@@ -1928,6 +2149,13 @@ local function oyuncuGeldi(oyuncu)
 		Son = {},
 		Alimlar = {},
 		Gecis = {},
+		SonGunluk = 0,
+		GunlukSeri = 0,
+		Kodlar = {},
+		FavoriSoruldu = false,
+		Rozet = {},
+		Arkadas = 0,
+		Grupta = false,
 	}
 	veriler[oyuncu] = v
 
@@ -1970,6 +2198,11 @@ local function oyuncuGeldi(oyuncu)
 	v.YarismaRekor = hazir.YarismaRekor
 	v.SonHediye = hazir.SonHediye
 	v.Alimlar = hazir.Alimlar
+	v.SonGunluk = hazir.SonGunluk
+	v.GunlukSeri = hazir.GunlukSeri
+	v.Kodlar = hazir.Kodlar
+	v.FavoriSoruldu = hazir.FavoriSoruldu
+	oyuncu:SetAttribute("FavoriSoruldu", v.FavoriSoruldu)
 	if hazir.IkiKatKalan > 0 then
 		v.IkiKatBitis = os.clock() + hazir.IkiKatKalan
 		oyuncu:SetAttribute("IkiKatBitis", workspace:GetServerTimeNow() + hazir.IkiKatKalan)
@@ -1983,6 +2216,14 @@ local function oyuncuGeldi(oyuncu)
 	kafaYazisiGuncelle(oyuncu)
 	durumGonder(oyuncu)
 	task.spawn(gecisleriKontrolEt, oyuncu)
+	task.spawn(grupKontrolEt, oyuncu)
+	task.spawn(rozetKontrol, oyuncu)
+	task.spawn(arkadaslariSay)
+	for _, r in ipairs(Config.Rozetler) do
+		if r.Anahtar == "Hosgeldin" then
+			rozetVer(oyuncu, r)
+		end
+	end
 	if not v.Arsa then
 		DuyuruOlay:FireClient(oyuncu, "Bütün arsalar dolu! Biri çıkınca dükkanın açılacak.")
 	end
@@ -2020,6 +2261,9 @@ end
 
 Players.PlayerAdded:Connect(oyuncuGeldi)
 Players.PlayerRemoving:Connect(oyuncuGitti)
+Players.PlayerRemoving:Connect(function()
+	task.defer(arkadaslariSay)
+end)
 for _, oyuncu in ipairs(Players:GetPlayers()) do
 	task.spawn(oyuncuGeldi, oyuncu)
 end
@@ -2113,6 +2357,59 @@ local function satinAl(oyuncu, anahtar)
 end
 
 SatinAlOlay.OnServerEvent:Connect(satinAl)
+
+-- Günlük ödül
+GunlukAlOlay.OnServerEvent:Connect(function(oyuncu)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or cokSik(v, "Gunluk", 1) then
+		return
+	end
+	if v.SonGunluk ~= 0 and os.time() < v.SonGunluk + Config.Gunluk.Bekleme then
+		durumGonder(oyuncu)
+		return
+	end
+	local seri = gunlukSonrakiSeri(v)
+	local odul = gunlukOdul(v, seri)
+	v.GunlukSeri = seri
+	v.SonGunluk = os.time()
+	v.Para += odul
+	skorGuncelle(oyuncu)
+	durumGonder(oyuncu)
+	DuyuruOlay:FireClient(oyuncu, "📅 %d. gün ödülü: +%s para!", seri, Ekonomi.Kisalt(odul))
+end)
+
+-- Kodlar (videolarda paylaşılır): her oyuncu her kodu bir kere kullanır
+KodOlay.OnServerEvent:Connect(function(oyuncu, metin)
+	local v = veriler[oyuncu]
+	if not v or not v.Hazir or type(metin) ~= "string" or cokSik(v, "Kod", 1) then
+		return
+	end
+	local kod = string.upper((string.gsub(string.sub(metin, 1, 30), "%s", "")))
+	local k = Config.Kodlar[kod]
+	if type(k) ~= "table" then
+		DuyuruOlay:FireClient(oyuncu, "🎟️ Böyle bir kod yok.")
+		return
+	end
+	if table.find(v.Kodlar, kod) then
+		DuyuruOlay:FireClient(oyuncu, "🎟️ Bu kodu zaten kullandın.")
+		return
+	end
+	local para = math.max(k.EnAz or 0, math.floor(saniyelikKazanc(v) * (k.Saniye or 0)))
+	table.insert(v.Kodlar, kod)
+	v.Para += para
+	skorGuncelle(oyuncu)
+	durumGonder(oyuncu)
+	DuyuruOlay:FireClient(oyuncu, "🎟️ %s kodu: +%s para!", kod, Ekonomi.Kisalt(para))
+end)
+
+-- "Oyunu favorile" penceresi bir kere gösterilir
+FavoriOlay.OnServerEvent:Connect(function(oyuncu)
+	local v = veriler[oyuncu]
+	if v and v.Hazir and not v.FavoriSoruldu then
+		v.FavoriSoruldu = true
+		oyuncu:SetAttribute("FavoriSoruldu", true)
+	end
+end)
 
 -- Yerdeki satın alma butonları: dükkan sahibi üstüne basınca alır. Üstünde durdukça tekrar almaz;
 -- çok seviyeli geliştirmeyi bir daha almak için butondan inip yeniden basmak gerekir.
@@ -2567,6 +2864,107 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(oyuncu, id, a
 	if g and veriler[oyuncu] then
 		gecisVer(oyuncu, g)
 		DuyuruOlay:FireClient(oyuncu, "🎉 %s alındı! Teşekkürler!", g.Ad)
+	end
+end)
+
+----------------------------------------------------------------------
+-- Meydanda dünya sıralaması tahtası (en çok paket yapanlar)
+----------------------------------------------------------------------
+local function siralamaTahtasiKur()
+	local yer = Config.Siralama.Yer
+	local cf = CFrame.lookAt(yer, Vector3.new(0, yer.Y, 0)) -- meydanın ortasına bakar
+	local m = Instance.new("Model")
+	m.Name = "SiralamaTahtasi"
+	for _, x in ipairs({ -6.5, 6.5 }) do
+		local direk = Gorsel.Parca({ Name = "Direk", Size = Vector3.new(0.8, 13, 0.8), CFrame = cf * CFrame.new(x, 6.5, 0.4), Color = Color3.fromRGB(70, 45, 30), Material = Enum.Material.Wood, CanCollide = true })
+		direk.Parent = m
+	end
+	local pano = Gorsel.Parca({ Name = "Pano", Size = Vector3.new(14, 10, 0.6), CFrame = cf * CFrame.new(0, 7.5, 0), Color = Color3.fromRGB(40, 28, 22), Material = Enum.Material.WoodPlanks, CanCollide = true })
+	pano.Parent = m
+	local cerceve = Gorsel.Parca({ Name = "Cerceve", Size = Vector3.new(14.8, 10.8, 0.4), CFrame = cf * CFrame.new(0, 7.5, 0.2), Color = Color3.fromRGB(250, 205, 50), Material = Enum.Material.SmoothPlastic, CanCollide = true })
+	cerceve.Parent = m
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sg.PixelsPerStud = 40
+	sg.LightInfluence = 0.2
+	sg.Parent = pano
+	local function satir(ad, metin, y, boy, renk)
+		local t = Instance.new("TextLabel")
+		t.Name = ad
+		t.BackgroundTransparency = 1
+		t.Position = UDim2.fromScale(0.05, y)
+		t.Size = UDim2.fromScale(0.9, boy)
+		t.TextScaled = true
+		t.FontFace = Font.fromEnum(Enum.Font.FredokaOne)
+		t.TextColor3 = renk
+		t.TextXAlignment = Enum.TextXAlignment.Left
+		t.Text = metin
+		t.Parent = sg
+		return t
+	end
+	local baslik = satir("Baslik", "🏆 DÜNYA SIRALAMASI", 0.03, 0.12, Color3.fromRGB(255, 215, 70))
+	baslik.TextXAlignment = Enum.TextXAlignment.Center
+	local alt = satir("Alt", "En çok paket yapanlar", 0.15, 0.06, Color3.fromRGB(230, 210, 190))
+	alt.TextXAlignment = Enum.TextXAlignment.Center
+	local satirlar = {}
+	for i = 1, Config.Siralama.Kisi do
+		satirlar[i] = satir("Sira" .. i, "", 0.23 + (i - 1) * 0.075, 0.068, i == 1 and Color3.fromRGB(255, 225, 90) or Color3.new(1, 1, 1))
+	end
+	m.Parent = harita
+	return satirlar
+end
+
+task.spawn(function()
+	local satirlar = siralamaTahtasiKur()
+	local isimler = {}
+	while true do
+		local liste = nil
+		if siralamaDeposu then
+			local ok, sayfa = pcall(function()
+				return siralamaDeposu:GetSortedAsync(false, Config.Siralama.Kisi)
+			end)
+			if ok and sayfa then
+				local ok2, veri = pcall(function()
+					return sayfa:GetCurrentPage()
+				end)
+				if ok2 and type(veri) == "table" and #veri > 0 then
+					liste = veri
+				end
+			end
+		end
+		if not liste then
+			-- Studio'da ya da depo boşsa: sunucudaki oyuncular
+			liste = {}
+			for oyuncu, v in pairs(veriler) do
+				table.insert(liste, { key = tostring(oyuncu.UserId), value = v.ToplamPaket })
+			end
+			table.sort(liste, function(a, b)
+				return a.value > b.value
+			end)
+		end
+		for i, t in ipairs(satirlar) do
+			local e = liste[i]
+			local metin = ""
+			if e then
+				local id = tonumber(e.key)
+				local ad = id and isimler[id]
+				if id and not ad then
+					local p = Players:GetPlayerByUserId(id)
+					ad = p and p.Name
+					if not ad then
+						local ok, n = pcall(function()
+							return Players:GetNameFromUserIdAsync(id)
+						end)
+						ad = ok and n or nil
+					end
+					isimler[id] = ad
+				end
+				metin = string.format("%d. %s  •  📦 %s", i, ad or "?", Ekonomi.Kisalt(tonumber(e.value) or 0))
+			end
+			t.Text = metin
+		end
+		task.wait(Config.Siralama.Guncelleme)
 	end
 end)
 
@@ -5048,8 +5446,11 @@ local function butonlariBoya()
 	end
 end
 
+local odulGuncelle = function() end -- aşağıda (🎉 Ödüller) doldurulur
+
 local function arayuzGuncelle()
 	butonlariBoya()
+	odulGuncelle()
 	if not durum then
 		return
 	end
@@ -5360,6 +5761,245 @@ task.spawn(function()
 		end
 	end
 end)
+
+----------------------------------------------------------------------
+-- 🎉 Ödüller: günlük ödül, kodlar, arkadaş daveti, grup; "favorile" sorusu
+----------------------------------------------------------------------
+local function odulBolumunuKur() -- (ayrı fonksiyon: Luau tek yerde en çok 200 yerel değişken tutar)
+	local SocialService = game:GetService("SocialService")
+	local AvatarEditorService = game:GetService("AvatarEditorService")
+	local GunlukAlOlay = Uzaklar:WaitForChild("GunlukAl")
+	local KodOlay = Uzaklar:WaitForChild("KodKullan")
+	local FavoriOlay = Uzaklar:WaitForChild("FavoriSoruldu")
+
+	kucukSira.Size = UDim2.fromOffset(266, 40)
+	local odulButonu = kucukButon("🎉")
+	odulButonu.Name = "Oduller"
+	local odulNokta = yap("Frame", {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 2, 0, -2),
+		Size = UDim2.fromOffset(14, 14),
+		BackgroundColor3 = Color3.fromRGB(255, 60, 60),
+		Visible = false,
+		Parent = odulButonu,
+	}, { kose(UDim.new(1, 0)), cizgi(Color3.new(1, 1, 1), 1.5) })
+
+	local odulPanel = yap("Frame", {
+		Name = "OdulPaneli",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(540, 380),
+		BackgroundColor3 = PANEL,
+		BackgroundTransparency = 0.04,
+		Visible = false,
+		ZIndex = 30,
+		Parent = ekran,
+	}, { kose(UDim.new(0, 18)), cizgi(Color3.fromRGB(255, 120, 200), 3) })
+	olcekEkle(odulPanel)
+	local odulBaslikYazi = yazi({
+		Text = "🎉 ÖDÜLLER",
+		Position = UDim2.fromOffset(16, 10),
+		Size = UDim2.new(1, -80, 0, 34),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(255, 170, 220),
+		ZIndex = 31,
+		Parent = odulPanel,
+	})
+	yaziCizgisi(KOYU, 2).Parent = odulBaslikYazi
+	local odulKapat = buton({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -12, 0, 10),
+		Size = UDim2.fromOffset(34, 34),
+		BackgroundColor3 = Color3.fromRGB(230, 70, 70),
+		Text = "✕",
+		ZIndex = 31,
+		Parent = odulPanel,
+	}, { kose(UDim.new(1, 0)), cizgi(KOYU, 2) })
+	local odulIcerik = yap("Frame", {
+		Position = UDim2.fromOffset(16, 56),
+		Size = UDim2.new(1, -32, 1, -68),
+		BackgroundTransparency = 1,
+		ZIndex = 31,
+		Parent = odulPanel,
+	}, { yap("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }) })
+
+	local function odulSatiri(sira, ikon, baslik)
+		local satir = yap("Frame", {
+			LayoutOrder = sira,
+			Size = UDim2.new(1, 0, 0, 66),
+			BackgroundColor3 = SATIR,
+			ZIndex = 32,
+			Parent = odulIcerik,
+		}, { kose(UDim.new(0, 12)) })
+		yazi({ Text = ikon, Position = UDim2.fromOffset(6, 11), Size = UDim2.fromOffset(44, 44), ZIndex = 33, Parent = satir })
+		local b = yazi({ Text = baslik, Position = UDim2.fromOffset(58, 6), Size = UDim2.new(1, -206, 0, 26), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 33, Parent = satir })
+		local a = yazi({
+			Text = "",
+			Position = UDim2.fromOffset(58, 37),
+			Size = UDim2.new(1, -206, 0, 20),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = Color3.fromRGB(220, 200, 180),
+			ZIndex = 33,
+			Parent = satir,
+		})
+		local bt = buton({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Size = UDim2.fromOffset(134, 44),
+			BackgroundColor3 = YESIL,
+			Text = "",
+			ZIndex = 33,
+			Parent = satir,
+		}, { kose(UDim.new(0, 12)), cizgi(KOYU, 2), yap("UIPadding", { PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }) })
+		return satir, b, a, bt
+	end
+
+	local _, gunlukBaslik, gunlukAlt, gunlukBtn = odulSatiri(1, "📅", "Günlük ödül")
+	gunlukBtn.Name = "GunlukAl"
+	local kodSatir, _, kodAlt, kodBtn = odulSatiri(2, "🎟️", "Kod gir")
+	kodAlt.Visible = false
+	kodBtn.Name = "KodKullan"
+	kodBtn.Text = T("KULLAN")
+	kodBtn.BackgroundColor3 = Color3.fromRGB(240, 140, 40)
+	local kodKutusu = yap("TextBox", {
+		Name = "KodKutusu",
+		Position = UDim2.fromOffset(58, 35),
+		Size = UDim2.new(1, -206, 0, 24),
+		BackgroundColor3 = Color3.fromRGB(250, 245, 235),
+		TextColor3 = KOYU,
+		PlaceholderText = T("Kodu buraya yaz"),
+		Text = "",
+		FontFace = FONT,
+		TextScaled = true,
+		ClearTextOnFocus = false,
+		ZIndex = 33,
+		Parent = kodSatir,
+	}, { kose(UDim.new(0, 8)) })
+	local _, _, davetAlt, davetBtn = odulSatiri(3, "👥", "Arkadaşlarınla oyna")
+	davetBtn.Name = "Davet"
+	davetBtn.Text = T("DAVET ET")
+	davetBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 230)
+	local grupSatir, _, grupAlt, grupBtn = odulSatiri(4, "⭐", "Grubumuza katıl")
+	grupSatir.Visible = false
+	grupBtn.Visible = false
+	grupAlt.Size = UDim2.new(1, -66, 0, 20)
+
+	local arkadasHap = etkinlikHapi(Color3.fromRGB(60, 140, 230))
+
+	local function saatYazi(sn)
+		sn = math.max(0, math.floor(sn))
+		return string.format("%d:%02d:%02d", sn // 3600, (sn % 3600) // 60, sn % 60)
+	end
+	local gunlukHazirZamani = nil
+	local gunlukHaberVerildi = false
+	local function gunlukButonuGuncelle()
+		if not gunlukHazirZamani then
+			return
+		end
+		local kalan = gunlukHazirZamani - os.clock()
+		if kalan <= 0 then
+			gunlukBtn.Text = T("AL!")
+			gunlukBtn.BackgroundColor3 = YESIL
+			odulNokta.Visible = true
+		else
+			gunlukBtn.Text = "⏳ " .. saatYazi(kalan)
+			gunlukBtn.BackgroundColor3 = Color3.fromRGB(110, 110, 120)
+			odulNokta.Visible = false
+		end
+	end
+	odulGuncelle = function()
+		if not durum or type(durum.Gunluk) ~= "table" then
+			return
+		end
+		local g = durum.Gunluk
+		gunlukHazirZamani = os.clock() + (g.Kalan or 0)
+		gunlukBaslik.Text = T("Günlük ödül: %d. gün", g.Seri or 1)
+		gunlukAlt.Text = T("💰 %s  •  Her gün gel, ödül büyüsün!", K(g.Odul or 0))
+		gunlukButonuGuncelle()
+		if (g.Kalan or 0) <= 0 and not gunlukHaberVerildi and durum.ArsaIndex > 0 then
+			gunlukHaberVerildi = true
+			task.delay(3, function()
+				duyuru(T("📅 Günlük ödülün hazır!"), Color3.fromRGB(255, 170, 220), 2.4, T("🎉 butonuna bas"))
+			end)
+		end
+		local kisi = math.floor(Config.ArkadasBonusu.Kisi * 100 + 0.5)
+		local simdi = math.floor(math.min(Config.ArkadasBonusu.EnCok, Config.ArkadasBonusu.Kisi * (durum.Arkadas or 0)) * 100 + 0.5)
+		davetAlt.Text = T("Her arkadaş +%%%d para (şu an +%%%d)", kisi, simdi)
+		arkadasHap.Visible = simdi > 0
+		arkadasHap.Text = T("👥 ARKADAŞ +%%%d", simdi)
+		grupSatir.Visible = durum.GrupVar == true
+		local grupYuzde = math.floor(Config.GrupBonusu * 100 + 0.5)
+		grupAlt.Text = durum.Grupta and T("✓ Gruptasın: +%%%d para", grupYuzde) or T("Oyun sayfasındaki gruba katıl, sonra tekrar gir: +%%%d para", grupYuzde)
+	end
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			gunlukButonuGuncelle()
+		end
+	end)
+
+	local function odulAcKapa(ac)
+		odulPanel.Visible = ac
+		if ac then
+			odulGuncelle()
+			dukkanAcKapa(false)
+			robuxAcKapa(false)
+		end
+	end
+	odulButonu.Activated:Connect(function()
+		odulAcKapa(not odulPanel.Visible)
+	end)
+	odulKapat.Activated:Connect(function()
+		odulAcKapa(false)
+	end)
+	gunlukBtn.Activated:Connect(function()
+		if gunlukHazirZamani and gunlukHazirZamani <= os.clock() then
+			gunlukHazirZamani = os.clock() + 5 -- sunucunun cevabını beklerken tekrar basılmasın
+			GunlukAlOlay:FireServer()
+		else
+			salla(gunlukBtn)
+		end
+	end)
+	local function koduGonder()
+		local metin = kodKutusu.Text
+		if metin == nil or string.gsub(metin, "%s", "") == "" then
+			salla(kodBtn)
+			return
+		end
+		KodOlay:FireServer(metin)
+		kodKutusu.Text = ""
+	end
+	kodBtn.Activated:Connect(koduGonder)
+	kodKutusu.FocusLost:Connect(function(enter)
+		if enter then
+			koduGonder()
+		end
+	end)
+	davetBtn.Activated:Connect(function()
+		local ok, olur = pcall(function()
+			return SocialService:CanSendGameInviteAsync(ben)
+		end)
+		if ok and olur then
+			pcall(function()
+				SocialService:PromptGameInvite(ben)
+			end)
+		else
+			duyuru(T("Şu an davet gönderilemiyor"), Color3.fromRGB(255, 150, 120), 1.4)
+		end
+	end)
+
+	-- Birkaç dakika oynayınca bir kere "oyunu favorile" penceresi
+	task.delay(Config.FavoriSoruDakika * 60, function()
+		if ben:GetAttribute("FavoriSoruldu") then
+			return
+		end
+		FavoriOlay:FireServer()
+		pcall(function()
+			AvatarEditorService:PromptSetFavorite(game.PlaceId, Enum.AvatarItemType.Asset, true)
+		end)
+	end)
+end
+odulBolumunuKur()
 
 -- Sohbette VIP yazısı
 pcall(function()

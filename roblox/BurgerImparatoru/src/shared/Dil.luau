@@ -241,6 +241,34 @@ local EN = {
 	["15 dakika boyunca bütün paketler 2 kat"] = "Every package earns double for 15 minutes",
 	["Herkese Altın Saat"] = "Golden Hour for Everyone",
 	["Bütün sunucuya hemen Altın Saat başlat"] = "Start a Golden Hour for the whole server now",
+
+	------------------------------------------------------------------
+	-- Ödüller, kodlar, arkadaşlar, grup, sıralama
+	------------------------------------------------------------------
+	["🎉 ÖDÜLLER"] = "🎉 REWARDS",
+	["Günlük ödül"] = "Daily reward",
+	["Kod gir"] = "Enter a code",
+	["Arkadaşlarınla oyna"] = "Play with friends",
+	["Grubumuza katıl"] = "Join our group",
+	["Kodu buraya yaz"] = "Type the code here",
+	["KULLAN"] = "REDEEM",
+	["DAVET ET"] = "INVITE",
+	["AL!"] = "CLAIM!",
+	["Günlük ödül: %d. gün"] = "Daily reward: day %d",
+	["💰 %s  •  Her gün gel, ödül büyüsün!"] = "💰 %s  •  Come back daily, it grows!",
+	["Her arkadaş +%%%d para (şu an +%%%d)"] = "Each friend +%d%% cash (now +%d%%)",
+	["👥 ARKADAŞ +%%%d"] = "👥 FRIENDS +%d%%",
+	["✓ Gruptasın: +%%%d para"] = "✓ You're in the group: +%d%% cash",
+	["Oyun sayfasındaki gruba katıl, sonra tekrar gir: +%%%d para"] = "Join the group on the game page, then rejoin: +%d%% cash",
+	["📅 Günlük ödülün hazır!"] = "📅 Your daily reward is ready!",
+	["🎉 butonuna bas"] = "Tap the 🎉 button",
+	["Şu an davet gönderilemiyor"] = "Can't send invites right now",
+	["📅 %d. gün ödülü: +%s para!"] = "📅 Day %d reward: +%s cash!",
+	["🎟️ Böyle bir kod yok."] = "🎟️ That code doesn't exist.",
+	["🎟️ Bu kodu zaten kullandın."] = "🎟️ You already used this code.",
+	["🎟️ %s kodu: +%s para!"] = "🎟️ Code %s: +%s cash!",
+	["🏆 DÜNYA SIRALAMASI"] = "🏆 WORLD LEADERBOARD",
+	["En çok paket yapanlar"] = "Most burgers packed",
 }
 Dil.EN = EN
 

@@ -143,6 +143,21 @@ Hepsi `magaza/` klasöründe (indirdiğin zip'te de var):
 6. **Genre:** `Simulation`. **Save Changes**.
 7. Türkçe ad ve açıklama için aşağıdaki **🌍 İki dil** bölümüne bak.
 
+## 🎉 Oyuncuları geri getiren şeyler
+
+- **📅 Günlük ödül:** Her gün gelene para; seri 7 güne kadar büyür, 2 gün gelmezsen baştan başlar.
+  🎉 butonundaki kırmızı nokta ödül hazır demek.
+- **🎟️ Kodlar:** 🎉 panelinde kod yazılır. Şimdiki kodlar: `HUSS`, `BURGER`, `TYCOON`. Videolarında paylaş!
+  Yeni kod eklemek için **Config ▸ Config.Kodlar**'a bir satır ekle. Her oyuncu her kodu bir kere kullanır.
+- **👥 Arkadaş bonusu:** Aynı sunucudaki her Roblox arkadaşın +%10 para (en çok +%30). 🎉 panelinde **DAVET ET**.
+- **⭐ Grup bonusu:** Roblox grubu kurunca numarasını **Config.GrupId**'ye yaz; gruptakiler +%10 para alır.
+  (Grubun numarası: grubun sayfasındaki linkte, `roblox.com/communities/` sonrasındaki sayı.)
+- **⭐ Favori:** 8 dakika oynayan oyuncuya bir kere "oyunu favorile" penceresi çıkar.
+- **🏆 Dünya sıralaması:** Meydanda en çok paket yapanların tahtası.
+- **🏅 Rozetler:** Hoş geldin, İlk Burger, 1000 Paket, Yeni Şube, BURGER İMPARATORU. Simgeleri
+  `magaza/robux/rozet_*.png`. Roblox'ta oluşturulunca numaraları **Config.Rozetler**'e yazılır
+  (API anahtarına **badges** izni eklersen ben oluştururum).
+
 ## 💎 Robux mağazası
 
 Oyunda Robux'la alınabilen geçişler ve ürünler var (💎 butonu). Oyunu bozmasınlar diye para paketleri
