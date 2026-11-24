@@ -267,5 +267,12 @@ document.getElementById('kap').style.width = W + 'px'; document.getElementById('
 for (const y of (cek.yazilar || [])) { const d = document.createElement('div'); d.className = y.sinif || 'baslik'; d.innerHTML = y.html; Object.assign(d.style, y.stil || {}); ust.appendChild(d); }
 await document.fonts.ready;
 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+// video için: sahneyi bir kere kur, kamerayı oynatıp kare kare çiz
+window.kareCiz = (p) => {
+  kamera.position.set(...p.goz);
+  if (p.fov) { kamera.fov = p.fov; kamera.updateProjectionMatrix(); }
+  kamera.lookAt(new THREE.Vector3(...p.bak));
+  composer.render();
+};
 document.title = 'HAZIR';
 </script></body></html>
