@@ -89,7 +89,7 @@ namespace BusTycoon.Game
         void RecomputeUrbanQuote()
         {
             urbanQuoteValid = false;
-            CityData city = session.Headquarters;
+            CityData city = CurrentCity;
             if (urbanOrigin == null || urbanDestination == null || cityView.Map == null || city == null) return;
             UrbanPlanner.TryPlan(cityView.Map, urbanOrigin, urbanDestination, city, session.Economy, urbanPlan);
             BusModelData model = PlannerModel;
@@ -121,7 +121,7 @@ namespace BusTycoon.Game
 
         void BuildUrbanPlanner(VisualElement body)
         {
-            CityData city = session.Headquarters;
+            CityData city = CurrentCity;
             SheetHeader("Yeni dolmuş hattı", $"{city?.DisplayName} · iki durak seç");
             if (cityView == null || !cityView.Ready)
             {
@@ -225,7 +225,7 @@ namespace BusTycoon.Game
         void OpenUrbanRouteFromPlanner()
         {
             if (!urbanQuoteValid || !urbanPlan.IsValid) return;
-            CityData city = session.Headquarters;
+            CityData city = CurrentCity;
             var result = session.Routes.TryOpenUrbanRoute(city, urbanPlan, urbanQuote.SuggestedPrice, out RouteState route);
             if (!result)
             {

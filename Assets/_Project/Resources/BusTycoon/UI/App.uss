@@ -3108,3 +3108,26 @@
     color: #F1F4F5;
     margin-top: 8px;
 }
+
+/* Harita sağ paneli: lisanslı şehirler arasında geçiş */
+.bt-mapside__cities {
+    flex-wrap: wrap;
+    margin: 0 0 10px 0;
+}
+
+.bt-mapside__city {
+    height: 26px;
+    margin: 0 6px 6px 0;
+    padding: 0 10px;
+    border-width: 1px;
+    border-radius: 13px;
+    border-color: rgba(42, 74, 82, 0.9);
+    background-color: #16262D;
+    color: #D3DCDF;
+    font-size: 12px;
+}
+
+.bt-mapside__city.is-active {
+    border-color: rgba(245, 196, 81, 0.8);
+    color: #F5C451;
+}

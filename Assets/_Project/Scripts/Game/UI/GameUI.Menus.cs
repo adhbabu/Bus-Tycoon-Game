@@ -361,6 +361,8 @@ namespace BusTycoon.Game
             {
                 session.State.vehicleClasses = true; // dolmuş/şehir otobüsü şehir içi, otobüs şehirlerarası
                 session.State.waitTimes = true;      // hat kurulumu 3 gün, araç teslimi; reklamla hemen biter
+                session.State.cityLicenses = true;   // başka şehir: lisansla (oyun parası ya da uygulama içi)
+                session.Progression.GrantCityLicense(hq);
                 StartTutorial();
             }
             Toast(cityStart ? $"{name} kuruldu! İlk iş: galeriden bir dolmuş al." : $"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);

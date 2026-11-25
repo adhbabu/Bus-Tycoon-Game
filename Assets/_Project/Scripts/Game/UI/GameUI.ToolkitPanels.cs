@@ -115,7 +115,7 @@ namespace BusTycoon.Game
                 }
                 case Panel.Regions:
                 {
-                    int signature = session.Progression.Level * 7919;
+                    int signature = session.Progression.Level * 7919 + session.State.ownedCityIds.Count * 131 + Mathf.RoundToInt((float)session.Finance.Cash / 1000f);
                     foreach (var region in session.World.Regions)
                     {
                         signature = signature * 3 + (session.Progression.IsRegionUnlocked(region) ? 1 : 0) +
@@ -162,6 +162,7 @@ namespace BusTycoon.Game
                     SheetHeader("Şirketim", $"Seviye {session.Progression.Level} · ülke lisansları");
                     BuildCompany(body);
                     BuildRegions(body);
+                    BuildCityLicenses(body); // ülke lisanslarının altında (kullanıcı kararı)
                     break;
                 case Panel.Finance:
                     SheetHeader("Finans", $"kasa {Fmt.Money(session.Finance.Cash)} · son 7 gün {Fmt.Signed(session.Finance.GetNetProfit(7))}");

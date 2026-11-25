@@ -97,8 +97,10 @@ namespace BusTycoon.Routes
                 return OpResult.Fail($"{a.Region.DisplayName} için işletme lisansınız yok.");
             if (!progression.IsRegionUnlocked(b.Region))
                 return OpResult.Fail($"{b.Region.DisplayName} için işletme lisansınız yok.");
+            if (!progression.OwnsCity(a) && !progression.OwnsCity(b))
+                return OpResult.Fail("Şehirlerarası hat lisanslı şehirlerinden birinden başlamalı (Şirketim → Şehir lisansları).");
 
-            float license = economy.GetRouteLicenseCost(world.GetRoadDistanceKm(a, b));
+            float license = RouteLicenseCost(a, b);
             if (!finance.CanAfford(license)) return OpResult.Fail($"Hat lisansı için {license:N0} gerekli.");
             return OpResult.Ok();
         }
@@ -118,7 +120,7 @@ namespace BusTycoon.Routes
 
             quote.DistanceKm = world.GetRoadDistanceKm(a, b);
             quote.TravelHours = plannedModel.TravelHours(quote.DistanceKm);
-            quote.LicenseCost = economy.GetRouteLicenseCost(quote.DistanceKm);
+            quote.LicenseCost = RouteLicenseCost(a, b);
 
             // Talep 30. gün olgunluğunda değerlendirilir: açılış günündeki düşük talep oyuncuyu yanıltmasın.
             RouteEconomics.Inputs inputs = BuildInputs(a, b, quote.DistanceKm, 0f, MatureDays, true, 1f, ElasticityBiasFor(a.Id, b.Id));
@@ -127,6 +129,13 @@ namespace BusTycoon.Routes
         }
 
         const int MatureDays = 30;
+
+        /// <summary>Şehirlerarası hat ruhsatı: iki ucu da lisanslı şehirse ücretsiz (şehir lisansı kuralı), değilse mesafeye göre.</summary>
+        public float RouteLicenseCost(CityData a, CityData b)
+        {
+            if (progression.CityLicensesActive && progression.OwnsCity(a) && progression.OwnsCity(b)) return 0f;
+            return economy.GetRouteLicenseCost(world.GetRoadDistanceKm(a, b));
+        }
 
         /// <summary>Teklifin ortak kısmı (şehirlerarası ve şehir içi): en iyi fiyat, otobüs sayısı, tahmin.</summary>
         void FillQuote(ref RouteQuote quote, RouteEconomics.Inputs inputs, BusModelData plannedModel, bool urban)
@@ -175,6 +184,7 @@ namespace BusTycoon.Routes
                 return OpResult.Fail($"Hat limiti dolu ({progression.MaxRoutes}). Şirket seviyesini yükseltin.");
             if (!progression.IsRegionUnlocked(city.Region))
                 return OpResult.Fail($"{city.Region.DisplayName} için işletme lisansınız yok.");
+            if (!progression.OwnsCity(city)) return OpResult.Fail($"{city.DisplayName} lisansı yok (Şirketim → Şehir lisansları).");
             float license = economy.GetUrbanLicenseCost(plan.Km);
             if (!finance.CanAfford(license)) return OpResult.Fail($"Hat ruhsatı için {license:N0} gerekli.");
             return OpResult.Ok();
@@ -237,7 +247,8 @@ namespace BusTycoon.Routes
             if (!check) return check;
 
             float km = world.GetRoadDistanceKm(a, b);
-            finance.TrySpend(economy.GetRouteLicenseCost(km), LedgerCategory.RouteLicense, a.Id + "-" + b.Id);
+            float licenseCost = RouteLicenseCost(a, b);
+            if (licenseCost > 0f) finance.TrySpend(licenseCost, LedgerCategory.RouteLicense, a.Id + "-" + b.Id);
 
             state.nextRouteSerial++;
             route = new RouteState

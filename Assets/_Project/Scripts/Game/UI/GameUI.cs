@@ -161,6 +161,7 @@ namespace BusTycoon.Game
             boundProgression.LevelChanged += OnLevelChanged;
             boundProgression.ModelUnlocked += OnModelUnlocked;
             boundProgression.RegionUnlocked += OnRegionUnlocked;
+            boundProgression.CityLicensed += OnCityLicensed;
             boundFleet.BusBrokeDown += OnBusBrokeDown;
             boundMaintenance = session.Maintenance;
             boundMaintenance.Completed += OnMaintenance;
@@ -181,6 +182,7 @@ namespace BusTycoon.Game
                 boundProgression.LevelChanged -= OnLevelChanged;
                 boundProgression.ModelUnlocked -= OnModelUnlocked;
                 boundProgression.RegionUnlocked -= OnRegionUnlocked;
+                boundProgression.CityLicensed -= OnCityLicensed;
             }
             if (boundMaintenance != null) boundMaintenance.Completed -= OnMaintenance;
             if (boundFleet != null)

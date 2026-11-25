@@ -33,6 +33,12 @@ namespace BusTycoon.Save
         /// ödüllü reklamla hemen biter. Eski kayıtlarda kapalı (hat ve araç hemen hazır).
         /// </summary>
         public bool waitTimes;
+        /// <summary>
+        /// Şehir lisansları (şehir içi başlangıçlı oyunlar): dolmuş hatları yalnız lisanslı şehirlerde; şehirlerarası hat
+        /// en az bir lisanslı şehirden başlar, iki ucu lisanslıysa hat ruhsatı alınmaz. Başlangıç şehri bedava.
+        /// </summary>
+        public bool cityLicenses;
+        public List<string> ownedCityIds = new List<string>();
         public int tutorialStep;
         /// <summary>Öğretici: oyuncu hat panelinde bileti gördü mü (son adım).</summary>
         public bool tutorialSawPrice;

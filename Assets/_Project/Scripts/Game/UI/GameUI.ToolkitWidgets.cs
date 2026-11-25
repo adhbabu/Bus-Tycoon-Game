@@ -16,7 +16,7 @@ namespace BusTycoon.Game
         Button tkMapViewCity, tkMapViewCountry;
         Label tkMapLocText, tkMapSideCaption, tkMapSideCta, tkMapViewCityText, tkMapAttribution, tkMapSideCtaTitle,
             tkMapSideMarkerAText, tkMapSideMarkerBText;
-        VisualElement tkMapSideMarkerA, tkMapSideMarkerB;
+        VisualElement tkMapSideMarkerA, tkMapSideMarkerB, tkMapCityChips;
         bool tkMapSideCity;
         int tkTooltipSignature = int.MinValue, tkMapSideSignature = int.MinValue;
         readonly List<RouteState> tkMapSideRoutes = new List<RouteState>();
@@ -59,6 +59,8 @@ namespace BusTycoon.Game
             tkMapViewCountry = country;
             Ui.Symbol("public", "bt-segment__icon", country);
             Ui.Text("bt-segment__label", "Türkiye", UiWeight.Bold, country);
+            // Lisanslı şehirler arasında geçiş (birden çok lisanslı şehir varsa)
+            tkMapCityChips = Ui.El("bt-row bt-mapside__cities", tkMapSide);
             tkMapSideCaption = Ui.Text("bt-caps is-green", "", UiWeight.Bold, tkMapSide);
             tkMapSideList = Ui.El("bt-col bt-mapside__list", tkMapSide);
             Ui.Text("bt-caps is-green bt-mapside__caption", "İŞARETLER", UiWeight.Bold, tkMapSide);
@@ -120,7 +122,7 @@ namespace BusTycoon.Game
                     bool city = cityMapWanted && panel != Panel.Planner;
                     Ui.Toggle(tkMapViewCity, "is-active", city);
                     Ui.Toggle(tkMapViewCountry, "is-active", !city);
-                    Ui.SetText(tkMapViewCityText, session.Headquarters.DisplayName);
+                    Ui.SetText(tkMapViewCityText, CurrentCity.DisplayName);
                     tkMapViewCity.SetEnabled(cityView.Ready || cityView.Loading);
                 }
                 Rect rect = SideRect;
@@ -136,11 +138,26 @@ namespace BusTycoon.Game
             var routes = session.Routes.Routes;
             bool city = CityMapShown;
             int signature = session.State.currentDay * 397 + routes.Count + (city ? 1 << 20 : 0);
+            signature = signature * 31 + session.State.ownedCityIds.Count + (CurrentCity?.Id.GetHashCode() ?? 0);
             if (signature == tkMapSideSignature) return;
             tkMapSideSignature = signature;
             tkMapSideCity = city;
 
             tkMapSideCaption.text = city ? $"DOLMUŞ HATLARIM" : $"ŞEHİRLERARASI HATLARIM";
+            tkMapCityChips.Clear();
+            int ownedMaps = 0;
+            foreach (string id in session.State.ownedCityIds)
+                if (CityView.Supports(session.World.GetCity(id))) ownedMaps++;
+            Ui.Show(tkMapCityChips, city && ownedMaps > 1);
+            if (city && ownedMaps > 1)
+                foreach (string id in session.State.ownedCityIds)
+                {
+                    CityData owned = session.World.GetCity(id);
+                    if (!CityView.Supports(owned)) continue;
+                    Button chip = Ui.Button("bt-mapside__city", owned.DisplayName, () => SelectMapCity(owned), tkMapCityChips, UiWeight.Bold);
+                    chip.name = "map-city-" + id;
+                    Ui.Toggle(chip, "is-active", owned == CurrentCity);
+                }
             tkMapSideList.Clear();
             tkMapSideRoutes.Clear();
             // Şehir haritasında o şehrin dolmuş hatları, Türkiye haritasında şehirlerarası hatlar
