@@ -349,7 +349,7 @@ namespace BusTycoon.Game
 
             session.StartNewGame(name, hq); // → OnSessionStarted
             Toast($"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
-            OpenPlannerNow(hq);
+            if (!NewUi) OpenPlannerNow(hq); // yeni arayüzde ana ekran açılır; "İlk hattını aç" kartı planlayıcıyı açar
         }
 
         // ------------------------------------------------------------------ kayıt / yükleme

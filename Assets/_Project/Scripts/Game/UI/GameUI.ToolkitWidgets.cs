@@ -1,112 +1,134 @@
+using System.Collections.Generic;
 using BusTycoon.Data;
+using BusTycoon.Routes;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Yeni arayüzde haritanın üstündeki küçük parçalar: görev kartı (telefonda tek satır), yakınlaştırma, mini haritanın
-    /// çerçevesi ve başlığı (harita içeriğini IMGUI çizer) ve şehir ipucu (fare şehrin üstündeyken).
+    /// Harita kartının parçaları: yuvarlak köşe çerçevesi, merkez şehir ve yakınlaştırma düğmeleri, sağdaki hat listesi
+    /// (hat paneli ya da planlayıcı açık değilken) ve şehir ipucu (fare şehrin üstündeyken).
     /// </summary>
     public sealed partial class GameUI
     {
-        VisualElement tkMinimap, tkMinimapHeader, tkTooltip;
-        Button tkMinimapToggle;
-        VisualElement tkMinimapPlus;
-        bool? tkMinimapCollapsedShown;
-        int tkTooltipSignature = int.MinValue;
-        VisualElement tkGoal, tkGoalIcon, tkZoom;
-        Label tkGoalHeader, tkGoalTitle, tkGoalHint;
-        Button tkGoalAll;
-        GoalTracker.Goal tkGoalShown;
-        int tkGoalCount = -1;
+        VisualElement tkMapFrame, tkMapEdge, tkMapControls, tkMapSide, tkMapSideList, tkTooltip;
+        Label tkMapLocText, tkMapSideCaption, tkMapSideCta;
+        int tkTooltipSignature = int.MinValue, tkMapSideSignature = int.MinValue;
+        readonly List<RouteState> tkMapSideRoutes = new List<RouteState>();
 
-        void BuildToolkitWidgets()
+        void BuildToolkitMapWidgets()
         {
-            // Mini harita çerçevesi: başlık ve küçült/büyüt (telefonda başlığın tamamı düğme)
-            tkMinimap = Ui.El("bt-minimap", tkHud);
-            tkMinimapHeader = Ui.El("bt-row bt-minimap__header", tkMinimap);
-            Ui.Icon(UIIcon.Routes, "bt-icon bt-minimap__icon", tkMinimapHeader);
-            Ui.Text("bt-caps bt-grow", "HARİTA", UiWeight.Bold, tkMinimapHeader);
-            // Eksi / artı işareti çizgilerle (yakınlaştırmanın +/− düğmeleriyle karışmasın, her boyutta net)
-            tkMinimapToggle = Ui.Button("bt-minimap__toggle", string.Empty, () => { if (!phone) minimapCollapsed = !minimapCollapsed; }, tkMinimapHeader);
-            Ui.El("bt-minimap__mark", tkMinimapToggle).pickingMode = PickingMode.Ignore;
-            tkMinimapPlus = Ui.El("bt-minimap__mark bt-minimap__mark--vertical", tkMinimapToggle);
-            tkMinimapPlus.pickingMode = PickingMode.Ignore;
-            tkMinimapHeader.RegisterCallback<ClickEvent>(_ => { if (phone) minimapCollapsed = !minimapCollapsed; });
-            tkMinimap.style.display = DisplayStyle.None;
+            // Yuvarlak köşeler: kartın çevresinde zemin renginde kalın kenarlı çerçeve (iç köşesi yuvarlak), üstünde ince kenar
+            tkMapFrame = Ui.El("bt-mapframe", tkHud);
+            tkMapFrame.pickingMode = PickingMode.Ignore;
+            tkMapEdge = Ui.El("bt-mapedge", tkHud);
+            tkMapEdge.pickingMode = PickingMode.Ignore;
 
-            tkGoal = Ui.El("bt-goal", tkHud);
-            tkGoalIcon = Ui.Icon(UIIcon.Goals, "bt-goal__icon", tkGoal);
-            VisualElement text = Ui.El("bt-col bt-grow bt-goal__text", tkGoal);
-            text.pickingMode = PickingMode.Ignore;
-            tkGoalHeader = Ui.Text("bt-caps", "", UiWeight.Bold, text);
-            tkGoalTitle = Ui.Text("bt-goal__title", "", UiWeight.Bold, text);
-            tkGoalHint = Ui.Text("bt-goal__hint", "", UiWeight.Regular, text);
-            tkGoalAll = Ui.Button("bt-tab is-active bt-goal__all", "Tümü", () => OpenPanelNow(Panel.Goals), tkGoal);
-            tkGoal.RegisterCallback<ClickEvent>(_ => { if (phone) OpenPanelNow(Panel.Goals); }); // telefonda şeridin tamamı
-            tkGoal.style.display = DisplayStyle.None;
+            // Kartın üstündeki düğmeler: solda merkez şehir, sağda yakınlaştırma
+            tkMapControls = Ui.El("bt-mapcontrols", tkHud);
+            tkMapControls.pickingMode = PickingMode.Ignore;
+            Button loc = Ui.Button("bt-row bt-maploc", string.Empty, FocusHeadquarters, tkMapControls);
+            Ui.Symbol("location_on", "bt-maploc__icon", loc);
+            tkMapLocText = Ui.Text("bt-maploc__text", "", UiWeight.Bold, loc);
+            Ui.El("bt-grow", tkMapControls).pickingMode = PickingMode.Ignore;
+            VisualElement zoom = Ui.El("bt-mapzoom", tkMapControls);
+            zoom.pickingMode = PickingMode.Ignore;
+            Button zoomIn = Ui.Button("bt-mapzoom__button", string.Empty, () => mapCamera.Zoom(-4f, MapCardCenterScreen), zoom);
+            Ui.Symbol("add", "bt-mapzoom__icon", zoomIn);
+            Button zoomOut = Ui.Button("bt-mapzoom__button", string.Empty, () => mapCamera.Zoom(4f, MapCardCenterScreen), zoom);
+            Ui.Symbol("remove", "bt-mapzoom__icon", zoomOut);
+            Button home = Ui.Button("bt-mapzoom__button", string.Empty, FocusHeadquarters, zoom);
+            Ui.Symbol("my_location", "bt-mapzoom__icon", home);
 
-            tkZoom = Ui.El("bt-zoom", tkHud);
-            tkZoom.pickingMode = PickingMode.Ignore;
-            Ui.Button("bt-zoom__button", "+", () => mapCamera.Zoom(-4f, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f)), tkZoom);
-            Ui.Button("bt-zoom__button", "−", () => mapCamera.Zoom(4f, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f)), tkZoom);
+            // Sağ panel (hat ya da planlayıcı açık değilken): hatlarım, işaretler, yeni hat
+            tkMapSide = Ui.El("bt-card bt-mapside", tkHud);
+            tkMapSideCaption = Ui.Text("bt-caps is-green", "", UiWeight.Bold, tkMapSide);
+            tkMapSideList = Ui.El("bt-col bt-mapside__list", tkMapSide);
+            Ui.Text("bt-caps is-green bt-mapside__caption", "İŞARETLER", UiWeight.Bold, tkMapSide);
+            VisualElement hq = Ui.El("bt-row bt-mapside__marker", tkMapSide);
+            Ui.Symbol("star", "bt-mapside__dot is-gold-bg", hq);
+            Ui.Text("bt-mapside__marker-text", "Merkez ofis", UiWeight.Bold, hq);
+            VisualElement linked = Ui.El("bt-row bt-mapside__marker", tkMapSide);
+            Ui.Symbol("check_circle", "bt-mapside__dot is-green-bg", linked);
+            Ui.Text("bt-mapside__marker-text", "Hattın olan şehir", UiWeight.Bold, linked);
+            Ui.El("bt-grow", tkMapSide).pickingMode = PickingMode.Ignore;
+            Button cta = Ui.Button("bt-cta", string.Empty, () => OpenPlannerNow(null), tkMapSide);
+            cta.name = "new-route";
+            VisualElement ctaText = Ui.El("bt-col bt-grow", cta);
+            ctaText.pickingMode = PickingMode.Ignore;
+            Ui.Text("bt-cta__title", "Yeni hat aç", UiWeight.Black, ctaText);
+            tkMapSideCta = Ui.Text("bt-cta__sub", "", UiWeight.Bold, ctaText);
+            VisualElement go = Ui.El("bt-cta__go", cta);
+            go.pickingMode = PickingMode.Ignore;
+            Ui.Symbol("arrow_forward", "bt-cta__go-icon", go);
         }
 
-        void UpdateToolkitWidgets(float k)
+        void FocusHeadquarters()
         {
-            bool onMap = !StationUi;
+            CityData hq = session.IsRunning ? session.Headquarters : null;
+            if (hq != null) mapCamera.FocusOn(world.GetCityPosition(hq), 34f);
+        }
 
-            Ui.Show(tkMinimap, onMap);
-            if (onMap)
-            {
-                Rect mini = MinimapRect;
-                Ui.Place(tkMinimap, mini.x * k, mini.y * k, mini.width * k, mini.height * k);
-                tkMinimapHeader.style.height = MinimapHeader * k;
-                tkCovered.Add(mini);
-                if (tkMinimapCollapsedShown != minimapCollapsed)
-                {
-                    tkMinimapCollapsedShown = minimapCollapsed;
-                    Ui.Show(tkMinimapPlus, minimapCollapsed);
-                }
-            }
-            // Görev kartı: masaüstünde mini haritanın sağında; telefonda tek satır; dar ekranda panelle çakışırsa gizli
-            GoalTracker.Goal goal = goals.Current;
-            bool showGoal = onMap && goal != null && !(compact && panel != Panel.None);
-            float height = (phone ? 44f : 120f) * u; // ipucu iki satıra sarabilir
-            float left = MinimapRect.xMax + Margin;
-            float width = phone ? Mathf.Min(460f * u, SafeRight - Margin - left) : 400f * u;
-            if (phone && width < 200f * u) showGoal = false;
-            if (!phone && panel != Panel.None && left + width > PanelRect.x - Margin) showGoal = false;
-            Ui.Show(tkGoal, showGoal);
-            if (showGoal)
-            {
-                Ui.Place(tkGoal, left * k, (ContentBottom - height - Margin) * k, width * k, height * k);
-                tkCovered.Add(new Rect(left, ContentBottom - height - Margin, width, height));
-                Ui.Toggle(tkGoal, "is-chip", phone);
-                if (goal != tkGoalShown || goals.CompletedCount != tkGoalCount)
-                {
-                    tkGoalShown = goal;
-                    tkGoalCount = goals.CompletedCount;
-                    tkGoalHeader.text = GoalHeader(goal);
-                    tkGoalTitle.text = goal.Title;
-                    tkGoalHint.text = goal.Hint;
-                }
-                Ui.Show(tkGoalHint, !phone);
-                Ui.Show(tkGoalAll, !phone);
-            }
+        void UpdateToolkitMapWidgets(float k)
+        {
+            bool onMap = MapShown && !StationUi;
+            Ui.Show(tkMapFrame, onMap);
+            Ui.Show(tkMapEdge, onMap);
+            Ui.Show(tkMapControls, onMap);
+            bool side = onMap && !ToolkitDrawsPanel(panel);
+            Ui.Show(tkMapSide, side);
+            if (!onMap) return;
 
-            // Yakınlaştırma (telefonda iki parmakla)
-            bool zoom = onMap && !phone;
-            Ui.Show(tkZoom, zoom);
-            if (zoom)
+            Rect card = MapCardRect;
+            const float ring = 40f; // çerçeve kalınlığı (birim): köşelerin dışını kapatır
+            Ui.Place(tkMapFrame, card.x * k - ring, card.y * k - ring, card.width * k + 2f * ring, card.height * k + 2f * ring);
+            Ui.Place(tkMapEdge, card.x * k, card.y * k, card.width * k, card.height * k);
+            float pad = 12f;
+            Ui.Place(tkMapControls, card.x * k + pad, card.y * k + pad, card.width * k - 2f * pad, card.height * k - 2f * pad);
+            CityData hq = session.Headquarters;
+            Ui.SetText(tkMapLocText, hq != null ? hq.DisplayName : "Merkez");
+
+            if (side)
             {
-                float size = 52f * u;
-                float right = panel != Panel.None ? PanelRect.x : SafeRight;
-                float top = ContentBottom - 2f * size - 2f * Margin;
-                Ui.Place(tkZoom, (right - size - Margin) * k, top * k, size * k, (2f * size + 6f * u) * k);
-                tkCovered.Add(new Rect(right - size - Margin, top, size, 2f * size + 6f * u));
+                Rect rect = SideRect;
+                Ui.Place(tkMapSide, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
+                tkCovered.Add(rect);
+                RefreshMapSide();
             }
+        }
+
+        /// <summary>Sağ paneldeki hat listesi: en kârlı altı hat; yalnız gün ya da hat sayısı değişince yeniden kurulur.</summary>
+        void RefreshMapSide()
+        {
+            var routes = session.Routes.Routes;
+            int signature = session.State.currentDay * 397 + routes.Count;
+            if (signature == tkMapSideSignature) return;
+            tkMapSideSignature = signature;
+
+            tkMapSideCaption.text = $"HATLARIM · {routes.Count}";
+            tkMapSideList.Clear();
+            tkMapSideRoutes.Clear();
+            tkMapSideRoutes.AddRange(routes);
+            tkMapSideRoutes.Sort((a, b) => b.LastReport.Profit.CompareTo(a.LastReport.Profit));
+            if (tkMapSideRoutes.Count == 0)
+                Ui.Text("bt-mapside__empty", "Henüz hattın yok. Haritada bir şehre dokun ya da aşağıdan yeni hat aç.", UiWeight.Regular, tkMapSideList);
+            int shown = Mathf.Min(phone ? 4 : 6, tkMapSideRoutes.Count);
+            for (int i = 0; i < shown; i++)
+            {
+                RouteState route = tkMapSideRoutes[i];
+                Button row = Ui.Button("bt-row bt-mapside__route", string.Empty, () => OpenRoutePanelNow(route, RouteTab.Price), tkMapSideList);
+                VisualElement swatch = Ui.El("bt-mapside__swatch", row);
+                swatch.pickingMode = PickingMode.Ignore;
+                swatch.style.backgroundColor = world.RouteIdentityColor(route.routeId);
+                Ui.Text("bt-mapside__name bt-grow", RouteName(route), UiWeight.Bold, row);
+                float profit = route.HasHistory ? route.LastReport.Profit : 0f;
+                Ui.Text(profit >= 0f ? "bt-mapside__value is-up" : "bt-mapside__value is-down", Fmt.Signed(profit), UiWeight.Bold, row);
+            }
+            int locked = 0;
+            foreach (var city in session.World.Cities)
+                if (!session.Progression.IsRegionUnlocked(city.Region)) locked++;
+            tkMapSideCta.text = $"{session.World.Cities.Count - locked} şehir seni bekliyor";
         }
 
         // ------------------------------------------------------------------ şehir ipucu

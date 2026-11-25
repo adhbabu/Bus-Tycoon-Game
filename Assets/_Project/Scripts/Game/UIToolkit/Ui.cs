@@ -89,6 +89,24 @@ namespace BusTycoon.Game
             if (sprite != null) element.style.backgroundImage = new StyleBackground(sprite);
         }
 
+        /// <summary>Material Symbols ikonu (beyaz; rengi stildeki tint verir: .bt-sym ve renk sınıfları).</summary>
+        public static VisualElement Symbol(string name, string classes, VisualElement parent = null)
+        {
+            var element = El(string.IsNullOrEmpty(classes) ? "bt-sym" : "bt-sym " + classes, parent);
+            element.pickingMode = PickingMode.Ignore;
+            SetSymbol(element, name);
+            return element;
+        }
+
+        public static void SetSymbol(VisualElement element, string name)
+        {
+            if (element.userData is string current && current == name) return; // aynı ikon: yeniden yazılmaz
+            Texture2D texture = UiSymbols.Get(name);
+            if (texture == null) return;
+            element.userData = name;
+            element.style.backgroundImage = new StyleBackground(texture);
+        }
+
         public static void SetText(TextElement element, string text)
         {
             if (element.text != text) element.text = text;

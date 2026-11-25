@@ -28,6 +28,10 @@ namespace BusTycoon.Game
         int tkSheetSignature, tkSheetOpenFrame = -1;
         VisualElement tkFinanceChart;
 
+        /// <summary>Tam sayfada iki sütunlu ızgara olarak dizilen paneller (kartlar yan yana).</summary>
+        static bool GridPage(Panel target) =>
+            target == Panel.RouteList || target == Panel.Fleet || target == Panel.Dealership || target == Panel.Goals || target == Panel.Regions;
+
         /// <summary>Panel yeni arayüzde mi çiziliyor (IMGUI çizmez).</summary>
         bool ToolkitDrawsPanel(Panel target) => NewUi && ToolkitPanels.Contains(target);
 
@@ -59,6 +63,11 @@ namespace BusTycoon.Game
             Rect rect = PanelRect;
             Ui.Place(tkSheet, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
             tkCovered.Add(rect);
+            // Sekme sayfası içerik alanını kaplar (başlık üst çubukta, kapatma sekmelerle); hat paneli ve planlayıcı
+            // haritanın sağındaki panelde, kapatma düğmesiyle
+            bool page = IsPagePanel(panel);
+            Ui.Toggle(tkSheet, "is-page", page);
+            Ui.Toggle(tkSheet, "is-wide", page && GridPage(panel));
 
             if (panel == Panel.Log) tkSheetDirty = true; // günlük gün içinde de dolar (imza ucuz)
             if (panel == Panel.Planner)
@@ -150,7 +159,8 @@ namespace BusTycoon.Game
                     BuildHelp(body);
                     break;
                 case Panel.Regions:
-                    SheetHeader("Bölgeler", "Yeni ülkelerde hat açmak için işletme lisansı alın.");
+                    SheetHeader("Şirketim", $"Seviye {session.Progression.Level} · ülke lisansları");
+                    BuildCompany(body);
                     BuildRegions(body);
                     break;
                 case Panel.Finance:
@@ -264,6 +274,29 @@ namespace BusTycoon.Game
         }
 
         // ------------------------------------------------------------------ Bölgeler
+
+        /// <summary>Şirketim sayfasının başı: şirket kartı, ardından ülke lisansları başlığı.</summary>
+        void BuildCompany(VisualElement body)
+        {
+            var progression = session.Progression;
+            VisualElement card = Ui.El("bt-item bt-company-card", body);
+            VisualElement header = Ui.El("bt-row", card);
+            VisualElement logo = Ui.El("bt-company-card__logo", header);
+            Ui.Symbol("directions_bus", "bt-company-card__logo-icon", logo);
+            VisualElement names = Ui.El("bt-col bt-grow", header);
+            Ui.Text("bt-company-card__name", session.State.companyName, UiWeight.Black, names);
+            CityData hq = session.Headquarters;
+            Ui.Text("bt-item__text", hq != null ? $"Merkez ofis: {hq.DisplayName}" : "Merkez ofis yok", UiWeight.Regular, names);
+            Ui.Text("bt-pill is-warning", $"Seviye {progression.Level}", UiWeight.Bold, header);
+            VisualElement bar = Ui.El("bt-bar", card);
+            Ui.Fill(Ui.El("bt-bar__fill", bar), progression.LevelProgress01);
+            double fleetValue = 0;
+            foreach (var bus in session.Fleet.Buses) fleetValue += session.Fleet.GetResaleValue(bus);
+            KeyValue(card, "İtibar", $"{Mathf.RoundToInt(progression.Reputation)} / 100", null, UIIcon.Star);
+            KeyValue(card, "Hat sınırı", $"{session.Routes.Routes.Count} / {progression.MaxRoutes}");
+            KeyValue(card, "Şirket değeri", Fmt.Money(session.Finance.Cash + fleetValue));
+            Section(body, "Ülke lisansları").AddToClassList("bt-section--full");
+        }
 
         void BuildRegions(VisualElement body)
         {
