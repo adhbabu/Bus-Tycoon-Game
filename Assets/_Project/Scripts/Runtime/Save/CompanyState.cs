@@ -19,6 +19,8 @@ namespace BusTycoon.Save
 
         public int saveVersion = CurrentSaveVersion;
         public string companyName;
+        /// <summary>Şirket logosu (arayüzdeki logo listesinin sırası; eski kayıtlarda 0).</summary>
+        public int logoId;
         public string startCityId;
         public int currentDay;
 

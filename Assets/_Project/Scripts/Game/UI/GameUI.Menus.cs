@@ -9,10 +9,15 @@ namespace BusTycoon.Game
     // Ana menü, yeni oyun (başlangıç şehri), duraklatma/iflas/zafer pencereleri, kayıt-yükleme, yardım.
     public sealed partial class GameUI
     {
-        static readonly string[] QuickStartCityIds = { "TR_ISTANBUL", "TR_ANKARA", "TR_IZMIR", "TR_BURSA", "TR_ANTALYA", "TR_KONYA" };
+        /// <summary>Başlangıç için önerilen büyük şehirler (şehir içi haritası olan 10 şehir).</summary>
+        static readonly string[] QuickStartCityIds =
+        {
+            "TR_ISTANBUL", "TR_ANKARA", "TR_IZMIR", "TR_BURSA", "TR_ANTALYA", "TR_KONYA", "TR_ADANA", "TR_GAZIANTEP", "TR_KAYSERI", "TR_SAMSUN"
+        };
         static readonly string[] EuropeStartCityIds = { "DE_BERLIN", "FR_PARIS", "GB_LONDRA" };
 
         string companyName = "Anadolu Turizm";
+        int companyLogo;
         CityData startCity;
         string startCityInfo;
         string startDifficulty;
@@ -64,7 +69,7 @@ namespace BusTycoon.Game
         }
 
         Rect NewGameRect => new Rect(SafeLeft + Margin, SafeTop + Margin,
-            Mathf.Min(470f * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
+            Mathf.Min((NewUi ? 560f : 470f) * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
 
         Rect ModalRect => CenteredBox(480f, modal == Modal.Pause ? 560f : 470f); // duraklatma: ayarlar (kalite) dahil
         Vector2 modalScroll;
@@ -348,6 +353,7 @@ namespace BusTycoon.Game
             GUIUtility.keyboardControl = 0;
 
             session.StartNewGame(name, hq); // → OnSessionStarted
+            session.State.logoId = companyLogo;
             Toast($"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
             if (!NewUi) OpenPlannerNow(hq); // yeni arayüzde ana ekran açılır; "İlk hattını aç" kartı planlayıcıyı açar
         }

@@ -281,8 +281,7 @@ namespace BusTycoon.Game
             var progression = session.Progression;
             VisualElement card = Ui.El("bt-item bt-company-card", body);
             VisualElement header = Ui.El("bt-row", card);
-            VisualElement logo = Ui.El("bt-company-card__logo", header);
-            Ui.Symbol("directions_bus", "bt-company-card__logo-icon", logo);
+            CompanyLogo(header, session.State.logoId, "bt-logo--large");
             VisualElement names = Ui.El("bt-col bt-grow", header);
             Ui.Text("bt-company-card__name", session.State.companyName, UiWeight.Black, names);
             CityData hq = session.Headquarters;

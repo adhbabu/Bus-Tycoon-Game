@@ -22,7 +22,7 @@ namespace BusTycoon.Game
 
         enum Tab { Home, Routes, Fleet, Map, Shop, Finance, Goals }
 
-        VisualElement tkHud, tkTop, tkBrandSub, tkKasa, tkDatePill, tkDateIcon, tkDayFill, tkPauseIcon, tkRace, tkTabs, tkMapButton, tkToasts;
+        VisualElement tkHud, tkTop, tkBrandLogo, tkBrandSub, tkKasa, tkDatePill, tkDateIcon, tkDayFill, tkPauseIcon, tkRace, tkTabs, tkMapButton, tkToasts;
         Label tkKicker, tkTitle, tkSubText, tkCash, tkDate, tkRaceText;
         Button tkPauseButton;
         readonly List<(VisualElement Button, Tab Tab, Label Badge)> tkNav = new List<(VisualElement, Tab, Label)>();
@@ -33,6 +33,7 @@ namespace BusTycoon.Game
         long tkCashValue = long.MinValue;
         int tkDayValue = -1, tkWarningValue = -1;
         bool? tkPausedShown;
+        int tkLogoShown = -1;
         DayNightCycle.Phase? tkPhase;
         Tab? tkTabShown;
         /// <summary>Yeni arayüzün haritayı kapattığı yerler (piksel): şehir adları buraya çizilmez.</summary>
@@ -76,6 +77,7 @@ namespace BusTycoon.Game
 
             // ---- üst çubuk: solda şirket (ana ekranda) ya da sayfa başlığı; sağda kasa, duraklat, kısayollar, tarih
             tkTop = Ui.El("bt-topbar", tkHud);
+            tkBrandLogo = CompanyLogo(tkTop, 0, "bt-logo--top");
             VisualElement brand = Ui.El("bt-brand", tkTop);
             brand.pickingMode = PickingMode.Ignore;
             tkKicker = Ui.Text("bt-brand__kicker", "", UiWeight.Bold, brand);
@@ -247,6 +249,11 @@ namespace BusTycoon.Game
             var progression = session.Progression;
             bool home = HomeShown;
 
+            if (session.State.logoId != tkLogoShown)
+            {
+                tkLogoShown = session.State.logoId;
+                SetCompanyLogo(tkBrandLogo, tkLogoShown);
+            }
             // Sol blok: ana ekranda şirket adı ve yeşil durum satırı; diğer ekranlarda üst başlık + sayfa adı
             Ui.Show(tkKicker, !home);
             Ui.Show(tkBrandSub, home);

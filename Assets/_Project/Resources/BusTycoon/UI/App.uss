@@ -2679,3 +2679,103 @@
     font-size: 14px;
     color: #F1F4F5;
 }
+
+/* ------------------------------------------------------------------ şirket logosu ve "Şirketini kur" */
+
+.bt-logo {
+    border-radius: 11px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bt-logo__icon {
+    width: 62%;
+    height: 62%;
+    -unity-background-image-tint-color: #FFFFFF;
+}
+
+.bt-logo__icon.is-dark {
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-logo--top {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+}
+
+.bt-logo--large {
+    width: 56px;
+    height: 56px;
+    border-radius: 15px;
+    margin-right: 14px;
+}
+
+.bt-logo--pick {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+}
+
+.bt-newgame__header {
+    flex-shrink: 0;
+}
+
+.bt-logo-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.bt-logo-pick {
+    margin: 0 8px 8px 0;
+    padding: 3px;
+    border-width: 2px;
+    border-radius: 16px;
+    border-color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-logo-pick.is-active {
+    border-color: #F5C451;
+}
+
+.bt-city-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.bt-city-pick {
+    width: 49%;
+    height: 50px;
+    margin: 0 0 8px 0;
+    padding: 0 10px 0 8px;
+    border-width: 1px;
+    border-radius: 13px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.bt-city-pick.is-active {
+    border-color: #F5C451;
+    background-color: rgba(245, 196, 81, 0.12);
+}
+
+.bt-city-pick__icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+    flex-shrink: 0;
+}
+
+.bt-city-pick__name {
+    font-size: 15px;
+    color: #F1F4F5;
+}
+
+.bt-city-pick__sub {
+    font-size: 12px;
+    color: #8DA1A8;
+}

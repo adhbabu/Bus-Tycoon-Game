@@ -5,7 +5,8 @@ using UnityEngine.UIElements;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Yeni arayüzde "Yeni Şirket Kur" ekranı (solda kart; arkada harita, merkez şehir haritadan da seçilir).
+    /// "Şirketini kur" ekranı: şirket adı, logo (özgün amblemler: renk + simge) ve başlangıç şehri (büyük şehirlerden
+    /// biri ya da haritadan herhangi bir şehir). Arkada harita kendi kendine süzülür; şehir haritadan da seçilir.
     /// Şirket adı bilgisayarda UI Toolkit yazı alanıyla, dokunmatik web'de tarayıcının yazı penceresiyle girilir (TkTextInput).
     /// </summary>
     public sealed partial class GameUI
@@ -13,7 +14,39 @@ namespace BusTycoon.Game
         VisualElement tkNewGame, tkNewGameCard;
         int tkNewGameSignature = int.MinValue;
 
+        /// <summary>Şirket logoları: simge, zemin rengi ve simgenin koyu mu açık mı olduğu. Sıra kayıtta saklanır: yalnız sona eklenir.</summary>
+        static readonly (string Symbol, Color Background, bool DarkIcon)[] CompanyLogos =
+        {
+            ("directions_bus", new Color(0.961f, 0.769f, 0.318f), true),   // altın
+            ("route", new Color(0.165f, 0.616f, 0.561f), false),          // deniz yeşili
+            ("star", new Color(0.902f, 0.224f, 0.275f), false),           // kırmızı
+            ("bolt", new Color(0.482f, 0.38f, 1f), false),                // mor
+            ("public", new Color(0.184f, 0.502f, 0.929f), false),         // mavi
+            ("flag", new Color(0.18f, 0.8f, 0.443f), true),               // yeşil
+            ("sports_score", new Color(0.957f, 0.635f, 0.38f), true),     // turuncu
+            ("speed", new Color(0.227f, 0.29f, 0.322f), false),           // arduvaz
+        };
+
         bool ToolkitDrawsNewGame => NewUi && mode == Mode.NewGame;
+
+        /// <summary>Şirket logosu öğesi (yuvarlak köşeli kare, ortada simge). Boyutu sınıftan gelir.</summary>
+        static VisualElement CompanyLogo(VisualElement parent, int logoId, string classes)
+        {
+            VisualElement logo = Ui.El("bt-logo " + classes, parent);
+            logo.pickingMode = PickingMode.Ignore;
+            Ui.Symbol(CompanyLogos[0].Symbol, "bt-logo__icon", logo);
+            SetCompanyLogo(logo, logoId);
+            return logo;
+        }
+
+        static void SetCompanyLogo(VisualElement logo, int logoId)
+        {
+            var design = CompanyLogos[Mathf.Clamp(logoId, 0, CompanyLogos.Length - 1)];
+            logo.style.backgroundColor = design.Background;
+            VisualElement icon = logo.hierarchy[0];
+            Ui.SetSymbol(icon, design.Symbol);
+            Ui.Toggle(icon, "is-dark", design.DarkIcon);
+        }
 
         void BuildToolkitNewGameLayer()
         {
@@ -37,7 +70,7 @@ namespace BusTycoon.Game
             Rect rect = NewGameRect;
             Ui.Place(tkNewGameCard, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
             tkCovered.Add(rect);
-            int signature = (startCity?.Id.GetHashCode() ?? 0) * 31 + (Entitlements.Owns(ContentPacks.Europe) ? 1 : 0);
+            int signature = (startCity?.Id.GetHashCode() ?? 0) * 31 + (Entitlements.Owns(ContentPacks.Europe) ? 1 : 0) + companyLogo * 7919;
             if (signature == tkNewGameSignature) return;
             tkNewGameSignature = signature;
             BuildNewGameCard();
@@ -46,7 +79,11 @@ namespace BusTycoon.Game
         void BuildNewGameCard()
         {
             tkNewGameCard.Clear();
-            Ui.Text("bt-sheet__title", "Yeni Şirket Kur", UiWeight.Black, tkNewGameCard);
+            VisualElement header = Ui.El("bt-row bt-newgame__header", tkNewGameCard);
+            CompanyLogo(header, companyLogo, "bt-logo--large");
+            VisualElement titles = Ui.El("bt-col bt-grow", header);
+            Ui.Text("bt-sheet__title", "Şirketini kur", UiWeight.Black, titles);
+            Ui.Text("bt-sheet__subtitle", "Adını ve logonu seç, ilk şehrini belirle.", UiWeight.Regular, titles);
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             scroll.AddToClassList("bt-sheet__scroll");
@@ -55,17 +92,37 @@ namespace BusTycoon.Game
 
             Ui.Text("bt-caps bt-modal__caption", "ŞİRKET ADI", UiWeight.Bold, body);
             TkTextInput(body, "company", companyName, 28, "Şirket adı", value => companyName = value);
-            Ui.Text("bt-item__text", "Haritadan merkez ofisinizin bulunacağı şehre tıklayın. O şehrin ülkesi ücretsiz açılır; diğer ülkeler sonradan lisansla açılır.", UiWeight.Regular, body);
 
-            Ui.Text("bt-caps bt-modal__caption", "HIZLI SEÇİM", UiWeight.Bold, body);
-            VisualElement quick = Ui.El("bt-tabs-inline", body);
-            foreach (string id in QuickStartCityIds)
+            Ui.Text("bt-caps bt-modal__caption", "LOGO", UiWeight.Bold, body);
+            VisualElement logos = Ui.El("bt-logo-picker", body);
+            for (int i = 0; i < CompanyLogos.Length; i++)
             {
-                CityData city = session.World.GetCity(id);
-                if (city == null) continue;
-                Button tab = Ui.Button("bt-tab", city.DisplayName, () => SelectStartCity(city), quick);
-                Ui.Toggle(tab, "is-active", city == startCity);
+                int id = i;
+                Button pick = Ui.Button("bt-logo-pick", string.Empty, () => companyLogo = id, logos);
+                pick.name = "logo-" + i;
+                Ui.Toggle(pick, "is-active", i == companyLogo);
+                CompanyLogo(pick, i, "bt-logo--pick");
             }
+
+            Ui.Text("bt-caps bt-modal__caption", "BAŞLANGIÇ ŞEHRİ", UiWeight.Bold, body);
+            VisualElement cities = Ui.El("bt-city-picker", body);
+            foreach (string cityId in QuickStartCityIds)
+            {
+                CityData city = session.World.GetCity(cityId);
+                if (city == null) continue;
+                Button pick = Ui.Button("bt-row bt-city-pick", string.Empty, () => SelectStartCity(city), cities);
+                Ui.Toggle(pick, "is-active", city == startCity);
+                VisualElement icon = Ui.El("bt-city-pick__icon", pick);
+                icon.pickingMode = PickingMode.Ignore;
+                Sprite sprite = UICityIcons.Sprite(city);
+                if (sprite != null) icon.style.backgroundImage = new StyleBackground(sprite);
+                VisualElement text = Ui.El("bt-col bt-grow", pick);
+                text.pickingMode = PickingMode.Ignore;
+                Ui.Text("bt-city-pick__name", city.DisplayName, UiWeight.Bold, text);
+                Ui.Text("bt-city-pick__sub", Fmt.Population(city.Population), UiWeight.Regular, text);
+            }
+            Ui.Text("bt-item__text", "Haritada başka bir şehre dokunarak da seçebilirsin. Şehrin ülkesi ücretsiz açılır; diğer ülkeler sonra lisansla açılır.",
+                UiWeight.Regular, body);
 
             if (startCity != null)
             {
@@ -79,10 +136,6 @@ namespace BusTycoon.Game
                 Ui.Text("bt-item__text", startCityInfo, UiWeight.Regular, card);
                 Label difficulty = Ui.Text("bt-item__title", startDifficulty, UiWeight.Bold, card);
                 difficulty.AddToClassList(startDifficultyColor.Equals(UIStyles.Green) ? "is-up" : "is-warning-text");
-            }
-            else
-            {
-                Ui.Text("bt-empty", "Henüz şehir seçilmedi.", UiWeight.Regular, body);
             }
 
             VisualElement capital = Ui.El("bt-item", body);
