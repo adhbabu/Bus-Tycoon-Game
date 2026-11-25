@@ -66,14 +66,8 @@ jobs:
         with:
           large-packages: false
 
-      # Anahtardaki "v2": 25 Kasım'da kaydedilen önbellekle Unity açılışta bellek yetmeyip öldürülüyordu (çıkış 137);
-      # önbellek bozulursa buradaki sürüm artırılır, temiz içe aktarma ile yeni önbellek oluşur.
-      - name: Unity Library önbelleği
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-WebGL-v2-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
-          restore-keys: Library-WebGL-v2-
+      # Library önbelleği yok: geri yüklenen önbellekle Unity açılışta zaman zaman öldürülüyordu (çıkış 137, 25 Kasım
+      # 2026: 5 derlemenin 3'ü). Temiz içe aktarma önbellekli derlemeyle aynı sürede (~11 dk) bitiyor.
 
       - name: Unity ile web sürümünü derle
         uses: game-ci/unity-builder@v4
