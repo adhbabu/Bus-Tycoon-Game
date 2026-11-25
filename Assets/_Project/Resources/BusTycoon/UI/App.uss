@@ -2121,6 +2121,11 @@
     width: 100%;
 }
 
+/* Izgarada tam genişlik kalan kart (ör. Filo'daki bakım asistanı şeridi) */
+.is-wide .bt-sheet__scroll .unity-scroll-view__content-container > .bt-full {
+    width: 100%;
+}
+
 .bt-section--full {
     width: 100%;
     margin-top: 10px;

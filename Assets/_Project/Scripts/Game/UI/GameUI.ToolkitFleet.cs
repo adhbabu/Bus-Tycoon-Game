@@ -41,7 +41,7 @@ namespace BusTycoon.Game
             tkFleetIdle = Ui.Button("bt-tab", "Garajdakiler", () => { fleetIdleOnly = true; RefreshFleet(); }, tabs);
             Ui.El("bt-grow", tabs).pickingMode = PickingMode.Ignore;
             ActionButton(tabs, "Galeri", () => OpenDealershipNow(null), primary: true);
-            tkFleetMaintenance = Ui.El("bt-item", body);
+            tkFleetMaintenance = Ui.El("bt-item bt-full", body); // ızgarada tam genişlik şerit
             tkFleetEmpty = Ui.Text("bt-empty", "Filonuz boş. Galeriden otobüs alın.", UiWeight.Regular, body);
             tkFleetList = Ui.El("bt-list", body);
             RefreshFleet();

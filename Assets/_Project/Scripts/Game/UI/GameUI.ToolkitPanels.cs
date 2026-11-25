@@ -155,7 +155,7 @@ namespace BusTycoon.Game
                     BuildLog(body);
                     break;
                 case Panel.Help:
-                    SheetHeader("Nasıl Oynanır?", null);
+                    SheetHeader("Nasıl Oynanır?", "İpuçları ve kısayollar");
                     BuildHelp(body);
                     break;
                 case Panel.Regions:
@@ -164,7 +164,7 @@ namespace BusTycoon.Game
                     BuildRegions(body);
                     break;
                 case Panel.Finance:
-                    SheetHeader("Finans", null);
+                    SheetHeader("Finans", $"kasa {Fmt.Money(session.Finance.Cash)} · son 7 gün {Fmt.Signed(session.Finance.GetNetProfit(7))}");
                     BuildFinance(body);
                     break;
                 case Panel.RouteList:
@@ -492,7 +492,9 @@ namespace BusTycoon.Game
         {
             tkSheetTitle.text = title;
             tkSheetSubtitle.text = subtitle ?? string.Empty;
-            Ui.Show(tkSheetSubtitle, !string.IsNullOrEmpty(subtitle));
+            // Sekme sayfasında özet üst çubukta yazar (ScreenHeading); sayfanın içinde ikinci kez yazılmaz.
+            // Satır içi stil USS'yi ezdiği için burada gizlenir.
+            Ui.Show(tkSheetSubtitle, !string.IsNullOrEmpty(subtitle) && !IsPagePanel(panel));
         }
 
         void BuildGoals(VisualElement body)

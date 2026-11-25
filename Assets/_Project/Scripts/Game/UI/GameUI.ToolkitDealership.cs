@@ -25,7 +25,7 @@ namespace BusTycoon.Game
 
         void BuildDealership(VisualElement body)
         {
-            SheetHeader("Otobüs Galerisi", $"Kasa {Fmt.Money(session.Finance.Cash)}");
+            SheetHeader("Otobüs Galerisi", "Sıfır ve 2. el otobüsler");
 
             if (dealershipTargetRoute != null && session.Routes.GetRoute(dealershipTargetRoute.routeId) != null)
             {
