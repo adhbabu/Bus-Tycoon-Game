@@ -353,9 +353,11 @@ namespace BusTycoon.Game
             CityData hq = startCity;
             GUIUtility.keyboardControl = 0;
 
-            session.StartNewGame(name, hq); // → OnSessionStarted
+            // Yeni arayüzde sokak haritası olan şehirde boş başlanır (yalnız sermaye): ilk dolmuş galeriden alınır
+            bool cityStart = NewUi && CityView.Supports(hq);
+            session.StartNewGame(name, hq, withStartingBus: !cityStart); // → OnSessionStarted
             session.State.logoId = companyLogo;
-            Toast($"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
+            Toast(cityStart ? $"{name} kuruldu! İlk iş: galeriden bir dolmuş al." : $"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
             if (!NewUi) OpenPlannerNow(hq); // yeni arayüzde ana ekran açılır; "İlk hattını aç" kartı planlayıcıyı açar
         }
 

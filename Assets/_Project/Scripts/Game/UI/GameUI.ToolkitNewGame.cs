@@ -140,7 +140,10 @@ namespace BusTycoon.Game
 
             VisualElement capital = Ui.El("bt-item", body);
             Ui.Text("bt-caps", "BAŞLANGIÇ SERMAYESİ", UiWeight.Bold, capital);
-            Ui.Text("bt-item__text", $"{Fmt.Money(session.ProgressionConfig.StartingCash)} nakit + 2. el {session.ProgressionConfig.StartingBus.DisplayName} minibüs", UiWeight.Regular, capital);
+            bool cityStart = startCity == null || CityView.Supports(startCity);
+            Ui.Text("bt-item__text", cityStart
+                ? $"{Fmt.Money(session.ProgressionConfig.StartingCash)} nakit. İlk dolmuşunu galeriden alıp şehrinde ilk hattını kuracaksın."
+                : $"{Fmt.Money(session.ProgressionConfig.StartingCash)} nakit + 2. el {session.ProgressionConfig.StartingBus.DisplayName} minibüs", UiWeight.Regular, capital);
 
             VisualElement actions = Ui.El("bt-actions bt-actions--fill", tkNewGameCard);
             ModalButton(actions, "Geri", EnterMainMenu);

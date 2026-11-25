@@ -137,7 +137,8 @@ namespace BusTycoon.Core
 
         // ------------------------------------------------------------------ oturum
 
-        public void StartNewGame(string companyName, CityData startCity)
+        /// <param name="withStartingBus">false: yalnız sermayeyle başlanır (şehir içi başlangıç: ilk dolmuş galeriden alınır).</param>
+        public void StartNewGame(string companyName, CityData startCity, bool withStartingBus = true)
         {
             var state = new CompanyState
             {
@@ -151,7 +152,7 @@ namespace BusTycoon.Core
             Build(state);
             Progression.GrantRegion(startCity.Region);
             Progression.RefreshUnlocks(silent: true);
-            if (progressionConfig.StartingBus != null)
+            if (withStartingBus && progressionConfig.StartingBus != null)
                 Fleet.GrantBus(progressionConfig.StartingBus, progressionConfig.StartingBusCondition);
 
             SessionStarted?.Invoke();
