@@ -801,6 +801,7 @@ namespace BusTycoon.Game
             {
                 foreach (var route in session.Routes.Routes)
                 {
+                    if (route.IsUrban) continue; // şehir içi hatlar şehir haritasında (CityView)
                     CityData a = session.World.GetCity(route.cityAId);
                     CityData b = session.World.GetCity(route.cityBId);
                     if (a == null || b == null) continue;

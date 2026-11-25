@@ -93,7 +93,7 @@ namespace BusTycoon.Stations
             int count = 0;
             if (city == null) return 0;
             foreach (var route in state.routes)
-                if (route.cityAId == city.Id || route.cityBId == city.Id) count++;
+                if (!route.IsUrban && (route.cityAId == city.Id || route.cityBId == city.Id)) count++; // otogar: şehirlerarası hatlar
             return count;
         }
 
@@ -106,7 +106,7 @@ namespace BusTycoon.Stations
             float total = 0f;
             if (city == null) return 0f;
             foreach (var route in state.routes)
-                if ((route.cityAId == city.Id || route.cityBId == city.Id) && route.HasHistory)
+                if (!route.IsUrban && (route.cityAId == city.Id || route.cityBId == city.Id) && route.HasHistory)
                     total += route.LastReport.passengers;
             return total;
         }

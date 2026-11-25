@@ -166,7 +166,7 @@ namespace BusTycoon.Fleet
         }
 
         float DailySeats(BusInstance bus, RouteState route) =>
-            bus.Model.Seats * RouteEconomics.MaxTripsPerDay(bus.Model, route.distanceKm, economy) * economy.AutoScheduleTargetLoadFactor;
+            bus.Model.Seats * RouteEconomics.MaxTripsPerDay(bus.Model, route.distanceKm, economy, route.IsUrban) * economy.AutoScheduleTargetLoadFactor;
 
         double Reserve()
         {

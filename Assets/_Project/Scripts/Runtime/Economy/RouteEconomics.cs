@@ -72,23 +72,38 @@ namespace BusTycoon.Economy
             public bool IncludeUnavailableBuses;
             /// <summary>Durak geliştirmelerinin talep çarpanı (StationSystem.RouteDemandFactor). 0 = etkisiz (1).</summary>
             public float StationFactor;
+            /// <summary>
+            /// Şehir içi (dolmuş) hat: şehir hızı ve kısa dönüş, terminal ve otoyol ücreti yok, bilet mesafeye göre
+            /// (yolcu ortalama binişi kadar öder; koltuk bir seferde birden çok kez dolar).
+            /// </summary>
+            public bool Urban;
+            /// <summary>Şehir içi hattın olgun talep potansiyeli (yolcu/gün, referans fiyatta; UrbanPlanner hesaplar).</summary>
+            public float UrbanDemand;
         }
 
+        /// <summary>Tek yön sürüş süresi (saat): şehirde trafik hızı, şehirlerarası yolda aracın hızı.</summary>
+        public static float TravelHours(BusModelData model, float roadKm, EconomyConfig cfg, bool urban) =>
+            urban ? roadKm / Mathf.Max(1f, cfg.UrbanSpeedKmh) : model.TravelHours(roadKm);
+
         /// <summary>Tek yön seferin saat cinsinden çevrim süresi: sürüş + indirme/bindirme.</summary>
-        public static float CycleHours(BusModelData model, float roadKm, EconomyConfig cfg) =>
-            model.TravelHours(roadKm) + cfg.TurnaroundHours;
+        public static float CycleHours(BusModelData model, float roadKm, EconomyConfig cfg, bool urban = false) =>
+            TravelHours(model, roadKm, cfg, urban) + (urban ? cfg.UrbanTurnaroundHours : cfg.TurnaroundHours);
 
         /// <summary>Bir otobüsün günde yapabileceği maksimum TEK YÖN sefer (kesirli, günlük ortalama).</summary>
-        public static float MaxTripsPerDay(BusModelData model, float roadKm, EconomyConfig cfg) =>
-            cfg.OperatingHoursPerDay / Mathf.Max(0.01f, CycleHours(model, roadKm, cfg));
+        public static float MaxTripsPerDay(BusModelData model, float roadKm, EconomyConfig cfg, bool urban = false) =>
+            cfg.OperatingHoursPerDay / Mathf.Max(0.01f, CycleHours(model, roadKm, cfg, urban));
 
-        public static int DriversPerTrip(BusModelData model, float roadKm, EconomyConfig cfg) =>
-            Mathf.Max(1, Mathf.CeilToInt(model.TravelHours(roadKm) / cfg.MaxDrivingHoursPerDriver));
+        public static int DriversPerTrip(BusModelData model, float roadKm, EconomyConfig cfg, bool urban = false) =>
+            Mathf.Max(1, Mathf.CeilToInt(TravelHours(model, roadKm, cfg, urban) / cfg.MaxDrivingHoursPerDriver));
 
         public static RouteForecast Evaluate(in Inputs input, IReadOnlyList<BusInstance> buses, EconomyConfig cfg)
         {
             var f = new RouteForecast { TicketPrice = Mathf.Max(0f, input.TicketPrice) };
             float km = input.DistanceKm;
+            bool urban = input.Urban;
+            // Şehir içi: yolcu ortalama binişi kadar öder; koltuk bir seferde 1/oran kez dolar (inen yerine biner)
+            float fareShare = urban ? Mathf.Clamp(cfg.UrbanRideShare, 0.2f, 1f) : 1f;
+            float turnover = 1f / fareShare;
 
             RegionData regionA = input.CityA.Region;
             RegionData regionB = input.CityB.Region;
@@ -96,7 +111,7 @@ namespace BusTycoon.Economy
             float fuelRegion = 0.5f * ((regionA ? regionA.FuelPriceMultiplier : 1f) + (regionB ? regionB.FuelPriceMultiplier : 1f));
             float wageRegion = 0.5f * ((regionA ? regionA.WageMultiplier : 1f) + (regionB ? regionB.WageMultiplier : 1f));
             // Seferler iki uç arasında dönüşümlü kalktığı için ortalama otogar ücreti.
-            float terminalFee = 0.5f * (input.CityA.GetTerminalFee(cfg) + input.CityB.GetTerminalFee(cfg));
+            float terminalFee = urban ? 0f : 0.5f * (input.CityA.GetTerminalFee(cfg) + input.CityB.GetTerminalFee(cfg));
 
             // ---------- 1) Filo karışımı ve tam kullanımda kapasite / maliyet ----------
             float maxSeats = 0f, maxTrips = 0f;
@@ -115,8 +130,8 @@ namespace BusTycoon.Economy
                     if (!input.IncludeUnavailableBuses && !bus.IsAvailableToday) continue;
 
                     f.AvailableBuses++;
-                    float trips = MaxTripsPerDay(m, km, cfg);
-                    float seats = m.Seats * trips;
+                    float trips = MaxTripsPerDay(m, km, cfg, urban);
+                    float seats = m.Seats * trips * turnover;
                     maxTrips += trips;
                     maxSeats += seats;
 
@@ -129,9 +144,9 @@ namespace BusTycoon.Economy
 
                     float wear = 1f + (1f - bus.condition) * cfg.WornMaintenancePenalty;
                     fuelMax += trips * km * m.FuelLitersPer100Km / 100f * cfg.FuelPricePerLiter * fuelRegion;
-                    driverMax += trips * DriversPerTrip(m, km, cfg) * CycleHours(m, km, cfg) * cfg.DriverWagePerHour * wageRegion;
+                    driverMax += trips * DriversPerTrip(m, km, cfg, urban) * CycleHours(m, km, cfg, urban) * cfg.DriverWagePerHour * wageRegion;
                     maintenanceMax += trips * km * m.MaintenanceCostPerKm * wear;
-                    tollMax += trips * km * cfg.TollPerKm;
+                    if (!urban) tollMax += trips * km * cfg.TollPerKm;
                     terminalMax += trips * terminalFee;
                 }
             }
@@ -153,13 +168,15 @@ namespace BusTycoon.Economy
             }
 
             // ---------- 2) Talep ----------
-            f.ReferencePrice = DemandModel.ReferenceFare(km, fareRegion * fareMix, cfg);
+            f.ReferencePrice = urban
+                ? (cfg.UrbanBaseFare + cfg.UrbanFarePerKm * km) * fareRegion * fareMix
+                : DemandModel.ReferenceFare(km, fareRegion * fareMix, cfg);
             f.ElasticityAtReference = cfg.BaseElasticity * elasticityMix * Mathf.Max(0.05f, input.ElasticityBias);
 
-            f.ReferenceDemand = DemandModel.PotentialDemand(input.CityA, input.CityB, km, cfg)
+            f.ReferenceDemand = (urban ? Mathf.Max(0f, input.UrbanDemand) : DemandModel.PotentialDemand(input.CityA, input.CityB, km, cfg))
                                 * DemandModel.ReputationFactor(input.CompanyReputation, cfg)
                                 * DemandModel.RampUpFactor(input.DaysOpen, cfg)
-                                * DemandModel.ComfortRangeFactor(km, rangeMix, cfg)
+                                * (urban ? 1f : DemandModel.ComfortRangeFactor(km, rangeMix, cfg))
                                 * (input.StationFactor > 0f ? input.StationFactor : 1f);
 
             float noise = input.DemandNoise > 0f ? input.DemandNoise : 1f;
@@ -184,13 +201,13 @@ namespace BusTycoon.Economy
             f.UnmetDemand = Mathf.Max(0f, f.Demand - f.Passengers);
 
             // ---------- 4) Gelir / gider ----------
-            f.Revenue = f.Passengers * f.TicketPrice;
+            f.Revenue = f.Passengers * f.TicketPrice * fareShare;
             f.FuelCost = fuelMax * f.Utilization;
             f.DriverCost = driverMax * f.Utilization;
             f.MaintenanceCost = maintenanceMax * f.Utilization;
             f.TollCost = tollMax * f.Utilization;
             f.TerminalCost = terminalMax * f.Utilization;
-            f.ServiceCost = f.Passengers * serviceMix;
+            f.ServiceCost = f.Passengers * serviceMix * (urban ? 0.2f : 1f); // dolmuşta ikram yok
 
             // ---------- 5) Memnuniyet ----------
             float priceRatio = f.ReferencePrice > 0f ? f.TicketPrice / f.ReferencePrice : 1f;

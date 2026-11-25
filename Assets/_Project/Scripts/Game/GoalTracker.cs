@@ -149,6 +149,7 @@ namespace BusTycoon.Game
         {
             var seen = new HashSet<string>();
             foreach (var route in s.Routes.Routes)
+                if (!route.IsUrban) // yurt dışı görevleri şehirlerarası hat ister
                 foreach (string id in new[] { route.cityAId, route.cityBId })
                 {
                     CityData city = s.World.GetCity(id);

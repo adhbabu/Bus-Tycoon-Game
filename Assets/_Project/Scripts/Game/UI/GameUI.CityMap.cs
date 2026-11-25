@@ -30,7 +30,7 @@ namespace BusTycoon.Game
         bool CityMapShown => cityView != null && cameraInCity && mode == Mode.Playing;
 
         /// <summary>Merkez şehrin sokak haritası var mı (yoksa harita sekmesi yalnız ülke haritasıdır).</summary>
-        bool HasCityMap => mode == Mode.Playing && CityView.Supports(session.Headquarters);
+        bool HasCityMap => NewUi && mode == Mode.Playing && CityView.Supports(session.Headquarters);
 
         void InitCityView()
         {
@@ -52,7 +52,7 @@ namespace BusTycoon.Game
         void UpdateCityMap()
         {
             if (cityView == null) return;
-            bool playing = mode == Mode.Playing;
+            bool playing = mode == Mode.Playing && NewUi; // şehir haritası yeni arayüzde (eski arayüz yalnız ülke haritası)
             CityData hq = playing ? session.Headquarters : null;
             if (hq != null && CityView.Supports(hq) && cityView.City != hq) cityView.Load(hq);
 

@@ -45,6 +45,18 @@ namespace BusTycoon.Routes
         /// <summary>Atanmış otobüslerin maksimum sefer kapasitesinin kullanılacak oranı (0..1).</summary>
         public float manualUtilization = 1f;
 
+        // ---- Şehir içi (dolmuş) hat: iki uç durak; şehirlerarası hatta boş. cityAId = cityBId = şehir.
+        // Uçların adı ve konumu (metre) saklanır: şehir verisi yeniden üretilse de hat en yakın durağa oturur.
+        public string urbanCityId;
+        public string urbanNameA, urbanNameB;
+        public float urbanAX, urbanAY, urbanBX, urbanBY;
+        /// <summary>Açılışta hesaplanan olgun talep potansiyeli (yolcu/gün, referans fiyatta).</summary>
+        public float urbanDemand;
+        /// <summary>Güzergâhtaki durak sayısı (uçlar dahil).</summary>
+        public int urbanStopCount;
+
+        public bool IsUrban => !string.IsNullOrEmpty(urbanCityId);
+
         public double lifetimePassengers;
         public double lifetimeProfit;
         public List<RouteDayReport> history = new List<RouteDayReport>();
