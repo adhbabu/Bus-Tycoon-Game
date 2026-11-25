@@ -127,7 +127,7 @@ namespace BusTycoon.Game
                 case Panel.Finance: return session.State.currentDay * 7 + session.State.recentTransactions.Count;
                 case Panel.RouteList:
                 {
-                    int signature = session.State.currentDay * 7 + session.Fleet.Buses.Count;
+                    int signature = session.State.currentDay * 7 + session.Fleet.Buses.Count + tkRouteFilter * 100003 + tkRouteSort * 1000003;
                     foreach (var route in session.Routes.Routes)
                         signature = signature * 31 + route.routeId.GetHashCode() + Mathf.RoundToInt(route.ticketPrice * 10f) +
                                     session.Fleet.CountBusesOnRoute(route.routeId) * 7;
@@ -224,6 +224,10 @@ namespace BusTycoon.Game
             _ => "is-success"
         };
 
+        /// <summary>Hatlarım süzgeci (0 tümü, 1 kârlı, 2 uyarı) ve sıralaması (0 önem/kâr, 1 doluluk, 2 ad).</summary>
+        int tkRouteFilter, tkRouteSort;
+        readonly List<RouteState> tkRouteView = new List<RouteState>();
+
         void BuildRouteList(VisualElement body)
         {
             var routes = session.Routes;
@@ -232,35 +236,95 @@ namespace BusTycoon.Game
             foreach (var route in routes.Routes) total += route.LastReport.Profit;
             SheetHeader("Hatlarım", $"{routes.Routes.Count} / {session.Progression.MaxRoutes} hat · dün toplam {Fmt.Signed(total)}");
 
-            Button create = ActionButton(body, "+ Yeni hat aç", () => OpenPlannerNow(null), primary: true);
-            create.AddToClassList("bt-btn--wide");
             if (routes.Routes.Count == 0)
             {
+                Button create = ActionButton(body, "+ Yeni hat aç", () => OpenPlannerNow(null), primary: true);
+                create.AddToClassList("bt-btn--wide");
                 Ui.Text("bt-item__text", "Henüz hattınız yok. 'Yeni hat aç' ile ya da bir durağa girip 'Buradan hat aç' ile başlayın.", UiWeight.Regular, body);
                 return;
             }
 
             EnsureRouteList();
+            int profitable = 0, warnings = 0;
+            RouteState alertRoute = null;
             foreach (var route in sortedRoutes)
             {
+                RouteInsight insight = routeInsightCache[route.routeId];
+                if (route.LastReport.Profit >= 0f) profitable++;
+                if (insight.Severity >= InsightSeverity.Warning)
+                {
+                    warnings++;
+                    if (alertRoute == null) alertRoute = route;
+                }
+            }
+
+            // Süzgeç ve sıralama; en önemli uyarı şeridi
+            VisualElement controls = Ui.El("bt-row bt-route-controls", body);
+            VisualElement filters = Ui.El("bt-row bt-segment", controls);
+            Segment(filters, "Tümü", routes.Routes.Count, tkRouteFilter == 0, () => tkRouteFilter = 0);
+            Segment(filters, "Kârlı", profitable, tkRouteFilter == 1, () => tkRouteFilter = 1);
+            Segment(filters, "Uyarı", warnings, tkRouteFilter == 2, () => tkRouteFilter = 2);
+            VisualElement sorts = Ui.El("bt-row bt-segment is-plain", controls);
+            Segment(sorts, "Kâr", -1, tkRouteSort == 0, () => tkRouteSort = 0);
+            Segment(sorts, "Doluluk", -1, tkRouteSort == 1, () => tkRouteSort = 1);
+            Segment(sorts, "Ad", -1, tkRouteSort == 2, () => tkRouteSort = 2);
+            Ui.El("bt-grow", controls).pickingMode = PickingMode.Ignore;
+            Button add = ActionButton(controls, "+ Yeni hat", () => OpenPlannerNow(null), primary: true);
+            add.name = "routes-new";
+            if (alertRoute != null)
+            {
+                Button alert = Ui.Button("bt-row bt-alert", string.Empty, () => OpenRoutePanelNow(alertRoute, RouteTab.Price), body);
+                Ui.Text("bt-alert__tag", "UYARI", UiWeight.Black, alert);
+                Ui.Text("bt-alert__text", $"{RouteName(alertRoute)}: {routeInsightCache[alertRoute.routeId].Message}", UiWeight.Bold, alert);
+            }
+
+            tkRouteView.Clear();
+            foreach (var route in sortedRoutes)
+            {
+                if (tkRouteFilter == 1 && route.LastReport.Profit < 0f) continue;
+                if (tkRouteFilter == 2 && routeInsightCache[route.routeId].Severity < InsightSeverity.Warning) continue;
+                tkRouteView.Add(route);
+            }
+            if (tkRouteSort == 1) tkRouteView.Sort((x, y) => y.LastReport.loadFactor.CompareTo(x.LastReport.loadFactor));
+            else if (tkRouteSort == 2) tkRouteView.Sort((x, y) => string.Compare(RouteName(x), RouteName(y), StringComparison.CurrentCulture));
+            if (tkRouteView.Count == 0) Ui.Text("bt-empty", "Bu süzgece uyan hat yok.", UiWeight.Regular, body);
+
+            foreach (var route in tkRouteView)
+            {
                 int buses = fleet.CountBusesOnRoute(route.routeId);
-                if (!routeInsightCache.TryGetValue(route.routeId, out RouteInsight insight))
-                    insight = RouteAdvisor.GetTopInsight(route, buses);
+                RouteInsight insight = routeInsightCache[route.routeId];
                 RouteDayReport last = route.LastReport;
+                Color identity = world.RouteIdentityColor(route.routeId);
 
                 VisualElement card = Ui.El("bt-item bt-route", body);
-                card.style.borderLeftColor = world.RouteIdentityColor(route.routeId); // haritadaki hat rengi
+                card.style.borderLeftColor = identity; // haritadaki hat rengi (sol şerit)
                 VisualElement header = Ui.El("bt-row", card);
-                Ui.Text("bt-item__title bt-grow", RouteName(route), UiWeight.Bold, header);
+                Label name = Ui.Text("bt-route__name", RouteName(route), UiWeight.Black, header);
+                name.style.color = Color.Lerp(identity, Color.white, 0.35f);
+                CityData a = session.World.GetCity(route.cityAId), b = session.World.GetCity(route.cityBId);
+                string category = a != null && b != null && a.Region != b.Region ? "ULUSLARARASI" : a?.Region.DisplayName.ToUpperInvariant() ?? string.Empty;
+                Label tag = Ui.Text("bt-route__tag", category, UiWeight.Black, header);
+                tag.style.color = identity;
+                Ui.El("bt-grow", header).pickingMode = PickingMode.Ignore;
                 Ui.Text("bt-pill " + InsightClass(insight.Severity), InsightTag(insight.Severity), UiWeight.Bold, header);
-                Label profit = Ui.Text("bt-route__profit", route.HasHistory ? $"{Fmt.Signed(last.Profit)}/gün" : "—", UiWeight.Black, header);
-                profit.AddToClassList(Tone(last.Profit));
 
-                VisualElement stats = Ui.El("bt-row bt-route__stats", card);
-                Ui.Text("bt-route__detail bt-grow", $"{buses} otobüs · {Fmt.Price(route.ticketPrice)} · {Fmt.Num(last.passengers)} yolcu", UiWeight.Regular, stats);
-                Ui.Text("bt-route__detail", Fmt.Pct(last.loadFactor), UiWeight.Bold, stats);
-                VisualElement bar = Ui.El("bt-bar bt-route__load", stats);
-                Ui.Fill(Ui.El("bt-bar__fill bt-bar__fill--blue", bar), last.loadFactor);
+                VisualElement row = Ui.El("bt-row bt-route__main", card);
+                Ui.Text("bt-route__detail bt-grow", $"{buses} otobüs · {Fmt.Price(route.ticketPrice)} · %{Mathf.RoundToInt(last.loadFactor * 100f)} dolu", UiWeight.Regular, row);
+                tkSparkBuffer.Clear();
+                if (route.history != null)
+                    for (int i = Mathf.Max(0, route.history.Count - 14); i < route.history.Count; i++) tkSparkBuffer.Add(route.history[i].Profit);
+                bool up = route.history == null || route.history.Count < 2 || route.history[route.history.Count - 1].Profit >= route.history[route.history.Count - 2].Profit;
+                if (tkSparkBuffer.Count >= 2)
+                {
+                    var spark = new UiSparkline();
+                    spark.AddToClassList("bt-route__spark");
+                    spark.SetData(tkSparkBuffer, up ? SparkUp : SparkDown);
+                    row.Add(spark);
+                }
+                VisualElement value = Ui.El("bt-col bt-route__value", row);
+                Label profit = Ui.Text("bt-route__profit", route.HasHistory ? Fmt.Signed(last.Profit) : "—", UiWeight.Black, value);
+                profit.AddToClassList(Tone(last.Profit));
+                Ui.Text("bt-change " + (up ? "is-up" : "is-down"), "günlük", UiWeight.Bold, value);
 
                 Label message = Ui.Text("bt-item__text", insight.Message, UiWeight.Regular, card);
                 message.AddToClassList(InsightClass(insight.Severity) + "-text");
@@ -271,6 +335,15 @@ namespace BusTycoon.Game
                 ActionButton(actions, "Otobüsler", () => OpenRoutePanelNow(target, RouteTab.Buses));
                 ActionButton(actions, "Geçmiş", () => OpenRoutePanelNow(target, RouteTab.History));
             }
+        }
+
+        /// <summary>Bölümlü seçim düğmesi (süzgeç/sıralama); seçince sayfa yeniden kurulur.</summary>
+        void Segment(VisualElement parent, string label, int count, bool active, Action select)
+        {
+            Button button = Ui.Button("bt-row bt-segment__item", string.Empty, () => { select(); tkSheetDirty = true; tkSheetSignature = int.MinValue; }, parent);
+            Ui.Toggle(button, "is-active", active);
+            Ui.Text("bt-segment__label", label, UiWeight.Bold, button);
+            if (count >= 0) Ui.Text("bt-segment__count", count.ToString(), UiWeight.Black, button);
         }
 
         // ------------------------------------------------------------------ Bölgeler
