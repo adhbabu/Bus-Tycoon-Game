@@ -236,6 +236,7 @@ namespace BusTycoon.Game
             SpawnIncomeLabels();
             goals.Evaluate();
             RefreshRouteIndicators(announce: true);
+            AnnounceEvents();
 
             if (session.Finance.Cash < 0 && !session.IsBankrupt)
             {

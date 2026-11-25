@@ -22,6 +22,9 @@ namespace BusTycoon.Game
         readonly List<(Vector2[] points, Color color)> tkMinimapLineBuffer = new List<(Vector2[], Color)>();
         readonly List<(Vector2 uv, Color color)> tkMinimapVehicleBuffer = new List<(Vector2, Color)>();
         Label tkHomeCash, tkHomeWorth, tkHomeBadgeText, tkHomeRouteCount, tkHomeReward, tkHomeGoalsSub, tkHomeStationSub;
+        // Takvim kutusu (şehir içi oyunda merkez durak kutusunun yerinde)
+        Label tkHomeEventTitle, tkHomeEventSub;
+        VisualElement tkHomeEventIcon, tkHomeStationTile, tkHomeEventTile;
         UiSparkline tkHomeChart;
         readonly Label[] tkHomeStats = new Label[4];
         readonly Dictionary<string, Label> tkHomeTileSubs = new Dictionary<string, Label>();
@@ -114,6 +117,10 @@ namespace BusTycoon.Game
             minis.pickingMode = PickingMode.Ignore;
             tkHomeGoalsSub = MiniTile(minis, "Görevler", "trophy", "is-amber", () => OpenPage(Panel.Goals), false);
             tkHomeStationSub = MiniTile(minis, "Merkez durak", "storefront", "is-purple", () => EnterStationNow(session.Headquarters), true);
+            tkHomeStationTile = tkHomeStationSub.parent.parent;
+            tkHomeEventSub = MiniTile(minis, "Takvim", "calendar_month", "is-purple", ShowCalendar, true, out tkHomeEventTitle, out tkHomeEventIcon);
+            tkHomeEventTile = tkHomeEventSub.parent.parent;
+            tkHomeEventTile.name = "home-event";
 
             VisualElement tiles = Ui.El("bt-home-tiles", right);
             tiles.pickingMode = PickingMode.Ignore;
@@ -139,15 +146,19 @@ namespace BusTycoon.Game
             Ui.Symbol("chevron_right", "bt-cta__go-icon", go);
         }
 
-        Label MiniTile(VisualElement parent, string title, string symbol, string tint, Action onClick, bool accent)
+        Label MiniTile(VisualElement parent, string title, string symbol, string tint, Action onClick, bool accent) =>
+            MiniTile(parent, title, symbol, tint, onClick, accent, out _, out _);
+
+        Label MiniTile(VisualElement parent, string title, string symbol, string tint, Action onClick, bool accent,
+            out Label titleLabel, out VisualElement icon)
         {
             Button tile = Ui.Button("bt-row bt-mini" + (accent ? " is-accent" : string.Empty), string.Empty, onClick, parent);
             VisualElement box = Ui.El("bt-tile__box " + tint, tile);
             box.pickingMode = PickingMode.Ignore;
-            Ui.Symbol(symbol, "bt-tile__icon", box);
+            icon = Ui.Symbol(symbol, "bt-tile__icon", box);
             VisualElement text = Ui.El("bt-col bt-grow", tile);
             text.pickingMode = PickingMode.Ignore;
-            Ui.Text("bt-tile__title", title, UiWeight.Bold, text);
+            titleLabel = Ui.Text("bt-tile__title", title, UiWeight.Bold, text);
             return Ui.Text("bt-tile__sub", "", UiWeight.Regular, text);
         }
 
@@ -293,6 +304,10 @@ namespace BusTycoon.Game
                 float stars = session.Stations.Popularity(hq).Stars;
                 tkHomeStationSub.text = $"{hq.DisplayName} · {stars:0.#} yıldız";
             }
+            bool events = EventsShown;
+            tkHomeStationTile.style.display = events ? DisplayStyle.None : DisplayStyle.Flex;
+            tkHomeEventTile.style.display = events ? DisplayStyle.Flex : DisplayStyle.None;
+            if (events) UpdateHomeEvent(tkHomeEventTitle, tkHomeEventIcon, tkHomeEventSub);
 
             // Kısayolların alt yazıları
             int unlocked = 0;

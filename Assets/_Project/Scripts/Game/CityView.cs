@@ -41,6 +41,16 @@ namespace BusTycoon.Game
         GameObject plane;
         Mesh planeMesh;
         MapSprites stopSprites, landmarkSprites, lineSprites, vehicleSprites;
+        // Ünlü mekân maketleri: yakınlaşınca belirir (uzakta yerine gri nokta)
+        GameObject maquettes;
+        Mesh maquetteMesh;
+        Material maquetteMaterial;
+        MeshRenderer maquetteRenderer;
+        static readonly int FadeId = Shader.PropertyToID("_Fade");
+        /// <summary>Maketlerin görünmeye başladığı ve tam göründüğü kamera uzaklığı (birim; 1 = 100 m).</summary>
+        public const float MaquetteFar = 34f, MaquetteNear = 24f;
+        /// <summary>Maketlerin şu anki görünürlüğü (0 gizli … 1 tam).</summary>
+        public float MaquetteFade { get; private set; }
         float spriteDistance = -1f;
         bool visible, linesDirty = true;
 
@@ -108,6 +118,14 @@ namespace BusTycoon.Game
             Map = null;
             if (plane != null) Destroy(plane);
             if (planeMesh != null) Destroy(planeMesh);
+            if (maquettes != null) Destroy(maquettes);
+            if (maquetteMesh != null) Destroy(maquetteMesh);
+            if (maquetteMaterial != null) Destroy(maquetteMaterial);
+            maquettes = null;
+            maquetteMesh = null;
+            maquetteMaterial = null;
+            maquetteRenderer = null;
+            MaquetteFade = 0f;
             if (material != null) Destroy(material);
             if (texture != null) Destroy(texture);
             plane = null;
@@ -132,6 +150,22 @@ namespace BusTycoon.Game
             if (plane != null) plane.SetActive(show);
             foreach (MapSprites sprites in new[] { stopSprites, landmarkSprites, lineSprites, vehicleSprites })
                 if (sprites != null) sprites.Renderer.enabled = show;
+            UpdateMaquettes();
+        }
+
+        /// <summary>Maketler kamera yakınlaştıkça belirir; tam görününce mekânların gri noktaları gizlenir.</summary>
+        void UpdateMaquettes()
+        {
+            float fade = visible && Ready && mapCamera != null
+                ? Mathf.Clamp01(Mathf.InverseLerp(MaquetteFar, MaquetteNear, mapCamera.Distance))
+                : 0f;
+            MaquetteFade = maquetteRenderer != null ? fade : 0f;
+            if (maquetteRenderer != null)
+            {
+                maquetteRenderer.enabled = fade > 0.01f;
+                maquetteMaterial.SetFloat(FadeId, fade);
+            }
+            if (landmarkSprites != null) landmarkSprites.Renderer.enabled = visible && MaquetteFade < 0.6f;
         }
 
         void Update()
@@ -139,6 +173,7 @@ namespace BusTycoon.Game
             if (loadingCityId != null) PollLoad();
             if (!Ready || !visible || mapCamera == null) return;
             float distance = mapCamera.Distance;
+            UpdateMaquettes();
             if (linesDirty || spriteDistance < 0f || Mathf.Abs(distance - spriteDistance) > spriteDistance * 0.03f) RebuildSprites(distance);
             UpdateVehicles(distance);
         }
@@ -177,7 +212,26 @@ namespace BusTycoon.Game
             }
             Map = map;
             BuildPlane();
+            BuildMaquettes();
             SetVisible(visible);
+        }
+
+        void BuildMaquettes()
+        {
+            if (Map.Landmarks.Count == 0) return;
+            Shader shader = Resources.Load<Shader>(DefaultContent.MaquetteShaderResourcePath);
+            if (shader == null) shader = Shader.Find("BusTycoon/Maquette");
+            if (shader == null || !shader.isSupported) return; // maket yoksa uzaktaki gri noktalar kalır
+            maquetteMesh = LandmarkModels.Build(Map.Landmarks, ToWorld, UnitsPerMeter);
+            maquetteMaterial = new Material(shader) { name = "Maquette" };
+            maquettes = new GameObject("LandmarkMaquettes");
+            maquettes.transform.SetParent(transform, false);
+            maquettes.AddComponent<MeshFilter>().sharedMesh = maquetteMesh;
+            maquetteRenderer = maquettes.AddComponent<MeshRenderer>();
+            maquetteRenderer.sharedMaterial = maquetteMaterial;
+            maquetteRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            maquetteRenderer.receiveShadows = false;
+            maquetteRenderer.enabled = false;
         }
 
         void BuildPlane()

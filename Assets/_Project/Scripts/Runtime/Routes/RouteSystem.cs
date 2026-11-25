@@ -233,6 +233,7 @@ namespace BusTycoon.Routes
                 urbanBY = plan.B.Position.y,
                 urbanDemand = plan.PotentialDemand,
                 urbanStopCount = plan.Stops.Count,
+                urbanKindFame = UrbanEvents.KindFame(plan.Landmarks),
                 setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
             };
             state.routes.Add(route);
@@ -402,7 +403,10 @@ namespace BusTycoon.Routes
             }
 
             float noise = 1f + (float)(rng.NextDouble() * 2.0 - 1.0) * economy.DailyDemandNoise;
-            RouteForecast f = RouteEconomics.Evaluate(BuildInputs(route, route.ticketPrice, noise, 1f, false), busBuffer, economy);
+            RouteEconomics.Inputs dayInputs = BuildInputs(route, route.ticketPrice, noise, 1f, false);
+            dayInputs.EventFactor = EventFactor(route, state.currentDay);
+            RouteForecast f = RouteEconomics.Evaluate(dayInputs, busBuffer, economy);
+            report.eventFactor = dayInputs.EventFactor;
 
             // Yıpranma: her çalışan otobüs, kullanım oranı kadar sefer yapar.
             foreach (var bus in busBuffer)
@@ -434,6 +438,12 @@ namespace BusTycoon.Routes
             route.AddReport(report);
             return report;
         }
+
+        readonly List<UrbanEvents.Event> eventScratch = new List<UrbanEvents.Event>();
+
+        /// <summary>Hattın o günkü önemli gün çarpanı (şehirlerarası hatta ve mekân geçmeyen hatta 1).</summary>
+        public float EventFactor(RouteState route, int day) =>
+            route != null && route.IsUrban ? UrbanEvents.DemandFactor(day, route.urbanKindFame, eventScratch) : 1f;
 
         // ------------------------------------------------------------------ yardımcılar
 

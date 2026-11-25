@@ -80,6 +80,7 @@ namespace BusTycoon.Data
         /// <summary>Haritadaki düz işaretler: şehir rozetleri ve otobüs kapsülleri (Game/MapSprites.cs).</summary>
         public const string MapSpriteShaderResourcePath = "BusTycoon/Shaders/MapSprite";
         public const string CityMapShaderResourcePath = "BusTycoon/Shaders/CityMap";
+        public const string MaquetteShaderResourcePath = "BusTycoon/Shaders/Maquette";
 
         public readonly struct ModelSpec
         {

@@ -189,6 +189,8 @@ namespace BusTycoon.Game
                 var names = new List<string>();
                 for (int i = 0; i < Mathf.Min(3, urbanPlan.Landmarks.Count); i++) names.Add(urbanPlan.Landmarks[i].Name);
                 Ui.Text("bt-item__text", "Yakından geçer: " + string.Join(", ", names) + (urbanPlan.Landmarks.Count > 3 ? "…" : ""), UiWeight.Regular, body);
+                string highlights = EventHighlights(UrbanEvents.KindFame(urbanPlan.Landmarks));
+                if (highlights != null) Ui.Text("bt-item__text is-gold", "Önemli günlerde: " + highlights, UiWeight.Bold, body);
             }
             Ui.Text("bt-item__text", "Bilet mesafeye göre: kısa binen az, uçtan uca binen tam bilet öder. Tahminler 30 günlük olgun hat içindir.",
                 UiWeight.Regular, body);

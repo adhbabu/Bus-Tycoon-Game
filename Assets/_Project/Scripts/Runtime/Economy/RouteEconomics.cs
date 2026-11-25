@@ -79,6 +79,8 @@ namespace BusTycoon.Economy
             public bool Urban;
             /// <summary>Şehir içi hattın olgun talep potansiyeli (yolcu/gün, referans fiyatta; UrbanPlanner hesaplar).</summary>
             public float UrbanDemand;
+            /// <summary>Önemli gün çarpanı (bayram, maç günü…; 0 ya da 1: etkinlik yok).</summary>
+            public float EventFactor;
         }
 
         /// <summary>Tek yön sürüş süresi (saat): şehirde trafik hızı, şehirlerarası yolda aracın hızı.</summary>
@@ -180,7 +182,8 @@ namespace BusTycoon.Economy
                                 * (input.StationFactor > 0f ? input.StationFactor : 1f);
 
             float noise = input.DemandNoise > 0f ? input.DemandNoise : 1f;
-            f.Demand = DemandModel.DemandAtPrice(f.ReferenceDemand, f.TicketPrice, f.ReferencePrice, f.ElasticityAtReference) * noise;
+            float eventFactor = input.EventFactor > 0f ? input.EventFactor : 1f;
+            f.Demand = DemandModel.DemandAtPrice(f.ReferenceDemand, f.TicketPrice, f.ReferencePrice, f.ElasticityAtReference) * noise * eventFactor;
             f.ElasticityAtPrice = DemandModel.PointElasticity(f.TicketPrice, f.ReferencePrice, f.ElasticityAtReference);
 
             // ---------- 3) Sefer planı ----------

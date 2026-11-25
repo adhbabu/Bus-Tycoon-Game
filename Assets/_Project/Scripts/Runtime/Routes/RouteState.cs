@@ -19,6 +19,8 @@ namespace BusTycoon.Routes
         public float cost;
         public float satisfaction;
         public int activeBuses;
+        /// <summary>Önemli gün çarpanı (bayram, maç günü…; 0 ya da 1: sıradan gün).</summary>
+        public float eventFactor;
 
         public float Profit => revenue - cost;
     }
@@ -54,6 +56,8 @@ namespace BusTycoon.Routes
         public float urbanDemand;
         /// <summary>Güzergâhtaki durak sayısı (uçlar dahil).</summary>
         public int urbanStopCount;
+        /// <summary>Hattın yakınındaki ünlü mekânların türlere göre ün toplamı: önemli günlerde yolcu akını buna göre (UrbanEvents).</summary>
+        public float[] urbanKindFame;
 
         public bool IsUrban => !string.IsNullOrEmpty(urbanCityId);
 
