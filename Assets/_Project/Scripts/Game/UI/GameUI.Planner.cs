@@ -34,6 +34,7 @@ namespace BusTycoon.Game
         void OpenPlannerNow(CityData origin)
         {
             if (mode != Mode.Playing) return;
+            if (urbanPlanning) CloseUrbanPlanner();
             panel = Panel.Planner;
             plannerDestination = null;
             plannerQuoteValid = false;

@@ -902,7 +902,7 @@ namespace BusTycoon.Game
             {
                 case KeyCode.Space: session.Clock.TogglePause(); break;
                 case KeyCode.Alpha1: case KeyCode.Keypad1: session.Clock.SetSpeed(1); break;
-                case KeyCode.N: Defer(() => OpenPlannerNow(null)); break;
+                case KeyCode.N: Defer(OpenNewRoutePlanner); break;
                 case KeyCode.R: Defer(() => OpenPanelNow(Panel.RouteList)); break;
                 case KeyCode.F: Defer(() => OpenPanelNow(Panel.Fleet)); break;
                 case KeyCode.G: Defer(() => OpenDealershipNow(null)); break;
@@ -1107,6 +1107,7 @@ namespace BusTycoon.Game
 
         void ClosePanel()
         {
+            if (urbanPlanning) CloseUrbanPlanner();
             panel = Panel.None;
             plannerOrigin = plannerDestination = null;
             plannerQuoteValid = false;
@@ -1395,6 +1396,7 @@ namespace BusTycoon.Game
 
         string RouteName(RouteState route)
         {
+            if (route.IsUrban) return $"{route.urbanNameA} – {route.urbanNameB}"; // dolmuş hattı: uç duraklar
             CityData a = session.World.GetCity(route.cityAId);
             CityData b = session.World.GetCity(route.cityBId);
             return $"{(a != null ? a.DisplayName : route.cityAId)} – {(b != null ? b.DisplayName : route.cityBId)}";

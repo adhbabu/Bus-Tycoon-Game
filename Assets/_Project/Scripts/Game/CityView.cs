@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BusTycoon.Data;
 using BusTycoon.Urban;
 using UnityEngine;
@@ -39,9 +40,26 @@ namespace BusTycoon.Game
         Material material;
         GameObject plane;
         Mesh planeMesh;
-        MapSprites stopSprites, landmarkSprites;
+        MapSprites stopSprites, landmarkSprites, lineSprites, vehicleSprites;
         float spriteDistance = -1f;
-        bool visible;
+        bool visible, linesDirty = true;
+
+        /// <summary>Haritadaki bir hat: güzergâh noktaları (dünya), rengi ve üstündeki araç sayısı.</summary>
+        sealed class Line
+        {
+            public string Id;
+            public readonly List<Vector3> Points = new List<Vector3>();
+            public float[] Cumulative;
+            public Color Color;
+            public int Vehicles;
+            public bool Preview;
+        }
+
+        readonly Dictionary<string, Line> lines = new Dictionary<string, Line>();
+        readonly List<int> pathBuffer = new List<int>();
+        Line preview;
+        UrbanStop previewOrigin, previewDestination;
+        static readonly Color PreviewColor = new Color(0.961f, 0.769f, 0.318f, 0.95f);
 
         public CityData City { get; private set; }
         public UrbanMap Map { get; private set; }
@@ -57,8 +75,10 @@ namespace BusTycoon.Game
         public void Init(MapCamera camera)
         {
             mapCamera = camera;
-            stopSprites = new MapSprites("CityStops", transform, 2);
+            lineSprites = new MapSprites("CityLines", transform, 0);
             landmarkSprites = new MapSprites("CityLandmarks", transform, 1);
+            stopSprites = new MapSprites("CityStops", transform, 2);
+            vehicleSprites = new MapSprites("CityVehicles", transform, 3);
             SetVisible(false);
         }
 
@@ -94,10 +114,14 @@ namespace BusTycoon.Game
             planeMesh = null;
             material = null;
             texture = null;
-            stopSprites?.Clear();
-            stopSprites?.Apply(0f);
-            landmarkSprites?.Clear();
-            landmarkSprites?.Apply(0f);
+            foreach (MapSprites sprites in new[] { stopSprites, landmarkSprites, lineSprites, vehicleSprites })
+            {
+                sprites?.Clear();
+                sprites?.Apply(0f);
+            }
+            lines.Clear();
+            preview = null;
+            previewOrigin = previewDestination = null;
             spriteDistance = -1f;
         }
 
@@ -105,8 +129,8 @@ namespace BusTycoon.Game
         {
             visible = show;
             if (plane != null) plane.SetActive(show);
-            if (stopSprites != null) stopSprites.Renderer.enabled = show;
-            if (landmarkSprites != null) landmarkSprites.Renderer.enabled = show;
+            foreach (MapSprites sprites in new[] { stopSprites, landmarkSprites, lineSprites, vehicleSprites })
+                if (sprites != null) sprites.Renderer.enabled = show;
         }
 
         void Update()
@@ -114,7 +138,8 @@ namespace BusTycoon.Game
             if (loadingCityId != null) PollLoad();
             if (!Ready || !visible || mapCamera == null) return;
             float distance = mapCamera.Distance;
-            if (spriteDistance < 0f || Mathf.Abs(distance - spriteDistance) > spriteDistance * 0.03f) RebuildSprites(distance);
+            if (linesDirty || spriteDistance < 0f || Mathf.Abs(distance - spriteDistance) > spriteDistance * 0.03f) RebuildSprites(distance);
+            UpdateVehicles(distance);
         }
 
         void PollLoad()
@@ -191,20 +216,153 @@ namespace BusTycoon.Game
         void RebuildSprites(float distance)
         {
             spriteDistance = distance;
+            linesDirty = false;
             float unit = distance * 0.0105f; // ~7 piksellik daire (masaüstü)
             stopSprites.Clear();
             foreach (UrbanStop stop in Map.Stops)
             {
                 bool major = stop.Weight >= 0.75f;
-                float radius = unit * Mathf.Lerp(0.75f, 1.15f, stop.Weight);
-                stopSprites.AddCircle(ToWorld(stop.Position) + Vector3.up * 0.02f, radius, major ? MajorStopFill : StopFill, StopRing, 0.62f);
+                bool picked = stop == previewOrigin || stop == previewDestination;
+                float radius = unit * (picked ? 1.6f : Mathf.Lerp(0.75f, 1.15f, stop.Weight));
+                Color fill = picked ? PreviewColor : major ? MajorStopFill : StopFill;
+                stopSprites.AddCircle(ToWorld(stop.Position) + Vector3.up * 0.02f, radius, fill, StopRing, picked ? 0.7f : 0.62f);
             }
             stopSprites.Apply(unit * 2f);
+
+            // Hatlar: güzergâh boyunca uç uca kapsüller (yuvarlak uçlar köşeleri kapatır); önizleme en üstte
+            lineSprites.Clear();
+            float width = unit * 0.85f;
+            foreach (Line line in lines.Values) AddLine(line, width);
+            if (preview != null) AddLine(preview, width * 1.15f);
+            lineSprites.Apply(width * 2f);
 
             landmarkSprites.Clear();
             foreach (UrbanLandmark landmark in Map.Landmarks)
                 landmarkSprites.AddCircle(ToWorld(landmark.Position) + Vector3.up * 0.01f, unit * 0.8f, LandmarkFill, LandmarkRing, 0.55f);
             landmarkSprites.Apply(unit * 2f);
+        }
+
+        void AddLine(Line line, float width)
+        {
+            var points = line.Points;
+            if (points.Count < 2) return;
+            float minStep = width * 0.6f; // çok sık noktalar seyreltilir (uzakta yüzlerce kapsül olmasın)
+            Vector3 from = points[0];
+            for (int i = 1; i < points.Count; i++)
+            {
+                Vector3 to = points[i];
+                float length = Vector3.Distance(from, to);
+                if (length < minStep && i < points.Count - 1) continue;
+                if (length < 1e-4f) continue;
+                lineSprites.AddCapsule((from + to) * 0.5f + Vector3.up * 0.015f, to - from, length + width, width, line.Color, line.Color, 1f);
+                from = to;
+            }
+        }
+
+        // ------------------------------------------------------------------ hatlar ve araçlar
+
+        /// <summary>Hat güzergâhı: uç durakların konumuna (metre) en yakın duraklar arasında en kısa yol.</summary>
+        bool BuildPath(Vector2 a, Vector2 b, List<Vector3> points)
+        {
+            points.Clear();
+            UrbanStop from = UrbanPlanner.NearestStop(Map, a), to = UrbanPlanner.NearestStop(Map, b);
+            if (from == null || to == null || !Map.FindPath(from.Node, to.Node, pathBuffer, out _)) return false;
+            foreach (int node in pathBuffer) points.Add(ToWorld(Map.NodePosition(node)));
+            return points.Count >= 2;
+        }
+
+        static float[] Cumulative(List<Vector3> points)
+        {
+            var result = new float[points.Count];
+            for (int i = 1; i < points.Count; i++) result[i] = result[i - 1] + Vector3.Distance(points[i - 1], points[i]);
+            return result;
+        }
+
+        /// <summary>
+        /// Şehrin hatlarını eşitler (kimlik, uçlar, renk, araç sayısı). Yeni hatların güzergâhı bir kez hesaplanır;
+        /// kapanan hatlar silinir. Çağıran yalnız hat/filo değişince çağırır.
+        /// </summary>
+        public void SetRoutes(IReadOnlyList<(string id, Vector2 a, Vector2 b, Color color, int vehicles)> routes)
+        {
+            if (!Ready) return;
+            var alive = new HashSet<string>();
+            foreach (var route in routes)
+            {
+                alive.Add(route.id);
+                if (!lines.TryGetValue(route.id, out Line line))
+                {
+                    line = new Line { Id = route.id };
+                    if (!BuildPath(route.a, route.b, line.Points)) continue;
+                    line.Cumulative = Cumulative(line.Points);
+                    lines[route.id] = line;
+                }
+                line.Color = route.color;
+                line.Vehicles = route.vehicles;
+            }
+            var stale = new List<string>();
+            foreach (string id in lines.Keys) if (!alive.Contains(id)) stale.Add(id);
+            foreach (string id in stale) lines.Remove(id);
+            linesDirty = true;
+        }
+
+        /// <summary>Planlayıcı önizlemesi: seçilen duraklar ve (varsa) güzergâh. null: önizleme yok.</summary>
+        public void SetPreview(UrbanStop origin, UrbanStop destination, IReadOnlyList<int> path)
+        {
+            previewOrigin = origin;
+            previewDestination = destination;
+            preview = null;
+            if (Ready && path != null && path.Count >= 2)
+            {
+                preview = new Line { Id = "preview", Color = PreviewColor, Preview = true };
+                foreach (int node in path) preview.Points.Add(ToWorld(Map.NodePosition(node)));
+                preview.Cumulative = Cumulative(preview.Points);
+            }
+            linesDirty = true;
+        }
+
+        public int LineCount => lines.Count;
+        /// <summary>Oyun duraklatılınca dolmuşlar da durur.</summary>
+        public bool Paused { get; set; }
+        float animationTime;
+
+        /// <summary>Dolmuşlar hat boyunca gidip gelir (görsel; hızı gerçek sefer süresinden bağımsız, akıcı).</summary>
+        void UpdateVehicles(float distance)
+        {
+            vehicleSprites.Clear();
+            float unit = distance * 0.0105f;
+            if (!Paused) animationTime += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
+            float t = animationTime;
+            foreach (Line line in lines.Values)
+            {
+                if (line.Vehicles <= 0 || line.Cumulative == null) continue;
+                float total = line.Cumulative[line.Cumulative.Length - 1];
+                if (total <= 0f) continue;
+                float tripSeconds = Mathf.Clamp(total * 0.35f, 8f, 40f); // birim/sn: uzun hat daha uzun sürer
+                for (int i = 0; i < line.Vehicles; i++)
+                {
+                    float phase = Mathf.Repeat(t / tripSeconds + i / (float)line.Vehicles, 2f);
+                    float along = (phase <= 1f ? phase : 2f - phase) * total;
+                    Sample(line, along, out Vector3 position, out Vector3 forward);
+                    if (phase > 1f) forward = -forward;
+                    vehicleSprites.AddCapsule(position + Vector3.up * 0.03f, forward, unit * 2.2f, unit * 1.1f, Color.white, line.Color, 0.55f);
+                }
+            }
+            vehicleSprites.Apply(unit * 3f);
+        }
+
+        static void Sample(Line line, float along, out Vector3 position, out Vector3 forward)
+        {
+            float[] c = line.Cumulative;
+            int lo = 0, hi = c.Length - 1;
+            while (hi - lo > 1)
+            {
+                int mid = (lo + hi) / 2;
+                if (c[mid] <= along) lo = mid;
+                else hi = mid;
+            }
+            float span = Mathf.Max(1e-5f, c[hi] - c[lo]);
+            position = Vector3.Lerp(line.Points[lo], line.Points[hi], (along - c[lo]) / span);
+            forward = line.Points[hi] - line.Points[lo];
         }
 
         public Vector3 ToWorld(Vector2 meters) =>

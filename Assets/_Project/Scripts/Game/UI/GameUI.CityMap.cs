@@ -42,7 +42,8 @@ namespace BusTycoon.Game
         void SelectCityMap(bool city)
         {
             cityMapWanted = city;
-            if (city && panel == Panel.Planner) ClosePanel(); // şehirlerarası planlayıcı ülke haritasında
+            // Planlayıcı haritasına bağlı: şehirlerarası planlayıcı ülke, dolmuş planlayıcısı şehir haritasında
+            if (panel == Panel.Planner && city != urbanPlanning) ClosePanel();
         }
 
         /// <summary>
@@ -57,7 +58,9 @@ namespace BusTycoon.Game
             if (hq != null && CityView.Supports(hq) && cityView.City != hq) cityView.Load(hq);
 
             // Şehirlerarası planlayıcı ülke haritasında açılır
-            bool wantCity = playing && cityMapWanted && panel != Panel.Planner && cityView.Ready && cityView.City == hq;
+            bool wantCity = playing && cityMapWanted && (panel != Panel.Planner || urbanPlanning) && cityView.Ready && cityView.City == hq;
+            if (cityView.Ready) SyncCityRoutes();
+            cityView.Paused = session.Clock == null || session.Clock.IsPaused;
             if (StationUi || StationBusy) return;
 
             if (wantCity != cameraInCity)
@@ -133,12 +136,15 @@ namespace BusTycoon.Game
             return true;
         }
 
-        /// <summary>Şehir görünümünde dokunuş: durak seçilir (hat kurma sonraki adımda; şimdilik bilgi).</summary>
+        /// <summary>
+        /// Şehir görünümünde dokunuş: planlayıcı açıksa durak seçilir; değilse dokunulan duraktan yeni hat başlar.
+        /// </summary>
         bool OnCityMapClick(Vector2 guiPoint)
         {
             if (!CityMapShown) return false;
-            if (cityView.TryPickStop(mapCamera.Camera, GuiToScreen(guiPoint), PickRadius, out UrbanStop stop))
-                Toast($"{stop.Name} durağı", UIStyles.Blue);
+            if (!cityView.TryPickStop(mapCamera.Camera, GuiToScreen(guiPoint), PickRadius, out UrbanStop stop)) return true;
+            if (UrbanPlannerOpen) UrbanStopClicked(stop);
+            else if (panel == Panel.None) OpenUrbanPlanner(stop);
             return true;
         }
 

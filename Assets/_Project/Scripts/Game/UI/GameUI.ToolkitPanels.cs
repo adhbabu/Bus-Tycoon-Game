@@ -135,7 +135,7 @@ namespace BusTycoon.Game
                 }
                 case Panel.Dealership: return DealershipSignature();
                 case Panel.Route: return RouteSignature();
-                case Panel.Planner: return PlannerSignature();
+                case Panel.Planner: return urbanPlanning ? UrbanPlannerSignature() : PlannerSignature();
                 default: return 0;
             }
         }
@@ -180,7 +180,8 @@ namespace BusTycoon.Game
                     BuildRoutePanel(body);
                     break;
                 case Panel.Planner:
-                    BuildPlanner(body);
+                    if (urbanPlanning) BuildUrbanPlanner(body);
+                    else BuildPlanner(body);
                     break;
             }
         }
@@ -238,7 +239,7 @@ namespace BusTycoon.Game
 
             if (routes.Routes.Count == 0)
             {
-                Button create = ActionButton(body, "+ Yeni hat aç", () => OpenPlannerNow(null), primary: true);
+                Button create = ActionButton(body, "+ Yeni hat aç", OpenNewRoutePlanner, primary: true);
                 create.AddToClassList("bt-btn--wide");
                 Ui.Text("bt-item__text", "Henüz hattınız yok. 'Yeni hat aç' ile ya da bir durağa girip 'Buradan hat aç' ile başlayın.", UiWeight.Regular, body);
                 return;
@@ -269,7 +270,7 @@ namespace BusTycoon.Game
             Segment(sorts, "Doluluk", -1, tkRouteSort == 1, () => tkRouteSort = 1);
             Segment(sorts, "Ad", -1, tkRouteSort == 2, () => tkRouteSort = 2);
             Ui.El("bt-grow", controls).pickingMode = PickingMode.Ignore;
-            Button add = ActionButton(controls, "+ Yeni hat", () => OpenPlannerNow(null), primary: true);
+            Button add = ActionButton(controls, "+ Yeni hat", OpenNewRoutePlanner, primary: true);
             add.name = "routes-new";
             if (alertRoute != null)
             {
@@ -352,7 +353,7 @@ namespace BusTycoon.Game
         void BuildCompany(VisualElement body)
         {
             var progression = session.Progression;
-            VisualElement card = Ui.El("bt-item bt-company-card", body);
+            VisualElement card = Ui.El("bt-item bt-company-card bt-full", body); // ızgarada tam genişlik
             VisualElement header = Ui.El("bt-row", card);
             CompanyLogo(header, session.State.logoId, "bt-logo--large");
             VisualElement names = Ui.El("bt-col bt-grow", header);

@@ -66,7 +66,7 @@ namespace BusTycoon.Game
             Ui.Symbol("check_circle", "bt-mapside__dot is-green-bg", linked);
             Ui.Text("bt-mapside__marker-text", "Hattın olan şehir", UiWeight.Bold, linked);
             Ui.El("bt-grow", tkMapSide).pickingMode = PickingMode.Ignore;
-            Button cta = Ui.Button("bt-cta", string.Empty, () => OpenPlannerNow(null), tkMapSide);
+            Button cta = Ui.Button("bt-cta", string.Empty, OpenNewRoutePlanner, tkMapSide);
             cta.name = "new-route";
             VisualElement ctaText = Ui.El("bt-col bt-grow", cta);
             ctaText.pickingMode = PickingMode.Ignore;

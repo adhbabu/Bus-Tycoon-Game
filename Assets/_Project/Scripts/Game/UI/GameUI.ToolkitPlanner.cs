@@ -14,7 +14,7 @@ namespace BusTycoon.Game
         /// <summary>Planlayıcı açıkken her kare: önerileri kare kare hesaplar, teklifi tazeler.</summary>
         void TickToolkitPlanner()
         {
-            if (panel != Panel.Planner || plannerOrigin == null) return;
+            if (panel != Panel.Planner || urbanPlanning || plannerOrigin == null) return;
             if (plannerDestination == null)
             {
                 bool stale = session.State != null && session.State.currentDay - suggestionsDay >= SuggestionRefreshDays;

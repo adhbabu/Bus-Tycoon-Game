@@ -93,7 +93,7 @@ namespace BusTycoon.Game
 
             VisualElement tiles = Ui.El("bt-home-tiles", right);
             tiles.pickingMode = PickingMode.Ignore;
-            Tile(tiles, "newroute", "Yeni hat", "add_road", "is-amber", false, () => OpenPlannerNow(null));
+            Tile(tiles, "newroute", "Yeni hat", "add_road", "is-amber", false, OpenNewRoutePlanner);
             Tile(tiles, "company", "Şirketim", "account_balance", "is-blue", false, () => OpenPage(Panel.Regions));
             Tile(tiles, "stations", "Duraklar", "storefront", "is-teal", false, () => EnterStationNow(session.Headquarters));
             Tile(tiles, "maintenance", "Bakım", "build", "is-slate", false, () => OpenPage(Panel.Fleet));
@@ -213,7 +213,7 @@ namespace BusTycoon.Game
             tkHomeRouteOrder.Sort((a, b) => b.LastReport.Profit.CompareTo(a.LastReport.Profit));
             if (tkHomeRouteOrder.Count == 0)
             {
-                Button empty = Ui.Button("bt-col bt-home-empty", string.Empty, () => OpenPlannerNow(null), tkHomeRoutes);
+                Button empty = Ui.Button("bt-col bt-home-empty", string.Empty, OpenNewRoutePlanner, tkHomeRoutes);
                 empty.name = "home-first-route";
                 VisualElement plus = Ui.El("bt-home-empty__plus", empty);
                 plus.pickingMode = PickingMode.Ignore;
