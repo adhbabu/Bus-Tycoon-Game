@@ -22,6 +22,7 @@ namespace BusTycoon.Game
 
         enum Tab { Home, Routes, Fleet, Map, Shop, Finance, Goals }
 
+        VisualElement tkMapDisc;
         VisualElement tkHud, tkTop, tkBrandLogo, tkBrandSub, tkKasa, tkDatePill, tkDateIcon, tkDayFill, tkPauseIcon, tkRace, tkTabs, tkMapButton, tkToasts;
         Label tkKicker, tkTitle, tkSubText, tkCash, tkDate, tkRaceText;
         Button tkPauseButton;
@@ -73,6 +74,7 @@ namespace BusTycoon.Game
             BuildToolkitMapWidgets();
             BuildToolkitRace();
             BuildToolkitSheet();
+            BuildToolkitTutorial();
             BuildToolkitStation();
 
             // ---- üst çubuk: solda şirket (ana ekranda) ya da sayfa başlığı; sağda kasa, duraklat, kısayollar, tarih
@@ -138,6 +140,7 @@ namespace BusTycoon.Game
             tkMapButton.pickingMode = PickingMode.Ignore;
             Ui.El("bt-mapbutton__ring", tkMapButton).pickingMode = PickingMode.Ignore;
             Button disc = Ui.Button("bt-mapbutton__disc", string.Empty, () => SelectTab(Tab.Map), tkMapButton);
+            tkMapDisc = disc;
             Ui.Symbol("map", "bt-mapbutton__icon", disc);
             Ui.Text("bt-mapbutton__label", "Harita", UiWeight.Black, tkMapButton);
             tkNav.Add((tkMapButton, Tab.Map, null));
@@ -231,6 +234,7 @@ namespace BusTycoon.Game
             UpdateToolkitRace(k);
             UpdateToolkitStation(k);
             UpdateToolkitSheet(k);
+            UpdateToolkitTutorial(content, k);
             UpdateToolkitToasts(k);
         }
 

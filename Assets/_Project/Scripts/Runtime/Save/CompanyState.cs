@@ -21,6 +21,11 @@ namespace BusTycoon.Save
         public string companyName;
         /// <summary>Şirket logosu (arayüzdeki logo listesinin sırası; eski kayıtlarda 0).</summary>
         public int logoId;
+        /// <summary>Şehir içi başlangıcın öğreticisi açık mı (eski kayıtlarda kapalı) ve hangi adımda (0..4).</summary>
+        public bool tutorialActive;
+        public int tutorialStep;
+        /// <summary>Öğretici: oyuncu hat panelinde bileti gördü mü (son adım).</summary>
+        public bool tutorialSawPrice;
         public string startCityId;
         public int currentDay;
 

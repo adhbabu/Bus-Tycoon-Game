@@ -2985,3 +2985,90 @@
     color: #E7D6D6;
     white-space: nowrap;
 }
+
+/* ------------------------------------------------------------------ öğretici (şehir içi başlangıç) */
+
+.bt-tutorial {
+    position: absolute;
+    flex-direction: column;
+    padding: 12px 14px 12px 14px;
+    border-width: 1.5px;
+    border-color: rgba(245, 196, 81, 0.55);
+    border-radius: 16px;
+}
+
+.bt-tutorial__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 4px;
+    margin-left: 4px;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.bt-tutorial__dot.is-done {
+    background-color: #3DDC84;
+}
+
+.bt-tutorial__dot.is-current {
+    width: 16px;
+    background-color: #F5C451;
+}
+
+.bt-tutorial__title {
+    font-size: 16px;
+    color: #F1F4F5;
+    margin-top: 6px;
+}
+
+.bt-tutorial__text {
+    font-size: 12.5px;
+    color: #B9C7CC;
+    margin-top: 3px;
+    white-space: normal;
+    flex-grow: 1;
+}
+
+.bt-tutorial__actions {
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+.bt-tutorial__skip {
+    height: 30px;
+    margin: 0;
+    padding: 0 4px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    color: #8DA1A8;
+    font-size: 12px;
+}
+
+.bt-tutorial__go {
+    height: 32px;
+    margin: 0;
+    padding: 0 14px;
+    border-width: 0;
+    border-radius: 10px;
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+    color: #1C1708;
+    font-size: 13px;
+}
+
+/* Öğreticinin gösterdiği düğme: yanıp sönen altın halka */
+.is-tutorial {
+    border-width: 2px;
+    border-color: #F5C451;
+}
+
+.is-tutorial.is-pulse {
+    border-color: rgba(245, 196, 81, 0.3);
+}
+
+.bt-mapbutton__disc.is-tutorial {
+    border-width: 4px;
+    border-color: #FFF3C9;
+}
+
+.bt-mapbutton__disc.is-tutorial.is-pulse {
+    border-color: rgba(255, 243, 201, 0.25);
+}

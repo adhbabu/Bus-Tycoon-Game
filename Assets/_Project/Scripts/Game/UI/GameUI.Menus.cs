@@ -357,6 +357,7 @@ namespace BusTycoon.Game
             bool cityStart = NewUi && CityView.Supports(hq);
             session.StartNewGame(name, hq, withStartingBus: !cityStart); // → OnSessionStarted
             session.State.logoId = companyLogo;
+            if (cityStart) StartTutorial();
             Toast(cityStart ? $"{name} kuruldu! İlk iş: galeriden bir dolmuş al." : $"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
             if (!NewUi) OpenPlannerNow(hq); // yeni arayüzde ana ekran açılır; "İlk hattını aç" kartı planlayıcıyı açar
         }
