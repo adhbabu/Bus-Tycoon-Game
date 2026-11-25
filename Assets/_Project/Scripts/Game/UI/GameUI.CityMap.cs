@@ -175,7 +175,7 @@ namespace BusTycoon.Game
             placedLabels.Clear();
 
             // Ünlü mekânlar: uzakta yalnız en ünlüleri
-            float fameLimit = distance < 25f ? 0f : distance < 60f ? 0.6f : distance < 120f ? 0.85f : 2f;
+            float fameLimit = distance < 40f ? 0f : distance < 100f ? 0.6f : distance < 260f ? 0.85f : 2f;
             foreach (UrbanLandmark landmark in urbanLabelLandmarks)
             {
                 if (landmark.Fame < fameLimit) break;
@@ -183,7 +183,7 @@ namespace BusTycoon.Game
             }
 
             // Duraklar: uzakta ilçe merkezleri, yakında hepsi
-            float weightLimit = distance < 30f ? 0f : distance < 80f ? 0.5f : distance < 160f ? 0.75f : 0.9f;
+            float weightLimit = distance < 40f ? 0f : distance < 100f ? 0.45f : distance < 260f ? 0.7f : 0.85f;
             foreach (UrbanStop stop in urbanLabelStops)
             {
                 if (stop.Weight < weightLimit) break;

@@ -14,7 +14,10 @@ namespace BusTycoon.Game
     {
         VisualElement tkMapFrame, tkMapEdge, tkMapControls, tkMapSide, tkMapSideList, tkTooltip, tkMapViewSwitch;
         Button tkMapViewCity, tkMapViewCountry;
-        Label tkMapLocText, tkMapSideCaption, tkMapSideCta, tkMapViewCityText, tkMapAttribution;
+        Label tkMapLocText, tkMapSideCaption, tkMapSideCta, tkMapViewCityText, tkMapAttribution, tkMapSideCtaTitle,
+            tkMapSideMarkerAText, tkMapSideMarkerBText;
+        VisualElement tkMapSideMarkerA, tkMapSideMarkerB;
+        bool tkMapSideCity;
         int tkTooltipSignature = int.MinValue, tkMapSideSignature = int.MinValue;
         readonly List<RouteState> tkMapSideRoutes = new List<RouteState>();
 
@@ -60,17 +63,17 @@ namespace BusTycoon.Game
             tkMapSideList = Ui.El("bt-col bt-mapside__list", tkMapSide);
             Ui.Text("bt-caps is-green bt-mapside__caption", "İŞARETLER", UiWeight.Bold, tkMapSide);
             VisualElement hq = Ui.El("bt-row bt-mapside__marker", tkMapSide);
-            Ui.Symbol("star", "bt-mapside__dot is-gold-bg", hq);
-            Ui.Text("bt-mapside__marker-text", "Merkez ofis", UiWeight.Bold, hq);
+            tkMapSideMarkerA = Ui.Symbol("star", "bt-mapside__dot is-gold-bg", hq);
+            tkMapSideMarkerAText = Ui.Text("bt-mapside__marker-text", "Merkez ofis", UiWeight.Bold, hq);
             VisualElement linked = Ui.El("bt-row bt-mapside__marker", tkMapSide);
-            Ui.Symbol("check_circle", "bt-mapside__dot is-green-bg", linked);
-            Ui.Text("bt-mapside__marker-text", "Hattın olan şehir", UiWeight.Bold, linked);
+            tkMapSideMarkerB = Ui.Symbol("check_circle", "bt-mapside__dot is-green-bg", linked);
+            tkMapSideMarkerBText = Ui.Text("bt-mapside__marker-text", "Hattın olan şehir", UiWeight.Bold, linked);
             Ui.El("bt-grow", tkMapSide).pickingMode = PickingMode.Ignore;
             Button cta = Ui.Button("bt-cta", string.Empty, OpenNewRoutePlanner, tkMapSide);
             cta.name = "new-route";
             VisualElement ctaText = Ui.El("bt-col bt-grow", cta);
             ctaText.pickingMode = PickingMode.Ignore;
-            Ui.Text("bt-cta__title", "Yeni hat aç", UiWeight.Black, ctaText);
+            tkMapSideCtaTitle = Ui.Text("bt-cta__title", "Yeni hat aç", UiWeight.Black, ctaText);
             tkMapSideCta = Ui.Text("bt-cta__sub", "", UiWeight.Bold, ctaText);
             VisualElement go = Ui.El("bt-cta__go", cta);
             go.pickingMode = PickingMode.Ignore;
@@ -131,17 +134,22 @@ namespace BusTycoon.Game
         void RefreshMapSide()
         {
             var routes = session.Routes.Routes;
-            int signature = session.State.currentDay * 397 + routes.Count;
+            bool city = CityMapShown;
+            int signature = session.State.currentDay * 397 + routes.Count + (city ? 1 << 20 : 0);
             if (signature == tkMapSideSignature) return;
             tkMapSideSignature = signature;
+            tkMapSideCity = city;
 
-            tkMapSideCaption.text = $"HATLARIM · {routes.Count}";
+            tkMapSideCaption.text = city ? $"DOLMUŞ HATLARIM" : $"ŞEHİRLERARASI HATLARIM";
             tkMapSideList.Clear();
             tkMapSideRoutes.Clear();
-            tkMapSideRoutes.AddRange(routes);
+            // Şehir haritasında o şehrin dolmuş hatları, Türkiye haritasında şehirlerarası hatlar
+            foreach (var route in routes)
+                if (city ? route.IsUrban && route.urbanCityId == cityView.City?.Id : !route.IsUrban) tkMapSideRoutes.Add(route);
             tkMapSideRoutes.Sort((a, b) => b.LastReport.Profit.CompareTo(a.LastReport.Profit));
             if (tkMapSideRoutes.Count == 0)
-                Ui.Text("bt-mapside__empty", "Henüz hattın yok. Haritada bir şehre dokun ya da aşağıdan yeni hat aç.", UiWeight.Regular, tkMapSideList);
+                Ui.Text("bt-mapside__empty", city ? "Henüz hattın yok. Haritada bir durağa dokun: oradan dolmuş hattı başlar."
+                    : "Henüz hattın yok. Haritada bir şehre dokun ya da aşağıdan yeni hat aç.", UiWeight.Regular, tkMapSideList);
             int shown = Mathf.Min(phone ? 4 : 6, tkMapSideRoutes.Count);
             for (int i = 0; i < shown; i++)
             {
@@ -154,10 +162,23 @@ namespace BusTycoon.Game
                 float profit = route.HasHistory ? route.LastReport.Profit : 0f;
                 Ui.Text(profit >= 0f ? "bt-mapside__value is-up" : "bt-mapside__value is-down", Fmt.Signed(profit), UiWeight.Bold, row);
             }
-            int locked = 0;
-            foreach (var city in session.World.Cities)
-                if (!session.Progression.IsRegionUnlocked(city.Region)) locked++;
-            tkMapSideCta.text = $"{session.World.Cities.Count - locked} şehir seni bekliyor";
+            // Şehir haritasında: duraklar ve mekânlar; Türkiye haritasında: merkez ve hatlı şehirler
+            Ui.SetSymbol(tkMapSideMarkerA, city ? "directions_bus" : "star");
+            Ui.SetText(tkMapSideMarkerAText, city ? "Durak (altın: ilçe merkezi)" : "Merkez ofis");
+            Ui.SetSymbol(tkMapSideMarkerB, city ? "castle" : "check_circle");
+            Ui.SetText(tkMapSideMarkerBText, city ? "Ünlü mekân (yolcu çeker)" : "Hattın olan şehir");
+            Ui.SetText(tkMapSideCtaTitle, city ? "Yeni dolmuş hattı" : "Yeni hat aç");
+            if (city && cityView.Map != null)
+            {
+                tkMapSideCta.text = $"{cityView.Map.Stops.Count} durak · iki durak seç";
+            }
+            else
+            {
+                int locked = 0;
+                foreach (var c in session.World.Cities)
+                    if (!session.Progression.IsRegionUnlocked(c.Region)) locked++;
+                tkMapSideCta.text = $"{session.World.Cities.Count - locked} şehir seni bekliyor";
+            }
         }
 
         // ------------------------------------------------------------------ şehir ipucu
