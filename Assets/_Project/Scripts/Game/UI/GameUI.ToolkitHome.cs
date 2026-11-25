@@ -290,7 +290,7 @@ namespace BusTycoon.Game
                 plus.pickingMode = PickingMode.Ignore;
                 Ui.Symbol("add", "bt-home-empty__icon", plus);
                 Ui.Text("bt-home-empty__title", "İlk hattını aç", UiWeight.Black, empty);
-                Ui.Text("bt-home-empty__sub", "Haritada iki şehir seç", UiWeight.Regular, empty);
+                Ui.Text("bt-home-empty__sub", HasCityMap ? "Haritada iki durak seç" : "Haritada iki şehir seç", UiWeight.Regular, empty);
             }
             for (int i = 0; i < Mathf.Min(rows, tkHomeRouteOrder.Count); i++) RouteRow(tkHomeRoutes, tkHomeRouteOrder[i]);
 
@@ -312,7 +312,7 @@ namespace BusTycoon.Game
             // Kısayolların alt yazıları
             int unlocked = 0;
             foreach (var region in session.World.Regions) if (session.Progression.IsRegionUnlocked(region)) unlocked++;
-            tkHomeTileSubs["newroute"].text = routes.Count < session.Progression.MaxRoutes ? "Şehir seç, hat aç" : "Hat sınırı dolu";
+            tkHomeTileSubs["newroute"].text = routes.Count >= session.Progression.MaxRoutes ? "Hat sınırı dolu" : HasCityMap ? "İki durak seç, hat aç" : "Şehir seç, hat aç";
             tkHomeTileSubs["company"].text = $"{unlocked} / {session.World.Regions.Count} ülke lisansı";
             tkHomeTileSubs["stations"].text = hq != null ? $"{session.Stations.UpgradeCount(hq)} geliştirme" : "Durak geliştir";
             tkHomeTileSubs["maintenance"].text = session.Maintenance.Enabled ? "Asistan açık" : "Asistan kapalı";

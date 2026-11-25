@@ -304,7 +304,7 @@ namespace BusTycoon.Game
                 Label name = Ui.Text("bt-route__name", RouteName(route), UiWeight.Black, header);
                 name.style.color = Color.Lerp(identity, Color.white, 0.35f);
                 CityData a = session.World.GetCity(route.cityAId), b = session.World.GetCity(route.cityBId);
-                string category = a != null && b != null && a.Region != b.Region ? "ULUSLARARASI" : a?.Region.DisplayName.ToUpperInvariant() ?? string.Empty;
+                string category = a != null && b != null && a.Region != b.Region ? "ULUSLARARASI" : Fmt.Upper(a?.Region.DisplayName);
                 Label tag = Ui.Text("bt-route__tag", category, UiWeight.Black, header);
                 tag.style.color = identity;
                 Ui.El("bt-grow", header).pickingMode = PickingMode.Ignore;

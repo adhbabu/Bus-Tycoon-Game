@@ -1,0 +1,123 @@
+<!-- Oyun logosu amblemi (taçlı otobüs rozeti). Oyundaki PNG: Resources/BusTycoon/UI/logo_emblem.png (384 px). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="34%" r="70%">
+      <stop offset="0" stop-color="#2A5560"/>
+      <stop offset="0.55" stop-color="#16303A"/>
+      <stop offset="1" stop-color="#0A151B"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE59A"/>
+      <stop offset="0.5" stop-color="#F5C451"/>
+      <stop offset="1" stop-color="#B9771F"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE08A"/>
+      <stop offset="0.45" stop-color="#F5C451"/>
+      <stop offset="1" stop-color="#DB962F"/>
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity="0.22"/>
+      <stop offset="0.16" stop-color="#000" stop-opacity="0"/>
+      <stop offset="0.84" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.22"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C5662"/>
+      <stop offset="1" stop-color="#0C1C23"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0A151B" stop-opacity="0"/>
+      <stop offset="0.35" stop-color="#0A151B" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#060D11"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.6" stop-color="#FFF3C4"/>
+      <stop offset="1" stop-color="#F5C451"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FFE7A0" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFE7A0" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="badge"><rect x="24" y="24" width="464" height="464" rx="108"/></clipPath>
+  </defs>
+
+  <!-- rozet -->
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#rim)"/>
+  <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#bg)"/>
+  <g clip-path="url(#badge)">
+    <!-- arka planda ışık halkaları -->
+    <circle cx="256" cy="210" r="196" fill="none" stroke="#F5C451" stroke-opacity="0.07" stroke-width="2"/>
+    <circle cx="256" cy="210" r="150" fill="none" stroke="#F5C451" stroke-opacity="0.08" stroke-width="2"/>
+    <!-- şehir silueti -->
+    <g fill="#1F4049">
+      <rect x="40" y="262" width="34" height="90"/>
+      <rect x="80" y="236" width="26" height="116"/>
+      <rect x="112" y="276" width="30" height="76"/>
+      <path d="M150 352 V300 a26 26 0 0 1 52 0 V352 Z"/>
+      <rect x="174" y="262" width="4" height="16"/>
+      <rect x="352" y="300" width="56" height="52"/>
+      <path d="M352 300 a28 22 0 0 1 56 0 Z"/>
+      <rect x="378" y="262" width="4" height="18"/>
+      <rect x="418" y="230" width="9" height="122"/>
+      <path d="M418 230 L422.5 206 L427 230 Z"/>
+      <rect x="416" y="262" width="13" height="4"/>
+      <rect x="436" y="270" width="36" height="82"/>
+    </g>
+    <!-- yol -->
+    <path d="M220 340 L292 340 L420 520 L92 520 Z" fill="url(#road)"/>
+    <path d="M253 352 h6 l3 26 h-12 Z M249 392 h14 l4 40 h-22 Z M244 448 h24 l6 60 h-36 Z" fill="#F5C451" fill-opacity="0.75"/>
+    <!-- otobüs gölgesi -->
+    <ellipse cx="256" cy="408" rx="132" ry="14" fill="#000" fill-opacity="0.45"/>
+  </g>
+
+  <!-- taç -->
+  <g>
+    <path d="M206 140 L214 92 L236 118 L256 80 L276 118 L298 92 L306 140 Z" fill="url(#gold)" stroke="#A8661A" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="214" cy="90" r="8" fill="url(#gold)" stroke="#A8661A" stroke-width="3"/>
+    <circle cx="256" cy="78" r="9" fill="url(#gold)" stroke="#A8661A" stroke-width="3"/>
+    <circle cx="298" cy="90" r="8" fill="url(#gold)" stroke="#A8661A" stroke-width="3"/>
+    <rect x="204" y="132" width="104" height="18" rx="5" fill="#E5A23A" stroke="#A8661A" stroke-width="3"/>
+    <circle cx="256" cy="141" r="5" fill="#3DDC84"/>
+    <circle cx="230" cy="141" r="3.5" fill="#0E1A21"/>
+    <circle cx="282" cy="141" r="3.5" fill="#0E1A21"/>
+  </g>
+
+  <!-- aynalar -->
+  <path d="M150 196 C134 194 126 200 124 210" fill="none" stroke="#0E1A21" stroke-width="7" stroke-linecap="round"/>
+  <path d="M362 196 C378 194 386 200 388 210" fill="none" stroke="#0E1A21" stroke-width="7" stroke-linecap="round"/>
+  <rect x="112" y="206" width="22" height="42" rx="7" fill="url(#gold)" stroke="#0E1A21" stroke-width="5"/>
+  <rect x="378" y="206" width="22" height="42" rx="7" fill="url(#gold)" stroke="#0E1A21" stroke-width="5"/>
+
+  <!-- gövde -->
+  <rect x="142" y="154" width="228" height="236" rx="38" fill="url(#gold)" stroke="#0E1A21" stroke-width="7"/>
+  <rect x="146" y="158" width="220" height="228" rx="34" fill="url(#side)"/>
+  <!-- tavan çizgisi ve hat tabelası -->
+  <rect x="184" y="166" width="144" height="26" rx="8" fill="#0E1A21"/>
+  <rect x="192" y="173" width="86" height="12" rx="3" fill="#F5C451" fill-opacity="0.9"/>
+  <rect x="286" y="173" width="34" height="12" rx="3" fill="#3DDC84"/>
+  <!-- ön cam -->
+  <rect x="160" y="202" width="192" height="94" rx="20" fill="url(#glass)" stroke="#0E1A21" stroke-width="6"/>
+  <path d="M174 286 L230 210 L262 210 L206 286 Z" fill="#FFFFFF" fill-opacity="0.14"/>
+  <path d="M220 286 L276 210 L290 210 L234 286 Z" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="253" y="204" width="6" height="90" fill="#0E1A21"/>
+  <!-- ön yüz -->
+  <rect x="160" y="306" width="192" height="6" rx="3" fill="#0E1A21" fill-opacity="0.25"/>
+  <circle cx="190" cy="336" r="34" fill="url(#glow)"/>
+  <circle cx="322" cy="336" r="34" fill="url(#glow)"/>
+  <circle cx="190" cy="336" r="17" fill="url(#lamp)" stroke="#0E1A21" stroke-width="5"/>
+  <circle cx="322" cy="336" r="17" fill="url(#lamp)" stroke="#0E1A21" stroke-width="5"/>
+  <rect x="222" y="322" width="68" height="30" rx="8" fill="#0E1A21"/>
+  <rect x="230" y="329" width="52" height="4" rx="2" fill="#F5C451" fill-opacity="0.7"/>
+  <rect x="230" y="337" width="52" height="4" rx="2" fill="#F5C451" fill-opacity="0.5"/>
+  <rect x="230" y="345" width="52" height="3" rx="1.5" fill="#F5C451" fill-opacity="0.3"/>
+  <!-- tampon ve tekerler -->
+  <rect x="166" y="386" width="40" height="26" rx="8" fill="#0A151B"/>
+  <rect x="306" y="386" width="40" height="26" rx="8" fill="#0A151B"/>
+  <rect x="150" y="364" width="212" height="24" rx="12" fill="#0E1A21"/>
+  <rect x="168" y="372" width="28" height="7" rx="3.5" fill="#FF6464"/>
+  <rect x="316" y="372" width="28" height="7" rx="3.5" fill="#FF6464"/>
+  <!-- üst parlama -->
+  <path d="M170 160 H342 a24 24 0 0 1 22 14 H148 a24 24 0 0 1 22 -14 Z" fill="#FFFFFF" fill-opacity="0.22"/>
+</svg>

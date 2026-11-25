@@ -16,6 +16,10 @@ namespace BusTycoon.Game
             catch (CultureNotFoundException) { return CultureInfo.InvariantCulture; }
         }
 
+        /// <summary>Türkçe büyük harf: i → İ, ı → I (ToUpperInvariant "i"yi noktasız "I" yapar).</summary>
+        public static string Upper(string text) =>
+            string.IsNullOrEmpty(text) ? string.Empty : text.Replace('i', 'İ').Replace('ı', 'I').ToUpperInvariant();
+
         public static string Money(double value) =>
             (value < -0.5 ? "-" : "") + Symbol + Math.Abs(Math.Round(value)).ToString("N0", Culture);
 

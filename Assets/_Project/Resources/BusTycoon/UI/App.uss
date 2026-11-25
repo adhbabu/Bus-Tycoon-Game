@@ -737,9 +737,11 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
+/* Anahtar sütunu en az %44: dar sağ panelde (harita) etiket harf harf kırılmasın; uzun değer kendi içinde sarar */
 .bt-kv__key {
     flex-grow: 1;
-    flex-shrink: 1;
+    flex-shrink: 0;
+    min-width: 44%;
     color: #A9B8BD;
     font-size: 13.5px;
     white-space: normal;
@@ -749,7 +751,9 @@
     font-size: 14px;
     color: #F1F4F5;
     -unity-text-align: middle-right;
-    flex-shrink: 0;
+    flex-shrink: 1;
+    margin-left: 8px;
+    white-space: normal;
 }
 
 .is-up {
@@ -1589,10 +1593,43 @@
     position: absolute;
     flex-direction: column;
     padding: 22px 26px 16px 26px;
-    background-color: rgba(19, 40, 48, 0.98);
+    background-color: rgba(12, 24, 30, 0.9);
     border-width: 1px;
-    border-color: rgba(120, 200, 210, 0.12);
-    border-radius: 22px;
+    border-color: rgba(245, 196, 81, 0.18);
+    border-top-width: 2px;
+    border-top-color: rgba(245, 196, 81, 0.55);
+    border-radius: 24px;
+}
+
+.bt-menu__veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.bt-menu__logo {
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+
+.bt-menu.is-wide .bt-menu__logo {
+    justify-content: flex-start;
+}
+
+.bt-menu__emblem {
+    flex-shrink: 0;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-menu__wordmark {
+    flex-shrink: 1;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .bt-menu.is-wide {

@@ -103,7 +103,7 @@ namespace BusTycoon.Game
             if (PageShown && tkSheetTitle != null)
             {
                 title = tkSheetTitle.text;
-                kicker = (tkSheetSubtitle.text ?? string.Empty).ToUpperInvariant();
+                kicker = Fmt.Upper(tkSheetSubtitle.text);
                 return;
             }
             if (CityMapShown && panel == Panel.None && cityView.Map != null)
@@ -112,7 +112,14 @@ namespace BusTycoon.Game
                 kicker = $"ŞEHİR HARİTASI · {cityView.Map.Stops.Count} DURAK · {cityView.Map.Landmarks.Count} MEKÂN";
                 return;
             }
-            title = panel == Panel.Planner ? "Yeni hat" : panel == Panel.Route && selectedRoute != null ? RouteName(selectedRoute) : "Harita";
+            title = panel == Panel.Planner ? (urbanPlanning ? "Yeni dolmuş hattı" : "Yeni hat") : panel == Panel.Route && selectedRoute != null ? RouteName(selectedRoute) : "Harita";
+            if (CityMapShown && cityView.City != null)
+            {
+                int urban = 0;
+                foreach (var route in session.Routes.Routes) if (route.IsUrban && route.urbanCityId == cityView.City.Id) urban++;
+                kicker = $"{Fmt.Upper(cityView.City.DisplayName)} · {urban} DOLMUŞ HATTI";
+                return;
+            }
             kicker = $"{session.World.Cities.Count} ŞEHİR · {session.Routes.Routes.Count} HAT";
         }
 

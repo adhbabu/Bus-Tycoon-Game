@@ -313,7 +313,7 @@ namespace BusTycoon.Game
             tkRaceCard.Clear();
             VisualElement header = Ui.El("bt-row bt-race-card__header", tkRaceCard);
             Ui.Icon(UIIcon.Finish, "bt-icon bt-race-card__icon", header);
-            Ui.Text("bt-caps", room.Phase == RoomPhase.Ended ? "YARIŞ BİTTİ" : $"{MatchRules.Name(room.Mode).ToUpperInvariant()} · HEDEF {Fmt.Compact(room.TargetCash)}", UiWeight.Bold, header);
+            Ui.Text("bt-caps", room.Phase == RoomPhase.Ended ? "YARIŞ BİTTİ" : $"{Fmt.Upper(MatchRules.Name(room.Mode))} · HEDEF {Fmt.Compact(room.TargetCash)}", UiWeight.Bold, header);
             List<RoomPlayer> standings = room.Standings();
             for (int i = 0; i < standings.Count; i++)
             {

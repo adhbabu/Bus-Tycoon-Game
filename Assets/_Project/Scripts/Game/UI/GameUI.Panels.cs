@@ -561,14 +561,16 @@ namespace BusTycoon.Game
                 return;
             }
 
+            string delivery = bus.InDelivery ? $" Teslim: {bus.deliveryDaysLeft} gün sonra." : string.Empty;
             if (route != null && session.Routes.GetRoute(route.routeId) != null)
             {
                 session.Routes.TryAssignBus(bus.busId, route.routeId);
-                Toast($"{bus.nickname} alındı ve {RouteName(route)} hattına atandı.", UIStyles.Green, Sfx.Coin);
+                Toast($"{bus.nickname} alındı ve {RouteName(route)} hattına atandı.{delivery}", UIStyles.Green, Sfx.Coin);
             }
             else
             {
-                Toast($"{bus.nickname} alındı. Filo (F) panelinden bir hatta atayın.", UIStyles.Green, Sfx.Coin);
+                Toast(NewUi ? $"{bus.nickname} alındı.{delivery} Filo'dan bir hatta ata." : $"{bus.nickname} alındı. Filo (F) panelinden bir hatta atayın.",
+                    UIStyles.Green, Sfx.Coin);
             }
             goals.Evaluate();
         }

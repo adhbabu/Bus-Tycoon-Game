@@ -12,6 +12,8 @@ namespace BusTycoon.Game
     public sealed partial class GameUI
     {
         VisualElement tkMenu, tkMenuCard, tkMenuMascot;
+        Texture2D logoEmblem, logoWordmark;
+        bool logoLoaded;
         bool tkMenuDirty = true;
         int tkMenuSignature = int.MinValue;
 
@@ -19,6 +21,14 @@ namespace BusTycoon.Game
         {
             tkMenu = Ui.El("bt-menu-layer", toolkit.Root);
             tkMenu.pickingMode = PickingMode.Ignore;
+            // Haritanın üstünde kenarları koyu perde: ortadaki kart ve logo öne çıkar
+            var vignette = Resources.Load<Texture2D>(DefaultContent.MenuVignetteResourcePath);
+            if (vignette != null)
+            {
+                VisualElement veil = Ui.El("bt-menu__veil", tkMenu);
+                veil.pickingMode = PickingMode.Ignore;
+                veil.style.backgroundImage = new StyleBackground(vignette);
+            }
             tkMenuCard = Ui.El("bt-menu", tkMenu);
             tkMenu.style.display = DisplayStyle.None;
         }
@@ -43,9 +53,11 @@ namespace BusTycoon.Game
             Rect box = MainMenuRect;
             Ui.Place(tkMenuCard, box.x * k, box.y * k, box.width * k, box.height * k);
 
-            // Maskot yolda gidiyormuş gibi hafifçe zıplar
+            // Logo rozeti hafifçe süzülür (maskot varsa yolda gider gibi zıplar)
             if (tkMenuMascot != null)
-                tkMenuMascot.style.translate = new Translate(0f, -Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 4f);
+                tkMenuMascot.style.translate = new Translate(0f, logoEmblem != null
+                    ? Mathf.Sin(Time.unscaledTime * 1.6f) * 3f
+                    : -Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 4f);
 
             int signature = MenuSignature();
             if (!tkMenuDirty && signature == tkMenuSignature) return;
@@ -91,6 +103,32 @@ namespace BusTycoon.Game
 
         void MenuBrand(VisualElement parent, float mascotHeight)
         {
+            if (!logoLoaded)
+            {
+                logoLoaded = true;
+                logoEmblem = Resources.Load<Texture2D>(DefaultContent.LogoEmblemResourcePath);
+                logoWordmark = Resources.Load<Texture2D>(DefaultContent.LogoWordmarkResourcePath);
+            }
+            if (logoEmblem != null && logoWordmark != null)
+            {
+                // Logo: taçlı otobüs rozeti + "OTOBÜS İMPARATORU" yazısı yan yana
+                float size = mascotHeight * 1.12f;
+                VisualElement lockup = Ui.El("bt-row bt-menu__logo", parent);
+                lockup.pickingMode = PickingMode.Ignore;
+                tkMenuMascot = Ui.El("bt-menu__emblem", lockup);
+                tkMenuMascot.usageHints = UsageHints.DynamicTransform; // her kare süzülür
+                tkMenuMascot.style.width = size;
+                tkMenuMascot.style.height = size;
+                tkMenuMascot.style.backgroundImage = new StyleBackground(logoEmblem);
+                VisualElement word = Ui.El("bt-menu__wordmark", lockup);
+                word.pickingMode = PickingMode.Ignore;
+                float wordHeight = size * 0.92f;
+                word.style.height = wordHeight;
+                word.style.width = wordHeight * logoWordmark.width / Mathf.Max(1f, logoWordmark.height);
+                word.style.backgroundImage = new StyleBackground(logoWordmark);
+                Ui.Text("bt-menu__subtitle", "Otobüs şirketini kur, şehrini bağla, imparatorluğunu büyüt.", UiWeight.Regular, parent);
+                return;
+            }
             if (!mascotLoaded)
             {
                 mascotLoaded = true;
@@ -135,7 +173,7 @@ namespace BusTycoon.Game
         void QualityTabs(VisualElement parent)
         {
             string current = GraphicsQuality.Label(GraphicsQuality.Current);
-            Ui.Text("bt-caps bt-modal__caption", GraphicsQuality.IsAuto ? $"GÖRÜNTÜ KALİTESİ · OTOMATİK: {current.ToUpperInvariant()}" : "GÖRÜNTÜ KALİTESİ", UiWeight.Bold, parent);
+            Ui.Text("bt-caps bt-modal__caption", GraphicsQuality.IsAuto ? $"GÖRÜNTÜ KALİTESİ · OTOMATİK: {Fmt.Upper(current)}" : "GÖRÜNTÜ KALİTESİ", UiWeight.Bold, parent);
             VisualElement tabs = Ui.El("bt-tabs-inline", parent);
             foreach (QualityLevel? choice in QualityChoices)
             {

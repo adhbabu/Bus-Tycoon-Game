@@ -126,7 +126,7 @@ namespace BusTycoon.Game
             CheckRow(body, "Gün sonu kazanç yazıları (hatların üstünde)", IncomeLabelsEnabled, () => IncomeLabelsEnabled = !IncomeLabelsEnabled);
 
             string current = GraphicsQuality.Label(GraphicsQuality.Current);
-            Ui.Text("bt-caps bt-modal__caption", GraphicsQuality.IsAuto ? $"GÖRÜNTÜ KALİTESİ · OTOMATİK: {current.ToUpperInvariant()}" : "GÖRÜNTÜ KALİTESİ", UiWeight.Bold, body);
+            Ui.Text("bt-caps bt-modal__caption", GraphicsQuality.IsAuto ? $"GÖRÜNTÜ KALİTESİ · OTOMATİK: {Fmt.Upper(current)}" : "GÖRÜNTÜ KALİTESİ", UiWeight.Bold, body);
             VisualElement quality = Ui.El("bt-tabs-inline", body);
             foreach (QualityLevel? choice in QualityChoices)
             {

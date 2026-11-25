@@ -67,6 +67,11 @@ namespace BusTycoon.Data
         public const string DisplayFontResourcePath = "BusTycoon/Fonts/Inter-ExtraBold";
         public const string IconsResourcePath = "BusTycoon/UI/icons";
         public const string MascotResourcePath = "BusTycoon/UI/mascot";
+        /// <summary>Oyun logosu: amblem (taçlı otobüs rozeti) ve yazı ("OTOBÜS İMPARATORU"); Tools/logo kaynaklı.</summary>
+        public const string LogoEmblemResourcePath = "BusTycoon/UI/logo_emblem";
+        public const string LogoWordmarkResourcePath = "BusTycoon/UI/logo_wordmark";
+        /// <summary>Ana menüde haritanın üstündeki koyu kenarlı perde.</summary>
+        public const string MenuVignetteResourcePath = "BusTycoon/UI/menu_vignette";
         /// <summary>Otobüs modellerinin yandan çizimleri (Tools/make_bus_art.py): galeri, filo, planlayıcı, mini harita.</summary>
         public const string BusArtResourcePath = "BusTycoon/UI/buses";
         /// <summary>Her şehrin kendine özgü ikonu ve "nesiyle ünlü" açıklaması (Tools/make_city_icons.py).</summary>
