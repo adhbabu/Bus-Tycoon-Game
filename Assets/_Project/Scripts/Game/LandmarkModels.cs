@@ -15,7 +15,8 @@ namespace BusTycoon.Game
         /// <summary>Maketler gerçek boyutun bu katı (haritada okunur kalsın, şehri kaplamasın).</summary>
         public const float Exaggeration = 1.5f;
 
-        sealed class Builder
+        /// <summary>Basit örgü kurucu (maketler ve şehir haritasındaki dolmuşlar).</summary>
+        internal sealed class Builder
         {
             public readonly List<Vector3> Vertices = new List<Vector3>();
             public readonly List<Vector3> Normals = new List<Vector3>();
@@ -34,6 +35,7 @@ namespace BusTycoon.Game
             }
 
             public void Tone(float value) => tone = new Color(value, value, value, 1f);
+            public void Paint(Color color) => tone = color;
 
             int Vertex(Vector3 local, Vector3 normal)
             {
@@ -348,6 +350,32 @@ namespace BusTycoon.Game
             b.Tone(1.05f);
             b.Box(new Vector3(-22f, 0f, 0f), new Vector3(11f, 34f, 11f));
             b.Cone(new Vector3(-22f, 34f, 0f), 7.8f, 16f, 4);
+        }
+
+        /// <summary>
+        /// Dolmuş örgüsü (birim boy, +z ileri, taban y=0): renkli gövde, koyu cam bandı, açık çatı, dört teker.
+        /// <paramref name="bodyVertexCount"/>: baştaki bu kadar köşe gövde (hat rengine boyanır).
+        /// </summary>
+        internal static void Minibus(List<Vector3> vertices, List<Vector3> normals, List<Color> colors, List<int> triangles, out int bodyVertexCount)
+        {
+            var b = new Builder();
+            b.Place(Vector3.zero, 0f, 1f);
+            b.Paint(Color.white);
+            b.Box(new Vector3(0f, 0.07f, 0f), new Vector3(0.42f, 0.2f, 1f));          // gövde (hat rengi)
+            b.Box(new Vector3(0f, 0.07f, 0.47f), new Vector3(0.4f, 0.12f, 0.08f));    // ön tampon çıkıntısı
+            bodyVertexCount = b.Vertices.Count;
+            b.Paint(new Color(0.13f, 0.17f, 0.2f, 1f));
+            b.Box(new Vector3(0f, 0.27f, -0.02f), new Vector3(0.4f, 0.11f, 0.9f));    // camlar
+            b.Paint(new Color(0.93f, 0.95f, 0.95f, 1f));
+            b.Box(new Vector3(0f, 0.38f, -0.03f), new Vector3(0.42f, 0.04f, 0.88f));  // çatı
+            b.Paint(new Color(0.06f, 0.07f, 0.08f, 1f));
+            foreach (float z in new[] { -0.32f, 0.32f })
+                foreach (float x in new[] { -0.2f, 0.2f })
+                    b.Box(new Vector3(x, 0f, z), new Vector3(0.06f, 0.12f, 0.16f));    // teker
+            vertices.AddRange(b.Vertices);
+            normals.AddRange(b.Normals);
+            colors.AddRange(b.Colors);
+            triangles.AddRange(b.Triangles);
         }
     }
 }

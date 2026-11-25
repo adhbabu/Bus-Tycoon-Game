@@ -51,6 +51,22 @@ namespace BusTycoon.Game
         public const float MaquetteFar = 34f, MaquetteNear = 24f;
         /// <summary>Maketlerin şu anki görünürlüğü (0 gizli … 1 tam).</summary>
         public float MaquetteFade { get; private set; }
+
+        // Dolmuşlar: küçük 3D araçlar, tek örgüde (her kare yeniden yerleştirilir); ekranda hep aynı boyda
+        Mesh vehicleMesh;
+        Material vehicleMaterial;
+        MeshRenderer vehicleRenderer;
+        readonly List<Vector3> vehicleVertices = new List<Vector3>();
+        readonly List<Vector3> vehicleNormals = new List<Vector3>();
+        readonly List<Color> vehicleColors = new List<Color>();
+        readonly List<int> vehicleTriangles = new List<int>();
+        readonly List<Vector3> templateVertices = new List<Vector3>();
+        readonly List<Vector3> templateNormals = new List<Vector3>();
+        readonly List<Color> templateColors = new List<Color>();
+        readonly List<int> templateTriangles = new List<int>();
+        int templateBody, vehicleMeshCount = -1;
+        /// <summary>Haritada çizilen dolmuş sayısı (3D).</summary>
+        public int VehicleModelCount { get; private set; }
         float spriteDistance = -1f;
         bool visible, linesDirty = true;
 
@@ -89,7 +105,28 @@ namespace BusTycoon.Game
             landmarkSprites = new MapSprites("CityLandmarks", transform, 1);
             stopSprites = new MapSprites("CityStops", transform, 2);
             vehicleSprites = new MapSprites("CityVehicles", transform, 3);
+            InitVehicleModels();
             SetVisible(false);
+        }
+
+        void InitVehicleModels()
+        {
+            Shader shader = Resources.Load<Shader>(DefaultContent.MaquetteShaderResourcePath);
+            if (shader == null) shader = Shader.Find("BusTycoon/Maquette");
+            if (shader == null || !shader.isSupported) return; // yoksa dolmuşlar düz kapsül olarak çizilir
+            LandmarkModels.Minibus(templateVertices, templateNormals, templateColors, templateTriangles, out templateBody);
+            vehicleMaterial = new Material(shader) { name = "CityVehicles" };
+            vehicleMaterial.SetColor("_Color", Color.white);
+            vehicleMaterial.SetFloat(FadeId, 1f);
+            vehicleMesh = new Mesh { name = "CityVehicles" };
+            var go = new GameObject("CityVehicleModels");
+            go.transform.SetParent(transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = vehicleMesh;
+            vehicleRenderer = go.AddComponent<MeshRenderer>();
+            vehicleRenderer.sharedMaterial = vehicleMaterial;
+            vehicleRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            vehicleRenderer.receiveShadows = false;
+            vehicleRenderer.enabled = false;
         }
 
         public static bool Supports(CityData city) => city != null && UrbanCatalog.Has(city.Id);
@@ -139,6 +176,12 @@ namespace BusTycoon.Game
             }
             lines.Clear();
             LinesVersion++;
+            if (vehicleMesh != null)
+            {
+                vehicleMesh.Clear();
+                vehicleMeshCount = 0;
+                VehicleModelCount = 0;
+            }
             preview = null;
             previewOrigin = previewDestination = null;
             spriteDistance = -1f;
@@ -150,6 +193,7 @@ namespace BusTycoon.Game
             if (plane != null) plane.SetActive(show);
             foreach (MapSprites sprites in new[] { stopSprites, landmarkSprites, lineSprites, vehicleSprites })
                 if (sprites != null) sprites.Renderer.enabled = show;
+            if (vehicleRenderer != null) vehicleRenderer.enabled = show;
             UpdateMaquettes();
         }
 
@@ -386,11 +430,70 @@ namespace BusTycoon.Game
         {
             vehicleSprites.Clear();
             float unit = distance * 0.0105f;
+            if (vehicleRenderer != null)
+            {
+                vehicleSprites.Apply(0f);
+                UpdateVehicleModels(unit);
+                return;
+            }
             foreach (Line line in lines.Values)
                 for (int i = 0; i < line.Vehicles; i++)
                     if (VehicleAt(line, i, out Vector3 position, out Vector3 forward))
                         vehicleSprites.AddCapsule(position + Vector3.up * 0.03f, forward, unit * 2.2f, unit * 1.1f, Color.white, line.Color, 0.55f);
             vehicleSprites.Apply(unit * 3f);
+        }
+
+        /// <summary>Dolmuş örgüsü: her araç için kalıp, konuma ve yöne göre yerleşir; gövde hat renginde.</summary>
+        void UpdateVehicleModels(float unit)
+        {
+            vehicleVertices.Clear();
+            vehicleNormals.Clear();
+            vehicleColors.Clear();
+            int count = 0;
+            float length = unit * 2.6f; // uzakta da seçilir; en yakında gerçek boyuna (~7 m) iner
+            foreach (Line line in lines.Values)
+                for (int i = 0; i < line.Vehicles; i++)
+                {
+                    if (!VehicleAt(line, i, out Vector3 position, out Vector3 forward)) continue;
+                    forward.y = 0f;
+                    if (forward.sqrMagnitude < 1e-10f) forward = Vector3.forward;
+                    Quaternion rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+                    Vector3 offset = rotation * new Vector3(length * 0.28f, 0f, 0f); // sağdan gider: gidiş ve dönüş yan yana
+                    Color body = line.Color;
+                    body.a = 1f;
+                    for (int v = 0; v < templateVertices.Count; v++)
+                    {
+                        vehicleVertices.Add(position + offset + rotation * (templateVertices[v] * length));
+                        vehicleNormals.Add(rotation * templateNormals[v]);
+                        vehicleColors.Add(v < templateBody ? body : templateColors[v]);
+                    }
+                    count++;
+                }
+
+            VehicleModelCount = count;
+            if (count != vehicleMeshCount)
+            {
+                vehicleMesh.Clear();
+                vehicleTriangles.Clear();
+                for (int k = 0; k < count; k++)
+                {
+                    int baseIndex = k * templateVertices.Count;
+                    foreach (int t in templateTriangles) vehicleTriangles.Add(baseIndex + t);
+                }
+                vehicleMesh.indexFormat = vehicleVertices.Count > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16;
+                vehicleMesh.SetVertices(vehicleVertices);
+                vehicleMesh.SetNormals(vehicleNormals);
+                vehicleMesh.SetColors(vehicleColors);
+                vehicleMesh.SetTriangles(vehicleTriangles, 0);
+                vehicleMeshCount = count;
+            }
+            else
+            {
+                vehicleMesh.SetVertices(vehicleVertices);
+                vehicleMesh.SetNormals(vehicleNormals);
+                vehicleMesh.SetColors(vehicleColors);
+            }
+            vehicleMesh.RecalculateBounds();
         }
 
         /// <summary>Haritada ya da ana ekranda dolmuşların ortak saati (oyun duraklayınca durur).</summary>
