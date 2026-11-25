@@ -155,7 +155,7 @@ namespace BusTycoon.Fleet
             float bestUnmet = 0f;
             foreach (var route in routes.Routes)
             {
-                if (!route.HasHistory) continue;
+                if (!route.HasHistory || !routes.CanServe(bus.Model, route)) continue;
                 float unmet = route.LastReport.unmetDemand;
                 if (added != null && added.TryGetValue(route.routeId, out float seats)) unmet -= seats;
                 if (unmet < bus.Model.Seats || unmet <= bestUnmet) continue;

@@ -247,6 +247,11 @@ namespace BusTycoon.Game
             {
                 VisualElement card = BusSummary(body, bus);
                 string id = bus.busId;
+                if (!session.Routes.CanServe(bus.Model, selectedRoute))
+                {
+                    Ui.Text("bt-item__text bt-dim", selectedRoute.IsUrban ? "Şehir içinde çalışamaz" : "Şehirlerarası çalışamaz", UiWeight.Bold, card);
+                    continue;
+                }
                 ActionButton(card, "Bu hatta ata", () =>
                 {
                     var result = session.Routes.TryAssignBus(id, selectedRoute.routeId);

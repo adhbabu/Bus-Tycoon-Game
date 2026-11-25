@@ -277,6 +277,17 @@ namespace BusTycoon.Routes
             return OpResult.Ok();
         }
 
+        /// <summary>Araç bu hatta çalışabilir mi (araç sınıfı kuralı açıksa: dolmuş/şehir otobüsü şehir içi, otobüs şehirlerarası).</summary>
+        public bool CanServe(BusModelData model, RouteState route) => route == null || CanServe(model, route.IsUrban);
+
+        public bool CanServe(BusModelData model, bool urban) =>
+            model == null || !state.vehicleClasses || (urban ? model.ServesUrban : model.ServesIntercity);
+
+        /// <summary>Kural gereği çalışamıyorsa oyuncuya gösterilecek kısa neden.</summary>
+        public static string ServeError(BusModelData model, bool urban) => urban
+            ? $"{model.DisplayName} şehir içi hatta çalışamaz (şehirlerarası otobüs)."
+            : $"{model.DisplayName} şehirlerarası hatta çalışamaz (yalnız şehir içi).";
+
         /// <summary>routeId null ise otobüs garaja çekilir.</summary>
         public OpResult TryAssignBus(string busId, string routeId)
         {
@@ -288,6 +299,7 @@ namespace BusTycoon.Routes
             {
                 route = GetRoute(routeId);
                 if (route == null) return OpResult.Fail("Hat bulunamadı.");
+                if (!CanServe(bus.Model, route)) return OpResult.Fail(ServeError(bus.Model, route.IsUrban));
             }
 
             RouteState previous = bus.IsAssigned ? GetRoute(bus.assignedRouteId) : null;

@@ -39,16 +39,17 @@ namespace BusTycoon.Game
             plannerDestination = null;
             plannerQuoteValid = false;
             plannerOrigin = origin;
-            RefreshPlannerModels();
+            RefreshPlannerModels(urban: false);
             suggestionsDirty = true;
             if (origin != null) mapCamera.FocusOn(world.GetCityPosition(origin));
         }
 
-        void RefreshPlannerModels()
+        /// <param name="urban">Şehir içi planlayıcı: yalnız şehir içinde çalışabilen araçlar (kural açıksa).</param>
+        void RefreshPlannerModels(bool urban = false)
         {
             plannerModels.Clear();
             foreach (var model in session.Catalog.SortedByTier)
-                if (session.Progression.IsModelUnlocked(model)) plannerModels.Add(model);
+                if (session.Progression.IsModelUnlocked(model) && session.Routes.CanServe(model, urban)) plannerModels.Add(model);
 
             // Varsayılan: garajda en çok boşta bekleyen model; yoksa açık olan en yüksek kademe.
             session.Fleet.GetIdleBuses(busBuffer);

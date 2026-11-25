@@ -1425,7 +1425,8 @@ namespace BusTycoon.Game
 
         static string SegmentName(BusSegment segment) => segment switch
         {
-            BusSegment.Minibus => "Minibüs",
+            BusSegment.Minibus => "Dolmuş",
+            BusSegment.CityBus => "Şehir otobüsü",
             BusSegment.Midibus => "Midibüs",
             BusSegment.StandardCoach => "Şehirlerarası",
             BusSegment.ComfortCoach => "Konfor",

@@ -86,6 +86,17 @@ namespace BusTycoon.Game
                 return;
             }
 
+            if (PlannerModel == null)
+            {
+                // Araç sınıfı: dolmuş şehirlerarası çalışamaz; ilk uygun araç midibüs
+                BusModelData first = null;
+                foreach (var model in session.Catalog.SortedByTier)
+                    if (model.ServesIntercity && (first == null || model.RequiredCompanyLevel < first.RequiredCompanyLevel)) first = model;
+                Ui.Text("bt-item__text is-warning-text", first != null
+                    ? $"Şehirlerarası hat için midibüs ya da şehirlerarası otobüs gerekir. İlk uygun araç {first.DisplayName}: şirket seviyesi {first.RequiredCompanyLevel} olunca açılır."
+                    : "Şehirlerarası hat için uygun araç yok.", UiWeight.Bold, body);
+                return;
+            }
             BuildModelSelector(body);
             if (plannerDestination == null) BuildSuggestions(body);
             else BuildQuote(body);

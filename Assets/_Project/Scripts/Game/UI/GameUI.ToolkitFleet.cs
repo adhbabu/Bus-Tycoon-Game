@@ -299,6 +299,7 @@ namespace BusTycoon.Game
             Ui.Text("bt-item__text", "Hangi hatta çalışsın?", UiWeight.Bold, card);
             foreach (var candidate in session.Routes.Routes)
             {
+                if (!session.Routes.CanServe(bus.Model, candidate)) continue; // araç sınıfı: bu hatta çalışamaz
                 bool current = candidate.routeId == bus.assignedRouteId;
                 RouteState target = candidate;
                 string label = $"{RouteName(candidate)} · {session.Fleet.CountBusesOnRoute(candidate.routeId)} otobüs" + (current ? " (şu an)" : "");

@@ -65,8 +65,20 @@ namespace BusTycoon.Game
             VisualElement info = Ui.El("bt-col bt-grow", header);
             Ui.Text("bt-model__name", model.DisplayName, UiWeight.Black, info);
             Ui.Text("bt-detail__text", $"{model.Manufacturer} · {SegmentName(model.Segment)} · kademe {model.Tier + 1}", UiWeight.Regular, info);
-            Detail(info, UIIcon.Seat, $"{model.Seats} koltuk · {model.AverageSpeedKmh:0} km/s");
-            Detail(info, UIIcon.Road, $"Rahat menzil {Fmt.Km(model.ComfortableRangeKm)}");
+            Detail(info, UIIcon.Seat, $"{model.Seats} {(model.Segment == BusSegment.CityBus ? "yolcu" : "koltuk")} · {model.AverageSpeedKmh:0} km/s");
+            if (session.State.vehicleClasses)
+            {
+                // Araç sınıfı: hangi hatlarda çalışır
+                string where = model.Category switch
+                {
+                    BusCategory.Dolmus => "Şehir içi hatlar (dolmuş)",
+                    BusCategory.CityBus => "Şehir içi hatlar",
+                    BusCategory.Midibus => "Şehir içi ve şehirlerarası",
+                    _ => "Şehirlerarası hatlar"
+                };
+                Detail(info, UIIcon.Road, where);
+            }
+            else Detail(info, UIIcon.Road, $"Rahat menzil {Fmt.Km(model.ComfortableRangeKm)}");
 
             VisualElement comfort = Ui.El("bt-row bt-detail", card);
             Ui.Icon(UIIcon.Star, "bt-detail__icon", comfort);

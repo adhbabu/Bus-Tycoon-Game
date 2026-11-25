@@ -2,7 +2,7 @@
 """
 Otobüs modellerinin yandan çizimleri (özgün çizim): galeri, filo kartları, hat planlayıcı ve mini haritada kullanılır.
 
-  Assets/_Project/Resources/BusTycoon/UI/buses.png   512×512: 2 sütun × 4 satır, 256×128 px hücre; otobüs sağa bakar
+  Assets/_Project/Resources/BusTycoon/UI/buses.png   512×768: 2 sütun × 6 satır, 256×128 px hücre; otobüs sağa bakar
 
 Hücre sırası Assets/_Project/Scripts/Game/UI/UIBusArt.cs → ModelIds ile AYNI olmalıdır.
 Gövde renkleri haritadaki 3B otobüslerle aynıdır (segment rengi: WorldRenderer / BusModels).
@@ -16,9 +16,10 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, "Assets", "_Project", "Resources", "BusTycoon", "UI", "buses.png")
 CELL_W, CELL_H, COLUMNS, SS = 256, 128, 2, 4
 
-# Segment renkleri (BusSegment sırası): minibüs, midibüs, şehirlerarası, konfor, lüks VIP, çift katlı
-BODY = [(242, 242, 238), (77, 204, 204), (77, 140, 255), (179, 115, 255), (255, 199, 64), (242, 89, 77)]
-STRIPE = [(255, 145, 0), (255, 255, 255), (255, 255, 255), (255, 196, 0), (52, 52, 64), (255, 255, 255)]
+# Segment renkleri (BusSegment sırası): minibüs, midibüs, şehirlerarası, konfor, lüks VIP, çift katlı, şehir otobüsü
+BODY = [(242, 242, 238), (77, 204, 204), (77, 140, 255), (179, 115, 255), (255, 199, 64), (242, 89, 77), (236, 240, 236)]
+STRIPE = [(255, 145, 0), (255, 255, 255), (255, 255, 255), (255, 196, 0), (52, 52, 64), (255, 255, 255), (0, 166, 150)]
+CITY = 6
 GLASS = (34, 46, 66)
 GLASS_SHINE = (84, 112, 150)
 TIRE = (26, 26, 30)
@@ -36,6 +37,10 @@ MODELS = [
     ("TOROS_42C", 3, 232, 70, 7, {"ac": True, "double_stripe": True}),
     ("ZIRVE_VIP", 4, 238, 66, 6, {"ac": True, "tandem": True, "tinted": True}),
     ("ZIRVE_DD", 5, 236, 100, 7, {"tandem": True, "double_deck": True}),
+    # Şehir otobüsleri: alçak taban, iki/üç kapı, ön üstte hat ekranı; körüklüde orta körük, elektrikte tavan bataryası
+    ("KENT_12", CITY, 206, 66, 6, {"doors": 2}),
+    ("KENT_12E", CITY, 206, 66, 6, {"doors": 2, "electric": True}),
+    ("KENT_18", CITY, 248, 66, 8, {"doors": 3, "articulated": True}),
 ]
 
 
@@ -102,6 +107,24 @@ def draw_bus(draw, segment, length, height, windows, options):
     door_x = (glass_right - 12 * s) if segment == 0 else (right - 30 * s)
     if segment != 0:
         draw.rounded_rectangle([door_x, top + 7 * s, door_x + 12 * s, skirt_top - 1 * s], radius=2 * s, fill=shade(glass, 0.9), outline=outline, width=s)
+    if segment == CITY:
+        # orta ve arka kapılar (geniş, çift kanat), ön üstte turuncu hat ekranı
+        doors = options.get("doors", 2)
+        for i in range(1, doors):
+            dx = right - 30 * s - i * (length * s - 50 * s) / (doors - 0.4)
+            draw.rounded_rectangle([dx, top + 7 * s, dx + 16 * s, body_bottom - 3 * s], radius=2 * s, fill=shade(glass, 0.9), outline=outline, width=s)
+            draw.line([dx + 8 * s, top + 8 * s, dx + 8 * s, body_bottom - 4 * s], fill=outline, width=s)
+        draw.rounded_rectangle([right - 15 * s, top + 1 * s, right - 3 * s, top + 5 * s], radius=s, fill=(255, 150, 20))
+    if options.get("articulated"):
+        # körük: gövdenin ortasında koyu, akordeon çizgili şerit
+        jx = left + length * s * 0.47
+        draw.rectangle([jx, top + 1 * s, jx + 9 * s, body_bottom - 1 * s], fill=(58, 62, 70))
+        for k in range(4):
+            draw.line([jx + (1.5 + k * 2) * s, top + 2 * s, jx + (1.5 + k * 2) * s, body_bottom - 2 * s], fill=(92, 98, 108), width=s)
+    if options.get("electric"):
+        # tavan bataryası ve yeşil şerit
+        draw.rounded_rectangle([left + length * s * 0.15, top - 6 * s, left + length * s * 0.62, top + 1 * s], radius=2 * s, fill=(196, 204, 210))
+        draw.rectangle([left + 2 * s, stripe_y, right - 2 * s, stripe_y + 5 * s], fill=(61, 200, 120))
     draw.ellipse([right - 7 * s, body_bottom - height * s * 0.27, right + 1 * s, body_bottom - height * s * 0.12], fill=HEADLIGHT)
     draw.rounded_rectangle([left - 1 * s, body_bottom - height * s * 0.36, left + 4 * s, body_bottom - height * s * 0.18], radius=s, fill=TAILLIGHT)
 
@@ -113,6 +136,8 @@ def draw_bus(draw, segment, length, height, windows, options):
     axles = [left + length * s * 0.18, right - length * s * 0.2] if segment >= 1 else [left + length * s * 0.2, right - length * s * 0.24]
     if options.get("tandem"):
         axles.insert(1, left + length * s * 0.18 + wheel_r * 2.3)
+    if options.get("articulated"):
+        axles = [left + length * s * 0.14, left + length * s * 0.38, right - length * s * 0.15]  # körüklü: üç dingil
     for cx in axles:
         cy = bottom - wheel_r
         arch = wheel_r * 1.22

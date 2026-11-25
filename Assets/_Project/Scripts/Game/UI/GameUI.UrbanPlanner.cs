@@ -36,7 +36,7 @@ namespace BusTycoon.Game
             urbanPlanning = true;
             plannerOrigin = plannerDestination = null;
             plannerQuoteValid = false;
-            RefreshPlannerModels();
+            RefreshPlannerModels(urban: true);
             urbanOrigin = origin;
             urbanDestination = null;
             urbanQuoteValid = false;

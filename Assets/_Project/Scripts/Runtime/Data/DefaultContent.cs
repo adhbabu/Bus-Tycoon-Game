@@ -147,6 +147,16 @@ namespace BusTycoon.Data
             new ModelSpec("ZIRVE_DD", "Zirve Çift Katlı", "Zirve Coach", BusSegment.DoubleDecker,
                 "72 koltuk. Yoğun ana arterlerde koltuk başı en düşük maliyet.",
                 600000, 16, 50, 72, 0.8f, 85, 2000, 1200000, 1.3f, 0.8f, 38, 0.22f, 70, 1.2f),
+            // Şehir otobüsleri (yalnız şehir içi): kapasite oturan + ayakta yolcu
+            new ModelSpec("KENT_12", "Kent 12", "Marmara Kent", BusSegment.CityBus,
+                "12 metre alçak tabanlı şehir otobüsü: 85 yolcu, iki geniş kapı. Kalabalık dolmuş hatlarının yükünü alır.",
+                92000, 3, 0, 85, 0.35f, 70, 250, 900000, 0.9f, 1.15f, 38, 0.09f, 16, 0.05f),
+            new ModelSpec("KENT_12E", "Kent 12 Elektrik", "Marmara Kent", BusSegment.CityBus,
+                "Sessiz elektrikli şehir otobüsü: 80 yolcu, yakıt gideri çok düşük, bakımı ucuz.",
+                150000, 6, 30, 80, 0.45f, 70, 250, 1100000, 0.95f, 1.1f, 9, 0.06f, 20, 0.05f),
+            new ModelSpec("KENT_18", "Kent 18 Körüklü", "Marmara Kent", BusSegment.CityBus,
+                "18 metre körüklü: 140 yolcu, üç kapı. Şehrin ana caddelerinde yolcu başı en ucuz araç.",
+                165000, 7, 0, 140, 0.35f, 65, 250, 1000000, 0.9f, 1.15f, 52, 0.13f, 26, 0.05f),
         };
 
         /// <summary>Avrupa Paketi'nin otobüsleri (paket sahibiyse katalogda; uydurma markalar). docs/03 tablosuyla aynı.</summary>
