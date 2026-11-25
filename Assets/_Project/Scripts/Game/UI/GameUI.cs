@@ -94,6 +94,7 @@ namespace BusTycoon.Game
         FleetSystem boundFleet;
         MaintenanceAssistant boundMaintenance;
         RouteSystem boundRoutes;
+        BusTycoon.Stations.StationSystem boundStations;
         int warningCount;
         readonly HashSet<string> criticalRoutes = new HashSet<string>();
         readonly HashSet<string> connectedCityIds = new HashSet<string>();
@@ -173,6 +174,8 @@ namespace BusTycoon.Game
             boundRoutes.RouteChanged += OnRouteChanged;
             boundRoutes.SetupFinished += OnSetupFinished;
             boundFleet.BusDelivered += OnBusDelivered;
+            boundStations = session.Stations;
+            boundStations.UpgradeCompleted += OnUpgradeCompleted;
         }
 
         void UnbindSystems()
@@ -192,6 +195,11 @@ namespace BusTycoon.Game
                 boundFleet.BusRemoved -= OnFleetChanged;
                 boundFleet.BusChanged -= OnFleetChanged;
                 boundFleet.BusDelivered -= OnBusDelivered;
+            }
+            if (boundStations != null)
+            {
+                boundStations.UpgradeCompleted -= OnUpgradeCompleted;
+                boundStations = null;
             }
             if (boundRoutes != null)
             {

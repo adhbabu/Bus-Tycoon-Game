@@ -202,7 +202,7 @@ namespace BusTycoon.Core
             Finance = new FinanceSystem(state);
             Progression = new ProgressionSystem(state, progressionConfig, busCatalog, economyConfig, Finance);
             Fleet = new FleetSystem(state, busCatalog, economyConfig, Finance, Progression);
-            Stations = new StationSystem(state, Finance, Progression);
+            Stations = new StationSystem(state, Finance, Progression, World.GetCity);
             Routes = new RouteSystem(state, World, economyConfig, Fleet, Finance, Progression, Stations);
             Maintenance = new MaintenanceAssistant(state, Fleet, Routes, Finance, economyConfig);
 
@@ -225,6 +225,7 @@ namespace BusTycoon.Core
 
             Maintenance.RunDaily();
             Fleet.BeginDay(rng);
+            Stations.AdvanceDay();
             Routes.SimulateDay(rng, report.Routes);
             Fleet.ChargeIdleInsurance();
 

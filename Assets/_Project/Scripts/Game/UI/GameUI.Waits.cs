@@ -1,4 +1,6 @@
+using BusTycoon.Data;
 using BusTycoon.Fleet;
+using BusTycoon.Stations;
 using BusTycoon.Routes;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -63,6 +65,23 @@ namespace BusTycoon.Game
                     if (session.Fleet.FinishDeliveryNow(id)) tkSheetDirty = true;
                 }))
                 Toast("Reklam şu an hazır değil, birazdan tekrar dene.", UIStyles.Orange);
+        }
+
+        void WatchAdToFinishUpgrade(CityData city, StationUpgrade upgrade)
+        {
+            if (!AdService.ShowRewarded(() =>
+                {
+                    if (session.Stations.FinishNow(city, upgrade)) tkStationSignature = int.MinValue;
+                }))
+                Toast("Reklam şu an hazır değil, birazdan tekrar dene.", UIStyles.Orange);
+        }
+
+        void OnUpgradeCompleted(CityData city, StationUpgrade upgrade)
+        {
+            Toast($"{city.DisplayName}: {upgrade.Name} tamamlandı, durak güzelleşti!", UIStyles.Green, Sfx.Coin);
+            MarkDataDirty();
+            tkStationSignature = int.MinValue;
+            goals.Evaluate();
         }
 
         void OnSetupFinished(RouteState route)
