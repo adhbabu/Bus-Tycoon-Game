@@ -2398,6 +2398,42 @@
     margin-bottom: 3px;
 }
 
+/* Ana ekran: şehrin canlı mini haritası (sol sütunda kalan yeri doldurur) */
+.bt-home-city {
+    flex-grow: 1;
+    flex-direction: column;
+    margin: 12px 0 0 0;
+    padding: 12px 12px 12px 12px;
+    border-radius: 18px;
+    min-height: 150px;
+}
+
+.bt-home-city__head {
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.bt-home-city__icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-home-city__title {
+    font-size: 15px;
+    color: #F1F4F5;
+}
+
+.bt-cityminimap {
+    flex-grow: 1;
+    border-radius: 12px;
+    background-color: #0B2230;
+    -unity-background-scale-mode: scale-and-crop;
+    border-width: 1px;
+    border-color: rgba(42, 74, 82, 0.6);
+}
+
 .bt-home-empty {
     height: 150px;
     margin: 8px 0 0 0;

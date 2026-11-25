@@ -13,7 +13,14 @@ namespace BusTycoon.Game
     /// </summary>
     public sealed partial class GameUI
     {
-        VisualElement tkHomePage, tkHomeRoutes, tkHomeBadge, tkHomeBadgeDot, tkHomeHelpTile;
+        VisualElement tkHomePage, tkHomeRoutes, tkHomeBadge, tkHomeBadgeDot, tkHomeHelpTile, tkHomeCity;
+        UiCityMinimap tkHomeMinimap;
+        Label tkHomeCityTitle, tkHomeCityInfo;
+        int tkHomeMinimapLines = -1;
+        Texture2D tkHomeMinimapTexture;
+        float tkHomeMinimapNext;
+        readonly List<(Vector2[] points, Color color)> tkMinimapLineBuffer = new List<(Vector2[], Color)>();
+        readonly List<(Vector2 uv, Color color)> tkMinimapVehicleBuffer = new List<(Vector2, Color)>();
         Label tkHomeCash, tkHomeWorth, tkHomeBadgeText, tkHomeRouteCount, tkHomeReward, tkHomeGoalsSub, tkHomeStationSub;
         UiSparkline tkHomeChart;
         readonly Label[] tkHomeStats = new Label[4];
@@ -72,6 +79,23 @@ namespace BusTycoon.Game
             all.name = "home-all-routes";
             tkHomeRoutes = Ui.El("bt-col bt-home-routes", left);
             tkHomeRoutes.pickingMode = PickingMode.Ignore;
+
+            // Şehrin canlı mini haritası: hatlar ve dolmuşlar; dokununca şehir haritası açılır
+            Button city = Ui.Button("bt-card bt-home-city", string.Empty, () =>
+            {
+                SelectCityMap(true);
+                SelectTab(Tab.Map);
+            }, left);
+            city.name = "home-city";
+            tkHomeCity = city;
+            VisualElement cityHead = Ui.El("bt-row bt-home-city__head", city);
+            cityHead.pickingMode = PickingMode.Ignore;
+            Ui.Symbol("location_city", "bt-home-city__icon", cityHead);
+            tkHomeCityTitle = Ui.Text("bt-home-city__title", "", UiWeight.Black, cityHead);
+            Ui.El("bt-grow", cityHead).pickingMode = PickingMode.Ignore;
+            tkHomeCityInfo = Ui.Text("bt-chip-gold", "", UiWeight.Black, cityHead);
+            tkHomeMinimap = new UiCityMinimap { pickingMode = PickingMode.Ignore };
+            city.Add(tkHomeMinimap);
 
             // ---- sağ sütun
             VisualElement right = Ui.El("bt-home__right", tkHomePage);
@@ -160,9 +184,13 @@ namespace BusTycoon.Game
                 Ui.Toggle(tkHomeCash, "is-negative", tkCashValue < 0);
             }
 
-            // Sığan hat satırı sayısı (telefonda 2-3, masaüstünde daha çok)
+            // Sığan hat satırı sayısı (telefonda 2-3, masaüstünde daha çok). Şehir mini haritası varsa en çok 3 satır:
+            // kalan yer haritanın (en az ~170 birim).
             float available = content.height * k - 190f - 40f; // kasa kartı ~190, başlık ~40 birim
-            int rows = Mathf.Clamp(Mathf.FloorToInt(available / 66f), 1, 6);
+            bool minimap = HasCityMap && cityView.Ready && available - 3f * 66f >= 170f;
+            int rows = Mathf.Clamp(Mathf.FloorToInt(available / 66f), 1, minimap ? 3 : 6);
+            Ui.Show(tkHomeCity, minimap);
+            if (minimap) UpdateHomeMinimap();
             bool roomForHelp = content.height * k >= 400f;
             Ui.Show(tkHomeHelpTile, roomForHelp);
 
@@ -171,6 +199,38 @@ namespace BusTycoon.Game
             if (signature == tkHomeSignature) return;
             tkHomeSignature = signature;
             RefreshHome(rows);
+        }
+
+        /// <summary>Mini harita: doku bir kez, çizgiler hat değişince, dolmuşlar saniyede ~6 kez.</summary>
+        void UpdateHomeMinimap()
+        {
+            if (tkHomeMinimapTexture != cityView.Texture) // ilk açılış ya da başka şehirde yeni oyun
+            {
+                tkHomeMinimapTexture = cityView.Texture;
+                tkHomeMinimap.SetTexture(tkHomeMinimapTexture);
+                tkHomeMinimapLines = -1;
+            }
+            if (cityView.LinesVersion != tkHomeMinimapLines)
+            {
+                tkHomeMinimapLines = cityView.LinesVersion;
+                cityView.GetMinimapLines(tkMinimapLineBuffer);
+                tkHomeMinimap.SetLines(tkMinimapLineBuffer);
+                int urban = 0, vehicles = 0;
+                foreach (var route in session.Routes.Routes)
+                {
+                    if (!route.IsUrban || route.urbanCityId != cityView.City.Id) continue;
+                    urban++;
+                    vehicles += session.Fleet.CountBusesOnRoute(route.routeId);
+                }
+                Ui.SetText(tkHomeCityTitle, cityView.City.DisplayName);
+                Ui.SetText(tkHomeCityInfo, urban == 0 ? "DURAĞA DOKUN, HAT KUR" : $"{urban} HAT · {vehicles} DOLMUŞ");
+            }
+            if (Time.unscaledTime >= tkHomeMinimapNext)
+            {
+                tkHomeMinimapNext = Time.unscaledTime + 0.16f;
+                cityView.GetMinimapVehicles(tkMinimapVehicleBuffer);
+                tkHomeMinimap.SetVehicles(tkMinimapVehicleBuffer);
+            }
         }
 
         void RefreshHome(int rows)

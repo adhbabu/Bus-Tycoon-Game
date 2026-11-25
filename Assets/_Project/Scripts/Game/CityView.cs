@@ -120,6 +120,7 @@ namespace BusTycoon.Game
                 sprites?.Apply(0f);
             }
             lines.Clear();
+            LinesVersion++;
             preview = null;
             previewOrigin = previewDestination = null;
             spriteDistance = -1f;
@@ -303,6 +304,7 @@ namespace BusTycoon.Game
             foreach (string id in lines.Keys) if (!alive.Contains(id)) stale.Add(id);
             foreach (string id in stale) lines.Remove(id);
             linesDirty = true;
+            LinesVersion++;
         }
 
         /// <summary>Planlayıcı önizlemesi: seçilen duraklar ve (varsa) güzergâh. null: önizleme yok.</summary>
@@ -330,25 +332,71 @@ namespace BusTycoon.Game
         {
             vehicleSprites.Clear();
             float unit = distance * 0.0105f;
-            if (!Paused) animationTime += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
-            float t = animationTime;
             foreach (Line line in lines.Values)
-            {
-                if (line.Vehicles <= 0 || line.Cumulative == null) continue;
-                float total = line.Cumulative[line.Cumulative.Length - 1];
-                if (total <= 0f) continue;
-                float tripSeconds = Mathf.Clamp(total * 0.35f, 8f, 40f); // birim/sn: uzun hat daha uzun sürer
                 for (int i = 0; i < line.Vehicles; i++)
-                {
-                    float phase = Mathf.Repeat(t / tripSeconds + i / (float)line.Vehicles, 2f);
-                    float along = (phase <= 1f ? phase : 2f - phase) * total;
-                    Sample(line, along, out Vector3 position, out Vector3 forward);
-                    if (phase > 1f) forward = -forward;
-                    vehicleSprites.AddCapsule(position + Vector3.up * 0.03f, forward, unit * 2.2f, unit * 1.1f, Color.white, line.Color, 0.55f);
-                }
-            }
+                    if (VehicleAt(line, i, out Vector3 position, out Vector3 forward))
+                        vehicleSprites.AddCapsule(position + Vector3.up * 0.03f, forward, unit * 2.2f, unit * 1.1f, Color.white, line.Color, 0.55f);
             vehicleSprites.Apply(unit * 3f);
         }
+
+        /// <summary>Haritada ya da ana ekranda dolmuşların ortak saati (oyun duraklayınca durur).</summary>
+        void LateUpdate()
+        {
+            if (!Paused) animationTime += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
+        }
+
+        bool VehicleAt(Line line, int index, out Vector3 position, out Vector3 forward)
+        {
+            position = forward = Vector3.zero;
+            if (line.Vehicles <= 0 || line.Cumulative == null || line.Cumulative.Length < 2) return false;
+            float total = line.Cumulative[line.Cumulative.Length - 1];
+            if (total <= 0f) return false;
+            float tripSeconds = Mathf.Clamp(total * 0.35f, 8f, 40f); // birim/sn: uzun hat daha uzun sürer
+            float phase = Mathf.Repeat(animationTime / tripSeconds + index / (float)line.Vehicles, 2f);
+            float along = (phase <= 1f ? phase : 2f - phase) * total;
+            Sample(line, along, out position, out forward);
+            if (phase > 1f) forward = -forward;
+            return true;
+        }
+
+        // ------------------------------------------------------------------ ana ekran mini haritası
+
+        public Texture2D Texture => texture;
+
+        /// <summary>Dünya noktası → harita dokusu UV'si (0..1, v yukarı).</summary>
+        public Vector2 ToUv(Vector3 world)
+        {
+            Rect r = WorldBounds;
+            return new Vector2((world.x - r.xMin) / Mathf.Max(1e-4f, r.width), (world.z - r.yMin) / Mathf.Max(1e-4f, r.height));
+        }
+
+        /// <summary>Hatların seyreltilmiş UV çizgileri (mini harita için; hat değişince istenir).</summary>
+        public void GetMinimapLines(List<(Vector2[] points, Color color)> result)
+        {
+            result.Clear();
+            foreach (Line line in lines.Values)
+            {
+                int count = line.Points.Count;
+                if (count < 2) continue;
+                int step = Mathf.Max(1, count / 80);
+                var points = new List<Vector2>();
+                for (int i = 0; i < count; i += step) points.Add(ToUv(line.Points[i]));
+                points.Add(ToUv(line.Points[count - 1]));
+                result.Add((points.ToArray(), line.Color));
+            }
+        }
+
+        /// <summary>Dolmuşların şu anki UV konumları.</summary>
+        public void GetMinimapVehicles(List<(Vector2 uv, Color color)> result)
+        {
+            result.Clear();
+            foreach (Line line in lines.Values)
+                for (int i = 0; i < line.Vehicles; i++)
+                    if (VehicleAt(line, i, out Vector3 position, out _)) result.Add((ToUv(position), line.Color));
+        }
+
+        /// <summary>Hatlar değişince artar (mini harita çizgilerini yeniden ister).</summary>
+        public int LinesVersion { get; private set; }
 
         static void Sample(Line line, float along, out Vector3 position, out Vector3 forward)
         {
