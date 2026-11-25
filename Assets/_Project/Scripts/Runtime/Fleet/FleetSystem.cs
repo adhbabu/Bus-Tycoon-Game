@@ -25,6 +25,8 @@ namespace BusTycoon.Fleet
         public event Action<BusInstance> BusRemoved;
         public event Action<BusInstance> BusChanged;
         public event Action<BusInstance> BusBrokeDown;
+        /// <summary>Sipariş edilen araç teslim edildi (bekleme süresi bitti ya da reklamla bitirildi).</summary>
+        public event Action<BusInstance> BusDelivered;
 
         public FleetSystem(CompanyState state, BusCatalog catalog, EconomyConfig economy,
             FinanceSystem finance, ProgressionSystem progression)
@@ -119,7 +121,8 @@ namespace BusTycoon.Fleet
             float price = GetPurchasePrice(model, condition);
             finance.TrySpend(price, LedgerCategory.BusPurchase, model.Id);
             bus = AddBus(model, condition, price);
-            return OpResult.Ok($"{bus.nickname} filoya katıldı.");
+            if (state.waitTimes) bus.deliveryDaysLeft = economy.DeliveryDays(model);
+            return OpResult.Ok(bus.InDelivery ? $"{bus.nickname} sipariş edildi: {bus.deliveryDaysLeft} günde teslim." : $"{bus.nickname} filoya katıldı.");
         }
 
         /// <summary>Oyun başlangıcındaki hediye otobüs gibi ücretsiz eklemeler için.</summary>
@@ -179,7 +182,11 @@ namespace BusTycoon.Fleet
 
             finance.TrySpend(price, LedgerCategory.BusPurchase, newModel.Id);
             newBus = AddBus(newModel, 1f, price);
-            if (!string.IsNullOrEmpty(routeId)) SetAssignment(newBus, routeId);
+            if (state.waitTimes) newBus.deliveryDaysLeft = economy.DeliveryDays(newModel);
+            // Yeni araç eski hattına geçer; araç sınıfı kuralı izin vermiyorsa garajda bekler
+            var route = string.IsNullOrEmpty(routeId) ? null : state.routes.Find(r => r.routeId == routeId);
+            bool allowed = route != null && (!state.vehicleClasses || (route.IsUrban ? newModel.ServesUrban : newModel.ServesIntercity));
+            if (allowed) SetAssignment(newBus, routeId);
             return OpResult.Ok($"{oldBus.nickname} yerine {newBus.nickname} (net {netCost:N0}).");
         }
 
@@ -204,6 +211,12 @@ namespace BusTycoon.Fleet
         {
             foreach (var bus in state.buses)
             {
+                if (bus.deliveryDaysLeft > 0)
+                {
+                    bus.deliveryDaysLeft--;
+                    if (bus.deliveryDaysLeft == 0) BusDelivered?.Invoke(bus);
+                    continue; // teslimattaki araç sefere çıkmaz, arıza zarı atılmaz
+                }
                 if (bus.outOfServiceDays > 0) bus.outOfServiceDays--;
                 if (!bus.IsAssigned || !bus.IsAvailableToday || bus.Model == null) continue;
 
@@ -238,6 +251,18 @@ namespace BusTycoon.Fleet
         public float GetExpressRepairCost(BusInstance bus) => bus?.Model == null ? 0f : bus.Model.Price * economy.ExpressRepairCostFactor;
 
         /// <summary>Acil tamir: arızalı otobüs bugün yeniden sefere çıkabilir.</summary>
+        /// <summary>Teslimatı hemen bitirir (ödüllü reklam).</summary>
+        public OpResult FinishDeliveryNow(string busId)
+        {
+            BusInstance bus = GetBus(busId);
+            if (bus == null) return OpResult.Fail("Araç bulunamadı.");
+            if (!bus.InDelivery) return OpResult.Fail("Araç zaten teslim edildi.");
+            bus.deliveryDaysLeft = 0;
+            BusChanged?.Invoke(bus);
+            BusDelivered?.Invoke(bus);
+            return OpResult.Ok($"{bus.nickname} teslim edildi.");
+        }
+
         public OpResult TryExpressRepair(string busId)
         {
             BusInstance bus = GetBus(busId);

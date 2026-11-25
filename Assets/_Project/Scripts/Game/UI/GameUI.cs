@@ -117,6 +117,7 @@ namespace BusTycoon.Game
             Fmt.Symbol = session.Economy.CurrencySymbol;
             InitToolkit();
             InitCityView();
+            InitAds();
             BindMultiplayer();
             EnterMainMenu();
             OpenInviteIfAny();
@@ -169,6 +170,8 @@ namespace BusTycoon.Game
             boundRoutes.RouteOpened += OnRouteSetChanged;
             boundRoutes.RouteClosed += OnRouteSetChanged;
             boundRoutes.RouteChanged += OnRouteChanged;
+            boundRoutes.SetupFinished += OnSetupFinished;
+            boundFleet.BusDelivered += OnBusDelivered;
         }
 
         void UnbindSystems()
@@ -186,12 +189,14 @@ namespace BusTycoon.Game
                 boundFleet.BusAdded -= OnFleetChanged;
                 boundFleet.BusRemoved -= OnFleetChanged;
                 boundFleet.BusChanged -= OnFleetChanged;
+                boundFleet.BusDelivered -= OnBusDelivered;
             }
             if (boundRoutes != null)
             {
                 boundRoutes.RouteOpened -= OnRouteSetChanged;
                 boundRoutes.RouteClosed -= OnRouteSetChanged;
                 boundRoutes.RouteChanged -= OnRouteChanged;
+                boundRoutes.SetupFinished -= OnSetupFinished;
             }
             boundFinance = null;
             boundProgression = null;
@@ -258,8 +263,11 @@ namespace BusTycoon.Game
             if (goal.IsVictory && !(Multiplayer != null && Multiplayer.InMatch)) modal = Modal.Victory; // yarışta kazananı oda belirler
         }
 
-        void OnLevelChanged(int level) =>
+        void OnLevelChanged(int level)
+        {
             Toast($"Şirket seviyesi {level}! Hat limiti: {session.Progression.MaxRoutes}", UIStyles.Gold);
+            AdService.TryShowInterstitial(); // seviye atlama sonrası geçiş reklamı (en sık 3 dakikada bir)
+        }
 
         void OnModelUnlocked(BusModelData model) =>
             Toast($"Yeni otobüs açıldı: {model.DisplayName} — Galeri (G)", UIStyles.Blue);
@@ -358,6 +366,7 @@ namespace BusTycoon.Game
             float dt = Time.unscaledDeltaTime;
             WebTap.Pump();
             UpdateCityMap();
+            UpdateAds(dt);
             UpdateToolkit();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)

@@ -22,6 +22,8 @@ namespace BusTycoon.Fleet
         public string assignedRouteId;
         /// <summary>Arıza nedeniyle seferden çekildiği kalan gün.</summary>
         public int outOfServiceDays;
+        /// <summary>Teslimata kalan gün (0: filoda, sefere hazır).</summary>
+        public int deliveryDaysLeft;
         /// <summary>Garaja çekilmeden önceki hattı: bakım asistanı otobüsü buraya geri gönderir.</summary>
         public string lastRouteId;
 
@@ -29,7 +31,8 @@ namespace BusTycoon.Fleet
         [NonSerialized] public BusModelData Model;
 
         public bool IsAssigned => !string.IsNullOrEmpty(assignedRouteId);
-        public bool IsAvailableToday => outOfServiceDays <= 0;
+        public bool IsAvailableToday => outOfServiceDays <= 0 && deliveryDaysLeft <= 0;
+        public bool InDelivery => deliveryDaysLeft > 0;
 
         /// <summary>
         /// Filoya eklenmeyen geçici otobüs: hat açmadan önce "bu hatta 2 × Toros 46 çalıştırsam ne olur?"

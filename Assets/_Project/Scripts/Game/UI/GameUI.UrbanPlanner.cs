@@ -243,6 +243,15 @@ namespace BusTycoon.Game
             OpenRoutePanelNow(route, assigned > 0 ? RouteTab.Price : RouteTab.Buses);
         }
 
+        /// <summary>Hatta bugün çalışan araç (teslimattaki ve arızalı sayılmaz).</summary>
+        int ActiveVehicles(RouteState route)
+        {
+            session.Fleet.GetBusesOnRoute(route.routeId, busBuffer);
+            int count = 0;
+            foreach (var bus in busBuffer) if (bus.IsAvailableToday) count++;
+            return count;
+        }
+
         /// <summary>Şehir haritasındaki hatlar: hat/araç/renk değişince CityView'a yazılır.</summary>
         void SyncCityRoutes()
         {
@@ -253,7 +262,7 @@ namespace BusTycoon.Game
             {
                 if (!route.IsUrban || route.urbanCityId != cityId) continue;
                 signature = signature * 31 + route.routeId.GetHashCode();
-                signature = signature * 31 + session.Fleet.CountBusesOnRoute(route.routeId);
+                signature = signature * 31 + session.Fleet.CountBusesOnRoute(route.routeId) + (route.IsSettingUp ? 1000 : 0);
                 signature = signature * 31 + world.RouteIdentityColor(route.routeId).GetHashCode();
             }
             if (signature == cityRoutesSignature) return;
@@ -263,7 +272,7 @@ namespace BusTycoon.Game
             {
                 if (!route.IsUrban || route.urbanCityId != cityId) continue;
                 cityRouteBuffer.Add((route.routeId, new Vector2(route.urbanAX, route.urbanAY), new Vector2(route.urbanBX, route.urbanBY),
-                    world.RouteIdentityColor(route.routeId), session.Fleet.CountBusesOnRoute(route.routeId)));
+                    world.RouteIdentityColor(route.routeId), route.IsSettingUp ? 0 : ActiveVehicles(route)));
             }
             cityView.SetRoutes(cityRouteBuffer);
         }

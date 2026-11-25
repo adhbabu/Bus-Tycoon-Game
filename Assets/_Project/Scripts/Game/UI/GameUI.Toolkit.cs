@@ -75,6 +75,7 @@ namespace BusTycoon.Game
             BuildToolkitRace();
             BuildToolkitSheet();
             BuildToolkitTutorial();
+            BuildToolkitAdOverlay();
             BuildToolkitStation();
 
             // ---- üst çubuk: solda şirket (ana ekranda) ya da sayfa başlığı; sağda kasa, duraklat, kısayollar, tarih

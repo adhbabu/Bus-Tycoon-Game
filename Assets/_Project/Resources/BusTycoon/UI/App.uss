@@ -3072,3 +3072,39 @@
 .bt-mapbutton__disc.is-tutorial.is-pulse {
     border-color: rgba(255, 243, 201, 0.25);
 }
+
+/* ------------------------------------------------------------------ bekleme süreleri ve reklam */
+
+.bt-wait {
+    border-color: rgba(245, 196, 81, 0.55);
+}
+
+.bt-wait__icon {
+    width: 26px;
+    height: 26px;
+    margin-right: 10px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-wait__title {
+    font-size: 15px;
+    color: #F5C451;
+}
+
+/* Test reklamı (?reklam=test): ekranı kaplayan koyu örtü ve geri sayım */
+.bt-adoverlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(5, 10, 14, 0.92);
+}
+
+.bt-adoverlay__text {
+    font-size: 64px;
+    color: #F1F4F5;
+    margin-top: 8px;
+}

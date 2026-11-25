@@ -26,7 +26,7 @@ namespace BusTycoon.Game
             ("Şehrini seçtin", "Merkezin hazır. Şimdi ilk aracını alalım.", "Devam"),
             ("Galeriden dolmuş al", "Galeri sekmesinden bir dolmuş (minibüs) satın al. Sermayen ilk araca ve hat ruhsatına yeter.", "Galeriye git"),
             ("İki durak seç, hat kur", "Haritada bir durağa dokun, sonra ikinci durağa. Hat sokaklardan en kısa yoldan gider; teklif uygunsa \"HATTI AÇ\".", "Haritaya git"),
-            ("İlk sefer gününü bekle", "Dolmuşun yola çıktı. Bir oyun günü 60 saniye: gün bitince ilk kazancın kasaya girer.", "Haritada izle"),
+            ("Kurulumu bekle ya da hızlandır", "Hat 3 günde kurulur, dolmuş da bayiden gelir (1 oyun günü = 60 sn). Beklemek istemezsen hat panelinde reklam izleyip hemen açabilirsin. İlk sefer gününün sonunda kazancın kasaya girer.", "Hattıma git"),
             ("Bilet fiyatı ve ilk kazanç", "Hattına dokun ve bilet fiyatına bak: önerilen fiyat en çok kârı getirir. Kazancın ana ekranda.", "Hatlarım"),
         };
 
@@ -79,7 +79,13 @@ namespace BusTycoon.Game
             {
                 case 1: SelectTab(Tab.Shop); break;
                 case 2: SelectCityMap(true); SelectTab(Tab.Map); break;
-                case 3: SelectCityMap(true); SelectTab(Tab.Map); break;
+                case 3:
+                    // Kurulumdaki ilk dolmuş hattının paneli (reklamla hızlandırma orada)
+                    foreach (var route in session.Routes.Routes)
+                        if (route.IsUrban) { OpenRoutePanelNow(route, RouteTab.Price); return; }
+                    SelectCityMap(true);
+                    SelectTab(Tab.Map);
+                    break;
                 case 4: SelectTab(Tab.Routes); break;
                 default: session.State.tutorialStep++; break;
             }
@@ -97,7 +103,7 @@ namespace BusTycoon.Game
                     foreach (var route in routes) if (route.IsUrban) return true;
                     return false;
                 case 3:
-                    foreach (var route in routes) if (route.IsUrban && route.HasHistory) return true;
+                    foreach (var route in routes) if (route.IsUrban && !route.IsSettingUp && route.HasHistory) return true;
                     return false;
                 case 4: return session.State.tutorialSawPrice;
                 default: return true;

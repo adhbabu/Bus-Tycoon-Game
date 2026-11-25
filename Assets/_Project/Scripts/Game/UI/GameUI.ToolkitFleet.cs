@@ -106,6 +106,7 @@ namespace BusTycoon.Game
             int signature = bus.Model.Id.GetHashCode();
             signature = signature * 31 + (bus.assignedRouteId?.GetHashCode() ?? 0);
             signature = signature * 31 + (bus.IsAvailableToday ? 1 : 0);
+            signature = signature * 31 + bus.deliveryDaysLeft * 2 + (AdService.Enabled ? 1 : 0);
             signature = signature * 31 + (route != null && route.HasHistory ? 1 : 0);
             signature = signature * 31 + (expandedBusId == bus.busId ? 1 + session.Routes.Routes.Count : 0);
             if (expandedBusId == bus.busId) // açık atama listesinde hatların otobüs sayıları yazılı
@@ -204,7 +205,8 @@ namespace BusTycoon.Game
             Sprite sprite = UIBusArt.Sprite(bus.Model);
             if (sprite != null) art.style.backgroundImage = new StyleBackground(sprite);
             Ui.Text("bt-item__title bt-grow", bus.nickname, UiWeight.Bold, header);
-            if (!bus.IsAvailableToday) Ui.Text("bt-pill is-danger", "Arızalı", UiWeight.Bold, header);
+            if (bus.InDelivery) Ui.Text("bt-pill is-warning", $"Teslimatta · {bus.deliveryDaysLeft} gün", UiWeight.Bold, header);
+            else if (!bus.IsAvailableToday) Ui.Text("bt-pill is-danger", "Arızalı", UiWeight.Bold, header);
             else if (route != null) Ui.Text("bt-pill is-success", "Yolda", UiWeight.Bold, header);
             else Ui.Text("bt-pill is-warning", "Garajda", UiWeight.Bold, header);
 
@@ -221,7 +223,17 @@ namespace BusTycoon.Game
             Ui.El("bt-grow", condition);
             Ui.Icon(UIIcon.Road, "bt-detail__icon", condition);
             view.Km = Ui.Text("bt-detail__text", string.Empty, UiWeight.Regular, condition);
-            if (!bus.IsAvailableToday)
+            if (bus.InDelivery)
+            {
+                Detail(card, UIIcon.Building, $"Bayiden {bus.deliveryDaysLeft} gün içinde teslim edilecek; hatta atanabilir, teslimde sefere başlar.");
+                if (AdService.Enabled)
+                {
+                    Button watch = ActionButton(card, "▶  Reklam izle, hemen teslim al", () => WatchAdToDeliver(bus), primary: true);
+                    watch.name = "ad-bus";
+                    watch.AddToClassList("bt-btn--block");
+                }
+            }
+            else if (!bus.IsAvailableToday)
             {
                 VisualElement warning = Detail(card, UIIcon.Warning, string.Empty);
                 warning.AddToClassList("is-warning-text");

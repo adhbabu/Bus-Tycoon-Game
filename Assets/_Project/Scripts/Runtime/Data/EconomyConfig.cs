@@ -121,6 +121,12 @@ namespace BusTycoon.Data
         [Tooltip("Güzergâha bu kadar (m) yakın duraklar hattın durağı sayılır; ünlü mekânlar için iki katı.")]
         [SerializeField, Min(50f)] float urbanCatchmentMeters = 600f;
         [SerializeField, Min(0f)] float urbanLicenseBase = 300f;
+
+        [Header("Bekleme süreleri (şehir içi başlangıçlı oyunlar; ödüllü reklamla hemen biter)")]
+        [Tooltip("Yeni hattın kurulumu (oyun günü): bu sürede sefer yapılmaz.")]
+        [SerializeField, Min(0)] int routeSetupDays = 3;
+        [Tooltip("Araç teslim süresi (gün): dolmuş, midibüs, şehir otobüsü, şehirlerarası otobüs.")]
+        [SerializeField] int[] deliveryDays = { 1, 2, 2, 3 };
         [SerializeField, Min(0f)] float urbanLicensePerKm = 40f;
 
         public string CurrencySymbol => currencySymbol;
@@ -185,6 +191,14 @@ namespace BusTycoon.Data
         public float UrbanPopulationExponent => urbanPopulationExponent;
         public float UrbanCatchmentMeters => urbanCatchmentMeters;
         public float GetUrbanLicenseCost(float km) => urbanLicenseBase + urbanLicensePerKm * km;
+        public int RouteSetupDays => routeSetupDays;
+
+        /// <summary>Aracın teslim süresi (gün).</summary>
+        public int DeliveryDays(BusModelData model)
+        {
+            if (model == null || deliveryDays == null || deliveryDays.Length == 0) return 0;
+            return Mathf.Max(0, deliveryDays[Mathf.Clamp((int)model.Category, 0, deliveryDays.Length - 1)]);
+        }
 
         /// <summary>Şehir içi hat uzunluğunun talebe etkisi: 2 km'den kısası yürünür, 5–20 km en iyi, sonra azalır.</summary>
         public static float UrbanLengthFactor(float km) =>

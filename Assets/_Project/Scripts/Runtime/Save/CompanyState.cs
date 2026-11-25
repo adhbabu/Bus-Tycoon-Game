@@ -28,6 +28,11 @@ namespace BusTycoon.Save
         /// otobüs yalnız şehirlerarası, midibüs ikisinde. Eski kayıtlarda kapalı (her araç her hatta).
         /// </summary>
         public bool vehicleClasses;
+        /// <summary>
+        /// Bekleme süreleri (şehir içi başlangıçlı oyunlar): yeni hat 3 günde kurulur, araçlar teslim süresiyle gelir;
+        /// ödüllü reklamla hemen biter. Eski kayıtlarda kapalı (hat ve araç hemen hazır).
+        /// </summary>
+        public bool waitTimes;
         public int tutorialStep;
         /// <summary>Öğretici: oyuncu hat panelinde bileti gördü mü (son adım).</summary>
         public bool tutorialSawPrice;

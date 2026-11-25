@@ -47,6 +47,20 @@ namespace BusTycoon.Routes
         public event Action<RouteState> RouteOpened;
         public event Action<RouteState> RouteClosed;
         public event Action<RouteState> RouteChanged;
+        /// <summary>Hattın kurulumu bitti (süre doldu ya da reklamla bitirildi): ertesi günden sefer yapar.</summary>
+        public event Action<RouteState> SetupFinished;
+
+        /// <summary>Kurulumu hemen bitirir (ödüllü reklam): hat bugün sefere başlar.</summary>
+        public OpResult FinishSetupNow(string routeId)
+        {
+            RouteState route = GetRoute(routeId);
+            if (route == null) return OpResult.Fail("Hat bulunamadı.");
+            if (!route.IsSettingUp) return OpResult.Fail("Hat zaten çalışıyor.");
+            route.setupDaysLeft = 0;
+            SetupFinished?.Invoke(route);
+            RouteChanged?.Invoke(route);
+            return OpResult.Ok("Hat kurulumu tamamlandı.");
+        }
 
         public RouteSystem(CompanyState state, WorldGraph world, EconomyConfig economy,
             FleetSystem fleet, FinanceSystem finance, ProgressionSystem progression, StationSystem stations = null)
@@ -208,7 +222,8 @@ namespace BusTycoon.Routes
                 urbanBX = plan.B.Position.x,
                 urbanBY = plan.B.Position.y,
                 urbanDemand = plan.PotentialDemand,
-                urbanStopCount = plan.Stops.Count
+                urbanStopCount = plan.Stops.Count,
+                setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
             };
             state.routes.Add(route);
             RouteOpened?.Invoke(route);
@@ -232,7 +247,8 @@ namespace BusTycoon.Routes
                 cityBId = b.Id,
                 distanceKm = km,
                 ticketPrice = Mathf.Max(0.01f, initialPrice),
-                openedDay = state.currentDay
+                openedDay = state.currentDay,
+                setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
             };
             state.routes.Add(route);
             RouteOpened?.Invoke(route);
@@ -357,6 +373,16 @@ namespace BusTycoon.Routes
         {
             fleet.GetBusesOnRoute(route.routeId, busBuffer);
             var report = new RouteDayReport { day = state.currentDay, routeId = route.routeId, ticketPrice = route.ticketPrice };
+
+            // Kurulumdaki hat sefer yapmaz; atanmış araçlar yalnız sigorta öder. Geçmişe yazılmaz (grafik kurulum sonrası başlar).
+            if (route.IsSettingUp)
+            {
+                foreach (var bus in busBuffer)
+                    if (bus.Model != null) finance.Charge(bus.Model.InsurancePerDay, LedgerCategory.Insurance, bus.busId);
+                route.setupDaysLeft--;
+                if (!route.IsSettingUp) SetupFinished?.Invoke(route);
+                return report;
+            }
 
             if (busBuffer.Count == 0)
             {

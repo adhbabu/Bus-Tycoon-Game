@@ -57,6 +57,10 @@ namespace BusTycoon.Routes
 
         public bool IsUrban => !string.IsNullOrEmpty(urbanCityId);
 
+        /// <summary>Kurulumun bitmesine kalan gün (0: hat çalışıyor). Kurulumda sefer yapılmaz.</summary>
+        public int setupDaysLeft;
+        public bool IsSettingUp => setupDaysLeft > 0;
+
         public double lifetimePassengers;
         public double lifetimeProfit;
         public List<RouteDayReport> history = new List<RouteDayReport>();
