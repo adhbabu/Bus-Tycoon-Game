@@ -19,7 +19,7 @@ namespace BusTycoon.Game
         /// <summary>Ana ekran açık mı (bir sayfa ya da harita paneli açılınca kapanır).</summary>
         bool tkHome = true;
         Camera backdropCamera;
-        int savedCullingMask = -1;
+        int savedCullingMask;
         bool worldHidden;
         Rect appliedViewport = new Rect(0f, 0f, 1f, 1f);
 
@@ -179,8 +179,9 @@ namespace BusTycoon.Game
                     savedCullingMask = cam.cullingMask;
                     cam.cullingMask = 0;
                 }
-                else if (savedCullingMask != -1)
+                else
                 {
+                    // Not: "her şey" maskesi -1'dir; ayrı bir "kayıtlı değil" değeri kullanılmaz
                     cam.cullingMask = savedCullingMask;
                 }
             }

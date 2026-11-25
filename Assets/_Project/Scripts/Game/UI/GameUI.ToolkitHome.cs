@@ -35,20 +35,25 @@ namespace BusTycoon.Game
             // ---- sol sütun
             VisualElement left = Ui.El("bt-home__left", tkHomePage);
             left.pickingMode = PickingMode.Ignore;
+            // Kasa kartı akan düzende: yazı ölçüleri ne olursa olsun içerik kartın içinde kalır
             VisualElement cash = Ui.El("bt-card bt-home-cash", left);
-            VisualElement head = Ui.El("bt-row", cash);
+            VisualElement cashTop = Ui.El("bt-home-cash__top", cash);
+            cashTop.pickingMode = PickingMode.Ignore;
+            VisualElement cashMain = Ui.El("bt-col bt-grow", cashTop);
+            cashMain.pickingMode = PickingMode.Ignore;
+            VisualElement head = Ui.El("bt-row", cashMain);
             head.pickingMode = PickingMode.Ignore;
             Ui.Text("bt-caps", "KASA", UiWeight.Bold, head);
             tkHomeBadge = Ui.El("bt-row bt-status-badge", head);
             tkHomeBadgeDot = Ui.El("bt-status-badge__dot", tkHomeBadge);
             tkHomeBadgeText = Ui.Text("bt-status-badge__text", "", UiWeight.Bold, tkHomeBadge);
-            tkHomeCash = Ui.Text("bt-home-cash__amount", "", UiWeight.Black, cash);
-            tkHomeWorth = Ui.Text("bt-home-cash__worth", "", UiWeight.Bold, cash);
+            tkHomeCash = Ui.Text("bt-home-cash__amount", "", UiWeight.Black, cashMain);
+            tkHomeWorth = Ui.Text("bt-home-cash__worth", "", UiWeight.Bold, cashMain);
             tkHomeChart = new UiSparkline();
             tkHomeChart.AddToClassList("bt-home-cash__chart");
-            cash.Add(tkHomeChart);
+            cashTop.Add(tkHomeChart);
             Ui.El("bt-home-cash__divider", cash).pickingMode = PickingMode.Ignore;
-            VisualElement stats = Ui.El("bt-row bt-home-cash__stats", cash);
+            VisualElement stats = Ui.El("bt-home-cash__stats", cash);
             stats.pickingMode = PickingMode.Ignore;
             string[] statNames = { "HATLAR", "FİLO", "SON 7 GÜN", "AYLIK GİDER" };
             for (int i = 0; i < statNames.Length; i++)
@@ -156,8 +161,8 @@ namespace BusTycoon.Game
             }
 
             // Sığan hat satırı sayısı (telefonda 2-3, masaüstünde daha çok)
-            float available = content.height * k - 160f - 40f;
-            int rows = Mathf.Clamp(Mathf.FloorToInt(available / 64f), 1, 6);
+            float available = content.height * k - 190f - 40f; // kasa kartı ~190, başlık ~40 birim
+            int rows = Mathf.Clamp(Mathf.FloorToInt(available / 66f), 1, 6);
             bool roomForHelp = content.height * k >= 400f;
             Ui.Show(tkHomeHelpTile, roomForHelp);
 

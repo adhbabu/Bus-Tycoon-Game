@@ -50,6 +50,7 @@ namespace BusTycoon.Game
         public static Label Text(string classes, string text, UiWeight weight = UiWeight.Regular, VisualElement parent = null)
         {
             var label = new Label(text);
+            label.AddToClassList("bt-text"); // varsayılan temanın yazı boşlukları sıfırlanır (App.uss)
             AddClasses(label, classes);
             Weight(label, weight);
             label.pickingMode = PickingMode.Ignore;
@@ -69,6 +70,7 @@ namespace BusTycoon.Game
                 text = text ?? string.Empty,
                 focusable = false
             };
+            if (string.IsNullOrEmpty(text)) button.AddToClassList("bt-box"); // içerik kutusu: yazılar sola dayalı
             AddClasses(button, classes);
             Weight(button, weight);
             parent?.Add(button);

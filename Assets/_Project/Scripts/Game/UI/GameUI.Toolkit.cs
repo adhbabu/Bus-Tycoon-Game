@@ -221,7 +221,7 @@ namespace BusTycoon.Game
                 Ui.Place(tkTabs, 0f, barTop * k, W * k, (SafeBottom + BottomBarHeight) * k);
                 SetPadding(tkTabs, content.x * k, 0f, (W - content.xMax) * k);
                 tkTabs.style.paddingBottom = SafeBottom * k;
-                Ui.Move(tkMapButton, W * 0.5f * k - MapButtonUnits * 0.5f, barTop * k - 18f);
+                Ui.Move(tkMapButton, W * 0.5f * k - MapButtonUnits * 0.5f, barTop * k - MapButtonLift);
             }
 
             UpdateToolkitTopBar();
@@ -235,6 +235,8 @@ namespace BusTycoon.Game
         }
 
         const float MapButtonUnits = 90f;
+        /// <summary>Harita düğmesi çubuğun ne kadar üstüne taşar (birim): altındaki "Harita" yazısı çubuğun içinde kalır.</summary>
+        const float MapButtonLift = 24f;
 
         static void SetPadding(VisualElement element, float left, float top, float right)
         {
