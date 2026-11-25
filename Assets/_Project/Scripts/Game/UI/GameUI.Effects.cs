@@ -120,6 +120,14 @@ namespace BusTycoon.Game
         /// <summary>Arayüz renginin açık zemindeki (sade harita) okunur tonu.</summary>
         static Color MapInk(Color color)
         {
+            if (UIStyles.DarkMap)
+            {
+                // Koyu haritada parlak tonlar
+                if (color.Equals(UIStyles.Green)) return new Color(0.24f, 0.86f, 0.52f);
+                if (color.Equals(UIStyles.Red)) return new Color(1f, 0.39f, 0.39f);
+                if (color.Equals(UIStyles.Gold) || color.Equals(UIStyles.Yellow) || color.Equals(UIStyles.Orange)) return new Color(0.96f, 0.77f, 0.32f);
+                return Color.Lerp(color, Color.white, 0.3f);
+            }
             if (color.Equals(UIStyles.Green)) return new Color(0.07f, 0.55f, 0.27f);
             if (color.Equals(UIStyles.Red)) return new Color(0.82f, 0.2f, 0.22f);
             if (color.Equals(UIStyles.Gold) || color.Equals(UIStyles.Yellow) || color.Equals(UIStyles.Orange)) return new Color(0.8f, 0.45f, 0f);

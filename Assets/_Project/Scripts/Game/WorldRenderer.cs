@@ -179,8 +179,22 @@ namespace BusTycoon.Game
         // Harita yüzeyi (BusTycoon/MapSurface): gün ışığı gölgelendiriciye genel değişkenle verilir
         static readonly int DaylightId = Shader.PropertyToID("_BT_Daylight");
         /// <summary>Düz harita dokusundaki deniz rengi (Tools/build_map.py FLAT_SEA); haritanın ötesi de bu renk.</summary>
-        static readonly Color FlatSea = new Color(150f / 255f, 202f / 255f, 222f / 255f);
-        Color backgroundColor = FlatSea;
+        static readonly Color LightSea = new Color(150f / 255f, 202f / 255f, 222f / 255f);
+        /// <summary>Koyu haritadaki deniz (MapSurface DarkTheme ile aynı lacivert).</summary>
+        static readonly Color DarkSea = new Color(0.055f, 0.135f, 0.19f);
+        static readonly int DarkMapId = Shader.PropertyToID("_BT_DarkMap");
+        /// <summary>Koyu harita açık mı (yeni arayüz açar). Deniz, yollar ve gece örtüsü buna göre.</summary>
+        public static bool DarkMap { get; private set; }
+        static Color FlatSea => DarkMap ? DarkSea : LightSea;
+        Color backgroundColor = LightSea;
+
+        /// <summary>Koyu haritayı aç/kapat (gölgelendiriciye genel değişkenle; yazı renkleri UIStyles'ta).</summary>
+        public void SetDarkMap(bool on)
+        {
+            DarkMap = on;
+            Shader.SetGlobalFloat(DarkMapId, on ? 1f : 0f);
+            backgroundColor = FlatSea;
+        }
 
         RouteSystem boundRoutes;
         FleetSystem boundFleet;
@@ -446,7 +460,7 @@ namespace BusTycoon.Game
         {
             if (nightOverlay == null) return;
             Color tint = Color.Lerp(DuskTint, NightTint, Mathf.Clamp01(night * 1.6f));
-            tint.a = Mathf.Max(night * 0.55f, dusk * 0.12f);
+            tint.a = Mathf.Max(night * 0.55f, dusk * 0.12f) * (DarkMap ? 0.45f : 1f); // koyu harita zaten koyu
             nightMaterial.color = tint;
             nightOverlay.enabled = tint.a > 0.005f;
             // Haritanın ötesi (kameranın arka planı) örtüyle aynı oranda kararır: gece sınır görünmez.
@@ -927,6 +941,7 @@ namespace BusTycoon.Game
                 if (roadWidthInShader) roadMaterial.SetFloat(WidthScaleId, roadZoom);
                 else if (Mathf.Abs(roadZoom - roadScale) > roadScale * 0.12f) RebuildRoadMesh(roadZoom);
                 Color tint = roadNightTint;
+                if (DarkMap) tint = new Color(tint.r * 0.42f, tint.g * 0.48f, tint.b * 0.52f, tint.a * 0.8f); // koyu zeminde sönük gri
                 tint.a *= 1f - Mathf.InverseLerp(45f, 100f, zoomDistance);
                 if (!tint.Equals(roadMaterial.color)) roadMaterial.color = tint;
                 bool roadsVisible = tint.a > 0.004f;

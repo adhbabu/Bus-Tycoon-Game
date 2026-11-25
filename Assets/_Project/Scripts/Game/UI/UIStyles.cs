@@ -53,6 +53,9 @@ namespace BusTycoon.Game
         /// <summary>Dokunmatik ekran için mi üretildi (kaydırıcı ve tutamacı parmakla tutulacak kadar büyük).</summary>
         public bool Touch { get; }
 
+        /// <summary>Koyu harita (yeni arayüz): harita yazıları açık renk, hale koyu.</summary>
+        public static bool DarkMap;
+
         public UIStyles(float unit, bool touch = false)
         {
             u = unit;
@@ -190,16 +193,17 @@ namespace BusTycoon.Game
             thumb.border = new RectOffset(Px(3), Px(3), Px(3), Px(3));
             thumb.normal.background = thumb.hover.background = thumb.active.background = Rounded(new Color(1f, 1f, 1f, 0.24f), 3);
 
-            // Şehir adları açık renkli düz haritada: koyu yazı, beyaz hale (gölge yerine)
-            var mapInk = new Color(0.13f, 0.15f, 0.19f);
+            // Şehir adları: açık renkli haritada koyu yazı + beyaz hale; koyu haritada açık yazı + koyu hale
+            var mapInk = DarkMap ? new Color(0.91f, 0.94f, 0.95f) : new Color(0.13f, 0.15f, 0.19f);
+            var mapHalo = DarkMap ? new Color(0.055f, 0.1f, 0.13f, 0.92f) : new Color(1f, 1f, 1f, 0.9f);
             MapLabel = MakeLabel(13, Weight.Regular, mapInk);
             MapLabel.alignment = TextAnchor.MiddleCenter;
             MapLabelBold = MakeLabel(15, Weight.Bold, mapInk);
             MapLabelBold.alignment = TextAnchor.MiddleCenter;
             MapLabelShadow = new GUIStyle(MapLabel);
-            MapLabelShadow.normal.textColor = new Color(1f, 1f, 1f, 0.9f);
+            MapLabelShadow.normal.textColor = mapHalo;
             MapLabelBoldShadow = new GUIStyle(MapLabelBold);
-            MapLabelBoldShadow.normal.textColor = new Color(1f, 1f, 1f, 0.9f);
+            MapLabelBoldShadow.normal.textColor = mapHalo;
             MapValue = MakeLabel(15, Weight.Bold, Color.white);
             MapValue.alignment = TextAnchor.MiddleCenter;
         }

@@ -50,6 +50,8 @@ namespace BusTycoon.Game
         {
             if (!UiHost.Requested || toolkit != null) return;
             toolkit = UiHost.Create(transform);
+            world.SetDarkMap(true); // yeni arayüz koyu temalı: harita da koyu (lacivert deniz, açık renk yazılar)
+            UIStyles.DarkMap = true;
             BuildToolkitHud();
             Debug.Log("[Bus Tycoon] Yeni arayüz (UI Toolkit) açık");
         }
