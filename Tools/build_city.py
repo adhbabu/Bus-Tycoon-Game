@@ -193,9 +193,13 @@ def render_map(city, layers, out_path):
             for poly in parts:
                 ds.append(" ".join(path_line(r) + "Z" for r in poly))
         if ds:
-            # Kalın, aynı renk kenar: döşeme sınırında komşu çokgenlerin arasındaki 1 piksellik boşluk açık çizgi olarak görünmesin
-            edge = 3.0 if lname == "water" else 2.0
-            svg.append(f'<path d="{" ".join(ds)}" fill="{fill}" fill-opacity="{op}" fill-rule="evenodd" stroke="{fill}" stroke-width="{edge}" stroke-linejoin="round"/>')
+            # Her çokgen ayrı yol: tek yolda "evenodd" kuralı, komşu döşemelerin örtüşen kenar şeridini delik sayıyor
+            # ve denizde ince bir ızgara çiziliyordu. Delikler (iç halkalar) yine kendi çokgeninde evenodd ile açılır.
+            # Aynı renkli ince kenar, döşeme sınırındaki kenar yumuşatma çizgisini kapatır.
+            edge = 1.5 if lname == "water" else 1.0
+            svg.append(f'<g fill="{fill}" fill-opacity="{op}" fill-rule="evenodd" stroke="{fill}" stroke-width="{edge}" stroke-linejoin="round">')
+            svg.extend(f'<path d="{d}"/>' for d in ds)
+            svg.append('</g>')
     scale = max(0.8, IMAGE / 4096)
     for cls, col, w in ROAD_STYLE:
         ds = [path_line(line) for t, parts, p in layers.get("transportation", []) if p.get("class") == cls and t.endswith("LineString") for line in parts]
