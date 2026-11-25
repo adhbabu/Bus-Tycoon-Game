@@ -69,6 +69,8 @@ STYLE_POLYGONS = [
 ROAD_STYLE = [("minor", "#2A3D43", 0.7), ("service", "#26393F", 0.45), ("tertiary", "#34494F", 1.2), ("secondary", "#3F545A", 1.6),
               ("primary", "#506268", 2.1), ("trunk", "#5C696C", 2.4), ("motorway", "#71643F", 2.7)]
 # Otoyol da ağda: boğaz köprüleri ve çevre yolları şehrin iki yakasını bağlar
+# OSM'deki yazım hataları (Türkçe büyük İ eksik vb.)
+NAME_FIXES = {"Inönü": "İnönü"}
 GRAPH_CLASSES = {"motorway": 0, "trunk": 0, "primary": 0, "secondary": 1, "tertiary": 2}
 
 POI_KINDS_UNUSED = [  # (eski otomatik seçim; ün sıralaması döşeme içi olduğu için elle seçime geçildi)
@@ -348,6 +350,7 @@ def build_stops(city, layers, nodes):
         if t != "Point" or p.get("class") not in order_of:
             continue
         name = p.get("name:tr") or p.get("name")
+        name = NAME_FIXES.get(name, name)
         if not name or len(name) > 26:
             continue
         x, z = city.meters(pt[0])

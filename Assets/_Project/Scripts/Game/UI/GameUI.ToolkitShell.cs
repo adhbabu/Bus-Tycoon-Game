@@ -106,6 +106,12 @@ namespace BusTycoon.Game
                 kicker = (tkSheetSubtitle.text ?? string.Empty).ToUpperInvariant();
                 return;
             }
+            if (CityMapShown && panel == Panel.None && cityView.Map != null)
+            {
+                title = cityView.City.DisplayName;
+                kicker = $"ŞEHİR HARİTASI · {cityView.Map.Stops.Count} DURAK · {cityView.Map.Landmarks.Count} MEKÂN";
+                return;
+            }
             title = panel == Panel.Planner ? "Yeni hat" : panel == Panel.Route && selectedRoute != null ? RouteName(selectedRoute) : "Harita";
             kicker = $"{session.World.Cities.Count} ŞEHİR · {session.Routes.Routes.Count} HAT";
         }

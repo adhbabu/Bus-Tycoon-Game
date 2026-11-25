@@ -39,6 +39,7 @@ namespace BusTycoon.Game
             panel = Panel.None;
             showMenuHelp = false;
             startCity = null;
+            ResetCityMap(); // menü ülke haritasının üstünde süzülür
             mapCamera.AutoDrift = true;
             // Yarışta saat durmaz (kurucunun saati herkesi bekletir); oyuncu menüden "Oyuna Dön" ile döner.
             if (session.IsRunning && session.Clock != null && !RaceLocked) session.Clock.SetSpeed(0);

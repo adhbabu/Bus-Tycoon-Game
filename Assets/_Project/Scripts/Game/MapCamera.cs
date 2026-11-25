@@ -14,16 +14,18 @@ namespace BusTycoon.Game
     {
         const float FarPitch = 78f, NearPitch = 58f;   // düz harita: uzakta neredeyse tepeden, yakında hafif eğik
         const float FarFov = 40f, NearFov = 35f;
-        const float MinDistance = 7f;
-        const float MaxDistance = 140f;     // Avrupa haritasının tamamı görünür
-        const float TiltDistance = 85f;     // eğim ve görüş açısı bu uzaklığa kadar değişir, ötesinde sabit
+        const float CountryMinDistance = 7f;
+        const float CountryMaxDistance = 140f;     // Avrupa haritasının tamamı görünür
+        const float CountryTiltDistance = 85f;     // eğim ve görüş açısı bu uzaklığa kadar değişir, ötesinde sabit
         const float UserSmooth = 0.11f;     // kullanıcı girdisi: çabuk tepki
         const float FocusSmooth = 0.42f;    // odaklanma (şehre/hatta): sinematik
         const float DriftSmooth = 1.6f;
         const float FlingDamping = 3.2f;    // süzülmenin sönümü (1/sn)
 
         Camera cam;
-        Rect bounds;
+        Rect bounds, countryBounds;
+        // Geçerli alanın sınırları: ülke haritası ya da şehir haritası (SetArea)
+        float MinDistance = CountryMinDistance, MaxDistance = CountryMaxDistance, TiltDistance = CountryTiltDistance;
         Vector3 target, targetGoal, targetVelocity;
         float distance = 60f, distanceGoal = 60f, distanceVelocity;
         float smoothTime = UserSmooth;
@@ -44,7 +46,7 @@ namespace BusTycoon.Game
         public void Init(Camera camera, Rect worldBoundsXZ)
         {
             cam = camera;
-            bounds = worldBoundsXZ;
+            bounds = countryBounds = worldBoundsXZ;
             target = targetGoal = new Vector3(bounds.center.x, 0f, bounds.center.y);
             Apply();
         }
@@ -160,6 +162,43 @@ namespace BusTycoon.Game
             targetGoal = Vector3.Lerp(targetGoal, new Vector3(point.x, 0f, point.z), 0.7f);
             Clamp();
         }
+
+        /// <summary>
+        /// Kameranın gezdiği alanı değiştirir (şehir haritası ayrı bir yerde, kendi ölçeğinde). Kamera alana anında
+        /// atlar: iki harita arasında süzülmez (arada boşluk var).
+        /// </summary>
+        public void SetArea(Rect worldBoundsXZ, float minDistance, float maxDistance, Vector3 focus, float startDistance)
+        {
+            bounds = worldBoundsXZ;
+            MinDistance = minDistance;
+            MaxDistance = Mathf.Max(minDistance + 1f, maxDistance);
+            TiltDistance = Mathf.Lerp(minDistance, MaxDistance, 0.6f);
+            fling = dragVelocity = targetVelocity = Vector3.zero;
+            distanceVelocity = 0f;
+            dragging = false;
+            AutoDrift = false;
+            smoothTime = UserSmooth;
+            target = targetGoal = new Vector3(focus.x, 0f, focus.z);
+            Clamp();
+            target = targetGoal;
+            distance = distanceGoal = Mathf.Clamp(startDistance, MinDistance, MaxDistance);
+            if (cam != null)
+            {
+                cam.farClipPlane = Mathf.Max(600f, MaxDistance * 2.5f); // şehir haritasının tamamı görünürken uzak kenar kesilmesin
+                Apply();
+            }
+        }
+
+        /// <summary>Ülke haritasına döner (Init'teki sınırlar ve uzaklıklar).</summary>
+        public void SetCountryArea(Vector3 focus, float startDistance)
+        {
+            SetArea(countryBounds, CountryMinDistance, CountryMaxDistance, focus, startDistance);
+            TiltDistance = CountryTiltDistance;
+            if (cam != null) Apply();
+        }
+
+        /// <summary>Şu an ülke haritasında mı (şehir haritasında değil).</summary>
+        public bool InCountryArea => bounds.Equals(countryBounds);
 
         public void FocusOn(Vector3 worldPoint, float? newDistance = null)
         {

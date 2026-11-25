@@ -116,6 +116,7 @@ namespace BusTycoon.Game
 
             Fmt.Symbol = session.Economy.CurrencySymbol;
             InitToolkit();
+            InitCityView();
             BindMultiplayer();
             EnterMainMenu();
             OpenInviteIfAny();
@@ -216,6 +217,7 @@ namespace BusTycoon.Game
             tkHome = true;
             if (Room == null) session.SecondsPerDay = DaySeconds; // yarışta gün süresini oda belirler
 
+            ResetCityMap();
             CityData hq = session.Headquarters;
             if (hq != null) mapCamera.FocusOn(world.GetCityPosition(hq), 34f);
             RefreshRouteIndicators(announce: false);
@@ -355,6 +357,7 @@ namespace BusTycoon.Game
             if (session == null) return;
             float dt = Time.unscaledDeltaTime;
             WebTap.Pump();
+            UpdateCityMap();
             UpdateToolkit();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
@@ -480,8 +483,15 @@ namespace BusTycoon.Game
 
             if (!InMenu && e.type == EventType.Repaint && !StationBusy)
             {
-                DrawCityLabels();
-                DrawFloatingLabels();
+                if (CityMapShown)
+                {
+                    if (MapShown) DrawUrbanLabels();
+                }
+                else
+                {
+                    DrawCityLabels();
+                    DrawFloatingLabels();
+                }
             }
 
             bool previousEnabled = GUI.enabled;
@@ -953,7 +963,7 @@ namespace BusTycoon.Game
             hoveredCity = null;
             hoverMouseGui = e.mousePosition;
             if (InMenu || modal != Modal.None || dragging || mobile || StationBusy) return; // dokunmatikte hover yok
-            if (IsOverUI(e.mousePosition)) return;
+            if (IsOverUI(e.mousePosition) || CityMapShown) return;
             world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), PickRadius, out hoveredCity);
         }
 
@@ -1044,6 +1054,7 @@ namespace BusTycoon.Game
 
         void OnMapClick(Vector2 guiPoint)
         {
+            if (OnCityMapClick(guiPoint)) return; // şehir haritasında duraklar seçilir
             Vector2 screen = GuiToScreen(guiPoint);
             if (world.TryPickCity(mapCamera.Camera, screen, PickRadius, out CityData city))
             {

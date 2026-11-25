@@ -2660,6 +2660,40 @@
     padding: 14px;
 }
 
+.bt-map-attribution {
+    position: absolute;
+    font-size: 10.5px;
+    color: rgba(241, 244, 245, 0.55);
+    padding: 2px 6px;
+    border-radius: 6px;
+    background-color: rgba(10, 21, 27, 0.55);
+}
+
+/* Şehir | Türkiye geçişi (sağ panelin başı) */
+.bt-mapside__switch {
+    margin: 0 0 12px 0;
+}
+
+.bt-mapside__switch .bt-segment__item {
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.bt-segment__icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    -unity-background-image-tint-color: #8DA1A8;
+}
+
+.bt-segment__item.is-active .bt-segment__icon {
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-segment__item:disabled {
+    opacity: 0.45;
+}
+
 .bt-mapside__list {
     margin-top: 8px;
     margin-bottom: 10px;

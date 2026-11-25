@@ -12,8 +12,9 @@ namespace BusTycoon.Game
     /// </summary>
     public sealed partial class GameUI
     {
-        VisualElement tkMapFrame, tkMapEdge, tkMapControls, tkMapSide, tkMapSideList, tkTooltip;
-        Label tkMapLocText, tkMapSideCaption, tkMapSideCta;
+        VisualElement tkMapFrame, tkMapEdge, tkMapControls, tkMapSide, tkMapSideList, tkTooltip, tkMapViewSwitch;
+        Button tkMapViewCity, tkMapViewCountry;
+        Label tkMapLocText, tkMapSideCaption, tkMapSideCta, tkMapViewCityText, tkMapAttribution;
         int tkTooltipSignature = int.MinValue, tkMapSideSignature = int.MinValue;
         readonly List<RouteState> tkMapSideRoutes = new List<RouteState>();
 
@@ -40,9 +41,21 @@ namespace BusTycoon.Game
             Ui.Symbol("remove", "bt-mapzoom__icon", zoomOut);
             Button home = Ui.Button("bt-mapzoom__button", string.Empty, FocusHeadquarters, zoom);
             Ui.Symbol("my_location", "bt-mapzoom__icon", home);
+            // Şehir haritasının kaynağı (ODbL gereği haritanın üstünde görünür)
+            tkMapAttribution = Ui.Text("bt-map-attribution", "© OpenStreetMap katkıcıları · OpenMapTiles", UiWeight.Regular, tkHud);
 
-            // Sağ panel (hat ya da planlayıcı açık değilken): hatlarım, işaretler, yeni hat
+            // Sağ panel (hat ya da planlayıcı açık değilken): şehir/Türkiye geçişi, hatlarım, işaretler, yeni hat
             tkMapSide = Ui.El("bt-card bt-mapside", tkHud);
+            tkMapViewSwitch = Ui.El("bt-row bt-segment bt-mapside__switch", tkMapSide);
+            tkMapViewCity = Ui.Button("bt-row bt-segment__item bt-grow", string.Empty, () => SelectCityMap(true), tkMapViewSwitch);
+            tkMapViewCity.name = "map-city";
+            Ui.Symbol("location_city", "bt-segment__icon", tkMapViewCity);
+            tkMapViewCityText = Ui.Text("bt-segment__label", "Şehir", UiWeight.Bold, tkMapViewCity);
+            Button country = Ui.Button("bt-row bt-segment__item bt-grow", string.Empty, () => SelectCityMap(false), tkMapViewSwitch);
+            country.name = "map-country";
+            tkMapViewCountry = country;
+            Ui.Symbol("public", "bt-segment__icon", country);
+            Ui.Text("bt-segment__label", "Türkiye", UiWeight.Bold, country);
             tkMapSideCaption = Ui.Text("bt-caps is-green", "", UiWeight.Bold, tkMapSide);
             tkMapSideList = Ui.El("bt-col bt-mapside__list", tkMapSide);
             Ui.Text("bt-caps is-green bt-mapside__caption", "İŞARETLER", UiWeight.Bold, tkMapSide);
@@ -66,6 +79,7 @@ namespace BusTycoon.Game
 
         void FocusHeadquarters()
         {
+            if (FocusCityCenter()) return; // şehir haritasında: şehrin ortası
             CityData hq = session.IsRunning ? session.Headquarters : null;
             if (hq != null) mapCamera.FocusOn(world.GetCityPosition(hq), 34f);
         }
@@ -73,6 +87,7 @@ namespace BusTycoon.Game
         void UpdateToolkitMapWidgets(float k)
         {
             bool onMap = MapShown && !StationUi;
+            if (!onMap) Ui.Show(tkMapAttribution, false);
             Ui.Show(tkMapFrame, onMap);
             Ui.Show(tkMapEdge, onMap);
             Ui.Show(tkMapControls, onMap);
@@ -86,11 +101,25 @@ namespace BusTycoon.Game
             Ui.Place(tkMapEdge, card.x * k, card.y * k, card.width * k, card.height * k);
             float pad = 12f;
             Ui.Place(tkMapControls, card.x * k + pad, card.y * k + pad, card.width * k - 2f * pad, card.height * k - 2f * pad);
+            bool attribution = CityMapShown;
+            Ui.Show(tkMapAttribution, attribution);
+            if (attribution) Ui.Move(tkMapAttribution, card.x * k + 16f, card.yMax * k - 26f);
             CityData hq = session.Headquarters;
             Ui.SetText(tkMapLocText, hq != null ? hq.DisplayName : "Merkez");
 
             if (side)
             {
+                // Şehir/Türkiye geçişi: merkez şehrin sokak haritası varsa
+                bool hasCity = HasCityMap;
+                Ui.Show(tkMapViewSwitch, hasCity);
+                if (hasCity)
+                {
+                    bool city = cityMapWanted && panel != Panel.Planner;
+                    Ui.Toggle(tkMapViewCity, "is-active", city);
+                    Ui.Toggle(tkMapViewCountry, "is-active", !city);
+                    Ui.SetText(tkMapViewCityText, session.Headquarters.DisplayName);
+                    tkMapViewCity.SetEnabled(cityView.Ready || cityView.Loading);
+                }
                 Rect rect = SideRect;
                 Ui.Place(tkMapSide, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
                 tkCovered.Add(rect);
