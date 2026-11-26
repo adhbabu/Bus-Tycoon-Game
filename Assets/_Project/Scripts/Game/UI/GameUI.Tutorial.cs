@@ -26,7 +26,7 @@ namespace BusTycoon.Game
             ("Şehrini seçtin", "Merkezin hazır. Şimdi ilk aracını alalım.", "Devam"),
             ("Galeriden dolmuş al", "Galeri sekmesinden bir dolmuş (minibüs) satın al. Sermayen ilk araca ve hat ruhsatına yeter.", "Galeriye git"),
             ("İki durak seç, hat kur", "Haritada bir durağa dokun, sonra ikinci durağa. Hat sokaklardan en kısa yoldan gider; teklif uygunsa \"HATTI AÇ\".", "Haritaya git"),
-            ("Kurulumu bekle ya da hızlandır", "Hat 3 günde kurulur, dolmuş da bayiden gelir (1 oyun günü = 60 sn). Beklemek istemezsen hat panelinde reklam izleyip hemen açabilirsin. İlk sefer gününün sonunda kazancın kasaya girer.", "Hattıma git"),
+            ("Kurulumu bekle ya da hızlandır", "Hat 2 günde kurulur, dolmuş da bayiden gelir (1 oyun günü = 60 sn). Beklemek istemezsen hat panelinde reklam izleyip hemen açabilirsin. Hat çalışmaya başlayınca kazancın her saniye kasaya akar.", "Hattıma git"),
             ("Bilet fiyatı ve ilk kazanç", "Hattına dokun ve bilet fiyatına bak: önerilen fiyat en çok kârı getirir. Kazancın ana ekranda.", "Hatlarım"),
         };
 
@@ -143,7 +143,7 @@ namespace BusTycoon.Game
                 tkTutorialTitle.text = content0.Title;
                 // Reklam yoksa (web, reklamsız cihaz) "reklamla hızlandır" cümlesi gösterilmez: düğmesi yok
                 tkTutorialText.text = step == 3 && !AdService.Enabled
-                    ? "Hat 3 günde kurulur, dolmuş da bayiden gelir (1 oyun günü = 60 sn). İlk sefer gününün sonunda kazancın kasaya girer."
+                    ? "Hat 2 günde kurulur, dolmuş da bayiden gelir (1 oyun günü = 60 sn). Hat çalışmaya başlayınca kazancın her saniye kasaya akar."
                     : content0.Text;
                 tkTutorialAction.text = content0.Action;
                 for (int i = 0; i < TutorialSteps; i++)

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace BusTycoon.Game
 {
-    // Harita üzerindeki kısa süreli efektler: gün sonunda hatların üstünden yükselip kaybolan kazanç yazıları.
+    // Harita üzerindeki kısa süreli efektler: birkaç saniyede bir hatların üstünden yükselip kaybolan kazanç yazıları.
     // Yalnız ekranda görünen hatlar, en çok dört tanesi; metin yaratılırken bir kez biçimlenir (her kare değil).
     public sealed partial class GameUI
     {
@@ -26,7 +26,7 @@ namespace BusTycoon.Game
         int incomeLabelsSetting = -1;
         float lastIncomeSpawn = -10f;
 
-        /// <summary>Gün sonu kazanç yazıları (ayar kalıcıdır; varsayılan açık).</summary>
+        /// <summary>Kazanç yazıları (ayar kalıcıdır; varsayılan açık).</summary>
         bool IncomeLabelsEnabled
         {
             get
@@ -42,28 +42,46 @@ namespace BusTycoon.Game
             }
         }
 
-        void SpawnIncomeLabels()
+        /// <summary>Kazanç yazıları bu aralıkla çıkar: hattın o süredeki kazancı (para saniyede bir kasaya akar).</summary>
+        const float IncomeLabelInterval = 3f;
+        readonly Dictionary<string, float> incomeLabelBase = new Dictionary<string, float>();
+        readonly Dictionary<string, float> incomeLabelGain = new Dictionary<string, float>();
+
+        /// <summary>Her karede çağrılır; birkaç saniyede bir ekranda görünen hatların üstünden o süredeki kazanç yükselir.</summary>
+        void UpdateIncomeLabels()
         {
-            if (!IncomeLabelsEnabled || mode != Mode.Playing || StationUi || modal != Modal.None) return;
+            if (session.Routes == null || session.Clock == null) return; // menüde şirket yok
             float now = Time.unscaledTime;
-            if (now - lastIncomeSpawn < 1.1f) return; // 4x hızda da üst üste binmesin
+            if (now - lastIncomeSpawn < IncomeLabelInterval) return;
             lastIncomeSpawn = now;
 
+            // Her hattın son yazıdan beri kazandığı (gün değişince bugünün toplamı sıfırdan başlar)
+            incomeLabelGain.Clear();
+            foreach (var route in session.Routes.Routes)
+            {
+                RouteDayAccrual today = route.Today;
+                float net = today.revenue - today.cost;
+                if (!incomeLabelBase.TryGetValue(route.routeId, out float before) || net < before - 0.5f) before = 0f;
+                incomeLabelBase[route.routeId] = net;
+                if (today.operated > 0f) incomeLabelGain[route.routeId] = net - before;
+            }
+
+            if (!IncomeLabelsEnabled || mode != Mode.Playing || StationUi || modal != Modal.None || session.Clock.IsPaused) return;
             Camera cam = mapCamera.Camera;
             incomeRoutes.Clear();
             foreach (var route in session.Routes.Routes)
             {
-                if (!route.HasHistory || Math.Abs(route.LastReport.Profit) < 1.0) continue;
+                if (!incomeLabelGain.TryGetValue(route.routeId, out float gain) || Math.Abs(gain) < 1f) continue;
                 if (!TryRouteMidpoint(route, out Vector3 midpoint)) continue;
                 Vector3 sp = cam.WorldToScreenPoint(midpoint);
                 if (sp.z <= 0f || sp.x < 0f || sp.x > W || sp.y < 0f || sp.y > H) continue;
                 if (IsOverUI(new Vector2(sp.x, H - sp.y))) continue;
                 incomeRoutes.Add(route);
             }
-            incomeRoutes.Sort((a, b) => Math.Abs(b.LastReport.Profit).CompareTo(Math.Abs(a.LastReport.Profit)));
+            incomeRoutes.Sort((a, b) => Math.Abs(incomeLabelGain[b.routeId]).CompareTo(Math.Abs(incomeLabelGain[a.routeId])));
             for (int i = 0; i < incomeRoutes.Count && i < MaxIncomeLabels; i++)
             {
-                double profit = incomeRoutes[i].LastReport.Profit;
+                double profit = incomeLabelGain[incomeRoutes[i].routeId];
                 TryRouteMidpoint(incomeRoutes[i], out Vector3 labelPoint);
                 floatingLabels.Add(new FloatingLabel
                 {

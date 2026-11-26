@@ -79,14 +79,23 @@ namespace BusTycoon.Economy
         static readonly int CategoryCount = Enum.GetValues(typeof(LedgerCategory)).Length;
 
         readonly CompanyState state;
-        readonly double[] todayByCategory = new double[CategoryCount];
-        double todayIncome;
-        double todayExpenses;
+        // Bugünün toplamları kayıtta durur (gelir gün içinde işlenir; gün ortasında kaydedilen oyun kaybetmesin)
+        readonly double[] todayByCategory;
 
         public event Action<double> CashChanged;
         public event Action<TransactionRecord> TransactionRecorded;
 
-        public FinanceSystem(CompanyState state) => this.state = state;
+        public FinanceSystem(CompanyState state)
+        {
+            this.state = state;
+            if (state.todayByCategory == null || state.todayByCategory.Length != CategoryCount)
+            {
+                var resized = new double[CategoryCount];
+                if (state.todayByCategory != null) Array.Copy(state.todayByCategory, resized, Math.Min(resized.Length, state.todayByCategory.Length));
+                state.todayByCategory = resized;
+            }
+            todayByCategory = state.todayByCategory;
+        }
 
         public double Cash => state.cash;
         public int DaysInDebt => state.daysInDebt;
@@ -118,8 +127,8 @@ namespace BusTycoon.Economy
         {
             state.cash += signedAmount;
             todayByCategory[(int)category] += signedAmount;
-            if (signedAmount >= 0) todayIncome += signedAmount;
-            else todayExpenses -= signedAmount;
+            if (signedAmount >= 0) state.todayIncome += signedAmount;
+            else state.todayExpenses -= signedAmount;
 
             if (logTransaction)
             {
@@ -138,8 +147,8 @@ namespace BusTycoon.Economy
             var summary = new DailyFinanceSummary
             {
                 day = day,
-                income = todayIncome,
-                expenses = todayExpenses,
+                income = state.todayIncome,
+                expenses = state.todayExpenses,
                 cashAtClose = state.cash,
                 byCategory = (double[])todayByCategory.Clone()
             };
@@ -150,8 +159,8 @@ namespace BusTycoon.Economy
             state.daysInDebt = state.cash < 0 ? state.daysInDebt + 1 : 0;
 
             Array.Clear(todayByCategory, 0, todayByCategory.Length);
-            todayIncome = 0;
-            todayExpenses = 0;
+            state.todayIncome = 0;
+            state.todayExpenses = 0;
             return summary;
         }
 

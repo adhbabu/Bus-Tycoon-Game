@@ -236,6 +236,7 @@ namespace BusTycoon.Routes
                 urbanKindFame = UrbanEvents.KindFame(plan.Landmarks),
                 setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
             };
+            route.Today.booked = Mathf.Clamp01(DayProgress); // gün ortasında açılan hat bu andan itibaren kazanır
             state.routes.Add(route);
             RouteOpened?.Invoke(route);
             return OpResult.Ok($"{plan.A.Name} – {plan.B.Name} dolmuş hattı açıldı.");
@@ -262,6 +263,7 @@ namespace BusTycoon.Routes
                 openedDay = state.currentDay,
                 setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
             };
+            route.Today.booked = Mathf.Clamp01(DayProgress);
             state.routes.Add(route);
             RouteOpened?.Invoke(route);
             return OpResult.Ok($"{a.DisplayName} – {b.DisplayName} hattı açıldı.");
@@ -374,17 +376,93 @@ namespace BusTycoon.Routes
 
         // ------------------------------------------------------------------ günlük simülasyon
 
+        /// <summary>Günün geçen kesri (0..1). GameSession her karede günceller; gün ortasında açılan hat bu andan kazanır.</summary>
+        public float DayProgress { get; set; }
+
+        // Bir tahakkuk adımında bütün hatların kategori toplamları: kasaya kategori başına tek kayıt
+        static readonly LedgerCategory[] AccrualCategories =
+        {
+            LedgerCategory.TicketRevenue, LedgerCategory.Fuel, LedgerCategory.DriverWages, LedgerCategory.Maintenance,
+            LedgerCategory.Tolls, LedgerCategory.TerminalFees, LedgerCategory.PassengerService, LedgerCategory.Insurance
+        };
+        readonly double[] pending = new double[8];
+
+        /// <summary>
+        /// Gelir ve giderleri günün <paramref name="dayProgress"/> anına kadar kasaya işler (saniyede bir çağrılır):
+        /// hat açılır açılmaz para akmaya başlar, gün sonunu beklemez. Gün sonu (<see cref="SimulateDay"/>) kalanı işler.
+        /// </summary>
+        public void Accrue(float dayProgress)
+        {
+            dayProgress = Mathf.Clamp01(dayProgress);
+            foreach (var route in state.routes) AccrueRoute(route, dayProgress);
+            FlushPending();
+        }
+
+        void AccrueRoute(RouteState route, float until)
+        {
+            RouteDayAccrual today = route.Today;
+            float delta = until - today.booked;
+            if (delta <= 0f) return;
+            today.booked = until;
+            if (route.IsSettingUp) return; // kurulumdaki hat sefer yapmaz (sigortası gün sonunda)
+            fleet.GetBusesOnRoute(route.routeId, busBuffer);
+            if (busBuffer.Count == 0) return;
+
+            RouteEconomics.Inputs inputs = BuildInputs(route, route.ticketPrice, today.noise > 0f ? today.noise : 1f, 1f, false);
+            inputs.EventFactor = EventFactor(route, state.currentDay);
+            RouteForecast f = RouteEconomics.Evaluate(inputs, busBuffer, economy);
+
+            // Yıpranma: her çalışan otobüs, kullanım oranı kadar sefer yapar
+            foreach (var bus in busBuffer)
+            {
+                if (!bus.IsAvailableToday || bus.Model == null) continue;
+                float trips = RouteEconomics.MaxTripsPerDay(bus.Model, route.distanceKm, economy, route.IsUrban) * f.Utilization * delta;
+                fleet.ApplyWear(bus, trips * route.distanceKm);
+            }
+
+            pending[0] += f.Revenue * delta;
+            pending[1] += f.FuelCost * delta;
+            pending[2] += f.DriverCost * delta;
+            pending[3] += f.MaintenanceCost * delta;
+            pending[4] += f.TollCost * delta;
+            pending[5] += f.TerminalCost * delta;
+            pending[6] += f.ServiceCost * delta;
+            pending[7] += f.InsuranceCost * delta;
+
+            today.operated += delta;
+            today.revenue += f.Revenue * delta;
+            today.cost += f.TotalCost * delta;
+            today.passengers += f.Passengers * delta;
+            today.demand += f.Demand * delta;
+            today.unmet += f.UnmetDemand * delta;
+            today.trips += f.TripsPerDay * delta;
+            today.load += f.LoadFactor * delta;
+            today.satisfaction += f.Satisfaction * delta;
+            today.activeBuses = f.AvailableBuses;
+            today.eventFactor = inputs.EventFactor;
+        }
+
+        void FlushPending()
+        {
+            finance.Earn(pending[0], LedgerCategory.TicketRevenue);
+            for (int i = 1; i < pending.Length; i++) finance.Charge(pending[i], AccrualCategories[i]);
+            Array.Clear(pending, 0, pending.Length);
+        }
+
         public void SimulateDay(System.Random rng, List<RouteDayReport> reportsOut)
         {
             reportsOut.Clear();
             foreach (var route in state.routes)
                 reportsOut.Add(SimulateRoute(route, rng));
+            FlushPending();
         }
 
+        /// <summary>Gün sonu: günün kalanı işlenir (saat ilerlemeden bitirilen günde bütün gün), toplamlar rapor olur.</summary>
         RouteDayReport SimulateRoute(RouteState route, System.Random rng)
         {
             fleet.GetBusesOnRoute(route.routeId, busBuffer);
             var report = new RouteDayReport { day = state.currentDay, routeId = route.routeId, ticketPrice = route.ticketPrice };
+            RouteDayAccrual today = route.Today;
 
             // Kurulumdaki hat sefer yapmaz; atanmış araçlar yalnız sigorta öder. Geçmişe yazılmaz (grafik kurulum sonrası başlar).
             if (route.IsSettingUp)
@@ -392,50 +470,31 @@ namespace BusTycoon.Routes
                 foreach (var bus in busBuffer)
                     if (bus.Model != null) finance.Charge(bus.Model.InsurancePerDay * IncomeScale, LedgerCategory.Insurance, bus.busId);
                 route.setupDaysLeft--;
+                today.Reset(today.noise);
                 if (!route.IsSettingUp) SetupFinished?.Invoke(route);
                 return report;
             }
 
-            if (busBuffer.Count == 0)
+            AccrueRoute(route, 1f);
+            if (today.operated > 0f)
             {
-                route.AddReport(report);
-                return report;
+                float operated = today.operated;
+                report.demand = today.demand;
+                report.passengers = today.passengers;
+                report.unmetDemand = today.unmet;
+                report.revenue = today.revenue;
+                report.cost = today.cost;
+                report.loadFactor = today.load / operated;
+                report.tripsPerDay = today.trips / operated;
+                report.satisfaction = today.satisfaction / operated;
+                report.activeBuses = today.activeBuses;
+                report.eventFactor = today.eventFactor;
             }
+            if (today.operated > 0f || busBuffer.Count == 0) route.AddReport(report);
 
-            float noise = 1f + (float)(rng.NextDouble() * 2.0 - 1.0) * economy.DailyDemandNoise;
-            RouteEconomics.Inputs dayInputs = BuildInputs(route, route.ticketPrice, noise, 1f, false);
-            dayInputs.EventFactor = EventFactor(route, state.currentDay);
-            RouteForecast f = RouteEconomics.Evaluate(dayInputs, busBuffer, economy);
-            report.eventFactor = dayInputs.EventFactor;
-
-            // Yıpranma: her çalışan otobüs, kullanım oranı kadar sefer yapar.
-            foreach (var bus in busBuffer)
-            {
-                if (!bus.IsAvailableToday || bus.Model == null) continue;
-                float trips = RouteEconomics.MaxTripsPerDay(bus.Model, route.distanceKm, economy, route.IsUrban) * f.Utilization;
-                fleet.ApplyWear(bus, trips * route.distanceKm);
-            }
-
-            string id = route.routeId;
-            finance.Earn(f.Revenue, LedgerCategory.TicketRevenue, id);
-            finance.Charge(f.FuelCost, LedgerCategory.Fuel, id);
-            finance.Charge(f.DriverCost, LedgerCategory.DriverWages, id);
-            finance.Charge(f.MaintenanceCost, LedgerCategory.Maintenance, id);
-            finance.Charge(f.TollCost, LedgerCategory.Tolls, id);
-            finance.Charge(f.TerminalCost, LedgerCategory.TerminalFees, id);
-            finance.Charge(f.ServiceCost, LedgerCategory.PassengerService, id);
-            finance.Charge(f.InsuranceCost, LedgerCategory.Insurance, id);
-
-            report.demand = f.Demand;
-            report.passengers = f.Passengers;
-            report.loadFactor = f.LoadFactor;
-            report.unmetDemand = f.UnmetDemand;
-            report.tripsPerDay = f.TripsPerDay;
-            report.revenue = f.Revenue;
-            report.cost = f.TotalCost;
-            report.satisfaction = f.Satisfaction;
-            report.activeBuses = f.AvailableBuses;
-            route.AddReport(report);
+            // Yarının talep oynaklığı şimdiden çekilir: gün boyunca işlenen tutarlar tutarlı kalsın
+            float noise = busBuffer.Count > 0 ? 1f + (float)(rng.NextDouble() * 2.0 - 1.0) * economy.DailyDemandNoise : 1f;
+            today.Reset(noise);
             return report;
         }
 

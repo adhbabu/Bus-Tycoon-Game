@@ -127,7 +127,7 @@ namespace BusTycoon.Data
 
         [Header("Bekleme süreleri (şehir içi başlangıçlı oyunlar; ödüllü reklamla hemen biter)")]
         [Tooltip("Yeni hattın kurulumu (oyun günü): bu sürede sefer yapılmaz.")]
-        [SerializeField, Min(0)] int routeSetupDays = 3;
+        [SerializeField, Min(0)] int routeSetupDays = 2;
         [Tooltip("Araç teslim süresi (gün): dolmuş, midibüs, şehir otobüsü, şehirlerarası otobüs.")]
         [SerializeField] int[] deliveryDays = { 1, 2, 2, 3 };
         [SerializeField, Min(0f)] float urbanLicensePerKm = 40f;

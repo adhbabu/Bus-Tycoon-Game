@@ -29,7 +29,7 @@ namespace BusTycoon.Save
         /// </summary>
         public bool vehicleClasses;
         /// <summary>
-        /// Bekleme süreleri (şehir içi başlangıçlı oyunlar): yeni hat 3 günde kurulur, araçlar teslim süresiyle gelir;
+        /// Bekleme süreleri (şehir içi başlangıçlı oyunlar): yeni hat 2 günde kurulur, araçlar teslim süresiyle gelir;
         /// ödüllü reklamla hemen biter. Eski kayıtlarda kapalı (hat ve araç hemen hazır).
         /// </summary>
         public bool waitTimes;
@@ -46,10 +46,16 @@ namespace BusTycoon.Save
         public bool tutorialSawPrice;
         public string startCityId;
         public int currentDay;
+        /// <summary>Kaydedildiği anda günün geçen kesri (0..1): gün ortasında açılan kayıt aynı yerden sürer.</summary>
+        public float dayProgress;
 
         // Finans
         public double cash;
         public int daysInDebt;
+        /// <summary>İçinde bulunulan günün o ana kadarki gelir/gider toplamları (gelir saniyede bir işlenir; gün sonunda
+        /// geçmişe yazılıp sıfırlanır). LedgerCategory sırasıyla.</summary>
+        public double todayIncome, todayExpenses;
+        public double[] todayByCategory;
         public List<DailyFinanceSummary> financeHistory = new List<DailyFinanceSummary>();
         public List<TransactionRecord> recentTransactions = new List<TransactionRecord>();
 

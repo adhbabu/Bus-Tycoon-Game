@@ -26,6 +26,32 @@ namespace BusTycoon.Routes
     }
 
     /// <summary>
+    /// Hattın içinde bulunulan günün kasaya işlenmiş kısmı. Gelir ve giderler gün sonunu beklemeden saniyede bir
+    /// işlenir (<c>RouteSystem.Accrue</c>); gün sonunda kalan kısım işlenir, toplamlar günün raporu olur.
+    /// Kayda yazılır: gün ortasında kaydedilip açılan oyunda aynı tutar iki kez işlenmez.
+    /// </summary>
+    [Serializable]
+    public sealed class RouteDayAccrual
+    {
+        /// <summary>Günün işlenmiş kesri (0..1). Gün ortasında açılan hatta açılış anından başlar.</summary>
+        public float booked;
+        /// <summary>Seferlerin yapıldığı kesir (araçlı ve kurulumu bitmiş kısım).</summary>
+        public float operated;
+        /// <summary>Günün talep oynaklığı çarpanı (0: çekilmedi, 1 sayılır).</summary>
+        public float noise;
+        public float revenue, cost, passengers, demand, unmet, trips, load, satisfaction, eventFactor;
+        public int activeBuses;
+
+        public void Reset(float nextNoise)
+        {
+            booked = operated = 0f;
+            revenue = cost = passengers = demand = unmet = trips = load = satisfaction = eventFactor = 0f;
+            activeBuses = 0;
+            noise = nextNoise;
+        }
+    }
+
+    /// <summary>
     /// Oyuncunun açtığı A ↔ B hattının runtime durumu. Otobüs ataması otobüs tarafında
     /// (<c>BusInstance.assignedRouteId</c>) tutulur; tek doğruluk kaynağı odur.
     /// </summary>
@@ -64,6 +90,10 @@ namespace BusTycoon.Routes
         /// <summary>Kurulumun bitmesine kalan gün (0: hat çalışıyor). Kurulumda sefer yapılmaz.</summary>
         public int setupDaysLeft;
         public bool IsSettingUp => setupDaysLeft > 0;
+
+        /// <summary>Bugünün kasaya işlenmiş kısmı (bkz. <see cref="RouteDayAccrual"/>).</summary>
+        public RouteDayAccrual today = new RouteDayAccrual();
+        public RouteDayAccrual Today => today ??= new RouteDayAccrual();
 
         public double lifetimePassengers;
         public double lifetimeProfit;
