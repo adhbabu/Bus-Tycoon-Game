@@ -72,7 +72,26 @@ namespace BusTycoon.Game
                     max = new Vector2(Mathf.Max(max.x, p.x), Mathf.Max(max.y, p.y));
                 }
             Vector2 span = max - min;
-            mapCamera.FocusOn(cityView.ToWorld((min + max) * 0.5f), ShowcaseFitDistance(Mathf.Max(span.x, span.y) * 1.35f));
+            float distance = ShowcaseFitDistance(Mathf.Max(span.x, span.y) * 1.35f);
+            Vector3 focus = cityView.ToWorld((min + max) * 0.5f);
+            ShowcaseKeepInsideMap(ref focus, ref distance);
+            mapCamera.FocusOn(focus, distance);
+        }
+
+        /// <summary>Kart haritanın dışını göstermesin (dik kartta, ör. iPad, şehir haritasının üstü ve altı boş kalıyordu):
+        /// görünen alan haritadan büyükse yakınlaşır, odak görünen alan haritanın içinde kalacak yere kayar.</summary>
+        void ShowcaseKeepInsideMap(ref Vector3 focus, ref float distance)
+        {
+            Rect card = MapCardRect;
+            float aspect = card.width / Mathf.Max(1f, card.height);
+            Rect bounds = cityView.WorldBounds;
+            // Görünen yükseklik ≈ 0,73 × uzaklık (CityView.FitDistance); eğik kamera için biraz pay
+            const float View = 0.73f * 1.08f;
+            float cover = Mathf.Min(bounds.height / View, bounds.width / (View * aspect));
+            distance = Mathf.Min(distance, cover);
+            float halfHeight = View * distance * 0.5f, halfWidth = halfHeight * aspect;
+            focus.x = Mathf.Clamp(focus.x, bounds.xMin + halfWidth, Mathf.Max(bounds.xMin + halfWidth, bounds.xMax - halfWidth));
+            focus.z = Mathf.Clamp(focus.z, bounds.yMin + halfHeight, Mathf.Max(bounds.yMin + halfHeight, bounds.yMax - halfHeight));
         }
 
         /// <summary>Dolmuş hattı planlayıcısı: iki durak seçili, teklif kartı açık.</summary>
@@ -83,15 +102,20 @@ namespace BusTycoon.Game
             UrbanStopClicked(a);
             UrbanStopClicked(b);
             float span = (a.Position - b.Position).magnitude;
-            mapCamera.FocusOn(cityView.ToWorld((a.Position + b.Position) * 0.5f), ShowcaseFitDistance(span * 1.8f));
+            float distance = ShowcaseFitDistance(span * 1.8f);
+            Vector3 focus = cityView.ToWorld((a.Position + b.Position) * 0.5f);
+            ShowcaseKeepInsideMap(ref focus, ref distance);
+            mapCamera.FocusOn(focus, distance);
         }
 
         /// <summary>Yakın plan: ünlü mekânların 3B maketleri ve hatlarında giden araçlar (maketler tam görünür uzaklıkta).</summary>
         internal void ShowcaseCityCloseUp(Vector2 meters, float spanMeters)
         {
             ShowcaseCityMap();
-            float distance = Mathf.Clamp(ShowcaseFitDistance(spanMeters * 1.5f + 600f), CityView.MinCameraDistance * 3f, CityView.MaquetteNear * 0.9f);
-            mapCamera.FocusOn(cityView.ToWorld(meters), distance);
+            float distance = Mathf.Clamp(ShowcaseFitDistance(spanMeters * 1.1f + 300f), CityView.MinCameraDistance * 3f, CityView.MaquetteNear * 0.9f);
+            Vector3 focus = cityView.ToWorld(meters);
+            ShowcaseKeepInsideMap(ref focus, ref distance);
+            mapCamera.FocusOn(focus, distance);
         }
 
         internal void ShowcaseHome()
