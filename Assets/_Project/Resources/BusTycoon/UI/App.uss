@@ -3158,10 +3158,16 @@
     background-color: #F5C451;
 }
 
+.bt-tutorial__head {
+    flex-shrink: 0;
+}
+
 .bt-tutorial__title {
     font-size: 16px;
     color: #F1F4F5;
     margin-top: 6px;
+    flex-shrink: 0;
+    white-space: normal;
 }
 
 .bt-tutorial__text {

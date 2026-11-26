@@ -34,7 +34,7 @@ namespace BusTycoon.Game
         {
             tkTutorial = Ui.El("bt-card bt-tutorial", tkHud);
             tkTutorial.name = "tutorial";
-            VisualElement head = Ui.El("bt-row", tkTutorial);
+            VisualElement head = Ui.El("bt-row bt-tutorial__head", tkTutorial);
             head.pickingMode = PickingMode.Ignore;
             tkTutorialKicker = Ui.Text("bt-caps is-gold-text", "", UiWeight.Black, head);
             Ui.El("bt-grow", head).pickingMode = PickingMode.Ignore;
@@ -141,7 +141,10 @@ namespace BusTycoon.Game
                 var content0 = TutorialContent[Mathf.Clamp(step, 0, TutorialContent.Length - 1)];
                 tkTutorialKicker.text = $"ÖĞRETİCİ · {step + 1}/{TutorialSteps}";
                 tkTutorialTitle.text = content0.Title;
-                tkTutorialText.text = content0.Text;
+                // Reklam yoksa (web, reklamsız cihaz) "reklamla hızlandır" cümlesi gösterilmez: düğmesi yok
+                tkTutorialText.text = step == 3 && !AdService.Enabled
+                    ? "Hat 3 günde kurulur, dolmuş da bayiden gelir (1 oyun günü = 60 sn). İlk sefer gününün sonunda kazancın kasaya girer."
+                    : content0.Text;
                 tkTutorialAction.text = content0.Action;
                 for (int i = 0; i < TutorialSteps; i++)
                 {
@@ -156,10 +159,24 @@ namespace BusTycoon.Game
             if (phone) tkTutorialKicker.text = $"{step + 1}/{TutorialSteps}";
             else if (!tkTutorialKicker.text.StartsWith("ÖĞRETİCİ")) tkTutorialKicker.text = $"ÖĞRETİCİ · {step + 1}/{TutorialSteps}";
 
-            // Yer: içerik alanının sol altı (haritada kartın sol altı; ana ekranda en kârlı hatların altı)
+            // Yer: içerik alanının sol altı (haritada kartın sol altı; ana ekranda en kârlı hatların altı). Kart alttan
+            // sabitlenir, yüksekliği içerikten gelir (uzun açıklamada yukarı doğru büyür; üst satır başlığa binmez)
             float width = Mathf.Min(phone ? 460f : 380f, content.width * k * (phone ? 0.62f : 0.36f));
-            Ui.Place(tkTutorial, content.x * k + 12f, content.yMax * k - 12f - TutorialHeight(), width, TutorialHeight());
-            tkCovered.Add(new Rect(content.x + 12f * u, content.yMax - (12f + TutorialHeight()) * u, width * u, TutorialHeight() * u));
+            float left = content.x * k + 12f, bottom = H * k - content.yMax * k + 12f;
+            if (left != tkTutorialLeft || bottom != tkTutorialBottom || width != tkTutorialWidth)
+            {
+                tkTutorialLeft = left;
+                tkTutorialBottom = bottom;
+                tkTutorialWidth = width;
+                IStyle style = tkTutorial.style;
+                style.left = left;
+                style.width = width;
+                style.bottom = bottom;
+                style.top = StyleKeyword.Auto;
+                style.height = StyleKeyword.Auto;
+            }
+            float height = TutorialHeight(width, tkTutorialText.text);
+            tkCovered.Add(new Rect(content.x + 12f * u, content.yMax - (12f + height) * u, width * u, height * u));
 
             // Vurgu: adımın düğmesi (sekme ya da Harita düğmesi); zaten oradaysa vurgu yok
             VisualElement target = null;
@@ -170,7 +187,15 @@ namespace BusTycoon.Game
             if (tkTutorialTarget != null) Ui.Toggle(tkTutorialTarget, "is-pulse", Mathf.Repeat(Time.unscaledTime, 1.2f) < 0.6f);
         }
 
-        float TutorialHeight() => phone ? 44f : 150f;
+        float tkTutorialLeft = -1f, tkTutorialBottom = -1f, tkTutorialWidth = -1f;
+
+        /// <summary>Kartın tahmini yüksekliği (tasarım birimi): haritaya dokunmayı kapatan alan için.</summary>
+        float TutorialHeight(float width, string text)
+        {
+            if (phone) return 44f;
+            int lines = Mathf.Max(1, Mathf.CeilToInt((text?.Length ?? 0) * 6.7f / Mathf.Max(120f, width - 28f)));
+            return 24f + 16f + 26f + 3f + lines * 17f + 40f + 3f;
+        }
 
         VisualElement TabButton(string name)
         {
