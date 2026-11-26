@@ -202,6 +202,21 @@ namespace BusTycoon.Progression
             return OpResult.Ok($"{city.DisplayName} lisansı alındı: şehirde dolmuş hattı kurabilir, lisanslı şehirlerine ücretsiz hat açabilirsin.");
         }
 
+        /// <summary>Dükkandan alınan, kullanılmamış şehir lisansı hakları.</summary>
+        public int CityLicenseCredits => state.cityLicenseCredits;
+
+        /// <summary>Dükkandan alınan lisans hakkıyla şehri açar (oyun parası harcanmaz).</summary>
+        public OpResult TryUseCityLicenseCredit(CityData city)
+        {
+            if (city == null) return OpResult.Fail("Geçersiz şehir.");
+            if (state.cityLicenseCredits <= 0) return OpResult.Fail("Şehir lisansı hakkın yok.");
+            if (OwnsCity(city)) return OpResult.Fail($"{city.DisplayName} lisansı zaten var.");
+            if (!IsRegionUnlocked(city.Region)) return OpResult.Fail($"{city.Region.DisplayName} için ülke lisansı gerekli.");
+            state.cityLicenseCredits--;
+            GrantCityLicense(city);
+            return OpResult.Ok($"{city.DisplayName} lisansı açıldı.");
+        }
+
         /// <summary>Ücretsiz lisans (başlangıç şehri ya da uygulama içi satın alma).</summary>
         public void GrantCityLicense(CityData city)
         {

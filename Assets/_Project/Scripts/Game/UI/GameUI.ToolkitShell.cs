@@ -31,7 +31,7 @@ namespace BusTycoon.Game
         /// <summary>Tam sayfa açılan paneller (harita gizlenir). Hat paneli ve planlayıcı haritanın yanında açılır.</summary>
         static bool IsPagePanel(Panel target) =>
             target == Panel.RouteList || target == Panel.Fleet || target == Panel.Dealership || target == Panel.Finance ||
-            target == Panel.Goals || target == Panel.Regions || target == Panel.Log || target == Panel.Help;
+            target == Panel.Goals || target == Panel.Regions || target == Panel.Log || target == Panel.Help || target == Panel.Shop;
 
         bool HomeShown => NewUi && mode == Mode.Playing && tkHome && panel == Panel.None && !StationUi;
         bool PageShown => NewUi && mode == Mode.Playing && IsPagePanel(panel) && !StationUi;
@@ -53,7 +53,7 @@ namespace BusTycoon.Game
                     case Panel.Dealership: return Tab.Shop;
                     case Panel.Finance: return Tab.Finance;
                     case Panel.Goals: return Tab.Goals;
-                    case Panel.Regions: case Panel.Log: case Panel.Help: return Tab.Home; // ana ekranın alt sayfaları
+                    case Panel.Regions: case Panel.Log: case Panel.Help: case Panel.Shop: return Tab.Home; // ana ekranın alt sayfaları
                     default: return Tab.Map;
                 }
             }

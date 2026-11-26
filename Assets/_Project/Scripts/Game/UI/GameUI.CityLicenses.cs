@@ -73,6 +73,25 @@ namespace BusTycoon.Game
                 var check = session.Progression.CanBuyCityLicense(city);
                 Ui.Text("bt-actions__note bt-grow", $"Lisans {Fmt.Money(session.Progression.CityLicensePrice(city))}", UiWeight.Regular, actions);
                 CityData target = city;
+                bool regionOpen = session.Progression.IsRegionUnlocked(city.Region);
+                if (session.Progression.CityLicenseCredits > 0)
+                {
+                    // Dükkandan alınan lisans hakkı: oyun parası harcanmaz
+                    Button credit = ActionButton(actions, "Hakkını kullan", () =>
+                    {
+                        var result = session.Progression.TryUseCityLicenseCredit(target);
+                        if (!result) Toast(result.Message, UIStyles.Red);
+                        goals.Evaluate();
+                        tkSheetDirty = true;
+                    }, enabled: regionOpen);
+                    credit.name = "city-credit-" + city.Id;
+                }
+                else if (ShopService.Available && Room == null)
+                {
+                    Button store = ActionButton(actions, ShopService.PriceText(ShopCatalog.CityLicense), () => BuyFromShop(ShopCatalog.CityLicense, target.Id),
+                        enabled: regionOpen && ShopService.BusyProduct == null);
+                    store.name = "city-store-" + city.Id;
+                }
                 Button buy = ActionButton(actions, "Lisans al", () =>
                 {
                     var result = session.Progression.TryBuyCityLicense(target);

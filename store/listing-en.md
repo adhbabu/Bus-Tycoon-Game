@@ -66,7 +66,7 @@ You don't drive the bus — you run the company!
 Reach 400 million lira in cash and become the Bus Emperor! Careful: stay in the red for 30 days and you go bankrupt.
 
 • Fully offline, no internet needed
-• No ads, no in-app purchases
+• No ads; optional small shop: looks packs, city license, capital
 • Automatic saving
 • Interface language: Turkish
 

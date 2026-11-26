@@ -10,7 +10,7 @@ Karakter sınırları kontrol edildi (`python3` ile sayıldı; Türkçe harfler 
 | **Tanıtım metni** (App Store, sürüm onayı gerekmeden değişir) | 170 | İstanbul'dan Samsun'a 10 şehrin gerçek sokaklarında dolmuş hattı kur, ünlü mekânlardan yolcu topla, filonu şehirlerarası otobüslere büyüt! |
 | **Anahtar kelimeler** (App Store, virgülle) | 100 | dolmuş,otobüs,tycoon,strateji,yönetim,simülasyon,şirket,ekonomi,ulaşım,istanbul,harita,filo |
 | **Kategori** | — | Play: Oyun ▸ Strateji · App Store: Oyunlar ▸ Strateji (ikincil: Simülasyon) |
-| **Fiyat** | — | Ücretsiz · reklam yok · uygulama içi satın alma yok |
+| **Fiyat** | — | Ücretsiz · reklam yok · isteğe bağlı küçük dükkan (₺19,99–₺49,99; bkz. DUKKAN.md) |
 | **Bu sürümde yenilikler** | 4000 | İlk sürüm! 10 büyük şehrin gerçek sokaklarında dolmuş hatları, 134 ünlü mekân, 13 araç ve Türkiye'den Avrupa'ya 221 şehirle otobüs imparatorluğunu kur. |
 
 > App Store'da anahtar kelimelerde uygulama adında geçen kelimeleri tekrar etmek gerekmez; yer açmak için
@@ -67,7 +67,7 @@ Direksiyonda sen değilsin — şirketi sen yönetiyorsun!
 Kasanda 400 milyon liraya ulaş ve Otobüs İmparatoru ol! Ama dikkat: kasan 30 gün üst üste eksi kalırsa iflas edersin.
 
 • İnternet gerekmez, tamamen çevrimdışı
-• Reklam yok, uygulama içi satın alma yok
+• Reklam yok; isteğe bağlı küçük dükkan: görünüm paketleri, şehir lisansı, sermaye
 • Oyun otomatik kaydedilir
 
 Şehir haritaları: © OpenStreetMap katkıcıları (ODbL), OpenMapTiles · Ülke haritası: Natural Earth · Şehir verisi: GeoNames (CC BY 4.0)

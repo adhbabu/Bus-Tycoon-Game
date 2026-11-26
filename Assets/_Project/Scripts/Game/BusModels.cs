@@ -217,6 +217,25 @@ namespace BusTycoon.Game
             return b.Build();
         }
 
+        static Color? livery;
+
+        /// <summary>
+        /// Şirket araç rengi (görünüm paketi): ülke haritasındaki bütün otobüslerin gövdesi bu renkte; null: segment
+        /// renkleri (aracın türü renginden okunur). Palet dokusu yerinde güncellenir, örgüler yeniden kurulmaz.
+        /// </summary>
+        public static void SetLivery(Color? color)
+        {
+            if (livery.HasValue == color.HasValue && (!color.HasValue || livery.Value.Equals(color.Value))) return;
+            livery = color;
+            if (palette == null) return; // palet ilk kurulurken uygulanır
+            for (int s = 0; s < SegmentColors.Length; s++)
+            {
+                int slot = BodyBase + s;
+                palette.SetPixel(slot % PaletteSize, slot / PaletteSize, livery ?? SegmentColors[s]);
+            }
+            palette.Apply();
+        }
+
         static Texture2D Palette()
         {
             if (palette != null) return palette;
@@ -237,7 +256,7 @@ namespace BusTycoon.Game
             colors[Led] = new Color(1f, 0.6f, 0.12f);
             for (int s = 0; s < SegmentColors.Length; s++)
             {
-                colors[BodyBase + s] = SegmentColors[s];
+                colors[BodyBase + s] = livery ?? SegmentColors[s];
                 colors[StripeBase + s] = StripeColors[s];
             }
 

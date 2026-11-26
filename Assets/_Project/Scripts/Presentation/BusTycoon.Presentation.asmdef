@@ -15,7 +15,8 @@
     "autoReferenced": true,
     "defineConstraints": [
         "BUSTYCOON_UGUI",
-        "BUSTYCOON_TMP"
+        "BUSTYCOON_TMP",
+        "BUSTYCOON_LEGACY_UGUI"
     ],
     "versionDefines": [
         {

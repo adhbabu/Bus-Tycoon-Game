@@ -17,7 +17,8 @@ namespace BusTycoon.Game
     {
         static readonly HashSet<Panel> ToolkitPanels = new HashSet<Panel>
         {
-            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet, Panel.Dealership, Panel.Route, Panel.Planner
+            Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet, Panel.Dealership, Panel.Route, Panel.Planner,
+            Panel.Shop
         };
 
         VisualElement tkSheet;
@@ -118,7 +119,8 @@ namespace BusTycoon.Game
                 }
                 case Panel.Regions:
                 {
-                    int signature = session.Progression.Level * 7919 + session.State.ownedCityIds.Count * 131 + Mathf.RoundToInt((float)session.Finance.Cash / 1000f);
+                    int signature = session.Progression.Level * 7919 + session.State.ownedCityIds.Count * 131 + Mathf.RoundToInt((float)session.Finance.Cash / 1000f) +
+                                    ShopService.Version * 977 + session.State.logoId * 53 + session.State.liveryId * 29 + session.State.cityLicenseCredits * 17;
                     foreach (var region in session.World.Regions)
                     {
                         signature = signature * 3 + (session.Progression.IsRegionUnlocked(region) ? 1 : 0) +
@@ -139,6 +141,7 @@ namespace BusTycoon.Game
                 case Panel.Dealership: return DealershipSignature();
                 case Panel.Route: return RouteSignature();
                 case Panel.Planner: return urbanPlanning ? UrbanPlannerSignature() : PlannerSignature();
+                case Panel.Shop: return ShopSignature();
                 default: return 0;
             }
         }
@@ -171,6 +174,8 @@ namespace BusTycoon.Game
                 case Panel.Regions:
                     SheetHeader("Şirketim", $"Seviye {session.Progression.Level} · ülke lisansları");
                     BuildCompany(body);
+                    BuildLooks(body);
+                    Section(body, "Ülke lisansları").AddToClassList("bt-section--full");
                     BuildRegions(body);
                     BuildCityLicenses(body); // ülke lisanslarının altında (kullanıcı kararı)
                     break;
@@ -193,6 +198,10 @@ namespace BusTycoon.Game
                 case Panel.Planner:
                     if (urbanPlanning) BuildUrbanPlanner(body);
                     else BuildPlanner(body);
+                    break;
+                case Panel.Shop:
+                    SheetHeader("Dükkan", ShopService.Available ? "İsteğe bağlı paketler" : "Yalnız mobil uygulamada");
+                    BuildShop(body);
                     break;
             }
         }
@@ -379,7 +388,6 @@ namespace BusTycoon.Game
             KeyValue(card, "İtibar", $"{Mathf.RoundToInt(progression.Reputation)} / 100", null, UIIcon.Star);
             KeyValue(card, "Hat sınırı", $"{session.Routes.Routes.Count} / {progression.MaxRoutes}");
             KeyValue(card, "Şirket değeri", Fmt.Money(session.Finance.Cash + fleetValue));
-            Section(body, "Ülke lisansları").AddToClassList("bt-section--full");
         }
 
         void BuildRegions(VisualElement body)
