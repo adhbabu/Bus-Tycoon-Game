@@ -134,7 +134,7 @@ Tools/build_map.py         Natural Earth 1:10m → sade harita dokuları (Stream
 Tools/make_store_art.py    Uygulama ikonu, mağaza tanıtım görseli ve ana menüdeki otobüs çizimi
 Tools/make_fonts.py        Inter yazı tipinden arayüzün üç kalınlığını üretir (Resources/BusTycoon/Fonts)
 Tools/make_icons.py        Twemoji ikonlarından arayüz ikon atlasını üretir (Resources/BusTycoon/UI/icons.png)
-Tools/make_bus_art.py      Otobüs modellerinin yandan çizimleri (Resources/BusTycoon/UI/buses.png)
+Tools/vehicles/            Araç modelleri (SketchUp), galeri atlası ve harita örgüleri (bkz. Tools/vehicles/README.md)
 Tools/make_city_icons.py   Her şehrin ikonu ve "nesiyle ünlü" açıklaması (Resources/BusTycoon/UI/cities.png, city_icons.txt)
 Tools/make_sounds.py       Oyun sesleri: tıklama, para, korna, bildirim, uyarı, başarı, hata (Resources/BusTycoon/Audio)
 Tools/webtest/             Web eklentilerinin (jslib) Unity'siz tarayıcı testleri: dokunuş/klavye/paylaşım ve çok oyunculu bağlantı

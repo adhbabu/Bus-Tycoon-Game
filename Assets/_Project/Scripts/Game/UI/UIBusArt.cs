@@ -4,13 +4,13 @@ using UnityEngine;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Otobüs modellerinin yandan çizimleri (Resources/BusTycoon/UI/buses.png, Tools/make_bus_art.py):
-    /// 2 sütun × 6 satır, hücre en-boy oranı 2:1 (hücre genişliği = atlas genişliği / 2; 256×128 ya da 2x 512×256);
-    /// otobüs sağa bakar. Atlas yoksa hiçbir şey çizilmez.
+    /// Otobüs modellerinin çizimleri (Resources/BusTycoon/UI/buses.png): SketchUp'ta kurulan modellerin önden-yandan
+    /// görünümü (Tools/vehicles: bus_gen.py → vehicles.html → atlas.py). 2 sütun × 6 satır, hücre en-boy oranı 2:1
+    /// (hücre genişliği = atlas genişliği / 2; 256×128 ya da 2x 512×256); otobüs sağa bakar. Atlas yoksa hiçbir şey çizilmez.
     /// </summary>
     public static class UIBusArt
     {
-        /// <summary>Hücre sırası Tools/make_bus_art.py → MODELS ile aynı.</summary>
+        /// <summary>Hücre sırası Tools/vehicles/atlas.py → IDS ile aynı.</summary>
         static readonly string[] ModelIds = { "KARTAL_M16", "KARTAL_M19", "ANKA_27", "ANKA_31", "TOROS_46", "TOROS_42C", "ZIRVE_VIP", "ZIRVE_DD",
             "KENT_12", "KENT_12E", "KENT_18" };
         const int Columns = 2;

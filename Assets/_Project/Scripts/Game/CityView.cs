@@ -114,7 +114,7 @@ namespace BusTycoon.Game
             Shader shader = Resources.Load<Shader>(DefaultContent.MaquetteShaderResourcePath);
             if (shader == null) shader = Shader.Find("BusTycoon/Maquette");
             if (shader == null || !shader.isSupported) return; // yoksa dolmuşlar düz kapsül olarak çizilir
-            LandmarkModels.Minibus(templateVertices, templateNormals, templateColors, templateTriangles, out templateBody);
+            if (!DolmusTemplate()) LandmarkModels.Minibus(templateVertices, templateNormals, templateColors, templateTriangles, out templateBody);
             vehicleMaterial = new Material(shader) { name = "CityVehicles" };
             vehicleMaterial.SetColor("_Color", Color.white);
             vehicleMaterial.SetFloat(FadeId, 1f);
@@ -127,6 +127,28 @@ namespace BusTycoon.Game
             vehicleRenderer.shadowCastingMode = ShadowCastingMode.Off;
             vehicleRenderer.receiveShadows = false;
             vehicleRenderer.enabled = false;
+        }
+
+        /// <summary>
+        /// Dolmuş kalıbı SketchUp modelinden (VehicleMeshes, KARTAL_M16): birim boya indirgenir (+z ileri, taban y=0),
+        /// yukarıdan okunsun diye biraz geniş; gövde köşeleri başta (hat rengine boyanır), şerit beyaz.
+        /// </summary>
+        bool DolmusTemplate()
+        {
+            VehicleMeshes.Model model = VehicleMeshes.Get("KARTAL_M16");
+            if (model == null) return false;
+            float s = 1f / Mathf.Max(model.Bounds.size.z, 0.01f), sx = s * 1.2f;
+            var inverse = new Vector3(1f / sx, 1f / s, 1f / s);
+            for (int i = 0; i < model.Positions.Length; i++)
+            {
+                Vector3 p = model.Positions[i];
+                templateVertices.Add(new Vector3(p.x * sx, p.y * s, (p.z - model.Bounds.center.z) * s));
+                templateNormals.Add(Vector3.Scale(model.Normals[i], inverse).normalized);
+                templateColors.Add(VehicleMeshes.SlotColor(model.Slots[i]));
+            }
+            templateTriangles.AddRange(model.Triangles);
+            templateBody = model.BodyVertexCount;
+            return true;
         }
 
         public static bool Supports(CityData city) => city != null && UrbanCatalog.Has(city.Id);
