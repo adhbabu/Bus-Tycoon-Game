@@ -131,7 +131,8 @@ namespace BusTycoon.Game
 
         /// <summary>
         /// Dolmuş kalıbı SketchUp modelinden (VehicleMeshes, KARTAL_M16): birim boya indirgenir (+z ileri, taban y=0),
-        /// yukarıdan okunsun diye biraz geniş; gövde köşeleri başta (hat rengine boyanır), şerit beyaz.
+        /// yukarıdan okunsun diye biraz geniş. Gövdenin yanları başta (hat rengine boyanır); tavan açık renk, şerit beyaz:
+        /// yukarıdan bakınca araç aynı renkteki hat çizgisinin üstünde seçilir.
         /// </summary>
         bool DolmusTemplate()
         {
@@ -139,15 +140,25 @@ namespace BusTycoon.Game
             if (model == null) return false;
             float s = 1f / Mathf.Max(model.Bounds.size.z, 0.01f), sx = s * 1.2f;
             var inverse = new Vector3(1f / sx, 1f / s, 1f / s);
-            for (int i = 0; i < model.Positions.Length; i++)
+            int count = model.Positions.Length;
+            var order = new List<int>(count);
+            var isRoof = new bool[count];
+            for (int i = 0; i < model.BodyVertexCount; i++)
+                isRoof[i] = model.Normals[i].y > 0.75f && model.Positions[i].y > model.Bounds.max.y * 0.5f;
+            for (int i = 0; i < model.BodyVertexCount; i++) if (!isRoof[i]) order.Add(i);
+            int sides = order.Count;
+            for (int i = 0; i < count; i++) if (i >= model.BodyVertexCount || isRoof[i]) order.Add(i);
+            var remap = new int[count];
+            foreach (int i in order)
             {
+                remap[i] = templateVertices.Count;
                 Vector3 p = model.Positions[i];
                 templateVertices.Add(new Vector3(p.x * sx, p.y * s, (p.z - model.Bounds.center.z) * s));
                 templateNormals.Add(Vector3.Scale(model.Normals[i], inverse).normalized);
-                templateColors.Add(VehicleMeshes.SlotColor(model.Slots[i]));
+                templateColors.Add(isRoof[i] ? new Color(0.93f, 0.94f, 0.93f) : VehicleMeshes.SlotColor(model.Slots[i]));
             }
-            templateTriangles.AddRange(model.Triangles);
-            templateBody = model.BodyVertexCount;
+            foreach (int t in model.Triangles) templateTriangles.Add(remap[t]);
+            templateBody = sides;
             return true;
         }
 
