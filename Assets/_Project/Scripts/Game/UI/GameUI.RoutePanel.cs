@@ -55,7 +55,7 @@ namespace BusTycoon.Game
             historyChartDirty = true;
             pendingPrice = route.ticketPrice;
             routeScroll = Vector2.zero;
-            mapCamera.FocusOn(world.GetRouteMidpoint(route));
+            if (TryRouteMidpoint(route, out Vector3 midpoint)) mapCamera.FocusOn(midpoint);
         }
 
         void EnsureRouteAnalysis()

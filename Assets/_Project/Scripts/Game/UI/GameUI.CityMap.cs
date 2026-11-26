@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BusTycoon.Data;
+using BusTycoon.Routes;
 using BusTycoon.Urban;
 using UnityEngine;
 
@@ -120,6 +121,25 @@ namespace BusTycoon.Game
             countryCameraFocus = Vector3.zero;
             countryCameraDistance = 34f;
             if (cityView != null && cameraInCity) LeaveCityCamera();
+        }
+
+        /// <summary>
+        /// Hattın haritadaki orta noktası. Şehir içi hat yalnız kendi şehrinin haritası açıkken çizilir: o zaman iki ucunun
+        /// ortası; başka şehirdeyse yok (dünya haritasında şehir içi hattın çizgisi yoktur). Şehirlerarası hat dünya haritasında.
+        /// </summary>
+        bool TryRouteMidpoint(RouteState route, out Vector3 point)
+        {
+            point = Vector3.zero;
+            if (route == null) return false;
+            if (route.IsUrban)
+            {
+                if (!CityMapShown || !cityView.Ready || cityView.City == null || cityView.City.Id != route.urbanCityId) return false;
+                point = cityView.ToWorld((new Vector2(route.urbanAX, route.urbanAY) + new Vector2(route.urbanBX, route.urbanBY)) * 0.5f);
+                return true;
+            }
+            if (CityMapShown) return false;
+            point = world.GetRouteMidpoint(route);
+            return point != Vector3.zero;
         }
 
         /// <summary>Kameranın baktığı yer (harita kartının ortası).</summary>

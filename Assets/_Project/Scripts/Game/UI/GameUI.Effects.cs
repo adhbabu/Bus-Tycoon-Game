@@ -54,7 +54,8 @@ namespace BusTycoon.Game
             foreach (var route in session.Routes.Routes)
             {
                 if (!route.HasHistory || Math.Abs(route.LastReport.Profit) < 1.0) continue;
-                Vector3 sp = cam.WorldToScreenPoint(world.GetRouteMidpoint(route));
+                if (!TryRouteMidpoint(route, out Vector3 midpoint)) continue;
+                Vector3 sp = cam.WorldToScreenPoint(midpoint);
                 if (sp.z <= 0f || sp.x < 0f || sp.x > W || sp.y < 0f || sp.y > H) continue;
                 if (IsOverUI(new Vector2(sp.x, H - sp.y))) continue;
                 incomeRoutes.Add(route);
@@ -63,9 +64,10 @@ namespace BusTycoon.Game
             for (int i = 0; i < incomeRoutes.Count && i < MaxIncomeLabels; i++)
             {
                 double profit = incomeRoutes[i].LastReport.Profit;
+                TryRouteMidpoint(incomeRoutes[i], out Vector3 labelPoint);
                 floatingLabels.Add(new FloatingLabel
                 {
-                    World = world.GetRouteMidpoint(incomeRoutes[i]),
+                    World = labelPoint,
                     Text = (profit >= 0 ? "+" : "") + Fmt.Compact(profit),
                     Color = profit >= 0 ? UIStyles.Green : UIStyles.Red,
                     Start = now
