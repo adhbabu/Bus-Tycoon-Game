@@ -27,7 +27,7 @@ namespace BusTycoon.Game
         internal static DeviceProfile ProfileOverride = DeviceProfile.Auto;
 
         enum Mode { MainMenu, NewGame, Playing, Multiplayer }
-        enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help }
+        enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help, Shop }
         enum Modal { None, Pause, GameOver, Victory, Confirm, MatchEnd }
 
         const string SaveSlot = "save1";
@@ -118,6 +118,7 @@ namespace BusTycoon.Game
             InitToolkit();
             InitCityView();
             InitAds();
+            InitShop();
             BindMultiplayer();
             EnterMainMenu();
             OpenInviteIfAny();
@@ -132,6 +133,7 @@ namespace BusTycoon.Game
             session.Bankrupt -= OnBankrupt;
             UnbindSystems();
             UnbindMultiplayer();
+            UnbindShop();
         }
 
         void OnApplicationFocus(bool focused)
@@ -218,6 +220,7 @@ namespace BusTycoon.Game
         void OnSessionStarted()
         {
             BindSystems();
+            ApplyLivery();
             mode = Mode.Playing;
             modal = Modal.None;
             panel = Panel.None;
@@ -378,6 +381,7 @@ namespace BusTycoon.Game
             UpdateAds(dt);
             UpdateToolkit();
             UpdateIncomeLabels();
+            UpdateShop();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
             if (TouchInput.BackPressed() && Time.frameCount != lastEscapeFrame)

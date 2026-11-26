@@ -103,6 +103,9 @@ namespace BusTycoon.Game
             Ui.Symbol("sports_score", "bt-race__icon", tkRace);
             tkRaceText = Ui.Text("bt-race__text", "", UiWeight.Bold, tkRace);
 
+            Button shopButton = Ui.Button("bt-round", string.Empty, () => OpenPage(Panel.Shop), tkTop);
+            shopButton.name = "shop";
+            Ui.Symbol("storefront", "bt-round__icon is-gold", shopButton);
             Button goalsButton = Ui.Button("bt-round", string.Empty, () => OpenPage(Panel.Goals), tkTop);
             goalsButton.name = "goals";
             Ui.Symbol("trophy", "bt-round__icon is-gold", goalsButton);
@@ -256,10 +259,11 @@ namespace BusTycoon.Game
             var progression = session.Progression;
             bool home = HomeShown;
 
-            if (session.State.logoId != tkLogoShown)
+            int logoKey = CompanyLogoKey();
+            if (logoKey != tkLogoShown)
             {
-                tkLogoShown = session.State.logoId;
-                SetCompanyLogo(tkBrandLogo, tkLogoShown);
+                tkLogoShown = logoKey;
+                SetCompanyLogo(tkBrandLogo, session.State.logoId);
             }
             // Sol blok: ana ekranda şirket adı ve yeşil durum satırı; diğer ekranlarda üst başlık + sayfa adı
             Ui.Show(tkKicker, !home);

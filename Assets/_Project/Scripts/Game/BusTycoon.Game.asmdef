@@ -3,7 +3,8 @@
     "rootNamespace": "BusTycoon.Game",
     "references": [
         "BusTycoon.Runtime",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.Purchasing"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -17,6 +18,11 @@
             "name": "com.unity.inputsystem",
             "expression": "1.0.0",
             "define": "BUSTYCOON_INPUT_SYSTEM"
+        },
+        {
+            "name": "com.unity.purchasing",
+            "expression": "5.5.0",
+            "define": "BT_IAP"
         }
     ],
     "noEngineReferences": false

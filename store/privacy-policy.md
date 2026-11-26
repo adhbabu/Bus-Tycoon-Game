@@ -1,6 +1,6 @@
 # Gizlilik Politikası — Otobüs İmparatoru
 
-*Son güncelleme: 28 Ekim 2026*
+*Son güncelleme: 26 Kasım 2026*
 
 **Otobüs İmparatoru** ("Oyun"), adhbabu tarafından geliştirilmiştir. Bu politika, Oyun'un
 kişisel verilerinizi nasıl ele aldığını açıklar.
@@ -11,8 +11,17 @@ Oyun **hiçbir kişisel veri toplamaz, saklamaz veya paylaşmaz.**
 
 * Hesap, giriş veya kayıt yoktur.
 * Reklam, analiz (analytics) veya izleme (tracking) aracı kullanılmaz.
-* Mobil uygulama internet bağlantısı kullanmaz; tamamen çevrimdışı çalışır.
+* Oynamak için internet gerekmez. Yalnız isteğe bağlı dükkandan satın alma yaparken cihazınızın mağazası
+  (App Store / Google Play) bağlanır.
 * Konum, kişiler, fotoğraflar, mikrofon veya kamera gibi cihaz izinleri istenmez.
+
+## Uygulama içi satın almalar
+
+Oyunda isteğe bağlı küçük bir dükkan vardır (görünüm paketleri, şehir lisansı, sermaye paketi). Ödemeyi
+**Apple App Store** ya da **Google Play** alır ve işler; Oyun kart, ödeme veya hesap bilginizi görmez ve saklamaz.
+Mağaza Oyun'a yalnız satın almanın onayını (ürün ve işlem numarası) iletir; bu bilgi ürünü vermek için
+cihazınızda tutulur ve hiçbir sunucuya gönderilmez. Satın almalar için Apple'ın ve Google'ın gizlilik
+politikaları geçerlidir.
 
 ## Cihazınızda saklanan bilgiler
 
@@ -49,7 +58,7 @@ Sorularınız için: [adhntpl@gmail.com](mailto:adhntpl@gmail.com)
 
 # Privacy Policy — Bus Tycoon: Transport Empire
 
-*Last updated: October 28, 2026*
+*Last updated: November 26, 2026*
 
 **Bus Tycoon: Transport Empire** (the "Game") is developed by adhbabu. This policy explains how the
 Game handles your personal data.
@@ -60,8 +69,17 @@ The Game **does not collect, store or share any personal data.**
 
 * There are no accounts, sign-ins or registrations.
 * No advertising, analytics or tracking tools are used.
-* The mobile app does not use the internet; it works fully offline.
+* No internet is needed to play. Only when you buy something in the optional shop does your device's store
+  (App Store / Google Play) connect.
 * No device permissions (location, contacts, photos, microphone, camera) are requested.
+
+## In-app purchases
+
+The Game has an optional small shop (looks packs, city license, capital pack). Payments are taken and processed
+by the **Apple App Store** or **Google Play**; the Game never sees or stores your card, payment or account
+details. The store only tells the Game that a purchase was confirmed (product and transaction number); this is
+kept on your device to deliver the item and is never sent to any server. Apple's and Google's privacy policies
+apply to purchases.
 
 ## Data stored on your device
 

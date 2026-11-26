@@ -25,27 +25,38 @@ namespace BusTycoon.Game
             ("flag", new Color(0.18f, 0.8f, 0.443f), true),               // yeşil
             ("sports_score", new Color(0.957f, 0.635f, 0.38f), true),     // turuncu
             ("speed", new Color(0.227f, 0.29f, 0.322f), false),           // arduvaz
+            // Görünüm paketi (FreeLogoCount'tan sonrası)
+            ("castle", new Color(0.56f, 0.13f, 0.19f), false),            // bordo
+            ("location_city", new Color(0.06f, 0.45f, 0.52f), false),     // petrol
+            ("sunny", new Color(1f, 0.6f, 0.2f), true),                   // gün batımı
+            ("dark_mode", new Color(0.2f, 0.22f, 0.56f), false),          // gece mavisi
+            ("stadium", new Color(0.09f, 0.55f, 0.31f), false),           // çim yeşili
+            ("account_balance", new Color(0.12f, 0.13f, 0.16f), false),   // siyah
         };
 
         bool ToolkitDrawsNewGame => NewUi && mode == Mode.NewGame;
 
-        /// <summary>Şirket logosu öğesi (yuvarlak köşeli kare, ortada simge). Boyutu sınıftan gelir.</summary>
-        static VisualElement CompanyLogo(VisualElement parent, int logoId, string classes)
+        /// <summary>Şirket logosu öğesi (yuvarlak köşeli kare, ortada simge). Boyutu sınıftan gelir.
+        /// <paramref name="preview"/>: seçicideki örnek (kilitli de olsa kendi tasarımı, destekçi çerçevesi yok).</summary>
+        static VisualElement CompanyLogo(VisualElement parent, int logoId, string classes, bool preview = false)
         {
             VisualElement logo = Ui.El("bt-logo " + classes, parent);
             logo.pickingMode = PickingMode.Ignore;
             Ui.Symbol(CompanyLogos[0].Symbol, "bt-logo__icon", logo);
-            SetCompanyLogo(logo, logoId);
+            SetCompanyLogo(logo, logoId, preview);
             return logo;
         }
 
-        static void SetCompanyLogo(VisualElement logo, int logoId)
+        /// <summary>Şirketin logosu: kilitli logo (paket bu cihazda yoksa) ilk logoya döner; destekçiye altın çerçeve.</summary>
+        static void SetCompanyLogo(VisualElement logo, int logoId, bool preview = false)
         {
+            if (!preview && !LogoUnlocked(logoId)) logoId = 0;
             var design = CompanyLogos[Mathf.Clamp(logoId, 0, CompanyLogos.Length - 1)];
             logo.style.backgroundColor = design.Background;
             VisualElement icon = logo.hierarchy[0];
             Ui.SetSymbol(icon, design.Symbol);
             Ui.Toggle(icon, "is-dark", design.DarkIcon);
+            Ui.Toggle(logo, "is-supporter", !preview && ShopService.Owns(ShopCatalog.Supporter));
         }
 
         void BuildToolkitNewGameLayer()
@@ -97,6 +108,7 @@ namespace BusTycoon.Game
             VisualElement logos = Ui.El("bt-logo-picker", body);
             for (int i = 0; i < CompanyLogos.Length; i++)
             {
+                if (!LogoUnlocked(i)) continue; // görünüm paketinin logoları paket varsa
                 int id = i;
                 Button pick = Ui.Button("bt-logo-pick", string.Empty, () => companyLogo = id, logos);
                 pick.name = "logo-" + i;

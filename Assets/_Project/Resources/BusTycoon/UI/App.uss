@@ -3343,3 +3343,107 @@
     border-color: rgba(245, 196, 81, 0.8);
     color: #F5C451;
 }
+
+/* ------------------------------------------------------------------ dükkan ve görünüm (logo, araç rengi) */
+
+.bt-round__icon.is-gold {
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-pill.is-gold {
+    background-color: #F5C451;
+    color: #1C1708;
+}
+
+.bt-logo.is-supporter {
+    border-width: 2px;
+    border-color: #F5C451;
+}
+
+.bt-logo-pick.is-locked .bt-logo {
+    opacity: 0.45;
+}
+
+.bt-logo-pick__lock {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 18px;
+    height: 18px;
+    -unity-background-image-tint-color: #F1F4F5;
+}
+
+.bt-looks__badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.bt-livery-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.bt-livery {
+    width: 74px;
+    margin: 0 8px 8px 0;
+    padding: 6px 4px;
+    align-items: center;
+    border-width: 2px;
+    border-radius: 14px;
+    border-color: rgba(0, 0, 0, 0);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.bt-livery.is-active {
+    border-color: #F5C451;
+}
+
+.bt-livery__swatch {
+    width: 34px;
+    height: 34px;
+    border-radius: 17px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.25);
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-livery.is-locked .bt-livery__swatch {
+    opacity: 0.5;
+}
+
+.bt-livery__lock {
+    width: 18px;
+    height: 18px;
+    -unity-background-image-tint-color: #F1F4F5;
+}
+
+.bt-livery__name {
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: #C7D2D6;
+    -unity-text-align: middle-center;
+}
+
+.bt-shop__note {
+    margin: 0 4px 10px 4px;
+    color: #F5C451;
+}
+
+.bt-shop-card__badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    margin-right: 12px;
+    background-color: rgba(245, 196, 81, 0.14);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bt-shop-card__icon {
+    width: 30px;
+    height: 30px;
+    -unity-background-image-tint-color: #F5C451;
+}

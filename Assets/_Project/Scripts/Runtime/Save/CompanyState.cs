@@ -41,6 +41,10 @@ namespace BusTycoon.Save
         /// <summary>Gelir katsayısı (0: ekonomi ayarındaki, şu an 10). Çok oyunculu yarışta 1 (yarış temposu değişmesin).</summary>
         public float incomeScale;
         public List<string> ownedCityIds = new List<string>();
+        /// <summary>Dükkandan alınan, henüz kullanılmamış şehir lisansı hakları (her biri bir şehri ücretsiz açar).</summary>
+        public int cityLicenseCredits;
+        /// <summary>Şirket araç rengi (0: varsayılan). Görünüm/destekçi paketi gerekir; sahiplik cihazda tutulur.</summary>
+        public int liveryId;
         public int tutorialStep;
         /// <summary>Öğretici: oyuncu hat panelinde bileti gördü mü (son adım).</summary>
         public bool tutorialSawPrice;

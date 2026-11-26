@@ -143,7 +143,7 @@ Profiles ▸ Android ▸ "Build App Bundle" işaretini kaldırıp **Build And Ru
 |---|---|
 | Uygulama veri topluyor/paylaşıyor mu? (Play Veri güvenliği, Apple App Privacy) | **Hayır** — veri toplanmıyor |
 | Reklam içeriyor mu? | Hayır |
-| Uygulama içi satın alma | Yok |
+| Uygulama içi satın alma | **Var**: 4 ürün (görünüm, şehir lisansı, destekçi, sermaye). Ürünler ve kurulum: `store/DUKKAN.md` |
 | Uygulamaya erişim için giriş gerekiyor mu? | Hayır, tüm özellikler girişsiz |
 | İçerik derecelendirmesi (IARC / Apple) | Şiddet, cinsellik, küfür, kumar, uyuşturucu, kullanıcı etkileşimi, konum paylaşımı: **yok** → beklenen PEGI 3 / ESRB Everyone / 4+ |
 | Hedef kitle (Play) | 13 yaş ve üstü önerilir (13 altı seçilirse Aileler politikası ek şartları gelir) |

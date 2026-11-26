@@ -65,6 +65,10 @@ namespace BusTycoon.Game
         readonly List<Color> templateColors = new List<Color>();
         readonly List<int> templateTriangles = new List<int>();
         int templateBody, vehicleMeshCount = -1;
+        /// <summary>Dolmuş tavanının kalıptaki köşeleri ve rengi (şirket rengi; yoksa açık gri, hat renginden ayrılsın).</summary>
+        readonly List<int> templateRoof = new List<int>();
+        static readonly Color DefaultRoofColor = new Color(0.93f, 0.94f, 0.93f);
+        Color roofColor = DefaultRoofColor;
         /// <summary>Haritada çizilen dolmuş sayısı (3D).</summary>
         public int VehicleModelCount { get; private set; }
         float spriteDistance = -1f;
@@ -155,11 +159,19 @@ namespace BusTycoon.Game
                 Vector3 p = model.Positions[i];
                 templateVertices.Add(new Vector3(p.x * sx, p.y * s, (p.z - model.Bounds.center.z) * s));
                 templateNormals.Add(Vector3.Scale(model.Normals[i], inverse).normalized);
-                templateColors.Add(isRoof[i] ? new Color(0.93f, 0.94f, 0.93f) : VehicleMeshes.SlotColor(model.Slots[i]));
+                if (isRoof[i]) templateRoof.Add(templateColors.Count);
+                templateColors.Add(isRoof[i] ? roofColor : VehicleMeshes.SlotColor(model.Slots[i]));
             }
             foreach (int t in model.Triangles) templateTriangles.Add(remap[t]);
             templateBody = sides;
             return true;
+        }
+
+        /// <summary>Dolmuşların tavan rengi (şirket rengi, görünüm paketi). null: açık gri.</summary>
+        public void SetRoofColor(Color? color)
+        {
+            roofColor = color ?? DefaultRoofColor;
+            foreach (int i in templateRoof) templateColors[i] = roofColor;
         }
 
         public static bool Supports(CityData city) => city != null && UrbanCatalog.Has(city.Id);
