@@ -131,8 +131,9 @@ Profiles ▸ Android ▸ "Build App Bundle" işaretini kaldırıp **Build And Ru
 3. **Fiyatlandırma**: Ücretsiz. **Uygulama Gizliliği**: gizlilik URL'si + "Veri Toplanmıyor".
 4. **Sürüm sayfası**: ekran görüntüleri (iPhone 6,9" + iPad 13"), tanıtım metni, açıklama, anahtar kelimeler,
    destek URL'si, telif hakkı, yüklenen **build**'i seçin.
-5. **App Review bilgileri**: iletişim; not: "Giriş gerekmez. Oyun çevrimdışıdır; hat açmak için haritada iki
-   şehre dokunun." ▸ **İncelemeye gönder**. Önce TestFlight ile kendiniz test etmeniz önerilir.
+5. **App Review bilgileri**: iletişim; not: "Giriş gerekmez. Oyun çevrimdışıdır. Yeni oyunda şirket adını ve
+   başlangıç şehrini seçin; öğretici ilk dolmuşu almayı ve haritada iki durağa dokunarak hat açmayı gösterir."
+   ▸ **İncelemeye gönder**. Önce TestFlight ile kendiniz test etmeniz önerilir.
 
 ---
 
@@ -147,7 +148,7 @@ Profiles ▸ Android ▸ "Build App Bundle" işaretini kaldırıp **Build And Ru
 | İçerik derecelendirmesi (IARC / Apple) | Şiddet, cinsellik, küfür, kumar, uyuşturucu, kullanıcı etkileşimi, konum paylaşımı: **yok** → beklenen PEGI 3 / ESRB Everyone / 4+ |
 | Hedef kitle (Play) | 13 yaş ve üstü önerilir (13 altı seçilirse Aileler politikası ek şartları gelir) |
 | Şifreleme / ihracat uyumu (Apple) | Şifreleme kullanmıyor (Info.plist'te otomatik) |
-| Üçüncü taraf içerik (Apple içerik hakları) | Evet, haklara sahibim: harita Natural Earth (kamu malı), şehir verisi GeoNames (CC BY 4.0, oyunda atıf var) |
+| Üçüncü taraf içerik (Apple içerik hakları) | Evet, haklara sahibim: şehir haritaları OpenStreetMap (ODbL) ve OpenMapTiles şeması (haritada "© OpenStreetMap katkıcıları" atfı var), ülke haritası Natural Earth (kamu malı), şehir verisi GeoNames (CC BY 4.0, oyunda atıf var), simgeler Material Symbols (Apache-2.0) ve Twemoji (CC BY 4.0) |
 | İnternet izni | Gerekmez (oyun çevrimdışı) |
 
 ## 5. Gizlilik politikası ve destek sayfası

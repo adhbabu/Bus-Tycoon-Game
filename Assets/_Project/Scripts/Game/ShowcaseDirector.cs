@@ -7,14 +7,16 @@ using BusTycoon.Fleet;
 using BusTycoon.Routes;
 using BusTycoon.Save;
 using BusTycoon.Stations;
+using BusTycoon.Urban;
 using UnityEngine;
 
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Mağaza ekran görüntüsü turu (…/oyna/?vitrin&amp;profil=telefon). Orta oyunda iyi yönetilen bir şirket kurar
-    /// (8 hat, önerilen sayıda otobüs, en kârlı fiyatlar, 2 aylık geçmiş) ve oyunu sırayla gösterilecek
-    /// ekranlara getirir. Her ekran hazır olunca
+    /// Mağaza ekran görüntüsü turu (…/oyna/?vitrin&amp;profil=telefon). Yeni arayüzde İstanbul'da şehir içi başlangıçlı,
+    /// iyi yönetilen bir şirket kurar (6 dolmuş/şehir otobüsü hattı, önerilen sayıda araç, en kârlı fiyatlar, 2 aylık
+    /// geçmiş); eski arayüzde (?arayuz=eski) şehirlerarası şirket (8 hat). Oyunu sırayla gösterilecek ekranlara getirir.
+    /// Her ekran hazır olunca
     /// konsola <c>[Showcase] READY n/N ad</c> yazar.
     ///  ?vitrin        → elle izleme: her ekran birkaç saniye görünür, kendiliğinden ilerler.
     ///  ?vitrin=betik  → ekran görüntüsünü alan betik (Tools/store-screenshots.mjs) her görüntüden sonra
@@ -34,7 +36,8 @@ namespace BusTycoon.Game
         int index = -1;
         float shownAt, announcedAt;
         int tidyFrame;
-        bool scripted, tidied, announced, continueRequested;
+        bool scripted, tidied, announced, continueRequested, cityStarted;
+        CityData showcaseCity;
 
         public void Init(GameSession gameSession, GameUI gameUI)
         {
@@ -54,7 +57,14 @@ namespace BusTycoon.Game
             if (session == null || ui == null) return;
             if (index < 0)
             {
-                BuildCompany();
+                if (ui.ShowcaseNewUi)
+                {
+                    // Şehir haritası tarayıcıda dosyadan iner: hazır olana kadar bekle
+                    if (!cityStarted) StartCityCompany();
+                    if (!ui.ShowcaseCityReady) return;
+                    BuildCityCompany();
+                }
+                else BuildCompany();
                 Show(0);
                 return;
             }
@@ -101,7 +111,108 @@ namespace BusTycoon.Game
             else Debug.Log("[Showcase] DONE");
         }
 
-        // ------------------------------------------------------------------ vitrin şirketi
+        // ------------------------------------------------------------------ vitrin şirketi (şehir içi, yeni arayüz)
+
+        static readonly string[] CityLineModels = { "KENT_12", "KARTAL_M19", "ANKA_27", "KARTAL_M16", "KENT_12", "ANKA_31" };
+        const int CityLines = 6;
+
+        void StartCityCompany()
+        {
+            cityStarted = true;
+            showcaseCity = session.World.GetCity("TR_ISTANBUL") ?? City("İstanbul");
+            session.StartNewGame("Anadolu Ekspres", showcaseCity, withStartingBus: false);
+            CompanyState state = session.State;
+            state.logoId = 1;
+            state.vehicleClasses = true;
+            state.cityLicenses = true;
+            state.waitTimes = false; // vitrin: hatlar ve araçlar hemen hazır (sonra gerçek kurallar)
+            state.reputation = 72f;
+            session.Progression.GrantCityLicense(showcaseCity);
+            session.Progression.AddExperience(session.ProgressionConfig.XpRequiredForLevel(6));
+            session.Progression.RefreshUnlocks(silent: true);
+            state.cash = 6000000;
+            ui.ShowcaseCityMap();
+        }
+
+        void BuildCityCompany()
+        {
+            CompanyState state = session.State;
+            UrbanMap map = ui.ShowcaseCityMapData;
+            var stops = new List<UrbanStop>(map.Stops);
+            stops.Sort((a, b) => b.Weight.CompareTo(a.Weight));
+            int take = Math.Min(40, stops.Count);
+            var uses = new Dictionary<UrbanStop, int>();
+            var routes = new List<RouteState>();
+            RouteState landmarkRoute = null;
+            UrbanLandmark landmark = null;
+            UrbanStop plannerA = null, plannerB = null;
+
+            for (int i = 0; i < take && (routes.Count < CityLines || plannerA == null); i++)
+                for (int j = i + 1; j < take && (routes.Count < CityLines || plannerA == null); j++)
+                {
+                    UrbanStop a = stops[i], b = stops[j];
+                    float km = (a.Position - b.Position).magnitude / 1000f;
+                    if (km < 3.5f || km > 9f) continue;
+                    var plan = new UrbanLinePlan();
+                    if (!UrbanPlanner.TryPlan(map, a, b, showcaseCity, session.Economy, plan)) continue;
+                    uses.TryGetValue(a, out int usedA);
+                    uses.TryGetValue(b, out int usedB);
+                    if (routes.Count >= CityLines || usedA >= 2 || usedB >= 2)
+                    {
+                        // Planlayıcı görüntüsü için açılmamış bir çift
+                        if (plannerA == null && usedA == 0 && usedB == 0 && routes.Count >= CityLines) { plannerA = a; plannerB = b; }
+                        continue;
+                    }
+                    BusModelData model = session.Catalog.GetById(CityLineModels[routes.Count % CityLineModels.Length]);
+                    if (model == null) continue;
+                    RouteQuote quote = session.Routes.QuoteUrbanRoute(showcaseCity, plan, model);
+                    if (!quote.IsValid) continue;
+                    var opened = session.Routes.TryOpenUrbanRoute(showcaseCity, plan, quote.SuggestedPrice, out RouteState route);
+                    if (!opened) continue;
+                    int busCount = Mathf.Clamp(quote.RecommendedBusCount, 1, MaxBusesPerRoute);
+                    for (int k = 0; k < busCount; k++)
+                    {
+                        if (!session.Fleet.TryPurchase(model, 1f, out BusInstance bus)) break;
+                        bus.deliveryDaysLeft = 0;
+                        session.Routes.TryAssignBus(bus.busId, route.routeId);
+                    }
+                    routes.Add(route);
+                    uses[a] = usedA + 1;
+                    uses[b] = usedB + 1;
+                    if (landmarkRoute == null && plan.Landmarks.Count >= 2)
+                    {
+                        landmarkRoute = route;
+                        landmark = plan.Landmarks[0];
+                    }
+                }
+            if (routes.Count == 0) Debug.LogWarning("[Showcase] Şehir içi hat açılamadı");
+
+            // Geçmiş grafikleri dolsun; kasa orta oyun düzeyinde kalsın
+            state.cash = 320000;
+            for (int day = 0; day < SimulatedDays; day++)
+            {
+                if (state.cash > 850000) state.cash = 600000;
+                if (day == SimulatedDays / 2) SetBestPrices();
+                session.Clock.AdvanceOneDay();
+            }
+            SetBestPrices();
+            state.cash = Math.Min(state.cash, 486350);
+            state.waitTimes = true;
+
+            RouteState best = null;
+            foreach (var route in routes)
+                if (best == null || route.LastReport.Profit > best.LastReport.Profit) best = route;
+
+            shots.Clear();
+            shots.Add(new KeyValuePair<string, Action>("sehir-haritasi", () => ui.ShowcaseCityOverview(routes)));
+            if (plannerA != null) shots.Add(new KeyValuePair<string, Action>("hat-planlama", () => ui.ShowcaseUrbanPlanner(plannerA, plannerB)));
+            if (best != null) shots.Add(new KeyValuePair<string, Action>("bilet-fiyati", () => ui.ShowcaseRoute(best)));
+            if (landmark != null) shots.Add(new KeyValuePair<string, Action>("yakin-plan", () => ui.ShowcaseCityCloseUp(landmark.Position)));
+            shots.Add(new KeyValuePair<string, Action>("ana-ekran", () => ui.ShowcaseHome()));
+            shots.Add(new KeyValuePair<string, Action>("galeri", () => ui.ShowcaseGallery()));
+        }
+
+        // ------------------------------------------------------------------ vitrin şirketi (şehirlerarası, eski arayüz)
 
         void BuildCompany()
         {
