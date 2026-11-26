@@ -22,11 +22,17 @@ namespace BusTycoon.Game
 
         VisualElement tkSheet;
         ScrollView tkSheetScroll;
+        /// <summary>Panelin altında kaymayan alan (ör. "Hattı aç"): boşsa gizli.</summary>
+        VisualElement tkSheetFooter;
         Label tkSheetTitle, tkSheetSubtitle;
         Panel tkBuiltPanel = Panel.None;
         bool tkSheetDirty;
         int tkSheetSignature, tkSheetOpenFrame = -1;
         VisualElement tkFinanceChart;
+
+        /// <summary>Tam sayfada iki sütunlu ızgara olarak dizilen paneller (kartlar yan yana).</summary>
+        static bool GridPage(Panel target) =>
+            target == Panel.RouteList || target == Panel.Fleet || target == Panel.Dealership || target == Panel.Goals || target == Panel.Regions;
 
         /// <summary>Panel yeni arayüzde mi çiziliyor (IMGUI çizmez).</summary>
         bool ToolkitDrawsPanel(Panel target) => NewUi && ToolkitPanels.Contains(target);
@@ -44,6 +50,7 @@ namespace BusTycoon.Game
             tkSheetScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden; // içerik yalnız dikeyde kayar
             tkSheetScroll.AddToClassList("bt-sheet__scroll");
             tkSheet.Add(tkSheetScroll);
+            tkSheetFooter = Ui.El("bt-sheet__footer", tkSheet);
             tkSheet.style.display = DisplayStyle.None;
         }
 
@@ -59,6 +66,11 @@ namespace BusTycoon.Game
             Rect rect = PanelRect;
             Ui.Place(tkSheet, rect.x * k, rect.y * k, rect.width * k, rect.height * k);
             tkCovered.Add(rect);
+            // Sekme sayfası içerik alanını kaplar (başlık üst çubukta, kapatma sekmelerle); hat paneli ve planlayıcı
+            // haritanın sağındaki panelde, kapatma düğmesiyle
+            bool page = IsPagePanel(panel);
+            Ui.Toggle(tkSheet, "is-page", page);
+            Ui.Toggle(tkSheet, "is-wide", page && GridPage(panel));
 
             if (panel == Panel.Log) tkSheetDirty = true; // günlük gün içinde de dolar (imza ucuz)
             if (panel == Panel.Planner)
@@ -106,7 +118,7 @@ namespace BusTycoon.Game
                 }
                 case Panel.Regions:
                 {
-                    int signature = session.Progression.Level * 7919;
+                    int signature = session.Progression.Level * 7919 + session.State.ownedCityIds.Count * 131 + Mathf.RoundToInt((float)session.Finance.Cash / 1000f);
                     foreach (var region in session.World.Regions)
                     {
                         signature = signature * 3 + (session.Progression.IsRegionUnlocked(region) ? 1 : 0) +
@@ -118,7 +130,7 @@ namespace BusTycoon.Game
                 case Panel.Finance: return session.State.currentDay * 7 + session.State.recentTransactions.Count;
                 case Panel.RouteList:
                 {
-                    int signature = session.State.currentDay * 7 + session.Fleet.Buses.Count;
+                    int signature = session.State.currentDay * 7 + session.Fleet.Buses.Count + tkRouteFilter * 100003 + tkRouteSort * 1000003;
                     foreach (var route in session.Routes.Routes)
                         signature = signature * 31 + route.routeId.GetHashCode() + Mathf.RoundToInt(route.ticketPrice * 10f) +
                                     session.Fleet.CountBusesOnRoute(route.routeId) * 7;
@@ -126,7 +138,7 @@ namespace BusTycoon.Game
                 }
                 case Panel.Dealership: return DealershipSignature();
                 case Panel.Route: return RouteSignature();
-                case Panel.Planner: return PlannerSignature();
+                case Panel.Planner: return urbanPlanning ? UrbanPlannerSignature() : PlannerSignature();
                 default: return 0;
             }
         }
@@ -135,6 +147,13 @@ namespace BusTycoon.Game
         {
             VisualElement body = tkSheetScroll.contentContainer;
             body.Clear();
+            tkSheetFooter.Clear();
+            BuildSheetContent(body);
+            Ui.Show(tkSheetFooter, tkSheetFooter.childCount > 0);
+        }
+
+        void BuildSheetContent(VisualElement body)
+        {
             switch (panel)
             {
                 case Panel.Goals:
@@ -146,15 +165,17 @@ namespace BusTycoon.Game
                     BuildLog(body);
                     break;
                 case Panel.Help:
-                    SheetHeader("Nasıl Oynanır?", null);
+                    SheetHeader("Nasıl Oynanır?", "İpuçları ve kısayollar");
                     BuildHelp(body);
                     break;
                 case Panel.Regions:
-                    SheetHeader("Bölgeler", "Yeni ülkelerde hat açmak için işletme lisansı alın.");
+                    SheetHeader("Şirketim", $"Seviye {session.Progression.Level} · ülke lisansları");
+                    BuildCompany(body);
                     BuildRegions(body);
+                    BuildCityLicenses(body); // ülke lisanslarının altında (kullanıcı kararı)
                     break;
                 case Panel.Finance:
-                    SheetHeader("Finans", null);
+                    SheetHeader("Finans", $"kasa {Fmt.Money(session.Finance.Cash)} · son 7 gün {Fmt.Signed(session.Finance.GetNetProfit(7))}");
                     BuildFinance(body);
                     break;
                 case Panel.RouteList:
@@ -170,7 +191,8 @@ namespace BusTycoon.Game
                     BuildRoutePanel(body);
                     break;
                 case Panel.Planner:
-                    BuildPlanner(body);
+                    if (urbanPlanning) BuildUrbanPlanner(body);
+                    else BuildPlanner(body);
                     break;
             }
         }
@@ -214,6 +236,10 @@ namespace BusTycoon.Game
             _ => "is-success"
         };
 
+        /// <summary>Hatlarım süzgeci (0 tümü, 1 kârlı, 2 uyarı) ve sıralaması (0 önem/kâr, 1 doluluk, 2 ad).</summary>
+        int tkRouteFilter, tkRouteSort;
+        readonly List<RouteState> tkRouteView = new List<RouteState>();
+
         void BuildRouteList(VisualElement body)
         {
             var routes = session.Routes;
@@ -222,35 +248,95 @@ namespace BusTycoon.Game
             foreach (var route in routes.Routes) total += route.LastReport.Profit;
             SheetHeader("Hatlarım", $"{routes.Routes.Count} / {session.Progression.MaxRoutes} hat · dün toplam {Fmt.Signed(total)}");
 
-            Button create = ActionButton(body, "+ Yeni hat aç", () => OpenPlannerNow(null), primary: true);
-            create.AddToClassList("bt-btn--wide");
             if (routes.Routes.Count == 0)
             {
+                Button create = ActionButton(body, "+ Yeni hat aç", OpenNewRoutePlanner, primary: true);
+                create.AddToClassList("bt-btn--wide");
                 Ui.Text("bt-item__text", "Henüz hattınız yok. 'Yeni hat aç' ile ya da bir durağa girip 'Buradan hat aç' ile başlayın.", UiWeight.Regular, body);
                 return;
             }
 
             EnsureRouteList();
+            int profitable = 0, warnings = 0;
+            RouteState alertRoute = null;
             foreach (var route in sortedRoutes)
             {
+                RouteInsight insight = routeInsightCache[route.routeId];
+                if (route.LastReport.Profit >= 0f) profitable++;
+                if (insight.Severity >= InsightSeverity.Warning)
+                {
+                    warnings++;
+                    if (alertRoute == null) alertRoute = route;
+                }
+            }
+
+            // Süzgeç ve sıralama; en önemli uyarı şeridi
+            VisualElement controls = Ui.El("bt-row bt-route-controls", body);
+            VisualElement filters = Ui.El("bt-row bt-segment", controls);
+            Segment(filters, "Tümü", routes.Routes.Count, tkRouteFilter == 0, () => tkRouteFilter = 0);
+            Segment(filters, "Kârlı", profitable, tkRouteFilter == 1, () => tkRouteFilter = 1);
+            Segment(filters, "Uyarı", warnings, tkRouteFilter == 2, () => tkRouteFilter = 2);
+            VisualElement sorts = Ui.El("bt-row bt-segment is-plain", controls);
+            Segment(sorts, "Kâr", -1, tkRouteSort == 0, () => tkRouteSort = 0);
+            Segment(sorts, "Doluluk", -1, tkRouteSort == 1, () => tkRouteSort = 1);
+            Segment(sorts, "Ad", -1, tkRouteSort == 2, () => tkRouteSort = 2);
+            Ui.El("bt-grow", controls).pickingMode = PickingMode.Ignore;
+            Button add = ActionButton(controls, "+ Yeni hat", OpenNewRoutePlanner, primary: true);
+            add.name = "routes-new";
+            if (alertRoute != null)
+            {
+                Button alert = Ui.Button("bt-row bt-alert", string.Empty, () => OpenRoutePanelNow(alertRoute, RouteTab.Price), body);
+                Ui.Text("bt-alert__tag", "UYARI", UiWeight.Black, alert);
+                Ui.Text("bt-alert__text", $"{RouteName(alertRoute)}: {routeInsightCache[alertRoute.routeId].Message}", UiWeight.Bold, alert);
+            }
+
+            tkRouteView.Clear();
+            foreach (var route in sortedRoutes)
+            {
+                if (tkRouteFilter == 1 && route.LastReport.Profit < 0f) continue;
+                if (tkRouteFilter == 2 && routeInsightCache[route.routeId].Severity < InsightSeverity.Warning) continue;
+                tkRouteView.Add(route);
+            }
+            if (tkRouteSort == 1) tkRouteView.Sort((x, y) => y.LastReport.loadFactor.CompareTo(x.LastReport.loadFactor));
+            else if (tkRouteSort == 2) tkRouteView.Sort((x, y) => string.Compare(RouteName(x), RouteName(y), StringComparison.CurrentCulture));
+            if (tkRouteView.Count == 0) Ui.Text("bt-empty", "Bu süzgece uyan hat yok.", UiWeight.Regular, body);
+
+            foreach (var route in tkRouteView)
+            {
                 int buses = fleet.CountBusesOnRoute(route.routeId);
-                if (!routeInsightCache.TryGetValue(route.routeId, out RouteInsight insight))
-                    insight = RouteAdvisor.GetTopInsight(route, buses);
+                RouteInsight insight = routeInsightCache[route.routeId];
                 RouteDayReport last = route.LastReport;
+                Color identity = world.RouteIdentityColor(route.routeId);
 
                 VisualElement card = Ui.El("bt-item bt-route", body);
-                card.style.borderLeftColor = world.RouteIdentityColor(route.routeId); // haritadaki hat rengi
+                card.style.borderLeftColor = identity; // haritadaki hat rengi (sol şerit)
                 VisualElement header = Ui.El("bt-row", card);
-                Ui.Text("bt-item__title bt-grow", RouteName(route), UiWeight.Bold, header);
+                Label name = Ui.Text("bt-route__name", RouteName(route), UiWeight.Black, header);
+                name.style.color = Color.Lerp(identity, Color.white, 0.35f);
+                CityData a = session.World.GetCity(route.cityAId), b = session.World.GetCity(route.cityBId);
+                string category = a != null && b != null && a.Region != b.Region ? "ULUSLARARASI" : Fmt.Upper(a?.Region.DisplayName);
+                Label tag = Ui.Text("bt-route__tag", category, UiWeight.Black, header);
+                tag.style.color = identity;
+                Ui.El("bt-grow", header).pickingMode = PickingMode.Ignore;
                 Ui.Text("bt-pill " + InsightClass(insight.Severity), InsightTag(insight.Severity), UiWeight.Bold, header);
-                Label profit = Ui.Text("bt-route__profit", route.HasHistory ? $"{Fmt.Signed(last.Profit)}/gün" : "—", UiWeight.Black, header);
-                profit.AddToClassList(Tone(last.Profit));
 
-                VisualElement stats = Ui.El("bt-row bt-route__stats", card);
-                Ui.Text("bt-route__detail bt-grow", $"{buses} otobüs · {Fmt.Price(route.ticketPrice)} · {Fmt.Num(last.passengers)} yolcu", UiWeight.Regular, stats);
-                Ui.Text("bt-route__detail", Fmt.Pct(last.loadFactor), UiWeight.Bold, stats);
-                VisualElement bar = Ui.El("bt-bar bt-route__load", stats);
-                Ui.Fill(Ui.El("bt-bar__fill bt-bar__fill--blue", bar), last.loadFactor);
+                VisualElement row = Ui.El("bt-row bt-route__main", card);
+                Ui.Text("bt-route__detail bt-grow", $"{buses} otobüs · {Fmt.Price(route.ticketPrice)} · %{Mathf.RoundToInt(last.loadFactor * 100f)} dolu", UiWeight.Regular, row);
+                tkSparkBuffer.Clear();
+                if (route.history != null)
+                    for (int i = Mathf.Max(0, route.history.Count - 14); i < route.history.Count; i++) tkSparkBuffer.Add(route.history[i].Profit);
+                bool up = route.history == null || route.history.Count < 2 || route.history[route.history.Count - 1].Profit >= route.history[route.history.Count - 2].Profit;
+                if (tkSparkBuffer.Count >= 2)
+                {
+                    var spark = new UiSparkline();
+                    spark.AddToClassList("bt-route__spark");
+                    spark.SetData(tkSparkBuffer, up ? SparkUp : SparkDown);
+                    row.Add(spark);
+                }
+                VisualElement value = Ui.El("bt-col bt-route__value", row);
+                Label profit = Ui.Text("bt-route__profit", route.HasHistory ? Fmt.Signed(last.Profit) : "—", UiWeight.Black, value);
+                profit.AddToClassList(Tone(last.Profit));
+                Ui.Text("bt-change " + (up ? "is-up" : "is-down"), "günlük", UiWeight.Bold, value);
 
                 Label message = Ui.Text("bt-item__text", insight.Message, UiWeight.Regular, card);
                 message.AddToClassList(InsightClass(insight.Severity) + "-text");
@@ -263,7 +349,38 @@ namespace BusTycoon.Game
             }
         }
 
+        /// <summary>Bölümlü seçim düğmesi (süzgeç/sıralama); seçince sayfa yeniden kurulur.</summary>
+        void Segment(VisualElement parent, string label, int count, bool active, Action select)
+        {
+            Button button = Ui.Button("bt-row bt-segment__item", string.Empty, () => { select(); tkSheetDirty = true; tkSheetSignature = int.MinValue; }, parent);
+            Ui.Toggle(button, "is-active", active);
+            Ui.Text("bt-segment__label", label, UiWeight.Bold, button);
+            if (count >= 0) Ui.Text("bt-segment__count", count.ToString(), UiWeight.Black, button);
+        }
+
         // ------------------------------------------------------------------ Bölgeler
+
+        /// <summary>Şirketim sayfasının başı: şirket kartı, ardından ülke lisansları başlığı.</summary>
+        void BuildCompany(VisualElement body)
+        {
+            var progression = session.Progression;
+            VisualElement card = Ui.El("bt-item bt-company-card bt-full", body); // ızgarada tam genişlik
+            VisualElement header = Ui.El("bt-row", card);
+            CompanyLogo(header, session.State.logoId, "bt-logo--large");
+            VisualElement names = Ui.El("bt-col bt-grow", header);
+            Ui.Text("bt-company-card__name", session.State.companyName, UiWeight.Black, names);
+            CityData hq = session.Headquarters;
+            Ui.Text("bt-item__text", hq != null ? $"Merkez ofis: {hq.DisplayName}" : "Merkez ofis yok", UiWeight.Regular, names);
+            Ui.Text("bt-pill is-warning", $"Seviye {progression.Level}", UiWeight.Bold, header);
+            VisualElement bar = Ui.El("bt-bar", card);
+            Ui.Fill(Ui.El("bt-bar__fill", bar), progression.LevelProgress01);
+            double fleetValue = 0;
+            foreach (var bus in session.Fleet.Buses) fleetValue += session.Fleet.GetResaleValue(bus);
+            KeyValue(card, "İtibar", $"{Mathf.RoundToInt(progression.Reputation)} / 100", null, UIIcon.Star);
+            KeyValue(card, "Hat sınırı", $"{session.Routes.Routes.Count} / {progression.MaxRoutes}");
+            KeyValue(card, "Şirket değeri", Fmt.Money(session.Finance.Cash + fleetValue));
+            Section(body, "Ülke lisansları").AddToClassList("bt-section--full");
+        }
 
         void BuildRegions(VisualElement body)
         {
@@ -387,7 +504,9 @@ namespace BusTycoon.Game
         {
             tkSheetTitle.text = title;
             tkSheetSubtitle.text = subtitle ?? string.Empty;
-            Ui.Show(tkSheetSubtitle, !string.IsNullOrEmpty(subtitle));
+            // Sekme sayfasında özet üst çubukta yazar (ScreenHeading); sayfanın içinde ikinci kez yazılmaz.
+            // Satır içi stil USS'yi ezdiği için burada gizlenir.
+            Ui.Show(tkSheetSubtitle, !string.IsNullOrEmpty(subtitle) && !IsPagePanel(panel));
         }
 
         void BuildGoals(VisualElement body)

@@ -16,7 +16,7 @@ namespace BusTycoon.Game
         VisualElement tkPriceChart;
         Label tkPriceValue, tkPriceZone, tkFcPassengers, tkFcLoad, tkFcSpill, tkFcRevenue, tkFcCost, tkFcProfit, tkFcDelta;
         Button tkPriceUndo, tkPriceApply;
-        int tkRouteBuiltDay = -1;
+        int tkRouteBuiltDay = -1, tkRouteBuiltSetup = -1;
 
         int RouteSignature()
         {
@@ -30,6 +30,8 @@ namespace BusTycoon.Game
             signature = signature * 31 + Mathf.RoundToInt(selectedRoute.ticketPrice * 100f);
             signature = signature * 31 + (showAdvanced ? 1 : 0) + (selectedRoute.autoSchedule ? 2 : 0) + Mathf.RoundToInt(selectedRoute.manualUtilization * 100f) * 4;
             signature = signature * 31 + (session.Routes.GetRoute(selectedRoute.routeId) != null ? 1 : 0);
+            // Kurulum kartının gün sayısı; fiyat düzenlenirken panel yeniden kurulmaz (kaydırıcı elde kalsın)
+            signature = signature * 31 + (editingPrice ? tkRouteBuiltSetup : selectedRoute.setupDaysLeft) * 2 + (AdService.Enabled ? 1 : 0);
             return signature;
         }
 
@@ -37,6 +39,7 @@ namespace BusTycoon.Game
         {
             tkPriceSlider = null;
             tkRouteBuiltDay = session.State.currentDay;
+            tkRouteBuiltSetup = selectedRoute != null ? selectedRoute.setupDaysLeft : -1;
             if (selectedRoute == null || session.Routes.GetRoute(selectedRoute.routeId) == null)
             {
                 SheetHeader("Hat", null);
@@ -48,6 +51,8 @@ namespace BusTycoon.Game
 
             int busCount = session.Fleet.CountBusesOnRoute(selectedRoute.routeId);
             SheetHeader(RouteName(selectedRoute), $"{Fmt.Km(selectedRoute.distanceKm)} · hat no {selectedRoute.routeId} · {busCount} otobüs");
+
+            if (selectedRoute.IsSettingUp) BuildSetupCard(body, selectedRoute);
 
             RouteInsight insight = RouteAdvisor.GetTopInsight(selectedRoute, busCount);
             VisualElement advice = Ui.El("bt-item bt-advice", body);
@@ -247,6 +252,11 @@ namespace BusTycoon.Game
             {
                 VisualElement card = BusSummary(body, bus);
                 string id = bus.busId;
+                if (!session.Routes.CanServe(bus.Model, selectedRoute))
+                {
+                    Ui.Text("bt-item__text bt-dim", selectedRoute.IsUrban ? "Şehir içinde çalışamaz" : "Şehirlerarası çalışamaz", UiWeight.Bold, card);
+                    continue;
+                }
                 ActionButton(card, "Bu hatta ata", () =>
                 {
                     var result = session.Routes.TryAssignBus(id, selectedRoute.routeId);

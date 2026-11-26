@@ -7,6 +7,7 @@ using BusTycoon.Fleet;
 using BusTycoon.Progression;
 using BusTycoon.Save;
 using BusTycoon.Stations;
+using BusTycoon.Urban;
 using BusTycoon.World;
 using UnityEngine;
 
@@ -46,6 +47,20 @@ namespace BusTycoon.Routes
         public event Action<RouteState> RouteOpened;
         public event Action<RouteState> RouteClosed;
         public event Action<RouteState> RouteChanged;
+        /// <summary>Hattın kurulumu bitti (süre doldu ya da reklamla bitirildi): ertesi günden sefer yapar.</summary>
+        public event Action<RouteState> SetupFinished;
+
+        /// <summary>Kurulumu hemen bitirir (ödüllü reklam): hat bugün sefere başlar.</summary>
+        public OpResult FinishSetupNow(string routeId)
+        {
+            RouteState route = GetRoute(routeId);
+            if (route == null) return OpResult.Fail("Hat bulunamadı.");
+            if (!route.IsSettingUp) return OpResult.Fail("Hat zaten çalışıyor.");
+            route.setupDaysLeft = 0;
+            SetupFinished?.Invoke(route);
+            RouteChanged?.Invoke(route);
+            return OpResult.Ok("Hat kurulumu tamamlandı.");
+        }
 
         public RouteSystem(CompanyState state, WorldGraph world, EconomyConfig economy,
             FleetSystem fleet, FinanceSystem finance, ProgressionSystem progression, StationSystem stations = null)
@@ -63,8 +78,9 @@ namespace BusTycoon.Routes
 
         public RouteState GetRoute(string routeId) => state.routes.Find(r => r.routeId == routeId);
 
-        public RouteState FindRoute(CityData a, CityData b) => state.routes.Find(r =>
-            (r.cityAId == a.Id && r.cityBId == b.Id) || (r.cityAId == b.Id && r.cityBId == a.Id));
+        /// <summary>İki şehir arasındaki şehirlerarası hat (şehir içi hatlar sayılmaz).</summary>
+        public RouteState FindRoute(CityData a, CityData b) => state.routes.Find(r => !r.IsUrban &&
+            ((r.cityAId == a.Id && r.cityBId == b.Id) || (r.cityAId == b.Id && r.cityBId == a.Id)));
 
         public CityData GetCityA(RouteState route) => world.GetCity(route.cityAId);
         public CityData GetCityB(RouteState route) => world.GetCity(route.cityBId);
@@ -81,9 +97,11 @@ namespace BusTycoon.Routes
                 return OpResult.Fail($"{a.Region.DisplayName} için işletme lisansınız yok.");
             if (!progression.IsRegionUnlocked(b.Region))
                 return OpResult.Fail($"{b.Region.DisplayName} için işletme lisansınız yok.");
+            if (!progression.OwnsCity(a) && !progression.OwnsCity(b))
+                return OpResult.Fail("Şehirlerarası hat lisanslı şehirlerinden birinden başlamalı (Şirketim → Şehir lisansları).");
 
-            float license = economy.GetRouteLicenseCost(world.GetRoadDistanceKm(a, b));
-            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat lisansı için {license:N0} gerekli.");
+            float license = RouteLicenseCost(a, b);
+            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat lisansı için {BusTycoon.Core.Money.Format(license)} gerekli.");
             return OpResult.Ok();
         }
 
@@ -102,16 +120,30 @@ namespace BusTycoon.Routes
 
             quote.DistanceKm = world.GetRoadDistanceKm(a, b);
             quote.TravelHours = plannedModel.TravelHours(quote.DistanceKm);
-            quote.LicenseCost = economy.GetRouteLicenseCost(quote.DistanceKm);
-
-            float bias = ElasticityBiasFor(a.Id, b.Id);
-            // Koltuksuz model ya da sefer yapılamayacak kadar uzun hat: sıfıra bölme olmasın
-            float busSeatsAtTarget = Mathf.Max(1f, plannedModel.Seats * economy.AutoScheduleTargetLoadFactor
-                                                   * RouteEconomics.MaxTripsPerDay(plannedModel, quote.DistanceKm, economy));
+            quote.LicenseCost = RouteLicenseCost(a, b);
 
             // Talep 30. gün olgunluğunda değerlendirilir: açılış günündeki düşük talep oyuncuyu yanıltmasın.
-            const int matureDays = 30;
-            RouteEconomics.Inputs inputs = BuildInputs(a, b, quote.DistanceKm, 0f, matureDays, true, 1f, bias);
+            RouteEconomics.Inputs inputs = BuildInputs(a, b, quote.DistanceKm, 0f, MatureDays, true, 1f, ElasticityBiasFor(a.Id, b.Id));
+            FillQuote(ref quote, inputs, plannedModel, false);
+            return quote;
+        }
+
+        const int MatureDays = 30;
+
+        /// <summary>Şehirlerarası hat ruhsatı: iki ucu da lisanslı şehirse ücretsiz (şehir lisansı kuralı), değilse mesafeye göre.</summary>
+        public float RouteLicenseCost(CityData a, CityData b)
+        {
+            if (progression.CityLicensesActive && progression.OwnsCity(a) && progression.OwnsCity(b)) return 0f;
+            return economy.GetRouteLicenseCost(world.GetRoadDistanceKm(a, b));
+        }
+
+        /// <summary>Teklifin ortak kısmı (şehirlerarası ve şehir içi): en iyi fiyat, otobüs sayısı, tahmin.</summary>
+        void FillQuote(ref RouteQuote quote, RouteEconomics.Inputs inputs, BusModelData plannedModel, bool urban)
+        {
+            // Koltuksuz model ya da sefer yapılamayacak kadar uzun hat: sıfıra bölme olmasın
+            float turnover = urban ? 1f / Mathf.Clamp(economy.UrbanRideShare, 0.2f, 1f) : 1f;
+            float busSeatsAtTarget = Mathf.Max(1f, plannedModel.Seats * turnover * economy.AutoScheduleTargetLoadFactor
+                                                   * RouteEconomics.MaxTripsPerDay(plannedModel, quote.DistanceKm, economy, urban));
 
             // 1) En düşük fiyattaki talebi bile taşıyabilecek sanal filo → kapasite kısıt olmaz.
             //    Otomatik sefer planında fazladan otobüs yalnızca sabit sigorta maliyetidir; en iyi fiyatı değiştirmez.
@@ -129,9 +161,84 @@ namespace BusTycoon.Routes
 
             FillVirtualFleet(plannedModel, busCount);
             quote.RecommendedBusCount = busCount;
-            quote.Forecast = RouteEconomics.Evaluate(
-                BuildInputs(a, b, quote.DistanceKm, quote.SuggestedPrice, matureDays, true, 1f, bias), virtualBuses, economy);
+            inputs.TicketPrice = quote.SuggestedPrice;
+            quote.Forecast = RouteEconomics.Evaluate(inputs, virtualBuses, economy);
+        }
+
+        // ------------------------------------------------------------------ şehir içi (dolmuş) hatları
+
+        /// <summary>Bu şehirde aynı iki uç arasında (yön fark etmez) hat var mı.</summary>
+        public RouteState FindUrbanRoute(string cityId, UrbanStop a, UrbanStop b)
+        {
+            if (a == null || b == null) return null;
+            return state.routes.Find(r => r.IsUrban && r.urbanCityId == cityId &&
+                ((r.urbanNameA == a.Name && r.urbanNameB == b.Name) || (r.urbanNameA == b.Name && r.urbanNameB == a.Name)));
+        }
+
+        public OpResult CanOpenUrbanRoute(CityData city, UrbanLinePlan plan)
+        {
+            if (city == null || plan == null) return OpResult.Fail("Şehir seçilmedi.");
+            if (!plan.IsValid) return OpResult.Fail(plan.Error ?? "Güzergâh bulunamadı.");
+            if (FindUrbanRoute(city.Id, plan.A, plan.B) != null) return OpResult.Fail("Bu hat zaten işletiliyor.");
+            if (state.routes.Count >= progression.MaxRoutes)
+                return OpResult.Fail($"Hat limiti dolu ({progression.MaxRoutes}). Şirket seviyesini yükseltin.");
+            if (!progression.IsRegionUnlocked(city.Region))
+                return OpResult.Fail($"{city.Region.DisplayName} için işletme lisansınız yok.");
+            if (!progression.OwnsCity(city)) return OpResult.Fail($"{city.DisplayName} lisansı yok (Şirketim → Şehir lisansları).");
+            float license = economy.GetUrbanLicenseCost(plan.Km);
+            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat ruhsatı için {BusTycoon.Core.Money.Format(license)} gerekli.");
+            return OpResult.Ok();
+        }
+
+        /// <summary>Şehir içi hat teklifi: mesafe, süre, ruhsat, önerilen araç sayısı ve tam hat bileti.</summary>
+        public RouteQuote QuoteUrbanRoute(CityData city, UrbanLinePlan plan, BusModelData plannedModel)
+        {
+            var quote = new RouteQuote { PlannedModel = plannedModel };
+            OpResult check = CanOpenUrbanRoute(city, plan);
+            quote.IsValid = check.Success;
+            quote.Error = check.Message;
+            if (city == null || plan == null || !plan.IsValid || plannedModel == null) return quote;
+
+            quote.DistanceKm = plan.Km;
+            quote.TravelHours = RouteEconomics.TravelHours(plannedModel, plan.Km, economy, true);
+            quote.LicenseCost = economy.GetUrbanLicenseCost(plan.Km);
+            RouteEconomics.Inputs inputs = BuildInputs(city, city, plan.Km, 0f, MatureDays, true, 1f,
+                ElasticityBiasFor(plan.A.Name, plan.B.Name), true, plan.PotentialDemand);
+            FillQuote(ref quote, inputs, plannedModel, true);
             return quote;
+        }
+
+        public OpResult TryOpenUrbanRoute(CityData city, UrbanLinePlan plan, float initialPrice, out RouteState route)
+        {
+            route = null;
+            OpResult check = CanOpenUrbanRoute(city, plan);
+            if (!check) return check;
+
+            finance.TrySpend(economy.GetUrbanLicenseCost(plan.Km), LedgerCategory.RouteLicense, city.Id + ":" + plan.A.Name + "-" + plan.B.Name);
+            state.nextRouteSerial++;
+            route = new RouteState
+            {
+                routeId = $"R{state.nextRouteSerial:000}",
+                cityAId = city.Id,
+                cityBId = city.Id,
+                distanceKm = plan.Km,
+                ticketPrice = Mathf.Max(0.01f, initialPrice),
+                openedDay = state.currentDay,
+                urbanCityId = city.Id,
+                urbanNameA = plan.A.Name,
+                urbanNameB = plan.B.Name,
+                urbanAX = plan.A.Position.x,
+                urbanAY = plan.A.Position.y,
+                urbanBX = plan.B.Position.x,
+                urbanBY = plan.B.Position.y,
+                urbanDemand = plan.PotentialDemand,
+                urbanStopCount = plan.Stops.Count,
+                urbanKindFame = UrbanEvents.KindFame(plan.Landmarks),
+                setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
+            };
+            state.routes.Add(route);
+            RouteOpened?.Invoke(route);
+            return OpResult.Ok($"{plan.A.Name} – {plan.B.Name} dolmuş hattı açıldı.");
         }
 
         public OpResult TryOpenRoute(CityData a, CityData b, float initialPrice, out RouteState route)
@@ -141,7 +248,8 @@ namespace BusTycoon.Routes
             if (!check) return check;
 
             float km = world.GetRoadDistanceKm(a, b);
-            finance.TrySpend(economy.GetRouteLicenseCost(km), LedgerCategory.RouteLicense, a.Id + "-" + b.Id);
+            float licenseCost = RouteLicenseCost(a, b);
+            if (licenseCost > 0f) finance.TrySpend(licenseCost, LedgerCategory.RouteLicense, a.Id + "-" + b.Id);
 
             state.nextRouteSerial++;
             route = new RouteState
@@ -151,7 +259,8 @@ namespace BusTycoon.Routes
                 cityBId = b.Id,
                 distanceKm = km,
                 ticketPrice = Mathf.Max(0.01f, initialPrice),
-                openedDay = state.currentDay
+                openedDay = state.currentDay,
+                setupDaysLeft = state.waitTimes ? economy.RouteSetupDays : 0
             };
             state.routes.Add(route);
             RouteOpened?.Invoke(route);
@@ -196,6 +305,17 @@ namespace BusTycoon.Routes
             return OpResult.Ok();
         }
 
+        /// <summary>Araç bu hatta çalışabilir mi (araç sınıfı kuralı açıksa: dolmuş/şehir otobüsü şehir içi, otobüs şehirlerarası).</summary>
+        public bool CanServe(BusModelData model, RouteState route) => route == null || CanServe(model, route.IsUrban);
+
+        public bool CanServe(BusModelData model, bool urban) =>
+            model == null || !state.vehicleClasses || (urban ? model.ServesUrban : model.ServesIntercity);
+
+        /// <summary>Kural gereği çalışamıyorsa oyuncuya gösterilecek kısa neden.</summary>
+        public static string ServeError(BusModelData model, bool urban) => urban
+            ? $"{model.DisplayName} şehir içi hatta çalışamaz (şehirlerarası otobüs)."
+            : $"{model.DisplayName} şehirlerarası hatta çalışamaz (yalnız şehir içi).";
+
         /// <summary>routeId null ise otobüs garaja çekilir.</summary>
         public OpResult TryAssignBus(string busId, string routeId)
         {
@@ -207,6 +327,7 @@ namespace BusTycoon.Routes
             {
                 route = GetRoute(routeId);
                 if (route == null) return OpResult.Fail("Hat bulunamadı.");
+                if (!CanServe(bus.Model, route)) return OpResult.Fail(ServeError(bus.Model, route.IsUrban));
             }
 
             RouteState previous = bus.IsAssigned ? GetRoute(bus.assignedRouteId) : null;
@@ -233,7 +354,7 @@ namespace BusTycoon.Routes
         {
             var buses = new List<BusInstance>();
             fleet.GetBusesOnRoute(route.routeId, buses);
-            float bias = ElasticityBiasFor(route.cityAId, route.cityBId);
+            float bias = route.IsUrban ? ElasticityBiasFor(route.urbanNameA, route.urbanNameB) : ElasticityBiasFor(route.cityAId, route.cityBId);
             RouteEconomics.Inputs template = BuildInputs(route, route.ticketPrice, 1f, bias, true);
 
             return price =>
@@ -265,6 +386,16 @@ namespace BusTycoon.Routes
             fleet.GetBusesOnRoute(route.routeId, busBuffer);
             var report = new RouteDayReport { day = state.currentDay, routeId = route.routeId, ticketPrice = route.ticketPrice };
 
+            // Kurulumdaki hat sefer yapmaz; atanmış araçlar yalnız sigorta öder. Geçmişe yazılmaz (grafik kurulum sonrası başlar).
+            if (route.IsSettingUp)
+            {
+                foreach (var bus in busBuffer)
+                    if (bus.Model != null) finance.Charge(bus.Model.InsurancePerDay * IncomeScale, LedgerCategory.Insurance, bus.busId);
+                route.setupDaysLeft--;
+                if (!route.IsSettingUp) SetupFinished?.Invoke(route);
+                return report;
+            }
+
             if (busBuffer.Count == 0)
             {
                 route.AddReport(report);
@@ -272,13 +403,16 @@ namespace BusTycoon.Routes
             }
 
             float noise = 1f + (float)(rng.NextDouble() * 2.0 - 1.0) * economy.DailyDemandNoise;
-            RouteForecast f = RouteEconomics.Evaluate(BuildInputs(route, route.ticketPrice, noise, 1f, false), busBuffer, economy);
+            RouteEconomics.Inputs dayInputs = BuildInputs(route, route.ticketPrice, noise, 1f, false);
+            dayInputs.EventFactor = EventFactor(route, state.currentDay);
+            RouteForecast f = RouteEconomics.Evaluate(dayInputs, busBuffer, economy);
+            report.eventFactor = dayInputs.EventFactor;
 
             // Yıpranma: her çalışan otobüs, kullanım oranı kadar sefer yapar.
             foreach (var bus in busBuffer)
             {
                 if (!bus.IsAvailableToday || bus.Model == null) continue;
-                float trips = RouteEconomics.MaxTripsPerDay(bus.Model, route.distanceKm, economy) * f.Utilization;
+                float trips = RouteEconomics.MaxTripsPerDay(bus.Model, route.distanceKm, economy, route.IsUrban) * f.Utilization;
                 fleet.ApplyWear(bus, trips * route.distanceKm);
             }
 
@@ -305,20 +439,32 @@ namespace BusTycoon.Routes
             return report;
         }
 
+        readonly List<UrbanEvents.Event> eventScratch = new List<UrbanEvents.Event>();
+
+        /// <summary>Hattın o günkü önemli gün çarpanı (şehirlerarası hatta ve mekân geçmeyen hatta 1).</summary>
+        public float EventFactor(RouteState route, int day) =>
+            route != null && route.IsUrban ? UrbanEvents.DemandFactor(day, route.urbanKindFame, eventScratch) : 1f;
+
         // ------------------------------------------------------------------ yardımcılar
 
         RouteEconomics.Inputs BuildInputs(RouteState route, float price, float noise, float elasticityBias, bool includeUnavailable)
         {
             RouteEconomics.Inputs inputs = BuildInputs(GetCityA(route), GetCityB(route), route.distanceKm, price,
-                state.currentDay - route.openedDay, route.autoSchedule, route.manualUtilization, elasticityBias);
+                state.currentDay - route.openedDay, route.autoSchedule, route.manualUtilization, elasticityBias,
+                route.IsUrban, route.urbanDemand);
             inputs.DemandNoise = noise;
             inputs.IncludeUnavailableBuses = includeUnavailable;
             return inputs;
         }
 
+        /// <summary>Gelir katsayısı: kayıttaki (çok oyunculuda 1) ya da ekonomi ayarındaki.</summary>
+        public float IncomeScale => state.incomeScale > 0f ? state.incomeScale : economy.IncomeScale;
+
         RouteEconomics.Inputs BuildInputs(CityData a, CityData b, float km, float price, int daysOpen,
-            bool autoSchedule, float manualUtilization, float elasticityBias) => new RouteEconomics.Inputs
+            bool autoSchedule, float manualUtilization, float elasticityBias, bool urban = false, float urbanDemand = 0f) => new RouteEconomics.Inputs
         {
+            Urban = urban,
+            UrbanDemand = urbanDemand,
             CityA = a,
             CityB = b,
             DistanceKm = km,
@@ -330,7 +476,9 @@ namespace BusTycoon.Routes
             DemandNoise = 1f,
             ElasticityBias = elasticityBias,
             IncludeUnavailableBuses = true,
-            StationFactor = stations != null ? stations.RouteDemandFactor(a, b) : 1f
+            IncomeScale = IncomeScale,
+            // Otogar geliştirmeleri şehirlerarası yolcuyu çeker; dolmuş hattını etkilemez
+            StationFactor = !urban && stations != null ? stations.RouteDemandFactor(a, b) : 1f
         };
 
         float FindBestPrice(RouteEconomics.Inputs template, IReadOnlyList<BusInstance> buses)

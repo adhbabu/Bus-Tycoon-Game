@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+const q = new URLSearchParams(location.search);
+const W = +(q.get('w') || 1600), H = +(q.get('h') || 800);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = +(q.get("exp") || 0.92);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+scene.environmentIntensity = 0.9;
+const sun = new THREE.DirectionalLight(0xfff6ea, 2.4); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
+sun.shadow.bias = -0.0004; sun.shadow.radius = 6; scene.add(sun); scene.add(sun.target);
+scene.add(new THREE.HemisphereLight(0xe6f0ff, 0x2a3036, 0.55));
+const data = await (await fetch(q.get('src') || '../vehicles/vehicles.json')).json();
+window.IDS = Object.keys(data);
+const srgb = (c) => new THREE.Color().setRGB(c[0] / 255, c[1] / 255, c[2] / 255, THREE.SRGBColorSpace);
+function material(m) {
+  const color = srgb(m.rgb);
+  switch (m.kind) {
+    case 'paint': return new THREE.MeshPhysicalMaterial({ color, metalness: 0.05, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.06 });
+    case 'metallic': return new THREE.MeshPhysicalMaterial({ color, metalness: 0.55, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.05 });
+    case 'glass': return new THREE.MeshPhysicalMaterial({ color, metalness: 0.25, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6 });
+    case 'matte': return new THREE.MeshStandardMaterial({ color, roughness: 0.92 });
+    case 'rubber': return new THREE.MeshStandardMaterial({ color, roughness: 0.82 });
+    case 'metal': return new THREE.MeshStandardMaterial({ color, metalness: 0.75, roughness: 0.32 });
+    case 'chrome': return new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: 0.1 });
+    case 'plastic': return new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+    case 'lamp': return new THREE.MeshStandardMaterial({ color, roughness: 0.15, emissive: color, emissiveIntensity: 0.55 });
+    case 'led': return new THREE.MeshStandardMaterial({ color, roughness: 0.4, emissive: color, emissiveIntensity: 1.1 });
+  }
+  return new THREE.MeshStandardMaterial({ color });
+}
+let current = null;
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.ShadowMaterial({ opacity: 0.32 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+// yumuşak temas gölgesi (araç altında)
+const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+const g2 = cv.getContext('2d'); const grd = g2.createRadialGradient(128, 32, 4, 128, 32, 128);
+grd.addColorStop(0, 'rgba(0,0,0,0.55)'); grd.addColorStop(1, 'rgba(0,0,0,0)'); g2.fillStyle = grd; g2.fillRect(0, 0, 256, 64);
+const contact = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
+contact.rotation.x = -Math.PI / 2; contact.position.y = 0.002; scene.add(contact);
+const cam = new THREE.PerspectiveCamera(+(q.get('fov') || 16), W / H, 1, 400);
+window.show = (id, yawDeg, pitchDeg) => {
+  if (current) { scene.remove(current); }
+  const v = data[id]; const group = new THREE.Group();
+  const mats = {}; for (const k in v.materials) mats[k] = material(v.materials[k]);
+  for (const p of v.parts) {
+    const src = p.pos; const arr = new Float32Array(src.length);
+    for (let i = 0; i < src.length; i += 3) { arr[i] = src[i]; arr[i + 1] = src[i + 2]; arr[i + 2] = -src[i + 1]; }
+    let geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+    geo = toCreasedNormals(geo, (['paint','stripe','rubber','rim','rim_polished','hub','hubcap','roof_unit','battery','trim','bellows'].includes(p.mat)) ? 0.6 : 0.2);
+    const mesh = new THREE.Mesh(geo, mats[p.mat]); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh);
+  }
+  scene.add(group); current = group;
+  const L = v.L; contact.scale.set(L * 1.08, 3.2, 1);
+  const yaw = (yawDeg ?? 36) * Math.PI / 180, pitch = (pitchDeg ?? 10) * Math.PI / 180;
+  const box = new THREE.Box3().setFromObject(group); const size = box.getSize(new THREE.Vector3());
+  const target = new THREE.Vector3(0, size.y * 0.45, 0);
+  const dist = (L * 0.62) / Math.tan(cam.fov * Math.PI / 360) / (W / H) * 1.0 + 6;
+  cam.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, target.y + Math.sin(pitch) * dist, Math.cos(yaw) * Math.cos(pitch) * dist);
+  cam.lookAt(target);
+  sun.position.set(-L * 0.35, 14, 9); sun.target.position.set(0, 0, 0);
+  const s = L * 0.8; Object.assign(sun.shadow.camera, { left: -s, right: s, top: s, bottom: -s, near: 1, far: 60 }); sun.shadow.camera.updateProjectionMatrix();
+  renderer.render(scene, cam);
+  return true;
+};
+window.READY = true;
+</script></body></html>

@@ -66,12 +66,8 @@ jobs:
         with:
           large-packages: false
 
-      - name: Unity Library önbelleği
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
-          restore-keys: Library-WebGL-
+      # Library önbelleği yok: geri yüklenen önbellekle Unity açılışta zaman zaman öldürülüyordu (çıkış 137, 25 Kasım
+      # 2026: 5 derlemenin 3'ü). Temiz içe aktarma önbellekli derlemeyle aynı sürede (~11 dk) bitiyor.
 
       - name: Unity ile web sürümünü derle
         uses: game-ci/unity-builder@v4

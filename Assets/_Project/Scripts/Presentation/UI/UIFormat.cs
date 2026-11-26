@@ -16,26 +16,16 @@ namespace BusTycoon.Presentation.UI
             catch (CultureNotFoundException) { return CultureInfo.InvariantCulture; }
         }
 
-        static string Symbol => GameSession.Instance != null && GameSession.Instance.Economy != null
-            ? GameSession.Instance.Economy.CurrencySymbol
-            : "$";
+        static string Symbol => BusTycoon.Core.Money.Symbol;
 
         /// <summary>12.345 → "$12.345", -800 → "-$800"</summary>
-        public static string Money(double value) =>
-            (value < 0 ? "-" : "") + Symbol + Math.Abs(value).ToString("N0", Culture);
+        public static string Money(double value) => BusTycoon.Core.Money.Format(value);
 
         /// <summary>Bilet fiyatları için kuruşlu biçim: "$23,50".</summary>
-        public static string Price(double value) => Symbol + value.ToString("N2", Culture);
+        public static string Price(double value) => BusTycoon.Core.Money.Price(value);
 
         /// <summary>1.250.000 → "$1,3 Mn", 12.500 → "$12,5 B" (bin); HUD gibi dar alanlar için.</summary>
-        public static string MoneyCompact(double value)
-        {
-            double abs = Math.Abs(value);
-            string sign = value < 0 ? "-" : "";
-            if (abs >= 1_000_000) return sign + Symbol + (abs / 1_000_000).ToString("0.#", Culture) + " Mn";
-            if (abs >= 10_000) return sign + Symbol + (abs / 1_000).ToString("0.#", Culture) + " B";
-            return Money(value);
-        }
+        public static string MoneyCompact(double value) => BusTycoon.Core.Money.Compact(value);
 
         /// <summary>Değişim göstergesi: "+$120" / "-$45".</summary>
         public static string SignedMoney(double value) => (value >= 0 ? "+" : "") + Money(value);

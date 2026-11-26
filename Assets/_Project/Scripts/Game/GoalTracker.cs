@@ -52,7 +52,7 @@ namespace BusTycoon.Game
                 _ => priceAdjusted);
             Add("second_bus", "Filoyu büyüt: 2 otobüs", "Galeri'den (G) bir otobüs alın.", 3000,
                 s => s.Fleet.Buses.Count >= 2);
-            Add("profit_500", "Günde $500 net kâr", "Doluluğu yüksek, fiyatı ideal bölgede hatlar kurun.", 5000,
+            Add("profit_500", $"Günde {Money.Format(500)} net kâr", "Doluluğu yüksek, fiyatı ideal bölgede hatlar kurun.", 5000,
                 s => LastNet(s) >= 500);
             Add("station", "Durağını güzelleştir", "Haritada hattınızın geçtiği bir durağa tıklayıp içine girin ve bir geliştirme yapın.", 5000,
                 s => s.State.stations.Count > 0);
@@ -64,7 +64,7 @@ namespace BusTycoon.Game
                 s => HasTier(s, 2));
             Add("rep_50", "İtibar 50", "Adil fiyat + konforlu araç = memnun yolcu.", 15000,
                 s => s.Progression.Reputation >= 50f);
-            Add("profit_5000", "Günde $5.000 net kâr", "Ana arterlere (İstanbul–Ankara, İstanbul–İzmir...) büyük otobüs koyun.", 25000,
+            Add("profit_5000", $"Günde {Money.Format(5000)} net kâr", "Ana arterlere (İstanbul–Ankara, İstanbul–İzmir...) büyük otobüs koyun.", 25000,
                 s => LastNet(s) >= 5000);
             Add("abroad", "Yurt dışına açıl", "Bölgeler (B) panelinden bir ülke lisansı alın.", 30000,
                 s => s.State.unlockedRegionIds.Count >= 2);
@@ -77,14 +77,14 @@ namespace BusTycoon.Game
             if (europe)
                 Add("istanbul_vienna", "İstanbul–Viyana hattı", "Avusturya seviye 15'te açılır; Sofya ve Belgrad üzerinden ~1.300 km'lik efsane güzergâh.", 75000,
                     s => HasRoute(s, "TR_ISTANBUL", "AT_VIYANA"));
-            Add("millionaire", "İlk milyon: $1.000.000 kasa", "Yolun yarısı bile değil: asıl hedef 10 milyon!", 0,
+            Add("millionaire", $"Milyoner şirket: {Money.Format(1_000_000)} kasa", "Yolun yarısı bile değil: asıl hedef bunun on katı!", 0,
                 s => s.Finance.Cash >= 1_000_000);
-            Add("profit_25000", "Günde $25.000 net kâr", "Büyük şehirleri VIP ve çift katlı otobüslerle bağlayın.", 100000,
+            Add("profit_25000", $"Günde {Money.Format(25000)} net kâr", "Büyük şehirleri VIP ve çift katlı otobüslerle bağlayın.", 100000,
                 s => LastNet(s) >= 25000);
             if (europe)
                 Add("capitals_5", "5 Avrupa başkentini bağla", "Hat ağınız Avrupa Paketi'nden 5 başkente ulaşsın (Belgrad, Viyana, Budapeşte...).", 150000,
                     s => CountPackCities(s, ContentPacks.Europe, capitalsOnly: true) >= 5);
-            Add("tycoon", "Otobüs İmparatoru: $10.000.000 kasa", "Büyük hedef! Ulaştığınızda oyunu kazanırsınız.", 0,
+            Add("tycoon", $"Otobüs İmparatoru: {Money.Format(10_000_000)} kasa", "Büyük hedef! Ulaştığınızda oyunu kazanırsınız.", 0,
                 s => s.Finance.Cash >= VictoryCash, isVictory: true);
         }
 
@@ -149,6 +149,7 @@ namespace BusTycoon.Game
         {
             var seen = new HashSet<string>();
             foreach (var route in s.Routes.Routes)
+                if (!route.IsUrban) // yurt dışı görevleri şehirlerarası hat ister
                 foreach (string id in new[] { route.cityAId, route.cityBId })
                 {
                     CityData city = s.World.GetCity(id);

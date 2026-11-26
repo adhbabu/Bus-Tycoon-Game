@@ -36,8 +36,8 @@ namespace BusTycoon.Game
             signature = signature * 31 + session.State.currentDay;
             signature = signature * 31 + stations.UpgradeCount(city) + (session.Progression.IsRegionUnlocked(city.Region) ? 1000 : 0);
             foreach (var upgrade in StationCatalog.Upgrades)
-                signature = signature * 3 + (stations.CanBuild(city, upgrade).Success ? 1 : 0);
-            return signature;
+                signature = signature * 3 + (stations.CanBuild(city, upgrade).Success ? 1 : 0) + stations.BuildDaysLeft(city, upgrade) * 7;
+            return signature * 2 + (AdService.Enabled ? 1 : 0);
         }
 
         void UpdateToolkitStation(float k)
@@ -181,14 +181,24 @@ namespace BusTycoon.Game
                 VisualElement text = Ui.El("bt-col bt-grow", row);
                 VisualElement title = Ui.El("bt-row", text);
                 Ui.Text("bt-item__title bt-grow", upgrade.Name, UiWeight.Bold, title);
+                int buildingDays = stations.BuildDaysLeft(city, upgrade);
                 if (built) Ui.Text("bt-pill is-success", "Yapıldı", UiWeight.Bold, title);
+                else if (buildingDays > 0) Ui.Text("bt-pill is-warning", $"Yapımda · {buildingDays} gün", UiWeight.Bold, title);
                 else if (!available) Ui.Text("bt-pill", StationCatalog.TierName(upgrade.MinTier), UiWeight.Bold, title);
                 Ui.Text("bt-item__text", upgrade.Description, UiWeight.Regular, text);
                 Label effect = Ui.Text("bt-detail__text", $"Konfor +{upgrade.Comfort} · talep +%{upgrade.Comfort * StationSystem.DemandBonusPerComfort * 100f:0.#}", UiWeight.Bold, text);
                 if (!built) effect.AddToClassList("is-up");
                 if (built || !available) continue;
-                var check = stations.CanBuild(city, upgrade);
                 StationUpgrade target = upgrade;
+                if (buildingDays > 0)
+                {
+                    if (!AdService.Enabled) continue;
+                    Button skip = ActionButton(card, "Reklam izle, hemen bitir", () => WatchAdToFinishUpgrade(city, target), primary: true);
+                    skip.name = "ad-upgrade";
+                    skip.AddToClassList("bt-btn--block");
+                    continue;
+                }
+                var check = stations.CanBuild(city, upgrade);
                 Button build = ActionButton(card, $"Yap · {Fmt.Money(stations.Cost(city, upgrade))}", () =>
                 {
                     BuildUpgradeNow(city, target);

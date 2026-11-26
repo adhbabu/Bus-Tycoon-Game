@@ -110,6 +110,26 @@ namespace BusTycoon.Game
         }
     }
 
+    /// <summary>
+    /// Yeni arayüzün ikonları (Material Symbols, beyaz; Tools/make_symbols.py): Resources/BusTycoon/UI/Symbols/&lt;ad&gt;.png.
+    /// Renk stilde verilir (-unity-background-image-tint-color). Doku bir kez yüklenir.
+    /// </summary>
+    public static class UiSymbols
+    {
+        public const string ResourceFolder = "BusTycoon/UI/Symbols/";
+        static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
+
+        public static Texture2D Get(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            if (textures.TryGetValue(name, out Texture2D texture) && texture != null) return texture;
+            texture = Resources.Load<Texture2D>(ResourceFolder + name);
+            if (texture == null) Debug.LogWarning($"[Bus Tycoon] İkon bulunamadı: Resources/{ResourceFolder}{name}.png");
+            textures[name] = texture;
+            return texture;
+        }
+    }
+
     /// <summary>İkon atlasındaki (UIIcons) ikonların UI Toolkit için Sprite'ları (bir kez oluşturulur).</summary>
     public static class UiSprites
     {

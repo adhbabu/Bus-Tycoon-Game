@@ -9,10 +9,15 @@ namespace BusTycoon.Game
     // Ana menü, yeni oyun (başlangıç şehri), duraklatma/iflas/zafer pencereleri, kayıt-yükleme, yardım.
     public sealed partial class GameUI
     {
-        static readonly string[] QuickStartCityIds = { "TR_ISTANBUL", "TR_ANKARA", "TR_IZMIR", "TR_BURSA", "TR_ANTALYA", "TR_KONYA" };
+        /// <summary>Başlangıç için önerilen büyük şehirler (şehir içi haritası olan 10 şehir).</summary>
+        static readonly string[] QuickStartCityIds =
+        {
+            "TR_ISTANBUL", "TR_ANKARA", "TR_IZMIR", "TR_BURSA", "TR_ANTALYA", "TR_KONYA", "TR_ADANA", "TR_GAZIANTEP", "TR_KAYSERI", "TR_SAMSUN"
+        };
         static readonly string[] EuropeStartCityIds = { "DE_BERLIN", "FR_PARIS", "GB_LONDRA" };
 
         string companyName = "Anadolu Turizm";
+        int companyLogo;
         CityData startCity;
         string startCityInfo;
         string startDifficulty;
@@ -34,6 +39,7 @@ namespace BusTycoon.Game
             panel = Panel.None;
             showMenuHelp = false;
             startCity = null;
+            ResetCityMap(); // menü ülke haritasının üstünde süzülür
             mapCamera.AutoDrift = true;
             // Yarışta saat durmaz (kurucunun saati herkesi bekletir); oyuncu menüden "Oyuna Dön" ile döner.
             if (session.IsRunning && session.Clock != null && !RaceLocked) session.Clock.SetSpeed(0);
@@ -64,7 +70,7 @@ namespace BusTycoon.Game
         }
 
         Rect NewGameRect => new Rect(SafeLeft + Margin, SafeTop + Margin,
-            Mathf.Min(470f * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
+            Mathf.Min((NewUi ? 560f : 470f) * u, SafeRight - SafeLeft - 2f * Margin), H - SafeTop - SafeBottom - 2f * Margin);
 
         Rect ModalRect => CenteredBox(480f, modal == Modal.Pause ? 560f : 470f); // duraklatma: ayarlar (kalite) dahil
         Vector2 modalScroll;
@@ -347,9 +353,20 @@ namespace BusTycoon.Game
             CityData hq = startCity;
             GUIUtility.keyboardControl = 0;
 
-            session.StartNewGame(name, hq); // → OnSessionStarted
-            Toast($"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
-            OpenPlannerNow(hq);
+            // Yeni arayüzde sokak haritası olan şehirde boş başlanır (yalnız sermaye): ilk dolmuş galeriden alınır
+            bool cityStart = NewUi && CityView.Supports(hq);
+            session.StartNewGame(name, hq, withStartingBus: !cityStart); // → OnSessionStarted
+            session.State.logoId = companyLogo;
+            if (cityStart)
+            {
+                session.State.vehicleClasses = true; // dolmuş/şehir otobüsü şehir içi, otobüs şehirlerarası
+                session.State.waitTimes = true;      // hat kurulumu 3 gün, araç teslimi; reklamla hemen biter
+                session.State.cityLicenses = true;   // başka şehir: lisansla (oyun parası ya da uygulama içi)
+                session.Progression.GrantCityLicense(hq);
+                StartTutorial();
+            }
+            Toast(cityStart ? $"{name} kuruldu! İlk iş: galeriden bir dolmuş al." : $"{name} kuruldu! İlk iş: {hq.DisplayName} çıkışlı bir hat açın.", UIStyles.Gold);
+            if (!NewUi) OpenPlannerNow(hq); // yeni arayüzde ana ekran açılır; "İlk hattını aç" kartı planlayıcıyı açar
         }
 
         // ------------------------------------------------------------------ kayıt / yükleme
@@ -568,7 +585,7 @@ namespace BusTycoon.Game
                 "J: görevler · F5: kaydet · Esc: geri / menü"),
             ("Çok oyunculu",
                 "Ana menüde Çok Oyunculu → Oda kur: arkadaşların 5 karakterlik oda kodunla katılır. Herkes kendi şirketini kurar, " +
-                "günler aynı anda ilerler. Blitz'de $1.000.000, Normal'de $10.000.000 kasaya ilk ulaşan kazanır."),
+                $"günler aynı anda ilerler. Blitz'de {Fmt.Money(1_000_000)}, Normal'de {Fmt.Money(10_000_000)} kasaya ilk ulaşan kazanır."),
             ("Dikkat",
                 "Kasa 30 gün üst üste eksi kalırsa iflas edersiniz. Garajda bekleyen otobüsler de sigorta öder.")
         };

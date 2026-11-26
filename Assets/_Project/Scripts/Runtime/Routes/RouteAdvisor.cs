@@ -33,10 +33,10 @@ namespace BusTycoon.Routes
             Average(route.history, out float profit, out float loadFactor, out float unmet, out float demand, out float satisfaction);
 
             if (profit < 0f)
-                return Make(InsightSeverity.Critical, InsightAction.AdjustPrice, $"Zarar ediyor ({profit:N0}/gün).");
+                return Make(InsightSeverity.Critical, InsightAction.AdjustPrice, $"Zarar ediyor ({BusTycoon.Core.Money.Format(profit)}/gün).");
 
             if (demand > 0f && unmet / demand > 0.15f && loadFactor > 0.8f)
-                return Make(InsightSeverity.Warning, InsightAction.AddBus, $"Kapasite yetersiz: günde ~{unmet:N0} yolcu kaçıyor.");
+                return Make(InsightSeverity.Warning, InsightAction.AddBus, $"Kapasite yetersiz: günde ~{BusTycoon.Core.Money.Count(unmet)} yolcu kaçıyor.");
 
             if (loadFactor < 0.45f)
                 return Make(InsightSeverity.Warning, InsightAction.AdjustPrice, $"Doluluk düşük (%{loadFactor * 100f:0}). Fiyatı düşürmeyi deneyin.");
@@ -44,7 +44,7 @@ namespace BusTycoon.Routes
             if (satisfaction < 0.35f)
                 return Make(InsightSeverity.Warning, InsightAction.UpgradeBus, "Yolcular memnun değil: fiyat yüksek veya araç konforsuz.");
 
-            return Make(InsightSeverity.Info, InsightAction.None, $"Sağlıklı · {profit:N0}/gün");
+            return Make(InsightSeverity.Info, InsightAction.None, $"Sağlıklı · {BusTycoon.Core.Money.Format(profit)}/gün");
         }
 
         static void Average(List<RouteDayReport> history, out float profit, out float loadFactor,

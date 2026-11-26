@@ -25,7 +25,7 @@ namespace BusTycoon.Game
 
         void BuildDealership(VisualElement body)
         {
-            SheetHeader("Otobüs Galerisi", $"Kasa {Fmt.Money(session.Finance.Cash)}");
+            SheetHeader("Otobüs Galerisi", "Sıfır ve 2. el otobüsler");
 
             if (dealershipTargetRoute != null && session.Routes.GetRoute(dealershipTargetRoute.routeId) != null)
             {
@@ -57,16 +57,32 @@ namespace BusTycoon.Game
             foreach (var bus in session.Fleet.Buses) if (bus.Model == model) owned++;
 
             VisualElement card = Ui.El("bt-item bt-model", body);
+            card.name = "model-" + model.Id;
             Ui.Toggle(card, "is-locked", !unlocked);
-            VisualElement header = Ui.El("bt-row", card);
-            VisualElement art = Ui.El("bt-model__art", header);
+            // Büyük çizim (önden-yandan, koyu sahnede): galeride otobüs kartın en üstünde
+            VisualElement stage = Ui.El("bt-model__stage", card);
+            VisualElement art = Ui.El("bt-model__art", stage);
             Sprite sprite = UIBusArt.Sprite(model);
             if (sprite != null) art.style.backgroundImage = new StyleBackground(sprite);
-            VisualElement info = Ui.El("bt-col bt-grow", header);
+            if (!unlocked) Ui.Text("bt-model__lock", "KİLİTLİ", UiWeight.Black, stage);
+            else if (owned > 0) Ui.Text("bt-model__lock is-owned", $"FİLODA {owned}", UiWeight.Black, stage);
+            VisualElement info = Ui.El("bt-col", card);
             Ui.Text("bt-model__name", model.DisplayName, UiWeight.Black, info);
             Ui.Text("bt-detail__text", $"{model.Manufacturer} · {SegmentName(model.Segment)} · kademe {model.Tier + 1}", UiWeight.Regular, info);
-            Detail(info, UIIcon.Seat, $"{model.Seats} koltuk · {model.AverageSpeedKmh:0} km/s");
-            Detail(info, UIIcon.Road, $"Rahat menzil {Fmt.Km(model.ComfortableRangeKm)}");
+            Detail(info, UIIcon.Seat, $"{model.Seats} {(model.Segment == BusSegment.CityBus ? "yolcu" : "koltuk")} · {model.AverageSpeedKmh:0} km/s");
+            if (session.State.vehicleClasses)
+            {
+                // Araç sınıfı: hangi hatlarda çalışır
+                string where = model.Category switch
+                {
+                    BusCategory.Dolmus => "Şehir içi hatlar (dolmuş)",
+                    BusCategory.CityBus => "Şehir içi hatlar",
+                    BusCategory.Midibus => "Şehir içi ve şehirlerarası",
+                    _ => "Şehirlerarası hatlar"
+                };
+                Detail(info, UIIcon.Road, where);
+            }
+            else Detail(info, UIIcon.Road, $"Rahat menzil {Fmt.Km(model.ComfortableRangeKm)}");
 
             VisualElement comfort = Ui.El("bt-row bt-detail", card);
             Ui.Icon(UIIcon.Star, "bt-detail__icon", comfort);

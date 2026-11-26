@@ -561,14 +561,16 @@ namespace BusTycoon.Game
                 return;
             }
 
+            string delivery = bus.InDelivery ? $" Teslim: {bus.deliveryDaysLeft} gün sonra." : string.Empty;
             if (route != null && session.Routes.GetRoute(route.routeId) != null)
             {
                 session.Routes.TryAssignBus(bus.busId, route.routeId);
-                Toast($"{bus.nickname} alındı ve {RouteName(route)} hattına atandı.", UIStyles.Green, Sfx.Coin);
+                Toast($"{bus.nickname} alındı ve {RouteName(route)} hattına atandı.{delivery}", UIStyles.Green, Sfx.Coin);
             }
             else
             {
-                Toast($"{bus.nickname} alındı. Filo (F) panelinden bir hatta atayın.", UIStyles.Green, Sfx.Coin);
+                Toast(NewUi ? $"{bus.nickname} alındı.{delivery} Filo'dan bir hatta ata." : $"{bus.nickname} alındı. Filo (F) panelinden bir hatta atayın.",
+                    UIStyles.Green, Sfx.Coin);
             }
             goals.Evaluate();
         }
@@ -636,7 +638,7 @@ namespace BusTycoon.Game
         {
             financeChartDirty = false;
             ChartTexture chart = financeChart;
-            chart.Clear(NewUi ? ChartBackgroundLight : ChartBackground);
+            chart.Clear(NewUi ? ChartBackgroundNew : ChartBackground);
             var history = session.State.financeHistory;
             const int days = 60;
             int start = Mathf.Max(0, history.Count - days);
@@ -656,9 +658,9 @@ namespace BusTycoon.Game
                 float x0 = (days - (history.Count - start) + (i - start)) * barWidth;
                 float y = (float)(history[i].Net - min) / range * (chart.Height - 1);
                 chart.FillRect(x0 + 1f, Mathf.Min(zeroY, y), x0 + barWidth - 1f, Mathf.Max(zeroY, y) + 1f,
-                    history[i].Net >= 0 ? (NewUi ? ChartPositiveLight : ChartPositive) : (NewUi ? ChartNegativeLight : ChartNegative));
+                    history[i].Net >= 0 ? (NewUi ? ChartPositiveNew : ChartPositive) : (NewUi ? ChartNegativeNew : ChartNegative));
             }
-            chart.HorizontalLine(zeroY, NewUi ? ChartZeroLight : ChartZero, 1);
+            chart.HorizontalLine(zeroY, NewUi ? ChartZeroNew : ChartZero, 1);
             chart.Apply();
         }
 

@@ -103,8 +103,7 @@ namespace BusTycoon.Game
             ModalTitle(body, race ? "Menü (yarış sürüyor)" : "Oyun Duraklatıldı");
             ModalButton(body, "Devam Et", ClosePauseMenu, "is-primary bt-modal__button--main");
             ModalButton(body, "Kaydet", () => SaveTo(SaveSlot));
-            if (compact) ModalButton(body, "Günlük (son olaylar)", () => { ClosePauseMenu(); OpenPanelNow(Panel.Log); });
-            if (phone) ModalButton(body, "Nasıl Oynanır? (yardım)", () => { ClosePauseMenu(); OpenPanelNow(Panel.Help); });
+            ModalButton(body, "Günlük (son olaylar)", () => { ClosePauseMenu(); OpenPage(Panel.Log); });
             if (race)
             {
                 ModalButton(body, "Yarıştan Çık (tek başına devam)",
@@ -113,14 +112,6 @@ namespace BusTycoon.Game
             else
             {
                 ModalButton(body, "Son Kaydı Yükle", () => LoadSlot(latestSaveSlot), enabled: latestSaveSlot != null);
-                Ui.Text("bt-caps bt-modal__caption", "GÜN SÜRESİ (1X HIZDA)", UiWeight.Bold, body);
-                VisualElement days = Ui.El("bt-tabs-inline", body);
-                foreach (float seconds in new[] { 2f, 4f, 8f })
-                {
-                    float value = seconds;
-                    Button tab = Ui.Button("bt-tab", $"{seconds:0} sn", () => { session.SecondsPerDay = value; tkModalDirty = true; }, days);
-                    Ui.Toggle(tab, "is-active", Mathf.Approximately(session.SecondsPerDay, seconds));
-                }
             }
 
             Ui.Text("bt-caps bt-modal__caption", "AYARLAR", UiWeight.Bold, body);
@@ -135,7 +126,7 @@ namespace BusTycoon.Game
             CheckRow(body, "Gün sonu kazanç yazıları (hatların üstünde)", IncomeLabelsEnabled, () => IncomeLabelsEnabled = !IncomeLabelsEnabled);
 
             string current = GraphicsQuality.Label(GraphicsQuality.Current);
-            Ui.Text("bt-caps bt-modal__caption", GraphicsQuality.IsAuto ? $"GÖRÜNTÜ KALİTESİ · OTOMATİK: {current.ToUpperInvariant()}" : "GÖRÜNTÜ KALİTESİ", UiWeight.Bold, body);
+            Ui.Text("bt-caps bt-modal__caption", GraphicsQuality.IsAuto ? $"GÖRÜNTÜ KALİTESİ · OTOMATİK: {Fmt.Upper(current)}" : "GÖRÜNTÜ KALİTESİ", UiWeight.Bold, body);
             VisualElement quality = Ui.El("bt-tabs-inline", body);
             foreach (QualityLevel? choice in QualityChoices)
             {

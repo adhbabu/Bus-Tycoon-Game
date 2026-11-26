@@ -31,6 +31,8 @@ namespace BusTycoon.Game
         enum Modal { None, Pause, GameOver, Victory, Confirm, MatchEnd }
 
         const string SaveSlot = "save1";
+        /// <summary>Tek oyunculu oyunda bir oyun günü (gerçek saniye; tek hız).</summary>
+        const float DaySeconds = 60f;
         const string AutosaveSlot = "autosave";
 
         GameSession session;
@@ -92,6 +94,7 @@ namespace BusTycoon.Game
         FleetSystem boundFleet;
         MaintenanceAssistant boundMaintenance;
         RouteSystem boundRoutes;
+        BusTycoon.Stations.StationSystem boundStations;
         int warningCount;
         readonly HashSet<string> criticalRoutes = new HashSet<string>();
         readonly HashSet<string> connectedCityIds = new HashSet<string>();
@@ -112,8 +115,9 @@ namespace BusTycoon.Game
             session.MonthCompleted += OnMonthCompleted;
             session.Bankrupt += OnBankrupt;
 
-            Fmt.Symbol = session.Economy.CurrencySymbol;
             InitToolkit();
+            InitCityView();
+            InitAds();
             BindMultiplayer();
             EnterMainMenu();
             OpenInviteIfAny();
@@ -157,6 +161,7 @@ namespace BusTycoon.Game
             boundProgression.LevelChanged += OnLevelChanged;
             boundProgression.ModelUnlocked += OnModelUnlocked;
             boundProgression.RegionUnlocked += OnRegionUnlocked;
+            boundProgression.CityLicensed += OnCityLicensed;
             boundFleet.BusBrokeDown += OnBusBrokeDown;
             boundMaintenance = session.Maintenance;
             boundMaintenance.Completed += OnMaintenance;
@@ -166,6 +171,10 @@ namespace BusTycoon.Game
             boundRoutes.RouteOpened += OnRouteSetChanged;
             boundRoutes.RouteClosed += OnRouteSetChanged;
             boundRoutes.RouteChanged += OnRouteChanged;
+            boundRoutes.SetupFinished += OnSetupFinished;
+            boundFleet.BusDelivered += OnBusDelivered;
+            boundStations = session.Stations;
+            boundStations.UpgradeCompleted += OnUpgradeCompleted;
         }
 
         void UnbindSystems()
@@ -175,6 +184,7 @@ namespace BusTycoon.Game
                 boundProgression.LevelChanged -= OnLevelChanged;
                 boundProgression.ModelUnlocked -= OnModelUnlocked;
                 boundProgression.RegionUnlocked -= OnRegionUnlocked;
+                boundProgression.CityLicensed -= OnCityLicensed;
             }
             if (boundMaintenance != null) boundMaintenance.Completed -= OnMaintenance;
             if (boundFleet != null)
@@ -183,12 +193,19 @@ namespace BusTycoon.Game
                 boundFleet.BusAdded -= OnFleetChanged;
                 boundFleet.BusRemoved -= OnFleetChanged;
                 boundFleet.BusChanged -= OnFleetChanged;
+                boundFleet.BusDelivered -= OnBusDelivered;
+            }
+            if (boundStations != null)
+            {
+                boundStations.UpgradeCompleted -= OnUpgradeCompleted;
+                boundStations = null;
             }
             if (boundRoutes != null)
             {
                 boundRoutes.RouteOpened -= OnRouteSetChanged;
                 boundRoutes.RouteClosed -= OnRouteSetChanged;
                 boundRoutes.RouteChanged -= OnRouteChanged;
+                boundRoutes.SetupFinished -= OnSetupFinished;
             }
             boundFinance = null;
             boundProgression = null;
@@ -211,7 +228,10 @@ namespace BusTycoon.Game
             criticalAnnouncedDay.Clear();
             lastToastAt.Clear();
             mapCamera.AutoDrift = false;
+            tkHome = true;
+            if (Room == null) session.SecondsPerDay = DaySeconds; // yarışta gün süresini oda belirler
 
+            ResetCityMap();
             CityData hq = session.Headquarters;
             if (hq != null) mapCamera.FocusOn(world.GetCityPosition(hq), 34f);
             RefreshRouteIndicators(announce: false);
@@ -223,6 +243,7 @@ namespace BusTycoon.Game
             SpawnIncomeLabels();
             goals.Evaluate();
             RefreshRouteIndicators(announce: true);
+            AnnounceEvents();
 
             if (session.Finance.Cash < 0 && !session.IsBankrupt)
             {
@@ -252,8 +273,11 @@ namespace BusTycoon.Game
             if (goal.IsVictory && !(Multiplayer != null && Multiplayer.InMatch)) modal = Modal.Victory; // yarışta kazananı oda belirler
         }
 
-        void OnLevelChanged(int level) =>
+        void OnLevelChanged(int level)
+        {
             Toast($"Şirket seviyesi {level}! Hat limiti: {session.Progression.MaxRoutes}", UIStyles.Gold);
+            AdService.TryShowInterstitial(); // seviye atlama sonrası geçiş reklamı (en sık 3 dakikada bir)
+        }
 
         void OnModelUnlocked(BusModelData model) =>
             Toast($"Yeni otobüs açıldı: {model.DisplayName} — Galeri (G)", UIStyles.Blue);
@@ -351,6 +375,8 @@ namespace BusTycoon.Game
             if (session == null) return;
             float dt = Time.unscaledDeltaTime;
             WebTap.Pump();
+            UpdateCityMap();
+            UpdateAds(dt);
             UpdateToolkit();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
@@ -367,7 +393,7 @@ namespace BusTycoon.Game
                 multiTouch = suppressTap = true;
                 float now = (t0 - t1).magnitude;
                 float before = ((t0 - d0) - (t1 - d1)).magnitude;
-                if (before > 1f && !InMenu && modal == Modal.None)
+                if (before > 1f && !InMenu && modal == Modal.None && (StationUi || MapAcceptsPointer(new Vector2((t0.x + t1.x) * 0.5f, Screen.height - (t0.y + t1.y) * 0.5f))))
                 {
                     if (StationUi) Stations.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f);
                     else mapCamera.Zoom((before - now) / (Screen.height * 0.01f) * 0.15f, (t0 + t1) * 0.5f);
@@ -380,7 +406,7 @@ namespace BusTycoon.Game
 
             // Tarayıcıda touchpad: iki parmakla kaydırma haritayı kaydırır, sıkıştırma yakınlaştırır.
             if (WheelInput.TakeWebGesture(out WheelInput.Kind gesture, out Vector2 gesturePixels) &&
-                !InMenu && modal == Modal.None && !IsOverUI(lastMouseGui))
+                !InMenu && modal == Modal.None && !IsOverUI(lastMouseGui) && (StationUi || MapAcceptsPointer(lastMouseGui)))
             {
                 if (StationUi)
                 {
@@ -403,7 +429,7 @@ namespace BusTycoon.Game
                 if (turn != 0f || tilt != 0f) Stations.Orbit(new Vector2(turn, tilt) * (dt * Screen.height * 0.5f));
                 if (zoomIn != 0f) Stations.Zoom(zoomIn * dt * 10f);
             }
-            else if (!InMenu && modal == Modal.None && !textFieldFocused && !StationBusy)
+            else if (!InMenu && modal == Modal.None && !textFieldFocused && !StationBusy && MapShown)
             {
                 Vector2 axis = Vector2.zero;
                 if (Held(KeyCode.W) || Held(KeyCode.UpArrow)) axis.y += 1f;
@@ -415,7 +441,7 @@ namespace BusTycoon.Game
                 float zoom = 0f;
                 if (Held(KeyCode.E) || Held(KeyCode.Equals) || Held(KeyCode.KeypadPlus)) zoom -= 1f;
                 if (Held(KeyCode.Q) || Held(KeyCode.Minus) || Held(KeyCode.KeypadMinus)) zoom += 1f;
-                if (zoom != 0f) mapCamera.Zoom(zoom * dt * 10f, new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
+                if (zoom != 0f) mapCamera.Zoom(zoom * dt * 10f, MapCardCenterScreen);
             }
 
             SyncWorldSelection();
@@ -476,8 +502,15 @@ namespace BusTycoon.Game
 
             if (!InMenu && e.type == EventType.Repaint && !StationBusy)
             {
-                DrawCityLabels();
-                DrawFloatingLabels();
+                if (CityMapShown)
+                {
+                    if (MapShown) DrawUrbanLabels();
+                }
+                else
+                {
+                    DrawCityLabels();
+                    DrawFloatingLabels();
+                }
             }
 
             bool previousEnabled = GUI.enabled;
@@ -506,7 +539,7 @@ namespace BusTycoon.Game
                         else if (!compact) DrawSideBar();
                         DrawPanel();
                         if (!phone && !NewUi) DrawZoomButtons(); // telefonda iki parmakla yakınlaştırılır
-                        DrawMinimap();
+                        if (!NewUi) DrawMinimap(); // yeni arayüzde harita kartı var, mini harita yok
                         if (!NewUi) DrawGoalWidget();
                         if (!NewUi) DrawRaceWidget();
                     }
@@ -618,8 +651,8 @@ namespace BusTycoon.Game
         }
 
         float Margin => (phone ? 8f : 12f) * u;
-        float TopBarHeight => (SlimTopBar ? 54f : 70f) * u;
-        float BottomBarHeight => (phone ? 58f : 66f) * u;
+        float TopBarHeight => (NewUi ? 67f : SlimTopBar ? 54f : 70f) * u;
+        float BottomBarHeight => (NewUi ? 72f : phone ? 58f : 66f) * u;
         /// <summary>Panel genişliği: panel ölçeğinde 490 birim; telefonda ekranın en çok %42'si (haritanın çoğu görünsün).</summary>
         float PanelWidth => phone ? Mathf.Min(490f * panelU, (SafeRight - SafeLeft) * 0.42f)
             : compact ? Mathf.Min(490f * panelU, (SafeRight - SafeLeft) * 0.48f) : 490f * panelU;
@@ -648,7 +681,7 @@ namespace BusTycoon.Game
         /// Alt menü çubuğu görünür mü? Telefonda bir panel açıkken gizlenir: panel tam boy kullanır, harita solda
         /// görünür kalır; menüye panel kapatılınca dönülür.
         /// </summary>
-        bool BottomBarVisible => compact && mode == Mode.Playing && !StationUi && !(phone && panel != Panel.None);
+        bool BottomBarVisible => NewUi ? mode == Mode.Playing && !StationUi : compact && mode == Mode.Playing && !StationUi && !(phone && panel != Panel.None);
         /// <summary>Harita/arayüz için kullanılabilir alanın alt sınırı (alt menü çubuğunun üstü).</summary>
         float ContentBottom => H - SafeBottom - (BottomBarVisible ? BottomBarHeight : 0f);
         /// <summary>Üst çubuk sade mi (telefon, dikey tablet): itibar/hat/filo sütunları gösterilmez.</summary>
@@ -658,6 +691,7 @@ namespace BusTycoon.Game
         {
             get
             {
+                if (NewUi) return IsPagePanel(panel) ? ContentRect : SideRect;
                 float top = SafeTop + TopBarHeight + Margin;
                 float bottom = ContentBottom - Margin;
                 return new Rect(SafeRight - PanelWidth - Margin, top, PanelWidth, Mathf.Max(100f * u, bottom - top));
@@ -881,16 +915,13 @@ namespace BusTycoon.Game
             if (panelKey && StationBusy) Stations.ExitImmediate(); // panel haritada açılır
 
             bool used = true;
-            bool speedKey = key == KeyCode.Space || key == KeyCode.Alpha1 || key == KeyCode.Keypad1 || key == KeyCode.Alpha2 ||
-                            key == KeyCode.Keypad2 || key == KeyCode.Alpha3 || key == KeyCode.Keypad3;
+            bool speedKey = key == KeyCode.Space || key == KeyCode.Alpha1 || key == KeyCode.Keypad1;
             if (speedKey && RaceLocked) return; // yarışta hız odaya bağlı
             switch (key)
             {
                 case KeyCode.Space: session.Clock.TogglePause(); break;
                 case KeyCode.Alpha1: case KeyCode.Keypad1: session.Clock.SetSpeed(1); break;
-                case KeyCode.Alpha2: case KeyCode.Keypad2: session.Clock.SetSpeed(2); break;
-                case KeyCode.Alpha3: case KeyCode.Keypad3: session.Clock.SetSpeed(4); break;
-                case KeyCode.N: Defer(() => OpenPlannerNow(null)); break;
+                case KeyCode.N: Defer(OpenNewRoutePlanner); break;
                 case KeyCode.R: Defer(() => OpenPanelNow(Panel.RouteList)); break;
                 case KeyCode.F: Defer(() => OpenPanelNow(Panel.Fleet)); break;
                 case KeyCode.G: Defer(() => OpenDealershipNow(null)); break;
@@ -928,7 +959,9 @@ namespace BusTycoon.Game
             else if (mode == Mode.Playing)
             {
                 if (StationBusy) ExitStationNow();
+                else if (NewUi && IsPagePanel(panel)) SelectTab(Tab.Home);
                 else if (panel != Panel.None) ClosePanel();
+                else if (NewUi && !tkHome) tkHome = true;
                 else OpenPauseMenu();
             }
         }
@@ -949,7 +982,7 @@ namespace BusTycoon.Game
             hoveredCity = null;
             hoverMouseGui = e.mousePosition;
             if (InMenu || modal != Modal.None || dragging || mobile || StationBusy) return; // dokunmatikte hover yok
-            if (IsOverUI(e.mousePosition)) return;
+            if (IsOverUI(e.mousePosition) || CityMapShown) return;
             world.TryPickCity(mapCamera.Camera, GuiToScreen(e.mousePosition), PickRadius, out hoveredCity);
         }
 
@@ -961,7 +994,7 @@ namespace BusTycoon.Game
             switch (e.type)
             {
                 case EventType.MouseDown:
-                    if (IsOverUI(mouse)) return;
+                    if (IsOverUI(mouse) || !MapAcceptsPointer(mouse)) return;
                     pointerOnMap = true;
                     dragging = false;
                     if (!multiTouch) suppressTap = false; // önceki pinch hareketinin kilidi yeni dokunuşu yutmasın
@@ -996,7 +1029,7 @@ namespace BusTycoon.Game
                     break;
 
                 case EventType.ScrollWheel:
-                    if (IsOverUI(mouse)) return;
+                    if (IsOverUI(mouse) || !MapAcceptsPointer(mouse)) return;
                     // Web'de touchpad ve sıkıştırma Update'te tarayıcıdan okunur; burada yalnız fare tekerleği kalır.
                     Vector2 pixels = Vector2.zero;
                     WheelInput.Kind kind = WheelInput.BrowserClassifies
@@ -1040,6 +1073,7 @@ namespace BusTycoon.Game
 
         void OnMapClick(Vector2 guiPoint)
         {
+            if (OnCityMapClick(guiPoint)) return; // şehir haritasında duraklar seçilir
             Vector2 screen = GuiToScreen(guiPoint);
             if (world.TryPickCity(mapCamera.Camera, screen, PickRadius, out CityData city))
             {
@@ -1092,6 +1126,7 @@ namespace BusTycoon.Game
 
         void ClosePanel()
         {
+            if (urbanPlanning) CloseUrbanPlanner();
             panel = Panel.None;
             plannerOrigin = plannerDestination = null;
             plannerQuoteValid = false;
@@ -1152,9 +1187,14 @@ namespace BusTycoon.Game
                     if (sp.z <= 0f) continue;
                     var p = new Vector2(sp.x, Screen.height - sp.y - 2f * u);
                     if (p.x < -100f * u || p.x > W + 100f * u || p.y < -40f * u || p.y > H + 40f * u) continue;
-                    // Üst çubuğun ve sol menünün altına düşen ad çizilmez (yeni arayüz IMGUI'nin altında çizilir)
-                    if (p.y - 24f * u < SafeTop + TopBarHeight || p.x < ContentLeft) continue;
-                    if (NewUi && ToolkitCovers(new Vector2(p.x, p.y - 12f * u))) continue; // panel / görev kartı altında
+                    // Yeni arayüzde yalnız harita kartının içinde (kartın dışını arayüz kaplar)
+                    if (NewUi && mode == Mode.Playing)
+                    {
+                        Rect card = MapCardRect;
+                        if (p.y - 24f * u < card.y || p.y > card.yMax || p.x < card.x + 30f * u || p.x > card.xMax - 30f * u) continue;
+                    }
+                    else if (p.y - 24f * u < SafeTop + TopBarHeight || p.x < ContentLeft) continue;
+                    if (NewUi && ToolkitCovers(new Vector2(p.x, p.y - 12f * u))) continue; // kartın üstündeki düğmelerin altında
 
                     bool bold = city.MapTier == 0 || important;
                     GUIStyle style = bold ? s.MapLabelBold : s.MapLabel;
@@ -1375,6 +1415,7 @@ namespace BusTycoon.Game
 
         string RouteName(RouteState route)
         {
+            if (route.IsUrban) return $"{route.urbanNameA} – {route.urbanNameB}"; // dolmuş hattı: uç duraklar
             CityData a = session.World.GetCity(route.cityAId);
             CityData b = session.World.GetCity(route.cityBId);
             return $"{(a != null ? a.DisplayName : route.cityAId)} – {(b != null ? b.DisplayName : route.cityBId)}";
@@ -1403,7 +1444,8 @@ namespace BusTycoon.Game
 
         static string SegmentName(BusSegment segment) => segment switch
         {
-            BusSegment.Minibus => "Minibüs",
+            BusSegment.Minibus => "Dolmuş",
+            BusSegment.CityBus => "Şehir otobüsü",
             BusSegment.Midibus => "Midibüs",
             BusSegment.StandardCoach => "Şehirlerarası",
             BusSegment.ComfortCoach => "Konfor",

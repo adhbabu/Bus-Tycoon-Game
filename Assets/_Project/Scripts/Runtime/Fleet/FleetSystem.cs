@@ -25,6 +25,8 @@ namespace BusTycoon.Fleet
         public event Action<BusInstance> BusRemoved;
         public event Action<BusInstance> BusChanged;
         public event Action<BusInstance> BusBrokeDown;
+        /// <summary>Sipariş edilen araç teslim edildi (bekleme süresi bitti ya da reklamla bitirildi).</summary>
+        public event Action<BusInstance> BusDelivered;
 
         public FleetSystem(CompanyState state, BusCatalog catalog, EconomyConfig economy,
             FinanceSystem finance, ProgressionSystem progression)
@@ -106,7 +108,7 @@ namespace BusTycoon.Fleet
             if (!progression.IsModelUnlocked(model)) return OpResult.Fail(progression.GetLockReason(model));
 
             float price = GetPurchasePrice(model, condition);
-            if (!finance.CanAfford(price)) return OpResult.Fail($"Yetersiz bakiye: {price:N0} gerekli.");
+            if (!finance.CanAfford(price)) return OpResult.Fail($"Yetersiz bakiye: {BusTycoon.Core.Money.Format(price)} gerekli.");
             return OpResult.Ok();
         }
 
@@ -119,7 +121,8 @@ namespace BusTycoon.Fleet
             float price = GetPurchasePrice(model, condition);
             finance.TrySpend(price, LedgerCategory.BusPurchase, model.Id);
             bus = AddBus(model, condition, price);
-            return OpResult.Ok($"{bus.nickname} filoya katıldı.");
+            if (state.waitTimes) bus.deliveryDaysLeft = economy.DeliveryDays(model);
+            return OpResult.Ok(bus.InDelivery ? $"{bus.nickname} sipariş edildi: {bus.deliveryDaysLeft} günde teslim." : $"{bus.nickname} filoya katıldı.");
         }
 
         /// <summary>Oyun başlangıcındaki hediye otobüs gibi ücretsiz eklemeler için.</summary>
@@ -152,7 +155,7 @@ namespace BusTycoon.Fleet
             state.buses.Remove(bus);
             finance.Earn(value, LedgerCategory.BusSale, bus.busId);
             BusRemoved?.Invoke(bus);
-            return OpResult.Ok($"{bus.nickname} {value:N0} karşılığında satıldı.");
+            return OpResult.Ok($"{bus.nickname} {BusTycoon.Core.Money.Format(value)} karşılığında satıldı.");
         }
 
         /// <summary>
@@ -170,7 +173,7 @@ namespace BusTycoon.Fleet
             float tradeInValue = GetResaleValue(oldBus);
             float price = GetPurchasePrice(newModel);
             float netCost = price - tradeInValue;
-            if (!finance.CanAfford(netCost)) return OpResult.Fail($"Takas için {netCost:N0} ek bakiye gerekli.");
+            if (!finance.CanAfford(netCost)) return OpResult.Fail($"Takas için {BusTycoon.Core.Money.Format(netCost)} ek bakiye gerekli.");
 
             string routeId = oldBus.assignedRouteId;
             state.buses.Remove(oldBus);
@@ -179,8 +182,12 @@ namespace BusTycoon.Fleet
 
             finance.TrySpend(price, LedgerCategory.BusPurchase, newModel.Id);
             newBus = AddBus(newModel, 1f, price);
-            if (!string.IsNullOrEmpty(routeId)) SetAssignment(newBus, routeId);
-            return OpResult.Ok($"{oldBus.nickname} yerine {newBus.nickname} (net {netCost:N0}).");
+            if (state.waitTimes) newBus.deliveryDaysLeft = economy.DeliveryDays(newModel);
+            // Yeni araç eski hattına geçer; araç sınıfı kuralı izin vermiyorsa garajda bekler
+            var route = string.IsNullOrEmpty(routeId) ? null : state.routes.Find(r => r.routeId == routeId);
+            bool allowed = route != null && (!state.vehicleClasses || (route.IsUrban ? newModel.ServesUrban : newModel.ServesIntercity));
+            if (allowed) SetAssignment(newBus, routeId);
+            return OpResult.Ok($"{oldBus.nickname} yerine {newBus.nickname} (net {BusTycoon.Core.Money.Format(netCost)}).");
         }
 
         // ------------------------------------------------------------------ atama
@@ -204,6 +211,12 @@ namespace BusTycoon.Fleet
         {
             foreach (var bus in state.buses)
             {
+                if (bus.deliveryDaysLeft > 0)
+                {
+                    bus.deliveryDaysLeft--;
+                    if (bus.deliveryDaysLeft == 0) BusDelivered?.Invoke(bus);
+                    continue; // teslimattaki araç sefere çıkmaz, arıza zarı atılmaz
+                }
                 if (bus.outOfServiceDays > 0) bus.outOfServiceDays--;
                 if (!bus.IsAssigned || !bus.IsAvailableToday || bus.Model == null) continue;
 
@@ -229,7 +242,8 @@ namespace BusTycoon.Fleet
         {
             foreach (var bus in state.buses)
                 if (!bus.IsAssigned && bus.Model != null)
-                    finance.Charge(bus.Model.InsurancePerDay, LedgerCategory.Insurance, bus.busId);
+                    finance.Charge(bus.Model.InsurancePerDay * (state.incomeScale > 0f ? state.incomeScale : economy.IncomeScale),
+                        LedgerCategory.Insurance, bus.busId);
         }
 
         // ------------------------------------------------------------------ bakım ve tamir
@@ -238,6 +252,18 @@ namespace BusTycoon.Fleet
         public float GetExpressRepairCost(BusInstance bus) => bus?.Model == null ? 0f : bus.Model.Price * economy.ExpressRepairCostFactor;
 
         /// <summary>Acil tamir: arızalı otobüs bugün yeniden sefere çıkabilir.</summary>
+        /// <summary>Teslimatı hemen bitirir (ödüllü reklam).</summary>
+        public OpResult FinishDeliveryNow(string busId)
+        {
+            BusInstance bus = GetBus(busId);
+            if (bus == null) return OpResult.Fail("Araç bulunamadı.");
+            if (!bus.InDelivery) return OpResult.Fail("Araç zaten teslim edildi.");
+            bus.deliveryDaysLeft = 0;
+            BusChanged?.Invoke(bus);
+            BusDelivered?.Invoke(bus);
+            return OpResult.Ok($"{bus.nickname} teslim edildi.");
+        }
+
         public OpResult TryExpressRepair(string busId)
         {
             BusInstance bus = GetBus(busId);
@@ -246,7 +272,7 @@ namespace BusTycoon.Fleet
 
             float cost = GetExpressRepairCost(bus);
             if (!finance.TrySpend(cost, LedgerCategory.Repairs, bus.busId))
-                return OpResult.Fail($"Acil tamir için {cost:N0} gerekli.");
+                return OpResult.Fail($"Acil tamir için {BusTycoon.Core.Money.Format(cost)} gerekli.");
 
             bus.outOfServiceDays = 0;
             BusChanged?.Invoke(bus);
@@ -261,7 +287,7 @@ namespace BusTycoon.Fleet
 
             float cost = GetOverhaulCost(bus);
             if (!finance.TrySpend(cost, LedgerCategory.Repairs, bus.busId))
-                return OpResult.Fail($"Revizyon için {cost:N0} gerekli.");
+                return OpResult.Fail($"Revizyon için {BusTycoon.Core.Money.Format(cost)} gerekli.");
 
             bus.condition = economy.OverhaulTargetCondition;
             BusChanged?.Invoke(bus);

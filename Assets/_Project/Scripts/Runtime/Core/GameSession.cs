@@ -137,7 +137,8 @@ namespace BusTycoon.Core
 
         // ------------------------------------------------------------------ oturum
 
-        public void StartNewGame(string companyName, CityData startCity)
+        /// <param name="withStartingBus">false: yalnız sermayeyle başlanır (şehir içi başlangıç: ilk dolmuş galeriden alınır).</param>
+        public void StartNewGame(string companyName, CityData startCity, bool withStartingBus = true)
         {
             var state = new CompanyState
             {
@@ -151,7 +152,7 @@ namespace BusTycoon.Core
             Build(state);
             Progression.GrantRegion(startCity.Region);
             Progression.RefreshUnlocks(silent: true);
-            if (progressionConfig.StartingBus != null)
+            if (withStartingBus && progressionConfig.StartingBus != null)
                 Fleet.GrantBus(progressionConfig.StartingBus, progressionConfig.StartingBusCondition);
 
             SessionStarted?.Invoke();
@@ -201,7 +202,7 @@ namespace BusTycoon.Core
             Finance = new FinanceSystem(state);
             Progression = new ProgressionSystem(state, progressionConfig, busCatalog, economyConfig, Finance);
             Fleet = new FleetSystem(state, busCatalog, economyConfig, Finance, Progression);
-            Stations = new StationSystem(state, Finance, Progression);
+            Stations = new StationSystem(state, Finance, Progression, World.GetCity);
             Routes = new RouteSystem(state, World, economyConfig, Fleet, Finance, Progression, Stations);
             Maintenance = new MaintenanceAssistant(state, Fleet, Routes, Finance, economyConfig);
 
@@ -224,6 +225,7 @@ namespace BusTycoon.Core
 
             Maintenance.RunDaily();
             Fleet.BeginDay(rng);
+            Stations.AdvanceDay();
             Routes.SimulateDay(rng, report.Routes);
             Fleet.ChargeIdleInsurance();
 

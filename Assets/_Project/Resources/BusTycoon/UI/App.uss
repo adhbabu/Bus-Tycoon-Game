@@ -1,38 +1,53 @@
 /*
- * Otobüs İmparatoru — yeni arayüz (UI Toolkit) stilleri. Birimler tasarım birimidir (IMGUI'nin "u"su; masaüstünde
- * ekran yüksekliği 1000 birim). Açık renkli kartlar sade, açık renkli haritayla uyumludur (Mini Motorways dili).
- * Renkler:
- *   mürekkep #1F2430 · soluk #6B7280 · çizgi #E6E8EC · zemin #FFFFFF · ikincil zemin #F4F5F7
- *   turuncu (marka) #FF8A00 · yeşil (para) #12A150 · kırmızı #E5484D · mavi #2F80ED · altın #F5B000
- * Yazı tipi Inter; kalınlık C#'tan verilir (UiText: Regular/Bold/Black).
+ * Otobüs İmparatoru — arayüz (UI Toolkit) stilleri. Birimler tasarım birimidir (masaüstünde ekran yüksekliği 1000 birim;
+ * telefonda 1 birim ≈ 0,78 pt). Koyu tema (Figma "Tema" değişkenleriyle aynı):
+ *   zemin #0E1A21 · çubuk #0A151B · kart #1C363E→#132A31 · kenar #2A4A52 · düğme #16262D / #1E3640 · seçili #1A2B32
+ *   yazı #F1F4F5 · soluk #8DA1A8 · altın #F5C451→#E5A23A (üstünde koyu yazı #1C1708)
+ *   yeşil #3DDC84 · kırmızı #FF6464 · mavi #5AA9FF
+ * Yazı tipi Inter; kalınlık C#'tan verilir (UiWeight: Regular=Medium, Bold, Black=ExtraBold). İkonlar Material
+ * Symbols (beyaz; renk -unity-background-image-tint-color ile).
  */
 
 .bt-root {
-    color: #1F2430;
+    color: #F1F4F5;
     font-size: 14px;
     /* Varsayılan temanın yazı renkleri (etiket, düğme) koyu mürekkep olsun */
-    --unity-colors-default-text: #1F2430;
-    --unity-colors-label-text: #1F2430;
-    --unity-colors-button-text: #1F2430;
+    --unity-colors-default-text: #F1F4F5;
+    --unity-colors-label-text: #F1F4F5;
+    --unity-colors-button-text: #F1F4F5;
+}
+
+/* ------------------------------------------------------------------ sıfırlama
+ * Varsayılan tema her yazıya kenar boşluğu ve iç boşluk verir (.unity-label); tasarım ölçüleri bunlarsız hesaplı.
+ * Aynı belirginlikte olduğundan aşağıdaki sınıflar (margin-top vb.) bunu ezer. İçerik kutusu olan düğmelerde
+ * (yazısız Button) yazılar sola dayanır: düğmenin ortalaması alt yazılara geçmesin. */
+
+.bt-text {
+    margin: 0;
+    padding: 0;
+}
+
+.bt-box {
+    -unity-text-align: middle-left;
 }
 
 /* ------------------------------------------------------------------ genel parçalar */
 
 .bt-card {
-    background-color: rgba(255, 255, 255, 0.97);
+    background-image: resource("BusTycoon/UI/Gradients/card");
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.09);
-    border-radius: 14px;
+    border-color: rgba(42, 74, 82, 0.75);
+    border-radius: 18px;
 }
 
 .bt-caps {
     font-size: 10.5px;
-    color: #6B7280;
+    color: #8DA1A8;
     letter-spacing: 0.6px;
 }
 
 .bt-dim {
-    color: #6B7280;
+    color: #8DA1A8;
 }
 
 .bt-row {
@@ -58,14 +73,14 @@
 .bt-bar {
     height: 5px;
     border-radius: 3px;
-    background-color: #ECEEF2;
+    background-color: rgba(255, 255, 255, 0.08);
     overflow: hidden;
     margin-top: 4px;
 }
 
 .bt-bar__fill {
     height: 100%;
-    background-color: #FF8A00;
+    background-color: #F5C451;
     border-radius: 3px;
     transform-origin: left;
 }
@@ -78,10 +93,28 @@
     height: 17px;
     padding: 0 4px;
     border-radius: 9px;
-    background-color: #E5484D;
+    background-color: #FF6464;
     color: #FFFFFF;
     font-size: 10.5px;
     -unity-text-align: middle-center;
+}
+
+/* ------------------------------------------------------------------ ikonlar (Material Symbols, beyaz; renk tint ile) */
+
+.bt-sym {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: #F1F4F5;
+}
+
+.is-gold.bt-sym, .bt-sym.is-gold {
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.is-green {
+    color: #3DDC84;
 }
 
 /* ------------------------------------------------------------------ üst çubuk */
@@ -90,214 +123,347 @@
     position: absolute;
     flex-direction: row;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.97);
+    background-color: #0E1A21;
     border-bottom-width: 1px;
-    border-color: #E6E8EC;
-    padding-left: 18px;
-    padding-right: 14px;
+    border-color: rgba(42, 74, 82, 0.45);
 }
 
-.bt-topbar__block {
+.bt-brand {
     flex-direction: column;
     justify-content: center;
-    margin-right: 22px;
+    flex-shrink: 1;
+    overflow: hidden;
 }
 
-.bt-company {
-    font-size: 16px;
-    color: #1F2430;
+.bt-brand__kicker {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    color: #3DDC84;
+    white-space: nowrap;
 }
 
-.bt-cash {
-    font-size: 26px;
-    color: #12A150;
+.bt-brand__title {
+    font-size: 20px;
+    color: #F1F4F5;
+    white-space: nowrap;
+    -unity-text-overflow-position: end;
+    text-overflow: ellipsis;
 }
 
-.bt-cash.is-negative {
-    color: #E5484D;
+.bt-brand__sub {
+    margin-top: 2px;
 }
 
-.bt-net {
+.bt-brand__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 4px;
+    background-color: #3DDC84;
+    margin-right: 6px;
+}
+
+.bt-brand__subtext {
     font-size: 12px;
-    margin-left: 8px;
-    margin-top: 8px;
+    color: #3DDC84;
+    white-space: nowrap;
 }
 
-.bt-net.is-up {
-    color: #12A150;
+.bt-kasa {
+    align-items: center;
+    margin-right: 12px;
+    flex-shrink: 0;
 }
 
-.bt-net.is-down {
-    color: #E5484D;
+.bt-kasa__caps {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    color: #3DDC84;
+    margin-right: 9px;
 }
 
-.bt-date {
-    font-size: 15px;
-    margin-left: 6px;
+.bt-kasa__value {
+    font-size: 20px;
+    color: #F1F4F5;
+    white-space: nowrap;
 }
 
-.bt-speed {
-    flex-direction: row;
-    background-color: #F1F2F5;
-    border-radius: 10px;
-    padding: 3px;
-    margin-left: 14px;
+.bt-kasa__value.is-negative {
+    color: #FF6464;
 }
 
-.bt-speed__button {
-    min-width: 40px;
-    height: 30px;
-    margin: 0;
-    padding: 0 8px;
-    border-width: 0;
-    border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0);
-    color: #4B5262;
-    font-size: 13px;
-    transition-property: background-color, color;
+.bt-round {
+    width: 36px;
+    height: 36px;
+    margin: 0 0 0 10px;
+    padding: 0;
+    border-width: 1px;
+    border-radius: 18px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: #16262D;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition-property: background-color;
     transition-duration: 0.12s;
 }
 
-.bt-speed__button:hover {
-    background-color: #E4E6EB;
+.bt-round:hover {
+    background-color: #1E3640;
 }
 
-.bt-speed__button.is-active {
-    background-color: #FF8A00;
-    color: #FFFFFF;
+.bt-round.is-paused {
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.bt-round.is-paused .bt-round__icon {
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-round__icon {
+    width: 20px;
+    height: 20px;
 }
 
 .bt-race {
-    flex-direction: row;
-    align-items: center;
-    margin-left: 14px;
+    margin-left: 10px;
     padding: 4px 12px;
-    border-radius: 10px;
-    background-color: #FFF1DF;
-    color: #B45F00;
+    border-radius: 13px;
+    background-color: rgba(245, 196, 81, 0.14);
 }
 
-.bt-stat {
-    flex-direction: column;
-    margin-left: 22px;
+.bt-race__icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    -unity-background-image-tint-color: #F5C451;
 }
 
-.bt-stat__value {
-    font-size: 17px;
-    color: #1F2430;
+.bt-race__text {
+    font-size: 13px;
+    color: #F5C451;
 }
 
-.bt-stat__extra {
-    font-size: 12px;
-    margin-left: 6px;
-    margin-top: 4px;
-    color: #6B7280;
+.bt-date {
+    height: 36px;
+    margin-left: 10px;
+    padding: 0 14px 0 12px;
+    border-width: 1px;
+    border-radius: 18px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: #16262D;
+    flex-shrink: 0;
 }
 
-.bt-stat__extra.is-warning {
-    color: #D97706;
+.bt-date__icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    -unity-background-image-tint-color: #F5C451;
 }
 
-.bt-daybar {
+.bt-date__text {
+    font-size: 14px;
+    color: #F1F4F5;
+    white-space: nowrap;
+}
+
+.bt-date__track {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 2px;
-    background-color: #FF8A00;
+    left: 13px;
+    right: 13px;
+    bottom: -10px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: rgba(245, 196, 81, 0.2);
+    overflow: hidden;
+}
+
+.bt-date__fill {
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+    background-color: #F5C451;
     transform-origin: left;
-    opacity: 0.85;
 }
 
-.bt-menu-button {
-    width: 44px;
-    height: 44px;
-    margin: 0 0 0 10px;
-    padding: 0;
-    border-width: 0;
-    border-radius: 12px;
-    background-color: #F1F2F5;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Sade üst çubuk (telefon, dar ekran): etiketler yok */
-.compact-top .bt-caps {
+.narrow .bt-kasa__caps {
     display: none;
 }
 
-.compact-top .bt-cash {
-    font-size: 21px;
+.narrow .bt-round {
+    margin-left: 7px;
 }
 
-.compact-top .bt-topbar__block {
-    margin-right: 12px;
-}
-
-/* ------------------------------------------------------------------ menü (masaüstünde solda, telefonda altta) */
-
-.bt-rail {
-    position: absolute;
-    flex-direction: column;
-    background-color: rgba(255, 255, 255, 0.97);
-    border-right-width: 1px;
-    border-color: #E6E8EC;
-    padding: 10px 6px;
-}
+/* ------------------------------------------------------------------ alt sekmeler ve yuvarlak Harita düğmesi */
 
 .bt-tabs {
     position: absolute;
     flex-direction: row;
-    background-color: rgba(255, 255, 255, 0.98);
+    align-items: center;
+    background-color: #0A151B;
     border-top-width: 1px;
-    border-color: #E6E8EC;
-    padding: 4px 6px 0 6px;
+    border-color: rgba(42, 74, 82, 0.45);
 }
 
-.bt-nav {
-    flex-direction: column;
+.bt-tabs__group {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    margin: 0 0 4px 0;
-    padding: 4px 0 6px 0;
+    justify-content: space-around;
+}
+
+.bt-tabs__slot {
+    width: 110px;
+    flex-shrink: 0;
+}
+
+.bt-tab-item {
+    flex-direction: row;
+    align-items: center;
+    height: 44px;
+    margin: 0;
+    padding: 0 14px;
     border-width: 0;
-    border-radius: 12px;
+    border-radius: 13px;
     background-color: rgba(0, 0, 0, 0);
-    color: #4B5262;
-    font-size: 11.5px;
-    transition-property: background-color, color;
+    transition-property: background-color;
     transition-duration: 0.15s;
 }
 
-.bt-tabs .bt-nav {
-    flex-grow: 1;
-    flex-basis: 0;
-    margin: 0 2px;
+.bt-tab-item:hover {
+    background-color: #142229;
 }
 
-.bt-nav:hover {
-    background-color: #F1F2F5;
+.bt-tab-item__icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 9px;
+    -unity-background-image-tint-color: #8FA3AB;
 }
 
-.bt-nav.is-active {
-    background-color: #FFF1DF;
-    color: #C26400;
-}
-
-.bt-nav__icon {
-    width: 26px;
-    height: 26px;
-    margin-bottom: 3px;
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.bt-nav__label {
-    -unity-text-align: middle-center;
+.bt-tab-item__label {
+    font-size: 15px;
+    color: #C7D2D6;
     white-space: nowrap;
 }
 
-.bt-rail__spacer {
-    flex-grow: 1;
+.bt-tab-item__marker {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    width: 38px;
+    height: 4px;
+    margin-left: -19px;
+    border-radius: 2px;
+    background-color: #F5C451;
+    display: none;
+}
+
+.bt-tab-item.is-active {
+    background-color: #1A2B32;
+}
+
+.bt-tab-item.is-active .bt-tab-item__icon {
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-tab-item.is-active .bt-tab-item__label {
+    color: #F5C451;
+}
+
+.bt-tab-item.is-active .bt-tab-item__marker {
+    display: flex;
+}
+
+.narrow .bt-tab-item {
+    flex-direction: column;
+    justify-content: center;
+    height: 56px;
+    padding: 2px 6px;
+}
+
+.narrow .bt-tab-item__icon {
+    margin-right: 0;
+    margin-bottom: 2px;
+}
+
+.narrow .bt-tab-item__label {
+    font-size: 11.5px;
+}
+
+.narrow .bt-tab-item__marker {
+    top: -7px;
+}
+
+.bt-tab-item .bt-badge {
+    top: 2px;
+    right: 2px;
+}
+
+.bt-mapbutton {
+    position: absolute;
+    width: 90px;
+    height: 91px;
+}
+
+.bt-mapbutton__ring {
+    position: absolute;
+    left: 6.5px;
+    top: 0;
+    width: 77px;
+    height: 77px;
+    border-radius: 38.5px;
+    background-color: #0A151B;
+}
+
+.bt-mapbutton__disc {
+    position: absolute;
+    left: 11.5px;
+    top: 5px;
+    width: 67px;
+    height: 67px;
+    margin: 0;
+    padding: 0;
+    border-width: 1px;
+    border-radius: 33.5px;
+    border-color: rgba(255, 231, 163, 0.55);
+    background-image: resource("BusTycoon/UI/Gradients/goldbutton");
+    align-items: center;
+    justify-content: center;
+    transition-property: scale;
+    transition-duration: 0.12s;
+}
+
+.bt-mapbutton__disc:hover {
+    scale: 1.04 1.04;
+}
+
+.bt-mapbutton__disc:active {
+    scale: 0.96 0.96;
+}
+
+.bt-mapbutton__icon {
+    width: 31px;
+    height: 31px;
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-mapbutton__label {
+    position: absolute;
+    left: 0;
+    top: 73px;
+    width: 90px;
+    height: 18px;
+    font-size: 13.5px;
+    color: #F5C451;
+    -unity-text-align: middle-center;
+}
+
+.bt-mapbutton.is-active .bt-mapbutton__disc {
+    border-width: 3px;
+    border-color: rgba(255, 231, 163, 0.85);
 }
 
 /* ------------------------------------------------------------------ bildirimler */
@@ -316,11 +482,11 @@
     margin-bottom: 8px;
     padding: 6px 18px 6px 14px;
     border-radius: 20px;
-    background-color: rgba(255, 255, 255, 0.98);
+    background-color: rgba(19, 40, 48, 0.98);
     border-width: 1px;
     border-left-width: 5px;
-    border-color: rgba(31, 36, 48, 0.1);
-    border-left-color: #2F80ED;
+    border-color: rgba(120, 200, 210, 0.12);
+    border-left-color: #5AA9FF;
 }
 
 .bt-toast__icon {
@@ -336,19 +502,19 @@
 }
 
 .bt-toast.is-success {
-    border-left-color: #12A150;
+    border-left-color: #3DDC84;
 }
 
 .bt-toast.is-error {
-    border-left-color: #E5484D;
+    border-left-color: #FF6464;
 }
 
 .bt-toast.is-warning {
-    border-left-color: #F59E0B;
+    border-left-color: #F5A524;
 }
 
 .bt-toast.is-gold {
-    border-left-color: #F5B000;
+    border-left-color: #F5C451;
 }
 
 .phone .bt-toast {
@@ -367,10 +533,10 @@
     position: absolute;
     flex-direction: column;
     padding: 16px 16px 6px 18px;
-    background-color: rgba(255, 255, 255, 0.98);
+    background-image: resource("BusTycoon/UI/Gradients/card");
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.1);
-    border-radius: 16px;
+    border-color: rgba(42, 74, 82, 0.75);
+    border-radius: 18px;
     opacity: 0.3;
     translate: 36px 0px;
     transition-property: opacity, translate;
@@ -391,12 +557,12 @@
 
 .bt-sheet__title {
     font-size: 22px;
-    color: #1F2430;
+    color: #F1F4F5;
 }
 
 .bt-sheet__subtitle {
     font-size: 13px;
-    color: #6B7280;
+    color: #8DA1A8;
     margin-top: 2px;
     flex-shrink: 0;
 }
@@ -408,22 +574,35 @@
     padding: 0;
     border-width: 0;
     border-radius: 18px;
-    background-color: #F1F2F5;
-    color: #4B5262;
+    background-color: #1E3640;
+    color: #C7D2D6;
     font-size: 22px;
     -unity-text-align: middle-center;
 }
 
 .bt-sheet__close:hover {
-    background-color: #E4E6EB;
+    background-color: #24414A;
 }
 
 .bt-sheet__scroll {
     flex-grow: 1;
     margin-top: 12px;
     border-top-width: 1px;
-    border-color: #EEF0F3;
+    border-color: rgba(255, 255, 255, 0.07);
     padding-top: 10px;
+}
+
+/* Panelin altında kaymayan alan (planlayıcıda araç atama ve "Hattı aç") */
+.bt-sheet__footer {
+    flex-shrink: 0;
+    padding-top: 10px;
+    margin-bottom: 8px;
+    border-top-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+}
+
+.bt-sheet__footer .bt-check {
+    margin-bottom: 8px;
 }
 
 .phone .bt-sheet__close {
@@ -437,18 +616,18 @@
     padding: 12px 14px;
     margin: 0 4px 10px 0;
     border-radius: 12px;
-    background-color: #F7F8FA;
+    background-color: rgba(255, 255, 255, 0.04);
     border-width: 1px;
-    border-color: #EEF0F3;
+    border-color: rgba(255, 255, 255, 0.07);
 }
 
 .bt-item.is-current {
-    background-color: #FFF7EC;
-    border-color: #FFD9A8;
+    background-color: rgba(245, 196, 81, 0.10);
+    border-color: rgba(245, 196, 81, 0.45);
 }
 
 .bt-item.is-done .bt-item__title {
-    color: #8A90A0;
+    color: #7F949B;
 }
 
 .bt-item__icon {
@@ -466,14 +645,14 @@
 
 .bt-item__text {
     font-size: 13px;
-    color: #5B6272;
+    color: #A9B8BD;
     white-space: normal;
     margin-top: 4px;
 }
 
 .bt-item__reward {
     font-size: 12.5px;
-    color: #B7791F;
+    color: #F5C451;
     margin-top: 4px;
 }
 
@@ -481,28 +660,28 @@
     font-size: 11.5px;
     padding: 2px 9px;
     border-radius: 10px;
-    background-color: #ECEEF2;
-    color: #4B5262;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #C7D2D6;
     flex-shrink: 0;
 }
 
 .bt-pill.is-success {
-    background-color: #E3F6EA;
-    color: #0F7A3D;
+    background-color: rgba(61, 220, 132, 0.12);
+    color: #3DDC84;
 }
 
 .bt-pill.is-warning {
-    background-color: #FFF1DF;
-    color: #B45F00;
+    background-color: rgba(245, 196, 81, 0.14);
+    color: #F5C451;
 }
 
 .bt-pill.is-danger {
-    background-color: #FDE7E8;
-    color: #C0262D;
+    background-color: rgba(255, 100, 100, 0.12);
+    color: #FF8A8A;
 }
 
 .bt-empty {
-    color: #6B7280;
+    color: #8DA1A8;
     margin: 8px 0;
 }
 
@@ -512,7 +691,7 @@
     align-items: flex-start;
     padding: 6px 4px 6px 0;
     border-bottom-width: 1px;
-    border-color: #F1F2F5;
+    border-color: #1E3640;
 }
 
 .bt-log__icon {
@@ -526,7 +705,7 @@
 .bt-log__day {
     width: 62px;
     font-size: 12px;
-    color: #8A90A0;
+    color: #7F949B;
     flex-shrink: 0;
     margin-top: 1px;
 }
@@ -546,7 +725,7 @@
 
 .bt-help__text {
     font-size: 13.5px;
-    color: #3F4554;
+    color: #D3DCDF;
     white-space: normal;
     margin: 4px 4px 12px 0;
 }
@@ -571,31 +750,35 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
+/* Anahtar sütunu en az %44: dar sağ panelde (harita) etiket harf harf kırılmasın; uzun değer kendi içinde sarar */
 .bt-kv__key {
     flex-grow: 1;
-    flex-shrink: 1;
-    color: #5B6272;
+    flex-shrink: 0;
+    min-width: 44%;
+    color: #A9B8BD;
     font-size: 13.5px;
     white-space: normal;
 }
 
 .bt-kv__value {
     font-size: 14px;
-    color: #1F2430;
+    color: #F1F4F5;
     -unity-text-align: middle-right;
-    flex-shrink: 0;
+    flex-shrink: 1;
+    margin-left: 8px;
+    white-space: normal;
 }
 
 .is-up {
-    color: #12A150;
+    color: #3DDC84;
 }
 
 .is-down {
-    color: #E5484D;
+    color: #FF6464;
 }
 
 .is-gold {
-    color: #B7791F;
+    color: #F5C451;
 }
 
 .bt-chips {
@@ -610,9 +793,9 @@
     padding: 3px 8px;
     margin: 0 6px 6px 0;
     border-radius: 8px;
-    background-color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.05);
     border-width: 1px;
-    border-color: #E6E8EC;
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .bt-chip__icon {
@@ -624,7 +807,7 @@
 
 .bt-chip__text {
     font-size: 12px;
-    color: #4B5262;
+    color: #C7D2D6;
 }
 
 .bt-actions {
@@ -635,7 +818,7 @@
 
 .bt-actions__note {
     font-size: 12px;
-    color: #5B6272;
+    color: #A9B8BD;
     white-space: normal;
 }
 
@@ -644,10 +827,10 @@
     margin: 0 0 0 8px;
     padding: 0 14px;
     border-width: 1px;
-    border-color: #DADDE3;
+    border-color: rgba(255, 255, 255, 0.12);
     border-radius: 10px;
-    background-color: #FFFFFF;
-    color: #1F2430;
+    background-color: #1E3640;
+    color: #F1F4F5;
     font-size: 13px;
     -unity-text-align: middle-center;
     transition-property: background-color;
@@ -655,17 +838,17 @@
 }
 
 .bt-btn:hover {
-    background-color: #F1F2F5;
+    background-color: #1E3640;
 }
 
 .bt-btn.is-primary {
-    background-color: #FF8A00;
-    border-color: #FF8A00;
-    color: #FFFFFF;
+    background-color: #F5C451;
+    border-color: #F5C451;
+    color: #1C1708;
 }
 
 .bt-btn.is-primary:hover {
-    background-color: #F07F00;
+    background-color: #E5A23A;
 }
 
 .bt-btn:disabled {
@@ -688,12 +871,12 @@
     margin: 8px 4px 12px 0;
     padding: 12px 14px;
     border-radius: 12px;
-    background-color: #FFF7EC;
+    background-color: rgba(245, 196, 81, 0.10);
 }
 
 .bt-pack__title {
     font-size: 16px;
-    color: #B45F00;
+    color: #F5C451;
 }
 
 .bt-chart {
@@ -710,12 +893,40 @@
 }
 
 .bt-route {
-    border-left-width: 5px;
+    border-left-width: 4px;
+    padding: 12px 14px 10px 14px;
+}
+
+.bt-route__name {
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.bt-route__tag {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    margin-left: 8px;
+    margin-right: 8px;
+    white-space: nowrap;
+}
+
+.bt-route__main {
+    margin-top: 6px;
+}
+
+.bt-route__spark {
+    width: 100px;
+    height: 30px;
+    margin: 0 14px;
+}
+
+.bt-route__value {
+    align-items: flex-end;
 }
 
 .bt-route__profit {
-    font-size: 15px;
-    margin-left: 8px;
+    font-size: 16px;
+    margin-bottom: 3px;
 }
 
 .bt-route__stats {
@@ -724,7 +935,7 @@
 
 .bt-route__detail {
     font-size: 12.5px;
-    color: #5B6272;
+    color: #A9B8BD;
 }
 
 .bt-route__load {
@@ -733,19 +944,19 @@
 }
 
 .bt-bar__fill--blue {
-    background-color: #2F80ED;
+    background-color: #5AA9FF;
 }
 
 .is-danger-text {
-    color: #C0262D;
+    color: #FF8A8A;
 }
 
 .is-warning-text {
-    color: #B45F00;
+    color: #F5C451;
 }
 
 .is-success-text {
-    color: #0F7A3D;
+    color: #3DDC84;
 }
 
 .bt-actions--start .bt-btn {
@@ -765,14 +976,14 @@
     padding: 0 12px;
     border-width: 0;
     border-radius: 17px;
-    background-color: #F1F2F5;
-    color: #4B5262;
+    background-color: #1E3640;
+    color: #C7D2D6;
     font-size: 13px;
 }
 
 .bt-tab.is-active {
-    background-color: #1F2430;
-    color: #FFFFFF;
+    background-color: #F1F4F5;
+    color: #1C1708;
 }
 
 .bt-btn--toggle {
@@ -795,8 +1006,8 @@
 }
 
 .bt-btn.is-danger {
-    color: #C0262D;
-    border-color: #F3C4C6;
+    color: #FF8A8A;
+    border-color: rgba(255, 100, 100, 0.35);
 }
 
 .bt-actions--fill {
@@ -832,13 +1043,13 @@
 
 .bt-detail__text {
     font-size: 12.5px;
-    color: #5B6272;
+    color: #A9B8BD;
     white-space: normal;
     flex-shrink: 1;
 }
 
 .is-warning-text .bt-detail__text {
-    color: #B45F00;
+    color: #F5C451;
 }
 
 .bt-bus__condition {
@@ -847,21 +1058,21 @@
 }
 
 .bt-bar__fill--green {
-    background-color: #12A150;
+    background-color: #3DDC84;
 }
 
 .bt-bar__fill--yellow {
-    background-color: #F5B000;
+    background-color: #F5C451;
 }
 
 .bt-bar__fill--red {
-    background-color: #E5484D;
+    background-color: #FF6464;
 }
 
 /* Galeri */
 .bt-note {
-    background-color: #EAF2FD;
-    border-color: #CFE0FA;
+    background-color: rgba(90, 169, 255, 0.12);
+    border-color: rgba(90, 169, 255, 0.35);
 }
 
 .bt-next {
@@ -869,30 +1080,55 @@
     white-space: normal;
 }
 
+/* Galeri: otobüs çizimi kartın üstünde büyük, koyu sahnede (2:1 çizim sahneye sığar, ortalanır) */
+.bt-model__stage {
+    height: 150px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(5, 13, 18, 0.55);
+    overflow: hidden;
+}
+
 .bt-model__art {
-    width: 112px;
-    height: 56px;
-    margin-right: 12px;
-    flex-shrink: 0;
+    flex-grow: 1;
+    margin: 4px 8px 0 8px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .bt-model.is-locked .bt-model__art {
-    opacity: 0.4;
+    opacity: 0.6;
+}
+
+.bt-model__lock {
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #F5C451;
+    background-color: rgba(10, 21, 27, 0.85);
+}
+
+.bt-model__lock.is-owned {
+    color: #3DDC84;
 }
 
 .bt-model.is-locked .bt-model__name {
-    color: #8A90A0;
+    color: #7F949B;
 }
 
 .bt-model__name {
     font-size: 17px;
-    color: #1F2430;
+    color: #F1F4F5;
 }
 
 .bt-model__price {
     font-size: 19px;
-    color: #1F2430;
+    color: #F1F4F5;
 }
 
 .bt-spec {
@@ -901,12 +1137,12 @@
 
 .bt-owned {
     font-size: 12.5px;
-    color: #0F7A3D;
+    color: #3DDC84;
     margin-top: 4px;
 }
 
 .bt-bar__fill--gold {
-    background-color: #F5B000;
+    background-color: #F5C451;
 }
 
 /* Hat paneli */
@@ -925,7 +1161,7 @@
 
 .bt-legend__text {
     font-size: 11.5px;
-    color: #8A90A0;
+    color: #7F949B;
 }
 
 .bt-legend__center {
@@ -941,7 +1177,7 @@
     height: 6px;
     margin-top: -3px;
     border-radius: 3px;
-    background-color: #E4E6EB;
+    background-color: #24414A;
     border-width: 0;
 }
 
@@ -950,9 +1186,9 @@
     height: 22px;
     margin-top: -11px;
     border-radius: 11px;
-    background-color: #FF8A00;
+    background-color: #F5C451;
     border-width: 2px;
-    border-color: #FFFFFF;
+    border-color: #0E1A21;
 }
 
 .phone .bt-slider .unity-base-slider__dragger {
@@ -976,17 +1212,17 @@
     margin: 0;
     padding: 0;
     border-width: 1px;
-    border-color: #DADDE3;
+    border-color: rgba(255, 255, 255, 0.12);
     border-radius: 12px;
-    background-color: #FFFFFF;
+    background-color: #1E3640;
     font-size: 22px;
-    color: #1F2430;
+    color: #F1F4F5;
     -unity-text-align: middle-center;
 }
 
 .bt-price {
     font-size: 28px;
-    color: #1F2430;
+    color: #F1F4F5;
 }
 
 .bt-zone {
@@ -997,14 +1233,14 @@
 }
 
 .bt-dim {
-    color: #8A90A0;
+    color: #7F949B;
 }
 
 .bt-btn--ghost {
     margin: 12px 0 0 0;
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
-    color: #2F80ED;
+    color: #5AA9FF;
 }
 
 .bt-bus-row {
@@ -1017,13 +1253,13 @@
 
 /* Tablo (hat geçmişi) */
 .bt-table__head .bt-table__cell {
-    color: #8A90A0;
+    color: #7F949B;
     font-size: 11.5px;
 }
 
 .bt-table__row {
     border-top-width: 1px;
-    border-color: #EEF0F3;
+    border-color: rgba(255, 255, 255, 0.07);
 }
 
 .bt-table__cell {
@@ -1052,7 +1288,7 @@
     margin: 0 4px 10px 0;
     padding: 8px 4px 8px 10px;
     border-radius: 12px;
-    background-color: #F7F8FA;
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
 .bt-endpoint__dot {
@@ -1061,20 +1297,42 @@
     border-radius: 7px;
     margin-right: 8px;
     border-width: 3px;
-    border-color: #1F2430;
+    border-color: #F1F4F5;
     background-color: #FFFFFF;
 }
 
 .bt-endpoint--origin .bt-endpoint__dot {
-    background-color: #3B7FF2;
+    background-color: #5AA9FF;
 }
 
 .bt-endpoint--destination .bt-endpoint__dot {
-    background-color: #FA8020;
+    background-color: #E5A23A;
 }
 
 .bt-endpoint__label {
     font-size: 16px;
+}
+
+/* İki durak tek satırda: adlar alt alta, "Değiştir" sağda */
+.bt-endpoint--pair {
+    padding: 6px 4px 6px 10px;
+}
+
+.bt-endpoint__line {
+    margin: 2px 0;
+}
+
+.bt-endpoint__line .bt-endpoint__label {
+    font-size: 15px;
+    flex-shrink: 1;
+}
+
+.bt-endpoint__dot.is-origin {
+    background-color: #5AA9FF;
+}
+
+.bt-endpoint__dot.is-destination {
+    background-color: #E5A23A;
 }
 
 .bt-endpoint__flag {
@@ -1109,16 +1367,16 @@
     margin: 0 4px 6px 0;
     padding: 0 12px;
     border-width: 1px;
-    border-color: #E6E8EC;
+    border-color: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    background-color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.04);
     transition-property: background-color, border-color;
     transition-duration: 0.12s;
 }
 
 .bt-suggestion:hover {
-    background-color: #FFF7EC;
-    border-color: #FFD9A8;
+    background-color: rgba(245, 196, 81, 0.10);
+    border-color: rgba(245, 196, 81, 0.45);
 }
 
 .bt-suggestion__flag {
@@ -1134,7 +1392,7 @@
 
 .bt-suggestion__km {
     font-size: 12.5px;
-    color: #8A90A0;
+    color: #7F949B;
     margin-right: 10px;
 }
 
@@ -1143,7 +1401,7 @@
 }
 
 .is-blue {
-    color: #2F80ED;
+    color: #5AA9FF;
 }
 
 .bt-check {
@@ -1162,13 +1420,13 @@
     margin-right: 10px;
     border-radius: 6px;
     border-width: 2px;
-    border-color: #B8BDC8;
-    background-color: #FFFFFF;
+    border-color: #6E848B;
+    background-color: #0E1A21;
 }
 
 .bt-check.is-on .bt-check__box {
-    background-color: #FF8A00;
-    border-color: #FF8A00;
+    background-color: #F5C451;
+    border-color: #F5C451;
 }
 
 .bt-check__label {
@@ -1187,9 +1445,9 @@
     flex-direction: row;
     align-items: flex-start;
     padding: 12px 12px 10px 14px;
-    background-color: rgba(255, 255, 255, 0.97);
+    background-color: rgba(19, 40, 48, 0.98);
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.1);
+    border-color: rgba(120, 200, 210, 0.12);
     border-radius: 16px;
 }
 
@@ -1220,7 +1478,7 @@
 
 .bt-goal__hint {
     font-size: 12.5px;
-    color: #5B6272;
+    color: #A9B8BD;
     white-space: normal;
     margin-top: 2px;
 }
@@ -1242,16 +1500,16 @@
     margin: 0 0 6px 0;
     padding: 0;
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.12);
+    border-color: rgba(120, 200, 210, 0.14);
     border-radius: 14px;
-    background-color: rgba(255, 255, 255, 0.97);
-    color: #1F2430;
+    background-color: rgba(19, 40, 48, 0.98);
+    color: #F1F4F5;
     font-size: 24px;
     -unity-text-align: middle-center;
 }
 
 .bt-zoom__button:hover {
-    background-color: #F1F2F5;
+    background-color: #1E3640;
 }
 
 /* Pencereler */
@@ -1261,7 +1519,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(15, 20, 35, 0.45);
+    background-color: rgba(3, 8, 12, 0.62);
     opacity: 0;
     transition-property: opacity;
     transition-duration: 0.18s;
@@ -1274,7 +1532,7 @@
 .bt-modal {
     position: absolute;
     padding: 22px 22px 16px 22px;
-    background-color: #FFFFFF;
+    background-color: #132830;
     border-radius: 20px;
     translate: 0px 14px;
     transition-property: translate;
@@ -1302,7 +1560,7 @@
 
 .bt-modal__text {
     font-size: 14.5px;
-    color: #3F4554;
+    color: #D3DCDF;
     white-space: normal;
     margin-bottom: 12px;
 }
@@ -1368,7 +1626,7 @@
     left: 1px;
     border-width: 0;
     border-radius: 3px;
-    background-color: #D0D4DB;
+    background-color: rgba(255, 255, 255, 0.16);
 }
 
 .bt-modal__scroll .unity-scroller--vertical {
@@ -1395,10 +1653,43 @@
     position: absolute;
     flex-direction: column;
     padding: 22px 26px 16px 26px;
-    background-color: rgba(255, 255, 255, 0.97);
+    background-color: rgba(12, 24, 30, 0.9);
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.1);
-    border-radius: 22px;
+    border-color: rgba(245, 196, 81, 0.18);
+    border-top-width: 2px;
+    border-top-color: rgba(245, 196, 81, 0.55);
+    border-radius: 24px;
+}
+
+.bt-menu__veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.bt-menu__logo {
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+
+.bt-menu.is-wide .bt-menu__logo {
+    justify-content: flex-start;
+}
+
+.bt-menu__emblem {
+    flex-shrink: 0;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-menu__wordmark {
+    flex-shrink: 1;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .bt-menu.is-wide {
@@ -1423,7 +1714,7 @@
 
 .bt-menu__title {
     font-size: 34px;
-    color: #FF8A00;
+    color: #F5C451;
     -unity-text-align: middle-center;
 }
 
@@ -1434,7 +1725,7 @@
 
 .bt-menu__subtitle {
     font-size: 14px;
-    color: #6B7280;
+    color: #8DA1A8;
     margin-bottom: 18px;
     -unity-text-align: middle-center;
     white-space: normal;
@@ -1446,7 +1737,7 @@
 
 .bt-menu__credits {
     font-size: 11px;
-    color: #9AA0AD;
+    color: #8DA1A8;
     margin-top: 10px;
     white-space: normal;
 }
@@ -1472,13 +1763,13 @@
     margin: 0;
     padding: 0 14px;
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.12);
+    border-color: rgba(120, 200, 210, 0.14);
     border-radius: 14px;
-    background-color: rgba(255, 255, 255, 0.97);
+    background-color: rgba(19, 40, 48, 0.98);
 }
 
 .bt-station__back:hover {
-    background-color: #F1F2F5;
+    background-color: #1E3640;
 }
 
 .bt-station__back-icon {
@@ -1569,7 +1860,7 @@
 }
 
 .bt-upgrade.is-locked .bt-item__title {
-    color: #8A90A0;
+    color: #7F949B;
 }
 
 .bt-upgrade__icon {
@@ -1585,6 +1876,18 @@
     padding-bottom: 14px;
 }
 
+/* Liste kalan yere sığar, düğmelerin altına taşmaz (telefonda düğmelerin arkasından görünüyordu) */
+.bt-newgame .bt-sheet__scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 60px;
+}
+
+.bt-newgame .bt-actions {
+    flex-shrink: 0;
+}
+
 .bt-field {
     margin: 0 4px 10px 0;
 }
@@ -1593,15 +1896,15 @@
     height: 40px;
     padding: 0 12px;
     border-width: 1px;
-    border-color: #DADDE3;
+    border-color: rgba(255, 255, 255, 0.12);
     border-radius: 10px;
-    background-color: #FFFFFF;
-    color: #1F2430;
+    background-color: #0E1A21;
+    color: #F1F4F5;
     font-size: 15px;
 }
 
 .bt-field:focus .unity-base-text-field__input {
-    border-color: #FF8A00;
+    border-color: #F5C451;
 }
 
 /* Dokunmatik yazı alanı: dokununca tarayıcının yazı penceresi açılır */
@@ -1610,18 +1913,18 @@
     padding: 0 12px;
     justify-content: center;
     border-width: 1px;
-    border-color: #DADDE3;
+    border-color: rgba(255, 255, 255, 0.12);
     border-radius: 10px;
-    background-color: #FFFFFF;
+    background-color: #0E1A21;
 }
 
 .bt-field__text {
     font-size: 15px;
-    color: #1F2430;
+    color: #F1F4F5;
 }
 
 .bt-field__text.is-placeholder {
-    color: #9AA0AD;
+    color: #8DA1A8;
 }
 
 /* Çok oyunculu ekranı */
@@ -1658,18 +1961,18 @@
     margin: 0 8px 0 0;
     padding: 8px 12px;
     border-width: 2px;
-    border-color: #E6E8EC;
+    border-color: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    background-color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
 .bt-mode:hover {
-    background-color: #F7F8FA;
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
 .bt-mode.is-active {
-    border-color: #FF8A00;
-    background-color: #FFF7EC;
+    border-color: #F5C451;
+    background-color: rgba(245, 196, 81, 0.10);
 }
 
 .bt-mode__title {
@@ -1678,7 +1981,7 @@
 
 .bt-mode__text {
     font-size: 12px;
-    color: #5B6272;
+    color: #A9B8BD;
     white-space: normal;
 }
 
@@ -1723,9 +2026,9 @@
 .bt-race-card {
     position: absolute;
     padding: 10px 14px 8px 14px;
-    background-color: rgba(255, 255, 255, 0.97);
+    background-color: rgba(19, 40, 48, 0.98);
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.1);
+    border-color: rgba(120, 200, 210, 0.12);
     border-radius: 16px;
 }
 
@@ -1769,9 +2072,9 @@
 /* Mini harita çerçevesi (harita içeriğini IMGUI çizer) */
 .bt-minimap {
     position: absolute;
-    background-color: rgba(255, 255, 255, 0.97);
+    background-color: rgba(19, 40, 48, 0.98);
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.1);
+    border-color: rgba(120, 200, 210, 0.12);
     border-radius: 14px;
 }
 
@@ -1793,7 +2096,7 @@
     padding: 0;
     border-width: 0;
     border-radius: 6px;
-    background-color: #F1F2F5;
+    background-color: #1E3640;
     align-items: center;
     justify-content: center;
 }
@@ -1803,7 +2106,7 @@
     width: 10px;
     height: 2px;
     border-radius: 1px;
-    background-color: #4B5262;
+    background-color: #C7D2D6;
 }
 
 .bt-minimap__mark--vertical {
@@ -1812,16 +2115,16 @@
 }
 
 .bt-minimap__toggle:hover {
-    background-color: #E6E8EC;
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Şehir ipucu (fare şehrin üstündeyken) */
 .bt-tooltip {
     position: absolute;
     padding: 9px 12px 9px 10px;
-    background-color: rgba(255, 255, 255, 0.98);
+    background-color: rgba(19, 40, 48, 0.98);
     border-width: 1px;
-    border-color: rgba(31, 36, 48, 0.14);
+    border-color: rgba(120, 200, 210, 0.16);
     border-radius: 12px;
 }
 
@@ -1877,6 +2180,1166 @@
     left: 1px;
     border-width: 0;
     border-radius: 3px;
-    background-color: #D0D4DB;
+    background-color: rgba(255, 255, 255, 0.16);
 }
 
+
+
+/* ------------------------------------------------------------------ sekme sayfası (içerik alanını kaplar) */
+
+.bt-sheet.is-page {
+    padding: 0;
+    background-image: none;
+    border-width: 0;
+    border-radius: 0;
+}
+
+.is-page .bt-sheet__header, .is-page .bt-sheet__subtitle {
+    display: none;
+}
+
+.is-page .bt-sheet__scroll {
+    margin-top: 0;
+    border-top-width: 0;
+    padding-top: 0;
+}
+
+.is-page .bt-item {
+    background-image: resource("BusTycoon/UI/Gradients/card");
+    border-color: rgba(42, 74, 82, 0.75);
+    border-radius: 16px;
+}
+
+/* İki sütunlu ızgara: kartlar yan yana, başlık ve sekmeler tam genişlik */
+.is-wide .bt-sheet__scroll .unity-scroll-view__content-container, .is-wide .bt-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.is-wide .bt-sheet__scroll .unity-scroll-view__content-container > * {
+    width: 100%;
+}
+
+.is-wide .bt-sheet__scroll .unity-scroll-view__content-container > .bt-item, .is-wide .bt-sheet__scroll .unity-scroll-view__content-container > .bt-route, .is-wide .bt-list > * {
+    width: 49.4%;
+    margin-right: 0;
+}
+
+.is-wide .bt-company-card {
+    width: 100%;
+}
+
+/* Izgarada tam genişlik kalan kart (ör. Filo'daki bakım asistanı şeridi) */
+.is-wide .bt-sheet__scroll .unity-scroll-view__content-container > .bt-full {
+    width: 100%;
+}
+
+.bt-section--full {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Şirketim */
+.bt-company-card__logo {
+    width: 54px;
+    height: 54px;
+    border-radius: 15px;
+    margin-right: 14px;
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-company-card__logo-icon {
+    width: 32px;
+    height: 32px;
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-company-card__name {
+    font-size: 20px;
+}
+
+/* ------------------------------------------------------------------ ortak: rozet, çip, bağlantı, değişim, çağrı */
+
+.bt-status-badge {
+    margin-left: 10px;
+    padding: 2px 9px 2px 7px;
+    border-radius: 9px;
+    background-color: rgba(61, 220, 132, 0.13);
+}
+
+.bt-status-badge__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 4px;
+    margin-right: 6px;
+    background-color: #3DDC84;
+}
+
+.bt-status-badge__text {
+    font-size: 11px;
+    color: #3DDC84;
+}
+
+.bt-status-badge.is-down {
+    background-color: rgba(255, 100, 100, 0.13);
+}
+
+.bt-status-badge.is-down .bt-status-badge__dot {
+    background-color: #FF6464;
+}
+
+.bt-status-badge.is-down .bt-status-badge__text {
+    color: #FF6464;
+}
+
+.bt-chip-gold {
+    margin-left: 10px;
+    padding: 3px 10px;
+    border-width: 1.5px;
+    border-radius: 11px;
+    border-color: rgba(245, 196, 81, 0.6);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #F5C451;
+}
+
+.bt-link {
+    margin: 0;
+    padding: 2px 4px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    font-size: 14px;
+    color: #F5C451;
+}
+
+.bt-change {
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 11.5px;
+}
+
+.bt-change.is-up {
+    background-color: rgba(61, 220, 132, 0.14);
+}
+
+.bt-change.is-down {
+    background-color: rgba(255, 100, 100, 0.14);
+}
+
+.bt-cta {
+    flex-direction: row;
+    align-items: center;
+    height: 58px;
+    margin: 0;
+    padding: 0 10px 0 16px;
+    border-width: 0;
+    border-radius: 15px;
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+    flex-shrink: 0;
+}
+
+.bt-cta__kicker {
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    color: rgba(28, 23, 8, 0.65);
+}
+
+.bt-cta__title {
+    font-size: 17px;
+    color: #1C1708;
+}
+
+.bt-cta--big .bt-cta__title {
+    font-size: 20px;
+}
+
+.bt-cta__sub {
+    font-size: 12px;
+    color: rgba(28, 23, 8, 0.75);
+}
+
+.bt-cta__go {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: rgba(0, 0, 0, 0.13);
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-cta__go-icon {
+    width: 22px;
+    height: 22px;
+    -unity-background-image-tint-color: #1C1708;
+}
+
+/* ------------------------------------------------------------------ ana ekran */
+
+.bt-home {
+    position: absolute;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.bt-home__left {
+    width: 61%;
+    flex-direction: column;
+}
+
+.bt-home__right {
+    width: 37.4%;
+    flex-direction: column;
+}
+
+.bt-home-cash {
+    padding: 16px 20px 14px 20px;
+    flex-shrink: 0;
+}
+
+.bt-home-cash__top {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.bt-home-cash__amount {
+    font-size: 38px;
+    color: #F1F4F5;
+    margin-top: 6px;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+}
+
+.bt-home-cash__amount.is-negative {
+    color: #FF6464;
+}
+
+.bt-home-cash__worth {
+    font-size: 13px;
+    color: #8DA1A8;
+    margin-top: 2px;
+}
+
+.bt-home-cash__chart {
+    width: 34%;
+    height: 74px;
+    margin-left: 16px;
+    flex-shrink: 0;
+}
+
+.bt-home-cash__divider {
+    height: 1px;
+    margin: 12px 0 10px 0;
+    background-color: rgba(42, 74, 82, 0.6);
+}
+
+.bt-home-cash__stats {
+    flex-direction: row;
+}
+
+.bt-home-stat {
+    width: 25%;
+}
+
+.bt-home-stat__value {
+    font-size: 16px;
+    color: #F1F4F5;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+.bt-home-section {
+    margin-top: 12px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.bt-home-section__title {
+    font-size: 17px;
+    color: #F1F4F5;
+}
+
+.bt-home-routes {
+    flex-shrink: 1;
+}
+
+.bt-home-route {
+    min-height: 58px;
+    margin: 8px 0 0 0;
+    padding: 8px 16px 8px 0;
+    border-radius: 15px;
+    flex-shrink: 0;
+}
+
+.bt-home-route__bar {
+    width: 4px;
+    height: 34px;
+    border-radius: 2px;
+    margin: 0 12px 0 12px;
+}
+
+.bt-home-route__name {
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.bt-home-route__info {
+    font-size: 12px;
+    color: #8DA1A8;
+    margin-top: 2px;
+}
+
+.bt-home-route__spark {
+    width: 108px;
+    height: 30px;
+    margin-right: 16px;
+}
+
+.bt-home-route__value {
+    align-items: flex-end;
+}
+
+.bt-home-route__money {
+    font-size: 16px;
+    color: #F1F4F5;
+    margin-bottom: 3px;
+}
+
+/* Ana ekran: şehrin canlı mini haritası (sol sütunda kalan yeri doldurur) */
+.bt-home-city {
+    flex-grow: 1;
+    flex-direction: column;
+    margin: 12px 0 0 0;
+    padding: 12px 12px 12px 12px;
+    border-radius: 18px;
+    min-height: 150px;
+}
+
+.bt-home-city__head {
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.bt-home-city__icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-home-city__title {
+    font-size: 15px;
+    color: #F1F4F5;
+}
+
+.bt-cityminimap {
+    flex-grow: 1;
+    border-radius: 12px;
+    background-color: #0B2230;
+    -unity-background-scale-mode: scale-and-crop;
+    border-width: 1px;
+    border-color: rgba(42, 74, 82, 0.6);
+}
+
+.bt-home-empty {
+    height: 150px;
+    margin: 8px 0 0 0;
+    border-width: 1px;
+    border-radius: 15px;
+    border-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.02);
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-home-empty__plus {
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+    background-color: rgba(255, 255, 255, 0.07);
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.bt-home-empty__icon {
+    width: 28px;
+    height: 28px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-home-empty__title {
+    font-size: 16px;
+    color: #F1F4F5;
+}
+
+.bt-home-empty__sub {
+    font-size: 12px;
+    color: #8DA1A8;
+}
+
+.bt-home-today {
+    padding: 12px 14px;
+    flex-shrink: 0;
+}
+
+.bt-reward {
+    height: 26px;
+    margin: 0;
+    padding: 0 10px 0 4px;
+    border-width: 0;
+    border-radius: 13px;
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+.bt-reward__dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background-color: #1C1708;
+    margin-right: 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-reward__icon {
+    width: 12px;
+    height: 12px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-reward__text {
+    font-size: 11.5px;
+    color: #1C1708;
+    white-space: nowrap;
+}
+
+.bt-home-minis {
+    margin-top: 10px;
+}
+
+.bt-mini {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-height: 50px;
+    margin: 0 4px;
+    padding: 6px 8px;
+    border-width: 1px;
+    border-radius: 13px;
+    border-color: rgba(42, 74, 82, 0.6);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.bt-mini.is-accent {
+    border-color: rgba(123, 97, 255, 0.55);
+}
+
+.bt-mini.is-accent .bt-tile__sub {
+    color: #B9A2FF;
+}
+
+.bt-home-tiles {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+.bt-tile {
+    width: 48.6%;
+    min-height: 52px;
+    margin: 0 0 9px 0;
+    padding: 7px 10px 7px 7px;
+    border-width: 1px;
+    border-radius: 14px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-image: resource("BusTycoon/UI/Gradients/card");
+    flex-shrink: 0;
+}
+
+.bt-tile--wide {
+    width: 100%;
+}
+
+.bt-tile__box {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    margin-right: 10px;
+    background-color: rgba(255, 255, 255, 0.07);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bt-tile__icon {
+    width: 20px;
+    height: 20px;
+}
+
+.bt-tile__title {
+    font-size: 15px;
+    color: #F1F4F5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bt-tile__sub {
+    font-size: 12px;
+    color: #8DA1A8;
+    white-space: nowrap;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Kutunun yazı sütunu daralabilir: uzun alt yazı kutudan taşmaz, "…" ile biter */
+.bt-tile .bt-col {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Telefon: ana ekran kısa; kutular alçak, "Nasıl oynanır" ve "Haritayı keşfet" gizli (Harita sekmesi zaten var) */
+.bt-home.is-phone .bt-tile {
+    min-height: 40px;
+    padding: 4px 8px 4px 5px;
+    margin-bottom: 6px;
+}
+
+.bt-home.is-phone .bt-tile__box {
+    width: 28px;
+    height: 28px;
+    margin-right: 7px;
+}
+
+.bt-home.is-phone .bt-tile__title {
+    font-size: 13.5px;
+}
+
+.bt-home.is-phone .bt-tile__sub {
+    font-size: 11px;
+}
+
+.bt-home.is-phone .bt-tile--wide {
+    display: none;
+}
+
+.bt-home.is-phone .bt-cta--big {
+    display: none;
+}
+
+.bt-home.is-phone .bt-home-today {
+    padding: 8px 10px;
+}
+
+.bt-home.is-phone .bt-home-minis {
+    margin-top: 6px;
+}
+
+.bt-home.is-phone .bt-mini {
+    min-height: 40px;
+    padding: 4px 6px;
+}
+
+.bt-home.is-phone .bt-home-tiles {
+    margin-top: 6px;
+}
+
+.bt-tile.is-highlight {
+    border-width: 0;
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+}
+
+.bt-tile.is-highlight .bt-tile__box {
+    background-color: rgba(0, 0, 0, 0.13);
+}
+
+.bt-tile.is-highlight .bt-tile__icon {
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-tile.is-highlight .bt-tile__title {
+    color: #1C1708;
+}
+
+.bt-tile.is-highlight .bt-tile__sub {
+    color: #3D3214;
+}
+
+.bt-tile__box.is-amber { background-color: #3A3020; }
+.bt-tile__box.is-amber .bt-tile__icon { -unity-background-image-tint-color: #F5C451; }
+.bt-tile__box.is-blue { background-color: #1C3350; }
+.bt-tile__box.is-blue .bt-tile__icon { -unity-background-image-tint-color: #6FB1FF; }
+.bt-tile__box.is-teal { background-color: #163A36; }
+.bt-tile__box.is-teal .bt-tile__icon { -unity-background-image-tint-color: #3DD6B5; }
+.bt-tile__box.is-slate { background-color: #24323A; }
+.bt-tile__box.is-slate .bt-tile__icon { -unity-background-image-tint-color: #A9BCC4; }
+.bt-tile__box.is-red { background-color: #3D2326; }
+.bt-tile__box.is-red .bt-tile__icon { -unity-background-image-tint-color: #FF7A7A; }
+.bt-tile__box.is-purple { background-color: #2E2648; }
+.bt-tile__box.is-purple .bt-tile__icon { -unity-background-image-tint-color: #B39BFF; }
+
+.phone .bt-home-cash__amount {
+    font-size: 34px;
+}
+
+/* ------------------------------------------------------------------ harita kartı */
+
+.bt-mapframe {
+    position: absolute;
+    border-width: 40px;
+    border-color: #0E1A21;
+    border-radius: 58px;
+}
+
+.bt-mapedge {
+    position: absolute;
+    border-width: 1px;
+    border-color: rgba(42, 74, 82, 0.75);
+    border-radius: 18px;
+}
+
+.bt-mapcontrols {
+    position: absolute;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.bt-maploc {
+    height: 36px;
+    margin: 0;
+    padding: 0 14px 0 10px;
+    border-width: 1px;
+    border-radius: 18px;
+    border-color: rgba(245, 196, 81, 0.55);
+    background-color: rgba(14, 26, 33, 0.9);
+}
+
+.bt-maploc__icon {
+    width: 19px;
+    height: 19px;
+    margin-right: 6px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-maploc__text {
+    font-size: 14.5px;
+    color: #F1F4F5;
+}
+
+.bt-mapzoom {
+    flex-direction: column;
+}
+
+.bt-mapzoom__button {
+    width: 42px;
+    height: 42px;
+    margin: 0 0 10px 0;
+    padding: 0;
+    border-width: 1px;
+    border-radius: 21px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: rgba(14, 26, 33, 0.92);
+    align-items: center;
+    justify-content: center;
+}
+
+.bt-mapzoom__icon {
+    width: 22px;
+    height: 22px;
+}
+
+.bt-mapside {
+    position: absolute;
+    flex-direction: column;
+    padding: 14px;
+}
+
+.bt-map-attribution {
+    position: absolute;
+    font-size: 10.5px;
+    color: rgba(241, 244, 245, 0.55);
+    padding: 2px 6px;
+    border-radius: 6px;
+    background-color: rgba(10, 21, 27, 0.55);
+}
+
+/* Şehir | Türkiye geçişi (sağ panelin başı) */
+.bt-mapside__switch {
+    margin: 0 0 12px 0;
+}
+
+.bt-mapside__switch .bt-segment__item {
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.bt-segment__icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    -unity-background-image-tint-color: #8DA1A8;
+}
+
+.bt-segment__item.is-active .bt-segment__icon {
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-segment__item:disabled {
+    opacity: 0.45;
+}
+
+.bt-mapside__list {
+    margin-top: 8px;
+    margin-bottom: 10px;
+}
+
+.bt-mapside__caption {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.bt-mapside__route {
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-mapside__swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.bt-mapside__name {
+    font-size: 14px;
+    color: #F1F4F5;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.bt-mapside__value {
+    font-size: 12.5px;
+    margin-left: 6px;
+}
+
+.bt-mapside__empty {
+    font-size: 13px;
+    color: #8DA1A8;
+    white-space: normal;
+}
+
+.bt-mapside__marker {
+    height: 26px;
+}
+
+.bt-mapside__dot {
+    width: 19px;
+    height: 19px;
+    margin-right: 10px;
+}
+
+.bt-mapside__dot.is-gold-bg {
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-mapside__dot.is-green-bg {
+    -unity-background-image-tint-color: #3DDC84;
+}
+
+.bt-mapside__marker-text {
+    font-size: 14px;
+    color: #F1F4F5;
+}
+
+/* ------------------------------------------------------------------ şirket logosu ve "Şirketini kur" */
+
+.bt-logo {
+    border-radius: 11px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bt-logo__icon {
+    width: 62%;
+    height: 62%;
+    -unity-background-image-tint-color: #FFFFFF;
+}
+
+.bt-logo__icon.is-dark {
+    -unity-background-image-tint-color: #1C1708;
+}
+
+.bt-logo--top {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+}
+
+.bt-logo--large {
+    width: 56px;
+    height: 56px;
+    border-radius: 15px;
+    margin-right: 14px;
+}
+
+.bt-logo--pick {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+}
+
+.bt-newgame__header {
+    flex-shrink: 0;
+}
+
+.bt-logo-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.bt-logo-pick {
+    margin: 0 8px 8px 0;
+    padding: 3px;
+    border-width: 2px;
+    border-radius: 16px;
+    border-color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-logo-pick.is-active {
+    border-color: #F5C451;
+}
+
+.bt-city-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.bt-city-pick {
+    width: 49%;
+    height: 50px;
+    margin: 0 0 8px 0;
+    padding: 0 10px 0 8px;
+    border-width: 1px;
+    border-radius: 13px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.bt-city-pick.is-active {
+    border-color: #F5C451;
+    background-color: rgba(245, 196, 81, 0.12);
+}
+
+.bt-city-pick__icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+    flex-shrink: 0;
+}
+
+.bt-city-pick__name {
+    font-size: 15px;
+    color: #F1F4F5;
+}
+
+.bt-city-pick__sub {
+    font-size: 12px;
+    color: #8DA1A8;
+}
+
+
+/* ------------------------------------------------------------------ Hatlarım: süzgeç, sıralama, uyarı şeridi */
+
+.bt-route-controls {
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.bt-segment {
+    padding: 3px;
+    margin: 0 10px 6px 0;
+    border-width: 1px;
+    border-radius: 15px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: #16262D;
+}
+
+.bt-segment__item {
+    height: 32px;
+    margin: 0;
+    padding: 0 14px;
+    border-width: 0;
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-segment__label {
+    font-size: 14px;
+    color: #D3DCDF;
+}
+
+.bt-segment__count {
+    font-size: 11px;
+    margin-left: 7px;
+    padding: 1px 7px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #F5C451;
+}
+
+.bt-segment__item.is-active {
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+}
+
+.bt-segment__item.is-active .bt-segment__label {
+    color: #1C1708;
+}
+
+.bt-segment__item.is-active .bt-segment__count {
+    background-color: rgba(0, 0, 0, 0.15);
+    color: #1C1708;
+}
+
+.bt-segment.is-plain .bt-segment__label {
+    color: #8DA1A8;
+}
+
+.bt-segment.is-plain .bt-segment__item.is-active {
+    background-image: none;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.bt-segment.is-plain .bt-segment__item.is-active .bt-segment__label {
+    color: #F1F4F5;
+}
+
+.bt-alert {
+    height: 40px;
+    margin: 0 0 10px 0;
+    padding: 0 12px;
+    border-width: 1px;
+    border-radius: 13px;
+    border-color: rgba(255, 100, 100, 0.25);
+    background-color: rgba(255, 100, 100, 0.07);
+    overflow: hidden;
+}
+
+.bt-alert__tag {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: #FF8F8F;
+    margin-right: 10px;
+}
+
+.bt-alert__text {
+    font-size: 13px;
+    color: #E7D6D6;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ öğretici (şehir içi başlangıç) */
+
+.bt-tutorial {
+    position: absolute;
+    flex-direction: column;
+    padding: 12px 14px 12px 14px;
+    border-width: 1.5px;
+    border-color: rgba(245, 196, 81, 0.55);
+    border-radius: 16px;
+}
+
+.bt-tutorial__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 4px;
+    margin-left: 4px;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.bt-tutorial__dot.is-done {
+    background-color: #3DDC84;
+}
+
+.bt-tutorial__dot.is-current {
+    width: 16px;
+    background-color: #F5C451;
+}
+
+.bt-tutorial__head {
+    flex-shrink: 0;
+}
+
+.bt-tutorial__title {
+    font-size: 16px;
+    color: #F1F4F5;
+    margin-top: 6px;
+    flex-shrink: 0;
+    white-space: normal;
+}
+
+.bt-tutorial__text {
+    font-size: 12.5px;
+    color: #B9C7CC;
+    margin-top: 3px;
+    white-space: normal;
+    flex-grow: 1;
+}
+
+.bt-tutorial__actions {
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+.bt-tutorial__skip {
+    height: 30px;
+    margin: 0;
+    padding: 0 4px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    color: #8DA1A8;
+    font-size: 12px;
+}
+
+/* Telefon: tek satırlık şerit (adım · başlık · Git · ×); açıklama ve noktalar gizli */
+.bt-tutorial.is-compact {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px 4px 10px;
+    border-radius: 12px;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__dots {
+    display: none;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__text {
+    display: none;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__title {
+    font-size: 13px;
+    margin: 0 0 0 8px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__actions {
+    margin: 0 0 0 6px;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__go {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__skip {
+    font-size: 11px;
+}
+
+.bt-tutorial__go {
+    height: 32px;
+    margin: 0;
+    padding: 0 14px;
+    border-width: 0;
+    border-radius: 10px;
+    background-image: resource("BusTycoon/UI/Gradients/gold");
+    color: #1C1708;
+    font-size: 13px;
+}
+
+/* Öğreticinin gösterdiği düğme: yanıp sönen altın halka */
+.is-tutorial {
+    border-width: 2px;
+    border-color: #F5C451;
+}
+
+.is-tutorial.is-pulse {
+    border-color: rgba(245, 196, 81, 0.3);
+}
+
+.bt-mapbutton__disc.is-tutorial {
+    border-width: 4px;
+    border-color: #FFF3C9;
+}
+
+.bt-mapbutton__disc.is-tutorial.is-pulse {
+    border-color: rgba(255, 243, 201, 0.25);
+}
+
+/* ------------------------------------------------------------------ bekleme süreleri ve reklam */
+
+.bt-wait {
+    border-color: rgba(245, 196, 81, 0.55);
+}
+
+.bt-wait__icon {
+    width: 26px;
+    height: 26px;
+    margin-right: 10px;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-wait__title {
+    font-size: 15px;
+    color: #F5C451;
+}
+
+/* Test reklamı (?reklam=test): ekranı kaplayan koyu örtü ve geri sayım */
+.bt-adoverlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(5, 10, 14, 0.92);
+}
+
+.bt-adoverlay__text {
+    font-size: 64px;
+    color: #F1F4F5;
+    margin-top: 8px;
+}
+
+/* Harita sağ paneli: lisanslı şehirler arasında geçiş */
+.bt-mapside__cities {
+    flex-wrap: wrap;
+    margin: 0 0 10px 0;
+}
+
+.bt-mapside__city {
+    height: 26px;
+    margin: 0 6px 6px 0;
+    padding: 0 10px;
+    border-width: 1px;
+    border-radius: 13px;
+    border-color: rgba(42, 74, 82, 0.9);
+    background-color: #16262D;
+    color: #D3DCDF;
+    font-size: 12px;
+}
+
+.bt-mapside__city.is-active {
+    border-color: rgba(245, 196, 81, 0.8);
+    color: #F5C451;
+}

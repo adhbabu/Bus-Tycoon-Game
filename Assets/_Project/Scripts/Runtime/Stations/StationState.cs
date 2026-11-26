@@ -10,5 +10,8 @@ namespace BusTycoon.Stations
         public string cityId;
         public int firstUpgradeDay;
         public List<string> upgrades = new List<string>();
+        /// <summary>Yapımdaki geliştirmeler (bekleme süreli oyunlarda) ve kalan günleri, aynı sırayla.</summary>
+        public List<string> building = new List<string>();
+        public List<int> buildingDays = new List<int>();
     }
 }

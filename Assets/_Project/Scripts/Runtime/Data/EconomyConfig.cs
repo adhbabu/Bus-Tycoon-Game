@@ -10,7 +10,10 @@ namespace BusTycoon.Data
     public sealed class EconomyConfig : ScriptableObject
     {
         [Header("Para birimi")]
-        [SerializeField] string currencySymbol = "$";
+        [SerializeField] string currencySymbol = "₺";
+        [Tooltip("Bir oyun günündeki hat gelir ve giderinin katı (bir oyun günü kaç günlük işletme sayılır). " +
+                 "Araç, lisans ve geliştirme fiyatları değişmez: para daha hızlı birikir.")]
+        [SerializeField, Min(1f)] float incomeScale = 10f;
 
         [Header("Talep potansiyeli — çekim (gravity) modeli")]
         [Tooltip("K: Q_ref = K × (NüfusA_mn × NüfusB_mn)^α × MesafeEğrisi(km) × Turizm")]
@@ -105,7 +108,32 @@ namespace BusTycoon.Data
         [Tooltip("İtibarın günlük memnuniyete yaklaşma hızı.")]
         [SerializeField, Range(0f, 0.2f)] float reputationAdjustRate = 0.02f;
 
+        [Header("Şehir içi (dolmuş) hatları")]
+        [Tooltip("Şehir trafiğinde ortalama hız (km/sa): duraklar ve ışıklar dahil.")]
+        [SerializeField, Min(5f)] float urbanSpeedKmh = 16f;
+        [Tooltip("Hat sonunda dönüş ve dolmuşun dolmasını bekleme süresi (saat).")]
+        [SerializeField, Min(0f)] float urbanTurnaroundHours = 0.2f;
+        [Tooltip("Tam hat biletinin referans fiyatı: taban + km × km_ücreti (bölge ve araç çarpanıyla).")]
+        [SerializeField, Min(0f)] float urbanBaseFare = 0.6f;
+        [SerializeField, Min(0f)] float urbanFarePerKm = 0.08f;
+        [Tooltip("Ortalama biniş, hattın bu oranı kadar: yolcu bu oranda bilet öder, koltuk bir seferde 1/oran kez dolar.")]
+        [SerializeField, Range(0.2f, 1f)] float urbanRideShare = 0.6f;
+        [Tooltip("Talep: K × nüfus_mn^α × (Σ(0,4 + durak önemi) + 0,15 × km) × uzunluk eğrisi × mekân çarpanı (yolcu/gün).")]
+        [SerializeField, Min(0f)] float urbanDemandScale = 100f;
+        [SerializeField, Range(0.1f, 1f)] float urbanPopulationExponent = 0.4f;
+        [Tooltip("Güzergâha bu kadar (m) yakın duraklar hattın durağı sayılır; ünlü mekânlar için iki katı.")]
+        [SerializeField, Min(50f)] float urbanCatchmentMeters = 600f;
+        [SerializeField, Min(0f)] float urbanLicenseBase = 300f;
+
+        [Header("Bekleme süreleri (şehir içi başlangıçlı oyunlar; ödüllü reklamla hemen biter)")]
+        [Tooltip("Yeni hattın kurulumu (oyun günü): bu sürede sefer yapılmaz.")]
+        [SerializeField, Min(0)] int routeSetupDays = 3;
+        [Tooltip("Araç teslim süresi (gün): dolmuş, midibüs, şehir otobüsü, şehirlerarası otobüs.")]
+        [SerializeField] int[] deliveryDays = { 1, 2, 2, 3 };
+        [SerializeField, Min(0f)] float urbanLicensePerKm = 40f;
+
         public string CurrencySymbol => currencySymbol;
+        public float IncomeScale => incomeScale;
 
         public float DemandScale => demandScale;
         public float PopulationExponent => populationExponent;
@@ -157,6 +185,28 @@ namespace BusTycoon.Data
         public float SatisfactionPriceWeight => satisfactionPriceWeight;
         public float SatisfactionCrowdingWeight => satisfactionCrowdingWeight;
         public float ReputationAdjustRate => reputationAdjustRate;
+
+        public float UrbanSpeedKmh => urbanSpeedKmh;
+        public float UrbanTurnaroundHours => urbanTurnaroundHours;
+        public float UrbanBaseFare => urbanBaseFare;
+        public float UrbanFarePerKm => urbanFarePerKm;
+        public float UrbanRideShare => urbanRideShare;
+        public float UrbanDemandScale => urbanDemandScale;
+        public float UrbanPopulationExponent => urbanPopulationExponent;
+        public float UrbanCatchmentMeters => urbanCatchmentMeters;
+        public float GetUrbanLicenseCost(float km) => urbanLicenseBase + urbanLicensePerKm * km;
+        public int RouteSetupDays => routeSetupDays;
+
+        /// <summary>Aracın teslim süresi (gün).</summary>
+        public int DeliveryDays(BusModelData model)
+        {
+            if (model == null || deliveryDays == null || deliveryDays.Length == 0) return 0;
+            return Mathf.Max(0, deliveryDays[Mathf.Clamp((int)model.Category, 0, deliveryDays.Length - 1)]);
+        }
+
+        /// <summary>Şehir içi hat uzunluğunun talebe etkisi: 2 km'den kısası yürünür, 5–20 km en iyi, sonra azalır.</summary>
+        public static float UrbanLengthFactor(float km) =>
+            Mathf.Clamp01((km - 1f) / 4f) * Mathf.Exp(-Mathf.Max(0f, km - 20f) / 15f);
 
         public float EvaluateDistanceDemand(float roadKm) =>
             distanceDemandCurve == null || distanceDemandCurve.length == 0 ? 1f : Mathf.Max(0f, distanceDemandCurve.Evaluate(roadKm));

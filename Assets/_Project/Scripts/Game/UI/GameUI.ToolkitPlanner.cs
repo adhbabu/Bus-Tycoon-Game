@@ -14,7 +14,7 @@ namespace BusTycoon.Game
         /// <summary>Planlayıcı açıkken her kare: önerileri kare kare hesaplar, teklifi tazeler.</summary>
         void TickToolkitPlanner()
         {
-            if (panel != Panel.Planner || plannerOrigin == null) return;
+            if (panel != Panel.Planner || urbanPlanning || plannerOrigin == null) return;
             if (plannerDestination == null)
             {
                 bool stale = session.State != null && session.State.currentDay - suggestionsDay >= SuggestionRefreshDays;
@@ -86,6 +86,17 @@ namespace BusTycoon.Game
                 return;
             }
 
+            if (PlannerModel == null)
+            {
+                // Araç sınıfı: dolmuş şehirlerarası çalışamaz; ilk uygun araç midibüs
+                BusModelData first = null;
+                foreach (var model in session.Catalog.SortedByTier)
+                    if (model.ServesIntercity && (first == null || model.RequiredCompanyLevel < first.RequiredCompanyLevel)) first = model;
+                Ui.Text("bt-item__text is-warning-text", first != null
+                    ? $"Şehirlerarası hat için midibüs ya da şehirlerarası otobüs gerekir. İlk uygun araç {first.DisplayName}: şirket seviyesi {first.RequiredCompanyLevel} olunca açılır."
+                    : "Şehirlerarası hat için uygun araç yok.", UiWeight.Bold, body);
+                return;
+            }
             BuildModelSelector(body);
             if (plannerDestination == null) BuildSuggestions(body);
             else BuildQuote(body);
@@ -114,8 +125,10 @@ namespace BusTycoon.Game
             Sprite sprite = UIBusArt.Sprite(model);
             if (sprite != null) art.style.backgroundImage = new StyleBackground(sprite);
             VisualElement info = Ui.El("bt-col bt-grow", row);
-            Ui.Text("bt-item__title", $"{model.DisplayName} · {SegmentName(model.Segment)}", UiWeight.Bold, info);
-            Ui.Text("bt-detail__text", $"{model.Seats} koltuk · rahat menzil {Fmt.Km(model.ComfortableRangeKm)}", UiWeight.Regular, info);
+            Ui.Text("bt-item__title", model.DisplayName, UiWeight.Bold, info);
+            Ui.Text("bt-detail__text", urbanPlanning
+                ? $"{SegmentName(model.Segment)} · {model.Seats} {(model.Segment == BusSegment.CityBus ? "yolcu" : "koltuk")}"
+                : $"{SegmentName(model.Segment)} · {model.Seats} koltuk · {Fmt.Km(model.ComfortableRangeKm)}", UiWeight.Regular, info);
             Button next = Ui.Button("bt-step", "›", () => { ChangePlannerModel(+1); tkSheetDirty = true; }, row);
             next.SetEnabled(plannerModelIndex < plannerModels.Count - 1);
         }

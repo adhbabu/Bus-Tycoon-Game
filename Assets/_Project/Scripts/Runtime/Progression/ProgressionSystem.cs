@@ -27,6 +27,7 @@ namespace BusTycoon.Progression
         public event Action<float> ReputationChanged;
         public event Action<BusModelData> ModelUnlocked;
         public event Action<RegionData> RegionUnlocked;
+        public event Action<CityData> CityLicensed;
 
         public ProgressionSystem(CompanyState state, ProgressionConfig config, BusCatalog catalog,
             EconomyConfig economy, FinanceSystem finance)
@@ -109,7 +110,7 @@ namespace BusTycoon.Progression
             if (state.level < model.RequiredCompanyLevel)
             {
                 long remaining = config.XpRequiredForLevel(model.RequiredCompanyLevel) - state.experience;
-                return $"Şirket seviyesi {model.RequiredCompanyLevel} gerekli ({remaining:N0} yolcu daha taşıyın).";
+                return $"Şirket seviyesi {model.RequiredCompanyLevel} gerekli ({BusTycoon.Core.Money.Count(remaining)} yolcu daha taşıyın).";
             }
             if (state.reputation < model.RequiredReputation)
                 return $"İtibar {model.RequiredReputation:0} gerekli (şu an {state.reputation:0}).";
@@ -150,7 +151,7 @@ namespace BusTycoon.Progression
             if (state.level < region.RequiredCompanyLevel)
                 return OpResult.Fail($"{region.DisplayName} için şirket seviyesi {region.RequiredCompanyLevel} gerekli.");
             if (!finance.CanAfford(region.OperatingLicenseCost))
-                return OpResult.Fail($"İşletme lisansı için {region.OperatingLicenseCost:N0} gerekli.");
+                return OpResult.Fail($"İşletme lisansı için {BusTycoon.Core.Money.Format(region.OperatingLicenseCost)} gerekli.");
             return OpResult.Ok();
         }
 
@@ -163,6 +164,50 @@ namespace BusTycoon.Progression
             state.unlockedRegionIds.Add(region.Id);
             RegionUnlocked?.Invoke(region);
             return OpResult.Ok($"{region.DisplayName} işletme lisansı alındı.");
+        }
+
+        // ------------------------------------------------------------------ şehir lisansları (şehir içi başlangıç)
+
+        /// <summary>Şehir lisansı kuralı açık mı (eski kayıtlarda kapalı: her şehir açık).</summary>
+        public bool CityLicensesActive => state.cityLicenses;
+
+        /// <summary>Bu şehirde işletme hakkı var mı (kural kapalıysa her şehir).</summary>
+        public bool OwnsCity(CityData city) =>
+            city != null && (!state.cityLicenses || state.ownedCityIds.Contains(city.Id));
+
+        /// <summary>Şehir lisansı bedeli (oyun parası): büyük şehir daha pahalı (İstanbul ~52 B, Samsun ~29 B).</summary>
+        public float CityLicensePrice(CityData city)
+        {
+            if (city == null) return 0f;
+            float price = 20000f + 8000f * Mathf.Sqrt(Mathf.Max(0.05f, (float)city.PopulationMillions));
+            return Mathf.Round(price / 1000f) * 1000f;
+        }
+
+        public OpResult CanBuyCityLicense(CityData city)
+        {
+            if (city == null) return OpResult.Fail("Geçersiz şehir.");
+            if (OwnsCity(city)) return OpResult.Fail($"{city.DisplayName} lisansı zaten var.");
+            if (!IsRegionUnlocked(city.Region)) return OpResult.Fail($"{city.Region.DisplayName} için ülke lisansı gerekli.");
+            float price = CityLicensePrice(city);
+            if (!finance.CanAfford(price)) return OpResult.Fail($"{city.DisplayName} lisansı için {BusTycoon.Core.Money.Format(price)} gerekli.");
+            return OpResult.Ok();
+        }
+
+        public OpResult TryBuyCityLicense(CityData city)
+        {
+            OpResult check = CanBuyCityLicense(city);
+            if (!check) return check;
+            finance.TrySpend(CityLicensePrice(city), LedgerCategory.RegionLicense, "city:" + city.Id);
+            GrantCityLicense(city);
+            return OpResult.Ok($"{city.DisplayName} lisansı alındı: şehirde dolmuş hattı kurabilir, lisanslı şehirlerine ücretsiz hat açabilirsin.");
+        }
+
+        /// <summary>Ücretsiz lisans (başlangıç şehri ya da uygulama içi satın alma).</summary>
+        public void GrantCityLicense(CityData city)
+        {
+            if (city == null || state.ownedCityIds.Contains(city.Id)) return;
+            state.ownedCityIds.Add(city.Id);
+            CityLicensed?.Invoke(city);
         }
 
         /// <summary>Başlangıç bölgesi gibi ücretsiz açılışlar için.</summary>

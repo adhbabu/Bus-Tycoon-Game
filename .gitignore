@@ -75,3 +75,4 @@ ios_dagitim_anahtari.pub
 _site/
 node_modules/
 /store-screenshots/
+Tools/.cache/

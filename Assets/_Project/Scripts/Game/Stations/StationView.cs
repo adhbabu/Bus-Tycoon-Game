@@ -217,7 +217,7 @@ namespace BusTycoon.Game
             var buses = new List<BusInstance>();
             foreach (var route in session.Routes.Routes)
             {
-                if (route.cityAId != city.Id && route.cityBId != city.Id) continue;
+                if (route.IsUrban || (route.cityAId != city.Id && route.cityBId != city.Id)) continue; // otogarda yalnız şehirlerarası
                 CityData other = session.World.GetCity(route.cityAId == city.Id ? route.cityBId : route.cityAId);
                 if (other != null && !info.Destinations.Contains(other.DisplayName)) info.Destinations.Add(other.DisplayName);
                 session.Fleet.GetBusesOnRoute(route.routeId, buses);

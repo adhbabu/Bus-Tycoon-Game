@@ -54,7 +54,8 @@ namespace BusTycoon.Game
             foreach (var route in session.Routes.Routes)
             {
                 if (!route.HasHistory || Math.Abs(route.LastReport.Profit) < 1.0) continue;
-                Vector3 sp = cam.WorldToScreenPoint(world.GetRouteMidpoint(route));
+                if (!TryRouteMidpoint(route, out Vector3 midpoint)) continue;
+                Vector3 sp = cam.WorldToScreenPoint(midpoint);
                 if (sp.z <= 0f || sp.x < 0f || sp.x > W || sp.y < 0f || sp.y > H) continue;
                 if (IsOverUI(new Vector2(sp.x, H - sp.y))) continue;
                 incomeRoutes.Add(route);
@@ -63,9 +64,10 @@ namespace BusTycoon.Game
             for (int i = 0; i < incomeRoutes.Count && i < MaxIncomeLabels; i++)
             {
                 double profit = incomeRoutes[i].LastReport.Profit;
+                TryRouteMidpoint(incomeRoutes[i], out Vector3 labelPoint);
                 floatingLabels.Add(new FloatingLabel
                 {
-                    World = world.GetRouteMidpoint(incomeRoutes[i]),
+                    World = labelPoint,
                     Text = (profit >= 0 ? "+" : "") + Fmt.Compact(profit),
                     Color = profit >= 0 ? UIStyles.Green : UIStyles.Red,
                     Start = now
@@ -120,6 +122,14 @@ namespace BusTycoon.Game
         /// <summary>Arayüz renginin açık zemindeki (sade harita) okunur tonu.</summary>
         static Color MapInk(Color color)
         {
+            if (UIStyles.DarkMap)
+            {
+                // Koyu haritada parlak tonlar
+                if (color.Equals(UIStyles.Green)) return new Color(0.24f, 0.86f, 0.52f);
+                if (color.Equals(UIStyles.Red)) return new Color(1f, 0.39f, 0.39f);
+                if (color.Equals(UIStyles.Gold) || color.Equals(UIStyles.Yellow) || color.Equals(UIStyles.Orange)) return new Color(0.96f, 0.77f, 0.32f);
+                return Color.Lerp(color, Color.white, 0.3f);
+            }
             if (color.Equals(UIStyles.Green)) return new Color(0.07f, 0.55f, 0.27f);
             if (color.Equals(UIStyles.Red)) return new Color(0.82f, 0.2f, 0.22f);
             if (color.Equals(UIStyles.Gold) || color.Equals(UIStyles.Yellow) || color.Equals(UIStyles.Orange)) return new Color(0.8f, 0.45f, 0f);
@@ -145,7 +155,7 @@ namespace BusTycoon.Game
                 float rise = (1f - (1f - t) * (1f - t)) * 34f * u;
                 float alpha = t < 0.12f ? t / 0.12f : 1f - Mathf.Clamp01((t - 0.55f) / 0.45f);
                 var rect = new Rect(sp.x - 90f * u, H - sp.y - 30f * u - rise, 180f * u, 24f * u);
-                if (NewUi && ToolkitCovers(rect.center)) continue; // yeni arayüzün panelinin altında
+                if (NewUi && (ToolkitCovers(rect.center) || !MapAcceptsPointer(rect.center))) continue; // harita kartının dışında ya da panelin altında
                 Color previous = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
                 // Açık renkli haritada: beyaz hale + koyu ton (gelir yeşil, gider kırmızı)

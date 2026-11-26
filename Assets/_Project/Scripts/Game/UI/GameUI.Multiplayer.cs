@@ -111,8 +111,8 @@ namespace BusTycoon.Game
 
             GUILayout.Label("Oda kur", s.H2);
             GUILayout.BeginHorizontal();
-            ModeCard(MatchMode.Blitz, "Blitz", "$1.000.000 · hızlı (2x)");
-            ModeCard(MatchMode.Normal, "Normal", "$10.000.000 · normal akış (1x)");
+            ModeCard(MatchMode.Blitz, "Blitz", $"{Fmt.Money(1_000_000)} · hızlı (2x)");
+            ModeCard(MatchMode.Normal, "Normal", $"{Fmt.Money(10_000_000)} · normal akış (1x)");
             GUILayout.EndHorizontal();
             Sp(4f);
             if (GUILayout.Button("ODA KUR", s.Primary, Ht(46f)))
@@ -338,7 +338,7 @@ namespace BusTycoon.Game
 
             float pad = 14f * u;
             UIIcons.Draw(new Rect(rect.x + pad, rect.y + 11f * u, 20f * u, 20f * u), UIIcon.Finish);
-            string title = room.Phase == RoomPhase.Ended ? "YARIŞ BİTTİ" : $"{MatchRules.Name(room.Mode).ToUpperInvariant()} · HEDEF {Fmt.Compact(room.TargetCash)}";
+            string title = room.Phase == RoomPhase.Ended ? "YARIŞ BİTTİ" : $"{Fmt.Upper(MatchRules.Name(room.Mode))} · HEDEF {Fmt.Compact(room.TargetCash)}";
             GUI.Label(new Rect(rect.x + pad + 26f * u, rect.y + 12f * u, width - pad * 2f - 26f * u, 20f * u), title, s.StatLabel);
 
             float y = rect.y + 40f * u;

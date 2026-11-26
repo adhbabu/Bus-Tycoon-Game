@@ -19,6 +19,8 @@ namespace BusTycoon.Routes
         public float cost;
         public float satisfaction;
         public int activeBuses;
+        /// <summary>Önemli gün çarpanı (bayram, maç günü…; 0 ya da 1: sıradan gün).</summary>
+        public float eventFactor;
 
         public float Profit => revenue - cost;
     }
@@ -44,6 +46,24 @@ namespace BusTycoon.Routes
         public bool autoSchedule = true;
         /// <summary>Atanmış otobüslerin maksimum sefer kapasitesinin kullanılacak oranı (0..1).</summary>
         public float manualUtilization = 1f;
+
+        // ---- Şehir içi (dolmuş) hat: iki uç durak; şehirlerarası hatta boş. cityAId = cityBId = şehir.
+        // Uçların adı ve konumu (metre) saklanır: şehir verisi yeniden üretilse de hat en yakın durağa oturur.
+        public string urbanCityId;
+        public string urbanNameA, urbanNameB;
+        public float urbanAX, urbanAY, urbanBX, urbanBY;
+        /// <summary>Açılışta hesaplanan olgun talep potansiyeli (yolcu/gün, referans fiyatta).</summary>
+        public float urbanDemand;
+        /// <summary>Güzergâhtaki durak sayısı (uçlar dahil).</summary>
+        public int urbanStopCount;
+        /// <summary>Hattın yakınındaki ünlü mekânların türlere göre ün toplamı: önemli günlerde yolcu akını buna göre (UrbanEvents).</summary>
+        public float[] urbanKindFame;
+
+        public bool IsUrban => !string.IsNullOrEmpty(urbanCityId);
+
+        /// <summary>Kurulumun bitmesine kalan gün (0: hat çalışıyor). Kurulumda sefer yapılmaz.</summary>
+        public int setupDaysLeft;
+        public bool IsSettingUp => setupDaysLeft > 0;
 
         public double lifetimePassengers;
         public double lifetimeProfit;

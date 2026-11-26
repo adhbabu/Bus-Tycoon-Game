@@ -5,11 +5,10 @@ using UnityEngine;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Haritadaki 3B otobüs modelleri: segmente göre (kaputlu minibüs, midibüs, şehirlerarası, VIP, çift katlı) kodla
-    /// üretilen tek parça modeller — gövde, pencere bantları, ön cam, kapı, tavan kliması, şerit, farlar, stop
-    /// lambaları ve jantlı tekerlekler. Renkler 8×8'lik bir palet dokusundan UV ile okunur: tek malzeme (Standard),
-    /// otobüs başına tek çizim. Ön taraf +z (gidiş yönü), yukarı +y, sağ +x (kapı sağda).
-    /// Gövde renkleri galeri çizimleriyle (Tools/make_bus_art.py) aynıdır.
+    /// Haritadaki 3B otobüs modelleri. Önce SketchUp'ta kurulan modellerin az çokgenli sürümü kullanılır
+    /// (<see cref="VehicleMeshes"/>, Tools/vehicles); o yoksa segmente göre kodla üretilen kutu modeller. Renkler 8×8'lik
+    /// bir palet dokusundan UV ile okunur: tek malzeme (Standard), otobüs başına tek çizim. Ön taraf +z (gidiş yönü),
+    /// yukarı +y, sağ +x (kapı sağda). Gövde renkleri galeri çizimleriyle aynıdır.
     /// </summary>
     public static class BusModels
     {
@@ -28,6 +27,7 @@ namespace BusTycoon.Game
         // Palet yuvaları
         const int Glass = 0, DarkGlass = 1, Roof = 2, RoofUnit = 3, Tire = 4, Hub = 5, Headlight = 6, Taillight = 7, Skirt = 8;
         const int BodyBase = 9, StripeBase = 15, PaletteSize = 8;
+        const int Frame = 21, Arch = 22, Indicator = 23, Led = 24;
 
         sealed class Shape
         {
@@ -62,7 +62,9 @@ namespace BusTycoon.Game
             string key = model != null ? model.Id : string.Empty;
             if (meshes.TryGetValue(key, out Mesh mesh) && mesh != null) return mesh;
             int segment = model != null ? Mathf.Clamp(model.Tier, 0, SegmentColors.Length - 1) : 2;
-            mesh = Build(ShapeFor(key, segment), segment);
+            Shape shape = ShapeFor(key, segment);
+            VehicleMeshes.Model source = VehicleMeshes.Get(key) ?? VehicleMeshes.Get(DefaultIdFor(segment));
+            mesh = source != null ? FromModel(source, shape, segment) : Build(shape, segment);
             mesh.name = "Bus_" + (model != null ? model.Id : "default");
             meshes[key] = mesh;
             return mesh;
@@ -92,6 +94,67 @@ namespace BusTycoon.Game
                 5 => ShapeFor("ZIRVE_DD", 5),
                 _ => ShapeFor("TOROS_46", 2)
             };
+        }
+
+        static string DefaultIdFor(int segment) => segment switch
+        {
+            0 => "KARTAL_M16",
+            1 => "ANKA_27",
+            3 => "TOROS_42C",
+            4 => "ZIRVE_VIP",
+            5 => "ZIRVE_DD",
+            _ => "TOROS_46"
+        };
+
+        /// <summary>
+        /// SketchUp modelinden harita örgüsü: boy ve yükseklik aynı oranla (tekerlekler yuvarlak kalır) modelin harita boyuna,
+        /// genişlik eski modellerin genişliğine ölçeklenir (yukarıdan bakınca okunaklı). Normaller ölçeğe göre düzeltilir.
+        /// </summary>
+        static Mesh FromModel(VehicleMeshes.Model source, Shape shape, int segment)
+        {
+            float length = Mathf.Max(source.Bounds.size.z, 0.01f), width = Mathf.Max(source.Bounds.size.x, 0.01f);
+            float s = shape.Length / length, sx = (shape.Width + 0.01f) / width;
+            var scale = new Vector3(sx, s, s);
+            var inverse = new Vector3(1f / sx, 1f / s, 1f / s);
+            int count = source.Positions.Length;
+            var vertices = new List<Vector3>(count);
+            var normals = new List<Vector3>(count);
+            var uvs = new List<Vector2>(count);
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 p = source.Positions[i];
+                vertices.Add(new Vector3(p.x * scale.x, p.y * scale.y, (p.z - source.Bounds.center.z) * scale.z));
+                normals.Add(Vector3.Scale(source.Normals[i], inverse).normalized);
+                uvs.Add(PaletteUv(PaletteSlot(source.Slots[i], segment)));
+            }
+            var mesh = new Mesh();
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(source.Triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        static int PaletteSlot(VehicleMeshes.Slot slot, int segment)
+        {
+            switch (slot)
+            {
+                case VehicleMeshes.Slot.Body: return BodyBase + segment;
+                case VehicleMeshes.Slot.Stripe: return StripeBase + segment;
+                case VehicleMeshes.Slot.Glass: return Glass;
+                case VehicleMeshes.Slot.DarkGlass: return DarkGlass;
+                case VehicleMeshes.Slot.Frame: return Frame;
+                case VehicleMeshes.Slot.Tire: return Tire;
+                case VehicleMeshes.Slot.Hub: return Hub;
+                case VehicleMeshes.Slot.Trim: return Skirt;
+                case VehicleMeshes.Slot.Arch: return Arch;
+                case VehicleMeshes.Slot.Headlight: return Headlight;
+                case VehicleMeshes.Slot.Indicator: return Indicator;
+                case VehicleMeshes.Slot.Taillight: return Taillight;
+                case VehicleMeshes.Slot.Led: return Led;
+                default: return RoofUnit;
+            }
         }
 
         static Mesh Build(Shape shape, int segment)
@@ -168,6 +231,10 @@ namespace BusTycoon.Game
             colors[Headlight] = new Color(1f, 0.95f, 0.62f);
             colors[Taillight] = new Color(0.92f, 0.16f, 0.12f);
             colors[Skirt] = new Color(0.22f, 0.22f, 0.25f);
+            colors[Frame] = new Color(0.09f, 0.1f, 0.11f);
+            colors[Arch] = new Color(0.06f, 0.06f, 0.07f);
+            colors[Indicator] = new Color(1f, 0.65f, 0.16f);
+            colors[Led] = new Color(1f, 0.6f, 0.12f);
             for (int s = 0; s < SegmentColors.Length; s++)
             {
                 colors[BodyBase + s] = SegmentColors[s];

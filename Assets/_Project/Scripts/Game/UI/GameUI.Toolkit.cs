@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BusTycoon.Core;
+using BusTycoon.Data;
 using BusTycoon.Multiplayer;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -8,10 +9,10 @@ using UnityEngine.UIElements;
 namespace BusTycoon.Game
 {
     /// <summary>
-    /// Yeni arayüz (UI Toolkit; varsayılan, <c>?arayuz=eski</c> eski arayüzü açar): üst çubuk, menü (masaüstünde solda,
-    /// telefonda altta), bildirimler, paneller, pencereler, menüler. Öğeler bir kez kurulur; her kare yalnız değişen
-    /// değerler yazılır. IMGUI yeni arayüzde yalnız harita üstü yazıları (şehir adları, kazanç yazıları) ve mini haritanın
-    /// içeriğini çizer; yerleşim ölçüleri (üst çubuk yüksekliği, menü genişliği, panel yeri) ortaktır.
+    /// Arayüz (UI Toolkit) kabuğu: üst çubuk, alt sekmeler (ortada yuvarlak Harita düğmesi), bildirimler, menüler ve
+    /// pencereler. Öğeler bir kez kurulur; her kare yalnız değişen değerler yazılır. Sayfa düzeni (ana ekran, sekme
+    /// sayfaları, harita kartı) <see cref="GameUI"/>'nin ToolkitShell parçasında. IMGUI yalnız harita üstü yazıları
+    /// (şehir adları, kazanç yazıları) çizer.
     /// </summary>
     public sealed partial class GameUI
     {
@@ -19,22 +20,24 @@ namespace BusTycoon.Game
         /// <summary>Yeni arayüz açık: IMGUI üst çubuğu, menüyü ve bildirimleri çizmez.</summary>
         bool NewUi => toolkit != null;
 
-        VisualElement tkHud, tkTop, tkRail, tkTabs, tkToasts, tkLevelFill, tkDayBar, tkDateIcon, tkSpeedBox, tkRace, tkStats, tkMenuButton;
-        Label tkLevel, tkCompany, tkCash, tkNet, tkDate, tkRaceText, tkReputation, tkRoutes, tkFleet, tkIdle;
-        readonly Dictionary<int, Button> tkSpeedButtons = new Dictionary<int, Button>();
-        readonly List<(Button Button, NavEntry Entry, Label Badge)> tkNav = new List<(Button, NavEntry, Label)>();
+        enum Tab { Home, Routes, Fleet, Map, Shop, Finance, Goals }
+
+        VisualElement tkMapDisc;
+        VisualElement tkHud, tkTop, tkBrandLogo, tkBrandSub, tkKasa, tkDatePill, tkDateIcon, tkDayFill, tkPauseIcon, tkRace, tkTabs, tkMapButton, tkToasts;
+        Label tkKicker, tkTitle, tkSubText, tkCash, tkDate, tkRaceText;
+        Button tkPauseButton;
+        readonly List<(VisualElement Button, Tab Tab, Label Badge)> tkNav = new List<(VisualElement, Tab, Label)>();
         readonly List<(VisualElement Box, VisualElement Icon, Label Text)> tkToastViews = new List<(VisualElement, VisualElement, Label)>();
 
         double tkShownCash = double.NaN;
         float tkCashTextTime;
         long tkCashValue = long.MinValue;
-        int tkLevelValue = -1, tkDayValue = -1, tkSpeedValue = -1, tkReputationValue = int.MinValue, tkRoutesValue = -1, tkMaxRoutesValue = -1;
-        int tkFleetValue = -1, tkIdleValue = -1, tkWarningValue = -1, tkDebtDays = int.MinValue;
-        double tkNetValue = double.NaN;
+        int tkDayValue = -1, tkWarningValue = -1;
+        bool? tkPausedShown;
+        int tkLogoShown = -1;
         DayNightCycle.Phase? tkPhase;
-        Panel tkPanel = (Panel)(-1);
-        bool tkNarrow;
-        /// <summary>Yeni arayüzün haritayı kapattığı yerler (piksel; panel, görev kartı, yakınlaştırma): şehir adları buraya çizilmez.</summary>
+        Tab? tkTabShown;
+        /// <summary>Yeni arayüzün haritayı kapattığı yerler (piksel): şehir adları buraya çizilmez.</summary>
         readonly List<Rect> tkCovered = new List<Rect>();
 
         /// <summary>Nokta (IMGUI koordinatı) yeni arayüzün bir kartının altında mı (ucuz dikdörtgen denetimi).</summary>
@@ -49,6 +52,8 @@ namespace BusTycoon.Game
         {
             if (!UiHost.Requested || toolkit != null) return;
             toolkit = UiHost.Create(transform);
+            world.SetDarkMap(true); // yeni arayüz koyu temalı: harita da koyu (lacivert deniz, açık renk yazılar)
+            UIStyles.DarkMap = true;
             BuildToolkitHud();
             Debug.Log("[Bus Tycoon] Yeni arayüz (UI Toolkit) açık");
         }
@@ -64,82 +69,82 @@ namespace BusTycoon.Game
             tkHud.style.right = 0f;
             tkHud.style.bottom = 0f;
 
-            // ---- üst çubuk
-            tkTop = Ui.El("bt-topbar", tkHud);
-
-            VisualElement company = Ui.El("bt-topbar__block", tkTop);
-            tkLevel = Ui.Text("bt-caps", "", UiWeight.Bold, company);
-            tkCompany = Ui.Text("bt-company", "", UiWeight.Bold, company);
-            VisualElement levelBar = Ui.El("bt-bar", company);
-            levelBar.style.width = 170f;
-            tkLevelFill = Ui.El("bt-bar__fill", levelBar);
-            tkLevelFill.usageHints = UsageHints.DynamicTransform; // ölçek değişince köşeler yeniden yüklenmesin (GPU'da)
-
-            VisualElement cash = Ui.El("bt-topbar__block", tkTop);
-            Ui.Text("bt-caps", "ŞİRKET KASASI", UiWeight.Bold, cash);
-            VisualElement cashRow = Ui.El("bt-row", cash);
-            tkCash = Ui.Text("bt-cash", "", UiWeight.Black, cashRow);
-            tkNet = Ui.Text("bt-net", "", UiWeight.Bold, cashRow);
-
-            Ui.El("bt-grow", tkTop).pickingMode = PickingMode.Ignore;
-
-            VisualElement date = Ui.El("bt-topbar__block", tkTop);
-            Ui.Text("bt-caps", "TARİH", UiWeight.Bold, date);
-            VisualElement dateRow = Ui.El("bt-row", date);
-            tkDateIcon = Ui.Icon(UIIcon.Sun, "bt-icon", dateRow);
-            tkDate = Ui.Text("bt-date", "", UiWeight.Bold, dateRow);
-
-            tkSpeedBox = Ui.El("bt-speed", tkTop);
-            foreach ((string label, int speed) in new[] { ("II", 0), ("1x", 1), ("2x", 2), ("4x", 4) })
-            {
-                int value = speed;
-                tkSpeedButtons[speed] = Ui.Button("bt-speed__button", label, () => session.Clock.SetSpeed(value), tkSpeedBox);
-            }
-            tkRace = Ui.El("bt-race", tkTop);
-            Ui.Icon(UIIcon.Finish, "bt-icon", tkRace);
-            tkRaceText = Ui.Text("bt-date", "", UiWeight.Bold, tkRace);
-
-            Ui.El("bt-grow", tkTop).pickingMode = PickingMode.Ignore;
-
-            tkStats = Ui.El("bt-row", tkTop);
-            VisualElement reputation = Ui.El("bt-stat", tkStats);
-            Ui.Text("bt-caps", "İTİBAR", UiWeight.Bold, reputation);
-            VisualElement reputationRow = Ui.El("bt-row", reputation);
-            Ui.Icon(UIIcon.Star, "bt-icon", reputationRow);
-            tkReputation = Ui.Text("bt-stat__value", "", UiWeight.Bold, reputationRow);
-            VisualElement routes = Ui.El("bt-stat", tkStats);
-            Ui.Text("bt-caps", "HATLAR", UiWeight.Bold, routes);
-            tkRoutes = Ui.Text("bt-stat__value", "", UiWeight.Bold, routes);
-            VisualElement fleet = Ui.El("bt-stat", tkStats);
-            Ui.Text("bt-caps", "FİLO", UiWeight.Bold, fleet);
-            VisualElement fleetRow = Ui.El("bt-row", fleet);
-            tkFleet = Ui.Text("bt-stat__value", "", UiWeight.Bold, fleetRow);
-            tkIdle = Ui.Text("bt-stat__extra", "", UiWeight.Regular, fleetRow);
-
-            tkMenuButton = Ui.Button("bt-menu-button", "", OpenPauseMenu, tkTop);
-            Ui.Icon(UIIcon.Settings, "bt-icon", tkMenuButton);
-
-            tkDayBar = Ui.El("bt-daybar", tkTop);
-            tkDayBar.usageHints = UsageHints.DynamicTransform; // her kare ilerler
-            tkDayBar.pickingMode = PickingMode.Ignore;
-
-            // ---- menü: masaüstünde solda dikey, telefonda altta yatay
-            tkRail = Ui.El("bt-rail", tkHud);
-            tkTabs = Ui.El("bt-tabs", tkHud);
-            foreach (NavEntry entry in NavEntries)
-            {
-                AddNavButton(tkRail, entry);
-                if (InBottomBar(entry)) AddNavButton(tkTabs, entry);
-            }
-            Ui.El("bt-rail__spacer", tkRail).pickingMode = PickingMode.Ignore;
-            AddRailButton(UIIcon.Save, "Kaydet", () => SaveTo(SaveSlot));
-            AddRailButton(UIIcon.Settings, "Menü", OpenPauseMenu);
-
-            // ---- harita üstü parçalar ve sağ panel
-            BuildToolkitWidgets();
+            // Sayfalar ve harita parçaları üst çubuğun ve sekmelerin altında kalır
+            BuildToolkitHome();
+            BuildToolkitMapWidgets();
             BuildToolkitRace();
             BuildToolkitSheet();
+            BuildToolkitTutorial();
+            BuildToolkitAdOverlay();
             BuildToolkitStation();
+
+            // ---- üst çubuk: solda şirket (ana ekranda) ya da sayfa başlığı; sağda kasa, duraklat, kısayollar, tarih
+            tkTop = Ui.El("bt-topbar", tkHud);
+            tkBrandLogo = CompanyLogo(tkTop, 0, "bt-logo--top");
+            VisualElement brand = Ui.El("bt-brand", tkTop);
+            brand.pickingMode = PickingMode.Ignore;
+            tkKicker = Ui.Text("bt-brand__kicker", "", UiWeight.Bold, brand);
+            tkTitle = Ui.Text("bt-brand__title", "", UiWeight.Black, brand);
+            tkBrandSub = Ui.El("bt-row bt-brand__sub", brand);
+            tkBrandSub.pickingMode = PickingMode.Ignore;
+            Ui.El("bt-brand__dot", tkBrandSub).pickingMode = PickingMode.Ignore;
+            tkSubText = Ui.Text("bt-brand__subtext", "", UiWeight.Bold, tkBrandSub);
+            Ui.El("bt-grow", tkTop).pickingMode = PickingMode.Ignore;
+
+            tkKasa = Ui.El("bt-row bt-kasa", tkTop);
+            tkKasa.pickingMode = PickingMode.Ignore;
+            Ui.Text("bt-kasa__caps", "KASA", UiWeight.Bold, tkKasa);
+            tkCash = Ui.Text("bt-kasa__value", "", UiWeight.Black, tkKasa);
+
+            tkPauseButton = Ui.Button("bt-round", string.Empty, TogglePauseFromBar, tkTop);
+            tkPauseButton.name = "pause";
+            tkPauseIcon = Ui.Symbol("pause", "bt-round__icon", tkPauseButton);
+            tkRace = Ui.El("bt-row bt-race", tkTop);
+            Ui.Symbol("sports_score", "bt-race__icon", tkRace);
+            tkRaceText = Ui.Text("bt-race__text", "", UiWeight.Bold, tkRace);
+
+            Button goalsButton = Ui.Button("bt-round", string.Empty, () => OpenPage(Panel.Goals), tkTop);
+            goalsButton.name = "goals";
+            Ui.Symbol("trophy", "bt-round__icon is-gold", goalsButton);
+            Button helpButton = Ui.Button("bt-round", string.Empty, () => OpenPage(Panel.Help), tkTop);
+            helpButton.name = "help";
+            Ui.Symbol("help", "bt-round__icon", helpButton);
+            Button settingsButton = Ui.Button("bt-round", string.Empty, OpenPauseMenu, tkTop);
+            settingsButton.name = "settings";
+            Ui.Symbol("settings", "bt-round__icon", settingsButton);
+
+            tkDatePill = Ui.El("bt-row bt-date", tkTop);
+            tkDatePill.pickingMode = PickingMode.Ignore;
+            tkDateIcon = Ui.Symbol("calendar_month", "bt-date__icon", tkDatePill);
+            tkDate = Ui.Text("bt-date__text", "", UiWeight.Bold, tkDatePill);
+            VisualElement dayTrack = Ui.El("bt-date__track", tkDatePill);
+            dayTrack.pickingMode = PickingMode.Ignore;
+            tkDayFill = Ui.El("bt-date__fill", dayTrack);
+            tkDayFill.usageHints = UsageHints.DynamicTransform; // her kare ilerler: köşeler yeniden yüklenmesin
+            tkDayFill.pickingMode = PickingMode.Ignore;
+
+            // ---- alt sekmeler: üçer sekme iki yanda, ortada Harita düğmesinin yeri
+            tkTabs = Ui.El("bt-tabs", tkHud);
+            VisualElement left = Ui.El("bt-tabs__group", tkTabs);
+            AddTab(left, Tab.Home, "home", "Ana ekran");
+            AddTab(left, Tab.Routes, "route", "Hatlarım");
+            AddTab(left, Tab.Fleet, "directions_bus", "Filo");
+            Ui.El("bt-tabs__slot", tkTabs).pickingMode = PickingMode.Ignore;
+            VisualElement right = Ui.El("bt-tabs__group", tkTabs);
+            AddTab(right, Tab.Shop, "shopping_cart", "Galeri");
+            AddTab(right, Tab.Finance, "bar_chart", "Finans");
+            AddTab(right, Tab.Goals, "trophy", "Görevler");
+
+            // Ortadaki yuvarlak Harita düğmesi: çubuğun biraz üstüne taşar
+            tkMapButton = Ui.El("bt-mapbutton", tkHud);
+            tkMapButton.name = "map";
+            tkMapButton.pickingMode = PickingMode.Ignore;
+            Ui.El("bt-mapbutton__ring", tkMapButton).pickingMode = PickingMode.Ignore;
+            Button disc = Ui.Button("bt-mapbutton__disc", string.Empty, () => SelectTab(Tab.Map), tkMapButton);
+            tkMapDisc = disc;
+            Ui.Symbol("map", "bt-mapbutton__icon", disc);
+            Ui.Text("bt-mapbutton__label", "Harita", UiWeight.Black, tkMapButton);
+            tkNav.Add((tkMapButton, Tab.Map, null));
 
             // ---- bildirimler
             tkToasts = Ui.El("bt-toasts", tkHud);
@@ -163,29 +168,25 @@ namespace BusTycoon.Game
             BuildToolkitModalLayer();
         }
 
-        void AddNavButton(VisualElement parent, NavEntry entry)
+        void AddTab(VisualElement parent, Tab tab, string symbol, string label)
         {
-            Button button = Ui.Button("bt-nav", string.Empty, () =>
-            {
-                if (panel == entry.Target) ClosePanel();
-                else entry.Open();
-            }, parent);
-            Ui.Icon(entry.Icon, "bt-nav__icon", button);
-            Ui.Text("bt-nav__label", entry.Label, UiWeight.Bold, button);
+            Button button = Ui.Button("bt-tab-item", string.Empty, () => SelectTab(tab), parent);
+            button.name = "tab-" + tab.ToString().ToLowerInvariant();
+            Ui.Symbol(symbol, "bt-tab-item__icon", button);
+            Ui.Text("bt-tab-item__label", label, UiWeight.Bold, button);
+            Ui.El("bt-tab-item__marker", button).pickingMode = PickingMode.Ignore;
             Label badge = null;
-            if (entry.Target == Panel.RouteList)
+            if (tab == Tab.Routes)
             {
                 badge = Ui.Text("bt-badge", "", UiWeight.Bold, button);
                 badge.style.display = DisplayStyle.None;
             }
-            tkNav.Add((button, entry, badge));
+            tkNav.Add((button, tab, badge));
         }
 
-        void AddRailButton(UIIcon icon, string label, Action action)
+        void TogglePauseFromBar()
         {
-            Button button = Ui.Button("bt-nav", string.Empty, action, tkRail);
-            Ui.Icon(icon, "bt-nav__icon", button);
-            Ui.Text("bt-nav__label", label, UiWeight.Bold, button);
+            if (session.IsRunning && !RaceLocked) session.Clock.TogglePause();
         }
 
         /// <summary>Her kare (Update): görünürlük, yerleşim ve yalnız değişen değerler.</summary>
@@ -196,7 +197,7 @@ namespace BusTycoon.Game
             toolkit.SetScale(u);
             toolkit.SetClass("phone", phone);
             toolkit.SetClass("compact", compact);
-            toolkit.SetClass("compact-top", SlimTopBar);
+            toolkit.SetClass("narrow", NarrowShell);
             PumpToolkitTaps();
             UpdateToolkitModal();
             UpdateToolkitMenu();
@@ -205,46 +206,80 @@ namespace BusTycoon.Game
             UpdateToolkitTooltip();
 
             bool playing = mode == Mode.Playing && session.IsRunning;
+            UpdateMapViewport(playing);
             Ui.Show(tkHud, playing);
             if (!playing) return;
             tkHud.SetEnabled(modal == Modal.None); // pencere açıkken arkadaki düğmeler tıklanmaz
+            if (panel != Panel.None) tkHome = false; // bir sayfa ya da harita paneli açıldı
 
-            // Yerleşim IMGUI ile aynı (geçiş sürerken paneller, mini harita aynı yerde kalır); tasarım birimine çevrilir
             float k = 1f / u;
-            bool rail = !compact && !StationUi;
-            float left = rail ? SafeLeft + SideBarWidth : 0f;
-            Ui.Place(tkTop, left * k, 0f, (W - left) * k, (SafeTop + TopBarHeight) * k);
-            tkTop.style.paddingTop = SafeTop * k;
-            Ui.Show(tkRail, rail);
-            if (rail) Ui.Place(tkRail, 0f, 0f, (SafeLeft + SideBarWidth) * k, H * k);
+            Rect content = ContentRect;
+            Ui.Place(tkTop, 0f, 0f, W * k, (SafeTop + TopBarHeight) * k);
+            SetPadding(tkTop, content.x * k, SafeTop * k, (W - content.xMax) * k);
             bool tabs = BottomBarVisible;
             Ui.Show(tkTabs, tabs);
-            if (tabs) Ui.Place(tkTabs, 0f, (H - SafeBottom - BottomBarHeight) * k, W * k, (SafeBottom + BottomBarHeight) * k);
-            Ui.Show(tkMenuButton, compact);
-            Ui.Show(tkStats, !SlimTopBar);
+            Ui.Show(tkMapButton, tabs);
+            if (tabs)
+            {
+                float barTop = H - SafeBottom - BottomBarHeight;
+                Ui.Place(tkTabs, 0f, barTop * k, W * k, (SafeBottom + BottomBarHeight) * k);
+                SetPadding(tkTabs, content.x * k, 0f, (W - content.xMax) * k);
+                tkTabs.style.paddingBottom = SafeBottom * k;
+                Ui.Move(tkMapButton, W * 0.5f * k - MapButtonUnits * 0.5f, barTop * k - MapButtonLift);
+            }
 
             UpdateToolkitTopBar();
             UpdateToolkitNav();
-            UpdateToolkitWidgets(k);
+            UpdateToolkitHome(content, k);
+            UpdateToolkitMapWidgets(k);
             UpdateToolkitRace(k);
             UpdateToolkitStation(k);
             UpdateToolkitSheet(k);
+            UpdateToolkitTutorial(content, k);
             UpdateToolkitToasts(k);
+        }
+
+        const float MapButtonUnits = 90f;
+        /// <summary>Harita düğmesi çubuğun ne kadar üstüne taşar (birim): altındaki "Harita" yazısı çubuğun içinde kalır.</summary>
+        const float MapButtonLift = 24f;
+
+        static void SetPadding(VisualElement element, float left, float top, float right)
+        {
+            IStyle style = element.style;
+            if (Mathf.Abs(style.paddingLeft.value.value - left) > 0.05f) style.paddingLeft = left;
+            if (Mathf.Abs(style.paddingTop.value.value - top) > 0.05f) style.paddingTop = top;
+            if (Mathf.Abs(style.paddingRight.value.value - right) > 0.05f) style.paddingRight = right;
         }
 
         void UpdateToolkitTopBar()
         {
             var progression = session.Progression;
-            if (progression.Level != tkLevelValue)
-            {
-                tkLevelValue = progression.Level;
-                tkLevel.text = SlimTopBar ? $"SEVİYE {tkLevelValue}" : $"ŞİRKET · SEVİYE {tkLevelValue}";
-            }
-            Ui.SetText(tkCompany, session.State.companyName);
-            Ui.Fill(tkLevelFill, progression.LevelProgress01);
-            Ui.Fill(tkDayBar, session.Clock.DayProgress01);
+            bool home = HomeShown;
 
-            // Kasa sayaç gibi akar (gün sonunda birden atlamasın)
+            if (session.State.logoId != tkLogoShown)
+            {
+                tkLogoShown = session.State.logoId;
+                SetCompanyLogo(tkBrandLogo, tkLogoShown);
+            }
+            // Sol blok: ana ekranda şirket adı ve yeşil durum satırı; diğer ekranlarda üst başlık + sayfa adı
+            Ui.Show(tkKicker, !home);
+            Ui.Show(tkBrandSub, home);
+            if (home)
+            {
+                Ui.SetText(tkTitle, session.State.companyName);
+                CityData hq = session.Headquarters;
+                Ui.SetText(tkSubText, $"Seviye {progression.Level} · İtibar {Mathf.RoundToInt(progression.Reputation)}" +
+                                      (hq != null && !NarrowShell ? $" · Merkez: {hq.DisplayName}" : string.Empty));
+            }
+            else
+            {
+                ScreenHeading(out string kicker, out string title);
+                Ui.SetText(tkKicker, kicker);
+                Ui.SetText(tkTitle, title);
+            }
+
+            // Kasa (ana ekranda büyük kasa kartı var); sayaç gibi akar, gün sonunda birden atlamaz
+            Ui.Show(tkKasa, !home);
             double cash = session.Finance.Cash;
             if (double.IsNaN(tkShownCash) || Math.Abs(cash - tkShownCash) > Math.Abs(cash) * 0.5 + 1e6) tkShownCash = cash;
             tkShownCash += (cash - tkShownCash) * (1.0 - Math.Exp(-Time.unscaledDeltaTime * 9.0));
@@ -260,86 +295,47 @@ namespace BusTycoon.Game
                 Ui.Toggle(tkCash, "is-negative", shown < 0);
             }
 
-            bool debt = session.Finance.DaysInDebt > 0;
-            int debtDays = debt ? session.ProgressionConfig.BankruptcyGraceDays - session.Finance.DaysInDebt : int.MinValue;
-            double net = LastDayNet();
-            bool showNet = !SlimTopBar || (SafeRight - SafeLeft) / u >= 880f;
-            if (debtDays != tkDebtDays || (!debt && !net.Equals(tkNetValue)))
-            {
-                tkDebtDays = debtDays;
-                tkNetValue = net;
-                tkNet.text = debt ? $"İflasa {debtDays} gün!" : $"Dün {Fmt.Signed(net)}";
-                Ui.Toggle(tkNet, "is-up", !debt && net >= 0);
-                Ui.Toggle(tkNet, "is-down", debt || net < 0);
-            }
-            Ui.Show(tkNet, debt || showNet);
-
+            Ui.Fill(tkDayFill, session.Clock.DayProgress01);
             if (session.State.currentDay != tkDayValue)
             {
                 tkDayValue = session.State.currentDay;
                 tkDate.text = SimulationClock.FormatDate(tkDayValue);
             }
             DayNightCycle cycle = DayNightCycle.Instance;
-            bool showPhase = cycle != null && cycle.Enabled;
-            Ui.Show(tkDateIcon, showPhase);
-            if (showPhase && cycle.CurrentPhase != tkPhase)
+            DayNightCycle.Phase? phase = cycle != null && cycle.Enabled ? cycle.CurrentPhase : (DayNightCycle.Phase?)null;
+            if (phase != tkPhase)
             {
-                tkPhase = cycle.CurrentPhase;
-                Ui.SetIcon(tkDateIcon, cycle.CurrentPhase switch
-                {
-                    DayNightCycle.Phase.Sunrise => UIIcon.Sunrise,
-                    DayNightCycle.Phase.Sunset => UIIcon.Sunset,
-                    DayNightCycle.Phase.Night => UIIcon.Moon,
-                    _ => UIIcon.Sun
-                });
+                tkPhase = phase;
+                Ui.SetSymbol(tkDateIcon, phase == DayNightCycle.Phase.Night ? "dark_mode" : phase.HasValue ? "sunny" : "calendar_month");
             }
 
+            // Duraklat (tek hız); yarışta hız odaya bağlı: yerine yarış etiketi
             bool race = RaceLocked;
-            Ui.Show(tkSpeedBox, !race);
+            Ui.Show(tkPauseButton, !race);
             Ui.Show(tkRace, race);
             if (race)
             {
-                Ui.SetText(tkRaceText, Narrow ? $"{Room.Speed}x" : $"{MatchRules.Name(Room.Mode)} · {Room.Speed}x");
+                Ui.SetText(tkRaceText, NarrowShell ? $"{Room.Speed}x" : $"{MatchRules.Name(Room.Mode)} · {Room.Speed}x");
             }
-            else if (session.Clock.Speed != tkSpeedValue)
+            else
             {
-                tkSpeedValue = session.Clock.Speed;
-                foreach (var pair in tkSpeedButtons) Ui.Toggle(pair.Value, "is-active", pair.Key == tkSpeedValue);
-            }
-
-            if (SlimTopBar) return;
-            int reputation = (int)Math.Round(progression.Reputation);
-            if (reputation != tkReputationValue)
-            {
-                tkReputationValue = reputation;
-                tkReputation.text = reputation.ToString();
-            }
-            if (session.Routes.Routes.Count != tkRoutesValue || progression.MaxRoutes != tkMaxRoutesValue)
-            {
-                tkRoutesValue = session.Routes.Routes.Count;
-                tkMaxRoutesValue = progression.MaxRoutes;
-                tkRoutes.text = $"{tkRoutesValue} / {tkMaxRoutesValue}";
-            }
-            int idle = 0;
-            foreach (var bus in session.Fleet.Buses) if (!bus.IsAssigned) idle++;
-            bool narrow = Narrow;
-            if (session.Fleet.Buses.Count != tkFleetValue || idle != tkIdleValue || narrow != tkNarrow)
-            {
-                tkFleetValue = session.Fleet.Buses.Count;
-                tkIdleValue = idle;
-                tkNarrow = narrow;
-                tkFleet.text = tkFleetValue.ToString();
-                tkIdle.text = narrow ? (idle > 0 ? $"{idle} boşta" : string.Empty) : $"otobüs · {idle} garajda";
-                Ui.Toggle(tkIdle, "is-warning", idle > 0);
+                bool paused = session.Clock.Speed == 0;
+                if (paused != tkPausedShown)
+                {
+                    tkPausedShown = paused;
+                    Ui.SetSymbol(tkPauseIcon, paused ? "play_arrow" : "pause");
+                    Ui.Toggle(tkPauseButton, "is-paused", paused);
+                }
             }
         }
 
         void UpdateToolkitNav()
         {
-            if (panel != tkPanel)
+            Tab active = ActiveTab;
+            if (active != tkTabShown)
             {
-                tkPanel = panel;
-                foreach (var item in tkNav) Ui.Toggle(item.Button, "is-active", item.Entry.Target == panel);
+                tkTabShown = active;
+                foreach (var item in tkNav) Ui.Toggle(item.Button, "is-active", item.Tab == active);
             }
             if (warningCount != tkWarningValue)
             {
@@ -356,15 +352,9 @@ namespace BusTycoon.Game
         void UpdateToolkitToasts(float k)
         {
             notes.GetActive(phone ? 2 : 3, activeToasts);
-            float leftEdge = ContentLeft + Margin;
-            float rightEdge = (panel != Panel.None && !StationUi ? PanelRect.x : SafeRight) - Margin;
-            if (rightEdge - leftEdge < 260f * u)
-            {
-                leftEdge = ContentLeft + Margin;
-                rightEdge = SafeRight - Margin;
-            }
+            Rect content = ContentRect;
             float top = SafeTop + TopBarHeight + (phone ? 8f : 14f) * u;
-            Ui.Place(tkToasts, leftEdge * k, top * k, (rightEdge - leftEdge) * k, 200f);
+            Ui.Place(tkToasts, content.x * k, top * k, content.width * k, 200f);
 
             for (int i = 0; i < tkToastViews.Count; i++)
             {

@@ -3,6 +3,9 @@
 // _WaterTex: R su, G kıyıya yakınlık, B açık deniz (Tools/build_map.py). Gölge, sis, bulut ve parıltı yok: hem sade
 // hem ekran kartına hafif.
 // Genel değerler (GraphicsQuality): _BT_Waves (0 kapalı .. 1). _Effects 0 olan malzemede (çevre haritası) kapalı.
+// _BT_DarkMap (0..1, GameUI): koyu harita. Açık renkli dokudan hesaplanır: deniz (mavi tonlu açık renk) laciverte döner;
+// kara koyu arduvaz olur, üstündeki koyu ayrıntılar (sınır, nehir, kabartma) açılır; doygun renkler (hat değil, harita
+// renkleri) korunur. Aynı hesap genel haritada, döşemelerde ve çevre haritasında: dikiş olmaz.
 // BT_TILE: yakın plan döşemesi (Game/MapTiles.cs). Döşeme dokusu, alttaki genel haritaya (_OverviewTex) _TileBlend
 // oranında karışır (belirerek gelir) ve harita kenarına yaklaşınca söner; derinlikte biraz öne çekilir (_ZOffset).
 // Deniz maskesi ve kenar sönmesi dünya konumundan hesaplanan harita UV'siyle okunur (_MapRect: x, z, genişlik, derinlik).
@@ -41,6 +44,21 @@ Shader "BusTycoon/MapSurface"
             sampler2D _OverviewTex;
             half _TileBlend;
             half _BT_Waves;
+            half _BT_DarkMap;
+
+            half3 DarkTheme(half3 c)
+            {
+                half mx = max(c.r, max(c.g, c.b));
+                half mn = min(c.r, min(c.g, c.b));
+                half L = (mx + mn) * 0.5;
+                half S = (mx - mn) / (1.0 - abs(2.0 * L - 1.0) + 1e-4);
+                half sea = smoothstep(0.06, 0.12, c.b - c.r) * smoothstep(-0.04, 0.0, c.b - c.g) * smoothstep(0.5, 0.58, L);
+                half colored = saturate((S - 0.35) * 2.2) * step(L, 0.75);
+                half outL = lerp(0.115 + 0.62 * (1.0 - L), L, colored);
+                half3 land = ((c - L) * (0.35 + 0.65 * colored) + outL) * half3(0.93, 1.0, 1.04);
+                half3 navy = half3(0.055, 0.135, 0.19) + (L - 0.78) * 0.25;
+                return lerp(land, navy, sea);
+            }
 
             struct v2f
             {
@@ -70,6 +88,9 @@ Shader "BusTycoon/MapSurface"
                 half3 col = tex2D(_MainTex, i.uv).rgb;
             #endif
 
+                UNITY_BRANCH
+                if (_BT_DarkMap > 0.0) col = lerp(col, DarkTheme(col), _BT_DarkMap);
+
                 // Kıyı halkaları: kıyıdan açığa doğru ağır ağır ilerleyen, giderek sönen ince açık çizgiler
                 half strength = _Effects * _BT_Waves;
                 UNITY_BRANCH
@@ -80,7 +101,7 @@ Shader "BusTycoon/MapSurface"
                     half shore = mask.g * mask.r * edge;
                     half phase = frac(shore * 3.0 + _Time.y * 0.05);
                     half ring = saturate(1.0 - abs(phase - 0.5) * 9.0) * shore * shore;
-                    col = lerp(col, half3(1.0, 1.0, 1.0), ring * 0.35 * strength);
+                    col = lerp(col, half3(1.0, 1.0, 1.0), ring * (0.35 - 0.2 * _BT_DarkMap) * strength);
                 }
                 return fixed4(col, 1.0);
             }

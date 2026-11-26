@@ -19,6 +19,31 @@ namespace BusTycoon.Save
 
         public int saveVersion = CurrentSaveVersion;
         public string companyName;
+        /// <summary>Şirket logosu (arayüzdeki logo listesinin sırası; eski kayıtlarda 0).</summary>
+        public int logoId;
+        /// <summary>Şehir içi başlangıcın öğreticisi açık mı (eski kayıtlarda kapalı) ve hangi adımda (0..4).</summary>
+        public bool tutorialActive;
+        /// <summary>
+        /// Araç sınıfı kuralı (şehir içi başlangıçlı oyunlar): dolmuş ve şehir otobüsü yalnız şehir içi, şehirlerarası
+        /// otobüs yalnız şehirlerarası, midibüs ikisinde. Eski kayıtlarda kapalı (her araç her hatta).
+        /// </summary>
+        public bool vehicleClasses;
+        /// <summary>
+        /// Bekleme süreleri (şehir içi başlangıçlı oyunlar): yeni hat 3 günde kurulur, araçlar teslim süresiyle gelir;
+        /// ödüllü reklamla hemen biter. Eski kayıtlarda kapalı (hat ve araç hemen hazır).
+        /// </summary>
+        public bool waitTimes;
+        /// <summary>
+        /// Şehir lisansları (şehir içi başlangıçlı oyunlar): dolmuş hatları yalnız lisanslı şehirlerde; şehirlerarası hat
+        /// en az bir lisanslı şehirden başlar, iki ucu lisanslıysa hat ruhsatı alınmaz. Başlangıç şehri bedava.
+        /// </summary>
+        public bool cityLicenses;
+        /// <summary>Gelir katsayısı (0: ekonomi ayarındaki, şu an 10). Çok oyunculu yarışta 1 (yarış temposu değişmesin).</summary>
+        public float incomeScale;
+        public List<string> ownedCityIds = new List<string>();
+        public int tutorialStep;
+        /// <summary>Öğretici: oyuncu hat panelinde bileti gördü mü (son adım).</summary>
+        public bool tutorialSawPrice;
         public string startCityId;
         public int currentDay;
 

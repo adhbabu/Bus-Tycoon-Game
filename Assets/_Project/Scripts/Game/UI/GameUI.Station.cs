@@ -268,8 +268,9 @@ namespace BusTycoon.Game
         void BuildUpgradeNow(CityData city, StationUpgrade upgrade)
         {
             var result = session.Stations.TryBuild(city, upgrade);
-            Toast(result.Success ? $"{upgrade.Name} yapıldı! {city.DisplayName} durağı güzelleşti." : result.Message, result.Success ? UIStyles.Green : UIStyles.Red,
-                result.Success ? Sfx.Coin : Sfx.Error);
+            int days = result.Success ? session.Stations.BuildDaysLeft(city, upgrade) : 0;
+            string done = days > 0 ? $"{upgrade.Name} yapımı başladı: {days} gün sonra hazır." : $"{upgrade.Name} yapıldı! {city.DisplayName} durağı güzelleşti.";
+            Toast(result.Success ? done : result.Message, result.Success ? UIStyles.Green : UIStyles.Red, result.Success ? Sfx.Coin : Sfx.Error);
             if (!result.Success) return;
             MarkDataDirty();
             goals.Evaluate();

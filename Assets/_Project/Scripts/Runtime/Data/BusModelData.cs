@@ -12,7 +12,17 @@ namespace BusTycoon.Data
         StandardCoach = 2,  // 2+2, 46 koltuk, şehirlerarası standart
         ComfortCoach = 3,   // 2+2 geniş, ekranlı, ikramlı
         LuxuryCoach = 4,    // 2+1 VIP, yüksek fiyat, düşük esneklik
-        DoubleDecker = 5    // Çift katlı, ana arterlerde ölçek ekonomisi
+        DoubleDecker = 5,   // Çift katlı, ana arterlerde ölçek ekonomisi
+        CityBus = 6         // Şehir otobüsü (12–18 m, ayakta yolcu); kademesi midibüs düzeyinde (sona eklendi: kayıt sırası)
+    }
+
+    /// <summary>Aracın hangi hatlarda çalıştığı (oyuncunun gördüğü basamak: dolmuş → midibüs → şehir otobüsü → şehirlerarası).</summary>
+    public enum BusCategory
+    {
+        Dolmus = 0,     // yalnız şehir içi
+        Midibus = 1,    // şehir içi ve şehirlerarası
+        CityBus = 2,    // yalnız şehir içi
+        Intercity = 3   // yalnız şehirlerarası
     }
 
     /// <summary>
@@ -65,7 +75,21 @@ namespace BusTycoon.Data
         public string DisplayName => string.IsNullOrEmpty(displayName) ? modelId : displayName;
         public string Manufacturer => manufacturer;
         public BusSegment Segment => segment;
-        public int Tier => (int)segment;
+        /// <summary>İlerleme kademesi (sıralama, sonraki model, görevler). Şehir otobüsü midibüs düzeyinde sayılır.</summary>
+        public int Tier => segment == BusSegment.CityBus ? 1 : (int)segment;
+
+        public BusCategory Category => segment switch
+        {
+            BusSegment.Minibus => BusCategory.Dolmus,
+            BusSegment.Midibus => BusCategory.Midibus,
+            BusSegment.CityBus => BusCategory.CityBus,
+            _ => BusCategory.Intercity
+        };
+
+        /// <summary>Şehir içi (dolmuş) hatlarda çalışabilir mi.</summary>
+        public bool ServesUrban => Category != BusCategory.Intercity;
+        /// <summary>Şehirlerarası hatlarda çalışabilir mi.</summary>
+        public bool ServesIntercity => Category == BusCategory.Midibus || Category == BusCategory.Intercity;
         public string Description => description;
         public Sprite Icon => icon;
         public GameObject Prefab => prefab;

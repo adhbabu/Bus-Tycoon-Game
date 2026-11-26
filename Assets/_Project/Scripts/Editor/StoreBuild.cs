@@ -376,11 +376,22 @@ namespace BusTycoon.EditorTools
         /// </summary>
         static void EnsureUiTextureImport()
         {
-            var textures = new (string resource, bool mipmaps)[]
+            var textures = new List<(string resource, bool mipmaps)>
             {
                 (DefaultContent.MascotResourcePath, false), (DefaultContent.IconsResourcePath, true), (DefaultContent.BusArtResourcePath, true),
-                (DefaultContent.CityIconsResourcePath, true)
+                (DefaultContent.CityIconsResourcePath, true),
+                // Giriş ekranı logosu ve perdesi: sıkıştırılmasın, ölçeklenmesin (keskin kalsın)
+                (DefaultContent.LogoEmblemResourcePath, true), (DefaultContent.LogoWordmarkResourcePath, true),
+                (DefaultContent.MenuVignetteResourcePath, false)
             };
+            // Yeni arayüzün ikonları (mipmap'li: küçük çizilir) ve gradyanları (gerilir; mipmap gerekmez)
+            foreach (var (folder, mipmaps) in new[] { ("BusTycoon/UI/Symbols", true), ("BusTycoon/UI/Gradients", false) })
+            {
+                string directory = $"Assets/_Project/Resources/{folder}";
+                if (!System.IO.Directory.Exists(directory)) continue;
+                foreach (string file in System.IO.Directory.GetFiles(directory, "*.png"))
+                    textures.Add(($"{folder}/{System.IO.Path.GetFileNameWithoutExtension(file)}", mipmaps));
+            }
             foreach (var (resource, mipmaps) in textures)
             {
                 string path = $"Assets/_Project/Resources/{resource}.png";

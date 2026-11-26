@@ -1,0 +1,29 @@
+<!-- Oyun logosu yazısı: Inter (değişken, 800–900). Oyundaki PNG: Resources/BusTycoon/UI/logo_wordmark.png (2x işlenip kırpılır). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="420" viewBox="0 0 1400 420">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE9A8"/>
+      <stop offset="0.42" stop-color="#F5C451"/>
+      <stop offset="1" stop-color="#D88E2A"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F5C451" stop-opacity="0"/>
+      <stop offset="1" stop-color="#F5C451"/>
+    </linearGradient>
+    <linearGradient id="line2" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#F5C451" stop-opacity="0"/>
+      <stop offset="1" stop-color="#F5C451"/>
+    </linearGradient>
+  </defs>
+  <g font-family="Inter, sans-serif" text-anchor="middle">
+    <!-- gölge -->
+    <text x="704" y="214" font-size="190" font-weight="900" letter-spacing="-4" fill="#03080B" fill-opacity="0.55">OTOBÜS</text>
+    <text x="700" y="206" font-size="190" font-weight="900" letter-spacing="-4" fill="url(#g)" stroke="#0A151B" stroke-width="12" paint-order="stroke" stroke-linejoin="round">OTOBÜS</text>
+    <text x="700" y="206" font-size="190" font-weight="900" letter-spacing="-4" fill="none" stroke="#FFF4CC" stroke-opacity="0.35" stroke-width="2">OTOBÜS</text>
+    <text x="702" y="306" font-size="84" font-weight="800" letter-spacing="22" fill="#03080B" fill-opacity="0.5">İMPARATORU</text>
+    <text x="700" y="302" font-size="84" font-weight="800" letter-spacing="22" fill="#F1F4F5" stroke="#0A151B" stroke-width="8" paint-order="stroke" stroke-linejoin="round">İMPARATORU</text>
+    <rect x="300" y="352" width="210" height="4" rx="2" fill="url(#line)"/>
+    <rect x="890" y="352" width="210" height="4" rx="2" fill="url(#line2)"/>
+    <text x="700" y="366" font-size="34" font-weight="700" letter-spacing="12" fill="#7FD6C4">BUS TYCOON</text>
+  </g>
+</svg>

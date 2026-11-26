@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BusTycoon.Core;
 using BusTycoon.Data;
 using BusTycoon.Economy;
@@ -44,11 +45,15 @@ namespace BusTycoon.Stations
         readonly CompanyState state;
         readonly FinanceSystem finance;
         readonly ProgressionSystem progression;
+        readonly Func<string, CityData> cityLookup;
 
         public event Action<CityData, StationUpgrade> UpgradeBuilt;
+        /// <summary>Yapımı süren geliştirme bitti (bekleme süreli oyunlar; hemen yapılan için çağrılmaz).</summary>
+        public event Action<CityData, StationUpgrade> UpgradeCompleted;
 
-        public StationSystem(CompanyState state, FinanceSystem finance, ProgressionSystem progression)
+        public StationSystem(CompanyState state, FinanceSystem finance, ProgressionSystem progression, Func<string, CityData> cityLookup = null)
         {
+            this.cityLookup = cityLookup;
             this.state = state;
             this.finance = finance;
             this.progression = progression;
@@ -66,6 +71,64 @@ namespace BusTycoon.Stations
         }
 
         public int UpgradeCount(CityData city) => Find(city)?.upgrades.Count ?? 0;
+
+        /// <summary>Yapım süresi (bekleme süreli oyunlarda): ucuz geliştirme 1, orta 2, büyük 3 gün.</summary>
+        public int BuildDays(CityData city, StationUpgrade upgrade)
+        {
+            float cost = Cost(city, upgrade);
+            return cost < 15000f ? 1 : cost < 60000f ? 2 : 3;
+        }
+
+        /// <summary>Yapımdaysa kalan gün; değilse 0.</summary>
+        public int BuildDaysLeft(CityData city, StationUpgrade upgrade)
+        {
+            StationState station = Find(city);
+            if (station?.building == null || upgrade == null) return 0;
+            int index = station.building.IndexOf(upgrade.Id);
+            return index >= 0 && index < station.buildingDays.Count ? Math.Max(1, station.buildingDays[index]) : 0;
+        }
+
+        public bool IsBuilding(CityData city, StationUpgrade upgrade) => BuildDaysLeft(city, upgrade) > 0;
+
+        /// <summary>Gün sonu: yapımdaki geliştirmelerin süresi bir gün azalır; biten durağa eklenir.</summary>
+        public void AdvanceDay()
+        {
+            for (int s = 0; s < state.stations.Count; s++)
+            {
+                StationState station = state.stations[s];
+                if (station.building == null || station.building.Count == 0) continue;
+                station.buildingDays ??= new List<int>();
+                for (int i = station.building.Count - 1; i >= 0; i--)
+                {
+                    int left = (i < station.buildingDays.Count ? station.buildingDays[i] : 1) - 1;
+                    if (i < station.buildingDays.Count) station.buildingDays[i] = left;
+                    if (left <= 0) Complete(station, i);
+                }
+            }
+        }
+
+        /// <summary>Yapımı hemen bitirir (ödüllü reklam). Yapımda değilse false.</summary>
+        public bool FinishNow(CityData city, StationUpgrade upgrade)
+        {
+            StationState station = Find(city);
+            int index = station?.building?.IndexOf(upgrade?.Id) ?? -1;
+            if (index < 0) return false;
+            Complete(station, index);
+            return true;
+        }
+
+        void Complete(StationState station, int index)
+        {
+            string id = station.building[index];
+            station.building.RemoveAt(index);
+            if (index < station.buildingDays.Count) station.buildingDays.RemoveAt(index);
+            if (!station.upgrades.Contains(id)) station.upgrades.Add(id);
+            CityData city = cityLookup?.Invoke(station.cityId);
+            StationUpgrade upgrade = StationCatalog.Get(id);
+            if (city == null || upgrade == null) return;
+            UpgradeBuilt?.Invoke(city, upgrade);
+            UpgradeCompleted?.Invoke(city, upgrade);
+        }
 
         public int Comfort(CityData city)
         {
@@ -93,7 +156,7 @@ namespace BusTycoon.Stations
             int count = 0;
             if (city == null) return 0;
             foreach (var route in state.routes)
-                if (route.cityAId == city.Id || route.cityBId == city.Id) count++;
+                if (!route.IsUrban && (route.cityAId == city.Id || route.cityBId == city.Id)) count++; // otogar: şehirlerarası hatlar
             return count;
         }
 
@@ -106,7 +169,7 @@ namespace BusTycoon.Stations
             float total = 0f;
             if (city == null) return 0f;
             foreach (var route in state.routes)
-                if ((route.cityAId == city.Id || route.cityBId == city.Id) && route.HasHistory)
+                if (!route.IsUrban && (route.cityAId == city.Id || route.cityBId == city.Id) && route.HasHistory)
                     total += route.LastReport.passengers;
             return total;
         }
@@ -132,6 +195,7 @@ namespace BusTycoon.Stations
         {
             if (city == null || upgrade == null) return OpResult.Fail("Geliştirme bulunamadı.");
             if (Has(city, upgrade)) return OpResult.Fail("Bu geliştirme zaten yapıldı.");
+            if (IsBuilding(city, upgrade)) return OpResult.Fail("Yapımı sürüyor.");
             StationTier tier = StationCatalog.TierOf(city);
             if (!StationCatalog.IsAvailable(upgrade, tier))
                 return OpResult.Fail($"{StationCatalog.TierName(upgrade.MinTier)} ve üstü duraklarda yapılabilir.");
@@ -139,7 +203,7 @@ namespace BusTycoon.Stations
                 return OpResult.Fail($"{city.Region.DisplayName} için işletme lisansınız yok.");
             if (!IsOperating(city)) return OpResult.Fail("Bu şehre hat açınca durağı geliştirebilirsiniz.");
             float cost = Cost(city, upgrade);
-            if (!finance.CanAfford(cost)) return OpResult.Fail($"Kasada yeterli para yok ({cost:N0} gerekli).");
+            if (!finance.CanAfford(cost)) return OpResult.Fail($"Kasada yeterli para yok ({BusTycoon.Core.Money.Format(cost)} gerekli).");
             return OpResult.Ok();
         }
 
@@ -154,6 +218,15 @@ namespace BusTycoon.Stations
             {
                 station = new StationState { cityId = city.Id, firstUpgradeDay = state.currentDay };
                 state.stations.Add(station);
+            }
+            if (state.waitTimes)
+            {
+                station.building ??= new List<string>();
+                station.buildingDays ??= new List<int>();
+                int days = BuildDays(city, upgrade);
+                station.building.Add(upgrade.Id);
+                station.buildingDays.Add(days);
+                return OpResult.Ok($"{city.DisplayName}: {upgrade.Name} yapımı başladı ({days} gün).");
             }
             station.upgrades.Add(upgrade.Id);
             UpgradeBuilt?.Invoke(city, upgrade);
