@@ -37,14 +37,9 @@ namespace BusTycoon.Game
         {
             ShopService.Load();
             if (LaunchOptions.Get("dukkan") == "test") ShopService.SetBackend(new TestShopBackend());
-#if BT_IAP
-            else if (Application.platform == RuntimePlatform.Android || Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-                var store = new UnityIapShopBackend();
-                ShopService.SetBackend(store);
-                store.Start();
-            }
-#endif
+            else if (ShopService.StoreFactory != null &&
+                     (Application.platform == RuntimePlatform.Android || Application.platform == RuntimePlatform.IPhonePlayer))
+                ShopService.SetBackend(ShopService.StoreFactory()); // App Store / Google Play (BusTycoon.Store)
             ShopService.Granted += OnShopGranted;
             ShopService.PurchaseFailed += OnShopPurchaseFailed;
             ShopService.Changed += OnShopChanged;

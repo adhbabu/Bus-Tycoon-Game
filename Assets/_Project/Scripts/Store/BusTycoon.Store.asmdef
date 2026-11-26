@@ -1,0 +1,26 @@
+{
+    "name": "BusTycoon.Store",
+    "rootNamespace": "BusTycoon.Game",
+    "references": [
+        "BusTycoon.Runtime",
+        "BusTycoon.Game",
+        "Unity.Purchasing"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "BT_IAP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.purchasing",
+            "expression": "5.5.0",
+            "define": "BT_IAP"
+        }
+    ],
+    "noEngineReferences": false
+}

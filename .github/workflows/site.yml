@@ -69,6 +69,18 @@ jobs:
       # Library önbelleği yok: geri yüklenen önbellekle Unity açılışta zaman zaman öldürülüyordu (çıkış 137, 25 Kasım
       # 2026: 5 derlemenin 3'ü). Temiz içe aktarma önbellekli derlemeyle aynı sürede (~11 dk) bitiyor.
 
+      # Web'de satın alma yok: uygulama içi satın alma paketi (ve getirdiği uGUI) web derlemesine girmesin (~4,4 MB).
+      # Mobil derlemelerde paket durur; satın alma kodu kendi derlemesinde (BusTycoon.Store), paket yokken derlenmez.
+      - name: Satın alma paketini web derlemesinden çıkar
+        run: |
+          python3 - <<'PY'
+          import json
+          path = "Packages/manifest.json"
+          manifest = json.load(open(path))
+          manifest["dependencies"].pop("com.unity.purchasing", None)
+          json.dump(manifest, open(path, "w"), indent=2)
+          PY
+
       - name: Unity ile web sürümünü derle
         uses: game-ci/unity-builder@v4
         env:

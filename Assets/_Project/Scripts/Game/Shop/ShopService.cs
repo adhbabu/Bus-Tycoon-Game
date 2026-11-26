@@ -7,7 +7,7 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Gerçek paralı küçük dükkan. Asıl iş bir arka uçta: App Store / Google Play derlemesinde Unity IAP
-    /// (<see cref="UnityIapShopBackend"/>), test için <c>?dukkan=test</c> ile anında tamamlanan sahte satın alma
+    /// (BusTycoon.Store derlemesindeki UnityIapShopBackend, <see cref="StoreFactory"/>), test için <c>?dukkan=test</c> ile anında tamamlanan sahte satın alma
     /// (<see cref="TestShopBackend"/>). Arka uç yoksa (web) dükkan sayfası açılır ama satın alma düğmeleri kapalıdır.
     /// <para>Sahiplik cihazda (PlayerPrefs) tutulur, kayıt dosyasında değil: bir kez alınan paketler bütün kayıtlarda
     /// geçerlidir ve mağazadan geri yüklenir. Tekrar alınabilen ürünler (sermaye, lisans hakkı) önce "bekleyen" olarak
@@ -17,6 +17,8 @@ namespace BusTycoon.Game
     {
         public interface IBackend
         {
+            /// <summary>Olaylar bağlandıktan sonra bir kez çağrılır (mağazaya bağlanma, ürünleri isteme).</summary>
+            void Connect();
             /// <summary>Ürünler mağazadan geldi (fiyatlar hazır).</summary>
             bool Ready { get; }
             /// <summary>Mağazanın yerel fiyat yazısı (bilinmiyorsa null).</summary>
@@ -43,6 +45,10 @@ namespace BusTycoon.Game
         static readonly List<string> handled = new List<string>();
         static int pendingCapital, pendingLicenses;
         static Action<bool, string> restoreDone;
+
+        /// <summary>App Store / Google Play arka ucunu kuran fabrika: satın alma paketi kuruluysa BusTycoon.Store derlemesi
+        /// açılışta atar (web derlemesinde paket yok, fabrika boş kalır).</summary>
+        public static Func<IBackend> StoreFactory;
 
         /// <summary>Dükkanın durumu değişti (fiyat, sahiplik, satın alma sürüyor…): sayfa yeniden çizilir.</summary>
         public static event Action Changed;
@@ -82,6 +88,7 @@ namespace BusTycoon.Game
                 backend.Changed += OnBackendChanged;
             }
             Bump();
+            backend?.Connect();
         }
 
         /// <summary>Kayıtlı sahiplikleri yükler (bir kez): bir kez alınan paketler <see cref="Entitlements"/>'a işlenir.</summary>
@@ -230,6 +237,7 @@ namespace BusTycoon.Game
     {
         int serial;
 
+        public void Connect() { }
         public bool Ready => true;
         public string Price(string productId) => ShopCatalog.Get(productId)?.FallbackPrice;
 

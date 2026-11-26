@@ -12,11 +12,15 @@ namespace BusTycoon.Game
     /// (<see cref="ShopCatalog"/>); kimlikler iki mağazada aynı açılır (store/DUKKAN.md). Satın alma önce oyuna verilir
     /// (ShopService diske yazar), sonra mağazada onaylanır: uygulama arada kapanırsa mağaza bir sonraki açılışta
     /// yeniden gönderir, ShopService aynı işlemi iki kez vermez. Bir kez alınan paketler açılışta mağazadan okunur.
-    /// <para>Bu sınıf yalnız <c>BT_IAP</c> tanımlıyken derlenir (com.unity.purchasing paketi kuruluysa; BusTycoon.Game
-    /// asmdef'teki versionDefines). Yalnız Android ve iOS'ta kullanılır.</para>
+    /// <para>Kendi derlemesinde (BusTycoon.Store): yalnız com.unity.purchasing paketi kuruluyken derlenir. Web derlemesinde
+    /// paket çıkarılır (CI), oyun kodu pakete bağlı değildir. Açılışta kendini <see cref="ShopService.StoreFactory"/>'ye
+    /// kaydeder; GameUI yalnız Android ve iOS'ta kullanır.</para>
     /// </summary>
     public sealed class UnityIapShopBackend : ShopService.IBackend
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void Register() => ShopService.StoreFactory = () => new UnityIapShopBackend();
+
         PurchasingController controller;
         string storeName;
         bool ready;
@@ -29,7 +33,7 @@ namespace BusTycoon.Game
         public event Action Changed;
 
         /// <summary>Mağazaya bağlanır ve ürünleri ister (sonuç olaylarla gelir).</summary>
-        public async void Start()
+        public async void Connect()
         {
             try
             {

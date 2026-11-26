@@ -55,5 +55,7 @@ Senin yapacağın: iki mağazada **aynı kimliklerle** 4 ürünü açmak ve öde
 
 * `Scripts/Runtime/Data/ShopCatalog.cs` — ürünler, adlar, yedek fiyatlar, sermaye tutarı.
 * `Scripts/Game/Shop/ShopService.cs` — sahiplik (cihazda), bekleyen ürünler, aynı işlemin bir kez verilmesi, test dükkanı.
-* `Scripts/Game/Shop/UnityIapShopBackend.cs` — App Store / Google Play bağlantısı (Unity IAP 5, `PurchasingController`).
+* `Scripts/Store/UnityIapShopBackend.cs` — App Store / Google Play bağlantısı (Unity IAP 5, `PurchasingController`).
+  Kendi derlemesinde (`BusTycoon.Store`): yalnız paket kuruluyken derlenir. Web derlemesinde paket çıkarılır
+  (`.github/workflows/site.yml`), web indirmesi büyümez.
 * `Scripts/Game/UI/GameUI.Shop.cs` — Dükkan sayfası, Şirketim ▸ Görünüm (logo, araç rengi), lisans hakkı.
