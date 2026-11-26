@@ -360,7 +360,7 @@ namespace BusTycoon.Game
             if (cityStart)
             {
                 session.State.vehicleClasses = true; // dolmuş/şehir otobüsü şehir içi, otobüs şehirlerarası
-                session.State.waitTimes = true;      // hat kurulumu 3 gün, araç teslimi; reklamla hemen biter
+                session.State.waitTimes = true;      // hat kurulumu 2 gün, araç teslimi; reklamla hemen biter
                 session.State.cityLicenses = true;   // başka şehir: lisansla (oyun parası ya da uygulama içi)
                 session.Progression.GrantCityLicense(hq);
                 StartTutorial();

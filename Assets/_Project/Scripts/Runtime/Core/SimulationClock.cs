@@ -3,8 +3,8 @@ using System;
 namespace BusTycoon.Core
 {
     /// <summary>
-    /// Oyun saatini yönetir. Simülasyon "gün" bazlı tick'lerle ilerler:
-    /// her gün sonunda tüm hatlar tek seferde hesaplanır (ekonomi deterministik ve hızlı kalır).
+    /// Oyun saatini yönetir. Simülasyon "gün" bazlı ilerler: hat gelir ve giderleri gün içinde saniyede bir kasaya
+    /// işlenir (GameSession → RouteSystem.Accrue), gün sonunda günün kalanı işlenip raporlar ve finans kapanışı yapılır.
     /// Görsel otobüs animasyonları bu saatten bağımsız, yalnızca kozmetiktir.
     /// </summary>
     public sealed class SimulationClock
@@ -39,6 +39,10 @@ namespace BusTycoon.Core
         public int? DayLimit { get; set; }
         public bool IsPaused => Speed == 0;
         public float DayProgress01 => accumulator / secondsPerDay;
+
+        /// <summary>Kayıttan açılışta günün kaldığı yer.</summary>
+        public void SetDayProgress(float progress01) =>
+            accumulator = Math.Max(0f, Math.Min(0.999f, progress01)) * secondsPerDay;
 
         /// <summary>1× hızda bir oyun gününün gerçek saniye karşılığı.</summary>
         public float SecondsPerDay

@@ -240,7 +240,6 @@ namespace BusTycoon.Game
         void OnDayCompleted(DayReport report)
         {
             MarkDataDirty();
-            SpawnIncomeLabels();
             goals.Evaluate();
             RefreshRouteIndicators(announce: true);
             AnnounceEvents();
@@ -378,6 +377,7 @@ namespace BusTycoon.Game
             UpdateCityMap();
             UpdateAds(dt);
             UpdateToolkit();
+            UpdateIncomeLabels();
 
             // Android geri tuşu / Esc (IMGUI olayı da gelirse aynı karede ikinci kez işlenmez)
             if (TouchInput.BackPressed() && Time.frameCount != lastEscapeFrame)

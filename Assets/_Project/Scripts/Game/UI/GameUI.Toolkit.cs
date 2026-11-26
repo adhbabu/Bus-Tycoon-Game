@@ -282,7 +282,9 @@ namespace BusTycoon.Game
             Ui.Show(tkKasa, !home);
             double cash = session.Finance.Cash;
             if (double.IsNaN(tkShownCash) || Math.Abs(cash - tkShownCash) > Math.Abs(cash) * 0.5 + 1e6) tkShownCash = cash;
-            tkShownCash += (cash - tkShownCash) * (1.0 - Math.Exp(-Time.unscaledDeltaTime * 9.0));
+            // Artışta yavaş (saniyede bir işlenen gelir bir sonrakine kadar akarak sayılsın), harcamada çabuk
+            double rate = cash > tkShownCash ? 3.2 : 9.0;
+            tkShownCash += (cash - tkShownCash) * (1.0 - Math.Exp(-Time.unscaledDeltaTime * rate));
             if (Math.Abs(cash - tkShownCash) < 1.0) tkShownCash = cash;
             long shown = (long)Math.Round(tkShownCash);
             // Sayaç yazısı en çok saniyede ~12 kez değişir: her değişen kare GPU'ya köşe yüklemesi demek (WebGL)

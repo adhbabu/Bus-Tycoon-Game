@@ -133,7 +133,22 @@ namespace BusTycoon.Core
             busCatalog = catalog;
         }
 
-        void Update() => Clock?.Tick(Time.unscaledDeltaTime);
+        /// <summary>Hat gelir ve giderleri bu aralıkla (gerçek saniye) kasaya işlenir: para gün sonunu beklemeden akar.</summary>
+        public const float AccrualSeconds = 1f;
+        float accrualTimer;
+
+        void Update()
+        {
+            if (Clock == null) return;
+            Clock.Tick(Time.unscaledDeltaTime);
+            if (Routes == null) return;
+            Routes.DayProgress = Clock.DayProgress01;
+            if (Clock.IsPaused || IsBankrupt) return;
+            accrualTimer += Time.unscaledDeltaTime;
+            if (accrualTimer < AccrualSeconds) return;
+            accrualTimer = 0f;
+            Routes.Accrue(Clock.DayProgress01);
+        }
 
         // ------------------------------------------------------------------ oturum
 
@@ -177,6 +192,7 @@ namespace BusTycoon.Core
             if (State == null) return false;
             try
             {
+                State.dayProgress = Clock != null ? Clock.DayProgress01 : 0f;
                 SaveSystem.Save(State, slot);
                 return true;
             }
@@ -207,6 +223,9 @@ namespace BusTycoon.Core
             Maintenance = new MaintenanceAssistant(state, Fleet, Routes, Finance, economyConfig);
 
             Clock = new SimulationClock(state.currentDay, secondsPerDay);
+            Clock.SetDayProgress(state.dayProgress);
+            Routes.DayProgress = Clock.DayProgress01;
+            accrualTimer = 0f;
             Clock.DayEnded += HandleDayEnded;
             Clock.MonthEnded += HandleMonthEnded;
         }
