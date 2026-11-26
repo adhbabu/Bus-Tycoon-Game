@@ -22,6 +22,8 @@ namespace BusTycoon.Game
         RouteQuote urbanQuote;
         bool urbanQuoteValid;
         int cityRoutesSignature = int.MinValue;
+        /// <summary>Planlayıcının teklif kartı (vitrin görüntüsünde kaydırılıp gösterilir).</summary>
+        VisualElement tkUrbanOffer;
         readonly List<(string id, Vector2 a, Vector2 b, Color color, int vehicles)> cityRouteBuffer = new List<(string, Vector2, Vector2, Color, int)>();
 
         bool UrbanPlannerOpen => urbanPlanning && panel == Panel.Planner;
@@ -121,6 +123,7 @@ namespace BusTycoon.Game
 
         void BuildUrbanPlanner(VisualElement body)
         {
+            tkUrbanOffer = null;
             CityData city = CurrentCity;
             SheetHeader("Yeni dolmuş hattı", $"{city?.DisplayName} · iki durak seç");
             if (cityView == null || !cityView.Ready)
@@ -136,29 +139,15 @@ namespace BusTycoon.Game
                     UiWeight.Regular, body);
                 return;
             }
-            StopRow(body, "Başlangıç", urbanOrigin, "bt-endpoint--origin", () =>
-            {
-                urbanOrigin = urbanDestination = null;
-                urbanQuoteValid = false;
-                urbanPlan.Clear();
-                SyncUrbanPreview();
-                tkSheetDirty = true;
-            });
             if (urbanDestination == null)
             {
+                StopRow(body, "Başlangıç", urbanOrigin, "bt-endpoint--origin", ResetUrbanEndpoints);
                 Ui.Text("bt-step-title", "2) Haritada VARIŞ durağına dokun.", UiWeight.Bold, body);
                 Ui.Text("bt-item__text", $"Hat sokaklardan en kısa yoldan gider; {UrbanPlanner.MinMeters / 1000f:0.#}–{UrbanPlanner.MaxMeters / 1000f:0} km arası olmalı. En kârlıları genelde 6–15 km.",
                     UiWeight.Regular, body);
                 return;
             }
-            StopRow(body, "Varış", urbanDestination, "bt-endpoint--destination", () =>
-            {
-                urbanDestination = null;
-                urbanQuoteValid = false;
-                urbanPlan.Clear();
-                SyncUrbanPreview();
-                tkSheetDirty = true;
-            });
+            EndpointsRow(body);
 
             if (!urbanPlan.IsValid)
             {
@@ -174,6 +163,7 @@ namespace BusTycoon.Game
 
             // Sade teklif: yalnız karar için gerekenler (uzunluk, yolcu, bilet, doluluk, kâr, ruhsat)
             VisualElement card = Ui.El("bt-item", body);
+            tkUrbanOffer = card;
             KeyValue(card, "Uzunluk", $"{Fmt.Km(quote.DistanceKm)} · {Fmt.Hours(quote.TravelHours)}", null, UIIcon.Ruler);
             KeyValue(card, "Yolcu", $"~{Fmt.Num(quote.Forecast.Demand)}/gün", null, UIIcon.People);
             KeyValue(card, "Tam hat bileti", $"{Fmt.Price(quote.SuggestedPrice)} (ort. {Fmt.Price(quote.SuggestedPrice * session.Economy.UrbanRideShare)})", "is-blue", UIIcon.Ticket);
@@ -210,6 +200,30 @@ namespace BusTycoon.Game
             }, primary: true, enabled: quote.IsValid);
             open.name = "urban-open";
             open.AddToClassList("bt-btn--cta");
+        }
+
+        void ResetUrbanEndpoints()
+        {
+            urbanOrigin = urbanDestination = null;
+            urbanQuoteValid = false;
+            urbanPlan.Clear();
+            SyncUrbanPreview();
+            tkSheetDirty = true;
+        }
+
+        /// <summary>İki durak seçiliyken tek satır (yer kazanır: telefonda teklif kaydırmadan görünür).</summary>
+        void EndpointsRow(VisualElement body)
+        {
+            VisualElement row = Ui.El("bt-row bt-endpoint bt-endpoint--pair", body);
+            VisualElement names = Ui.El("bt-col bt-grow", row);
+            foreach (var (stop, tone) in new[] { (urbanOrigin, "is-origin"), (urbanDestination, "is-destination") })
+            {
+                VisualElement line = Ui.El("bt-row bt-endpoint__line", names);
+                Ui.El("bt-endpoint__dot " + tone, line);
+                Ui.Text("bt-endpoint__label", stop.Name, UiWeight.Black, line);
+            }
+            Button button = ActionButton(row, "Değiştir", ResetUrbanEndpoints);
+            button.AddToClassList("bt-btn--ghost");
         }
 
         void StopRow(VisualElement body, string label, UrbanStop stop, string tone, System.Action change)

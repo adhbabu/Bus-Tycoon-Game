@@ -3,6 +3,7 @@ using BusTycoon.Data;
 using BusTycoon.Routes;
 using BusTycoon.Urban;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace BusTycoon.Game
 {
@@ -85,11 +86,12 @@ namespace BusTycoon.Game
             mapCamera.FocusOn(cityView.ToWorld((a.Position + b.Position) * 0.5f), ShowcaseFitDistance(span * 1.8f));
         }
 
-        /// <summary>Yakın plan: ünlü mekânların 3B maketleri ve hatlarında giden araçlar.</summary>
-        internal void ShowcaseCityCloseUp(Vector2 meters)
+        /// <summary>Yakın plan: ünlü mekânların 3B maketleri ve hatlarında giden araçlar (maketler tam görünür uzaklıkta).</summary>
+        internal void ShowcaseCityCloseUp(Vector2 meters, float spanMeters)
         {
             ShowcaseCityMap();
-            mapCamera.FocusOn(cityView.ToWorld(meters), CityView.MaquetteNear * 0.75f);
+            float distance = Mathf.Clamp(ShowcaseFitDistance(spanMeters * 1.5f + 600f), CityView.MinCameraDistance * 3f, CityView.MaquetteNear * 0.9f);
+            mapCamera.FocusOn(cityView.ToWorld(meters), distance);
         }
 
         internal void ShowcaseHome()
@@ -98,10 +100,25 @@ namespace BusTycoon.Game
             SelectTab(Tab.Home);
         }
 
-        internal void ShowcaseGallery()
+        /// <summary>Galeri; <paramref name="modelId"/> verilirse o modelin kartı sayfanın başına kaydırılır.</summary>
+        internal void ShowcaseGallery(string modelId = null)
         {
             ClosePanel();
             SelectTab(Tab.Shop);
+            showcaseScrollTarget = modelId != null ? "model-" + modelId : null;
+        }
+
+        string showcaseScrollTarget;
+
+        static VisualElement FindNamed(VisualElement root, string name)
+        {
+            if (root.name == name) return root;
+            foreach (VisualElement child in root.Children())
+            {
+                VisualElement found = FindNamed(child, name);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         internal void ShowcaseDealership(CityData focus, float distance)
@@ -129,6 +146,15 @@ namespace BusTycoon.Game
         {
             notes.Clear();
             modal = Modal.None;
+            // Kaydırma: dolmuş planlayıcısında teklif kartı (yolcu, bilet, kâr), galeride seçilen model başa gelsin
+            if (tkSheetScroll == null) return;
+            VisualElement target = UrbanPlannerOpen ? tkUrbanOffer
+                : showcaseScrollTarget != null ? FindNamed(tkSheetScroll.contentContainer, showcaseScrollTarget) : null;
+            if (target == null) return;
+            bool inside = false;
+            for (var e = target.parent; e != null; e = e.parent) if (e == tkSheetScroll.contentContainer) inside = true;
+            if (inside)
+                tkSheetScroll.scrollOffset = new Vector2(0f, Mathf.Max(0f, target.worldBound.y - tkSheetScroll.contentContainer.worldBound.y - 4f));
         }
     }
 }

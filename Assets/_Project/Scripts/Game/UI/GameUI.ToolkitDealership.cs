@@ -57,6 +57,7 @@ namespace BusTycoon.Game
             foreach (var bus in session.Fleet.Buses) if (bus.Model == model) owned++;
 
             VisualElement card = Ui.El("bt-item bt-model", body);
+            card.name = "model-" + model.Id;
             Ui.Toggle(card, "is-locked", !unlocked);
             // Büyük çizim (önden-yandan, koyu sahnede): galeride otobüs kartın en üstünde
             VisualElement stage = Ui.El("bt-model__stage", card);

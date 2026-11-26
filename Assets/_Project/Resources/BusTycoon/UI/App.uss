@@ -1313,6 +1313,28 @@
     font-size: 16px;
 }
 
+/* İki durak tek satırda: adlar alt alta, "Değiştir" sağda */
+.bt-endpoint--pair {
+    padding: 6px 4px 6px 10px;
+}
+
+.bt-endpoint__line {
+    margin: 2px 0;
+}
+
+.bt-endpoint__line .bt-endpoint__label {
+    font-size: 15px;
+    flex-shrink: 1;
+}
+
+.bt-endpoint__dot.is-origin {
+    background-color: #5AA9FF;
+}
+
+.bt-endpoint__dot.is-destination {
+    background-color: #E5A23A;
+}
+
 .bt-endpoint__flag {
     width: 20px;
     height: 20px;

@@ -32,6 +32,9 @@ namespace BusTycoon.Core
 
         public static string Signed(double units) => (units >= 0 ? "+" : "") + Format(units);
 
+        /// <summary>Para olmayan sayılar (yolcu, deneyim) aynı binlik ayracıyla: 15416 → "15.416" (₺ ve kur çarpanı yok).</summary>
+        public static string Count(double value) => Math.Round(value).ToString("N0", Culture);
+
         /// <summary>Dar yerler için: "₺1,25 Mn", "₺48,2 B" (bin), "₺1,2 Mr" (milyar).</summary>
         public static string Compact(double units)
         {

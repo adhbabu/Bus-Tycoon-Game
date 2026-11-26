@@ -36,7 +36,7 @@ namespace BusTycoon.Routes
                 return Make(InsightSeverity.Critical, InsightAction.AdjustPrice, $"Zarar ediyor ({BusTycoon.Core.Money.Format(profit)}/gün).");
 
             if (demand > 0f && unmet / demand > 0.15f && loadFactor > 0.8f)
-                return Make(InsightSeverity.Warning, InsightAction.AddBus, $"Kapasite yetersiz: günde ~{BusTycoon.Core.Money.Format(unmet)} yolcu kaçıyor.");
+                return Make(InsightSeverity.Warning, InsightAction.AddBus, $"Kapasite yetersiz: günde ~{BusTycoon.Core.Money.Count(unmet)} yolcu kaçıyor.");
 
             if (loadFactor < 0.45f)
                 return Make(InsightSeverity.Warning, InsightAction.AdjustPrice, $"Doluluk düşük (%{loadFactor * 100f:0}). Fiyatı düşürmeyi deneyin.");

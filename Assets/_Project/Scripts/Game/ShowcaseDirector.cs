@@ -71,7 +71,8 @@ namespace BusTycoon.Game
             if (index >= shots.Count) return;
 
             // Tur boyunca oyun akmaya devam eder; kasa orta oyun düzeyinde kalsın (ekran görüntüleri tutarlı olsun).
-            if (session.State.cash > 900000) session.State.cash = 640000;
+            // Şehir içi turda kasa grafiği ana ekranda görünür: kırpılmaz (tur birkaç oyun günü sürer).
+            if (!cityStarted && session.State.cash > 900000) session.State.cash = 640000;
 
             if (!tidied)
             {
@@ -113,8 +114,12 @@ namespace BusTycoon.Game
 
         // ------------------------------------------------------------------ vitrin şirketi (şehir içi, yeni arayüz)
 
-        static readonly string[] CityLineModels = { "KENT_12", "KARTAL_M19", "ANKA_27", "KARTAL_M16", "KENT_12", "ANKA_31" };
+        static readonly string[] CityLineModels = { "KENT_12", "KARTAL_M19", "ANKA_27", "KENT_12", "KARTAL_M16", "ANKA_31" };
         const int CityLines = 6;
+        /// <summary>Şehir içi hatlarda bilet önerilen fiyatın en çok bu katı (yolcu memnun kalsın, uyarı çıkmasın).</summary>
+        const float CityPriceCap = 1.0f;
+        /// <summary>Ana ekrandaki 30 günlük kasa grafiğinin en alt noktası (iç para birimi).</summary>
+        const double CityCashFloor = 260000;
 
         void StartCityCompany()
         {
@@ -143,8 +148,8 @@ namespace BusTycoon.Game
             int take = Math.Min(40, stops.Count);
             var uses = new Dictionary<UrbanStop, int>();
             var routes = new List<RouteState>();
-            RouteState landmarkRoute = null;
-            UrbanLandmark landmark = null;
+            var nearRoutes = new List<UrbanLandmark>();
+            var basePrices = new Dictionary<string, float>();
             UrbanStop plannerA = null, plannerB = null;
 
             for (int i = 0; i < take && (routes.Count < CityLines || plannerA == null); i++)
@@ -177,39 +182,37 @@ namespace BusTycoon.Game
                         session.Routes.TryAssignBus(bus.busId, route.routeId);
                     }
                     routes.Add(route);
+                    basePrices[route.routeId] = quote.SuggestedPrice;
                     uses[a] = usedA + 1;
                     uses[b] = usedB + 1;
-                    if (landmarkRoute == null && plan.Landmarks.Count >= 2)
-                    {
-                        landmarkRoute = route;
-                        landmark = plan.Landmarks[0];
-                    }
+                    foreach (var near in plan.Landmarks) if (!nearRoutes.Contains(near)) nearRoutes.Add(near);
                 }
             if (routes.Count == 0) Debug.LogWarning("[Showcase] Şehir içi hat açılamadı");
 
-            // Geçmiş grafikleri dolsun; kasa orta oyun düzeyinde kalsın
+            // Geçmiş grafikleri dolsun. Kasa kırpılmaz (ana ekranın kasa grafiği testere dişi olmasın); sonunda bütün
+            // geçmiş aynı miktarda kaydırılır: grafiğin biçimi gerçek kalır, kasa orta oyun düzeyinde biter.
             state.cash = 320000;
             for (int day = 0; day < SimulatedDays; day++)
             {
-                if (state.cash > 850000) state.cash = 600000;
-                if (day == SimulatedDays / 2) SetBestPrices();
+                if (day == SimulatedDays / 3) SetBestPrices(basePrices);
                 session.Clock.AdvanceOneDay();
             }
-            SetBestPrices();
-            state.cash = Math.Min(state.cash, 486350);
+            SetBestPrices(basePrices);
+            ShiftCashHistory(state);
             state.waitTimes = true;
 
-            RouteState best = null;
-            foreach (var route in routes)
-                if (best == null || route.LastReport.Profit > best.LastReport.Profit) best = route;
+            RouteState best = PickPriceRoute(routes, map);
+            Vector2 closeUp;
+            float closeUpSpan;
+            bool hasCloseUp = PickLandmarkCluster(map, nearRoutes, out closeUp, out closeUpSpan);
 
             shots.Clear();
             shots.Add(new KeyValuePair<string, Action>("sehir-haritasi", () => ui.ShowcaseCityOverview(routes)));
             if (plannerA != null) shots.Add(new KeyValuePair<string, Action>("hat-planlama", () => ui.ShowcaseUrbanPlanner(plannerA, plannerB)));
             if (best != null) shots.Add(new KeyValuePair<string, Action>("bilet-fiyati", () => ui.ShowcaseRoute(best)));
-            if (landmark != null) shots.Add(new KeyValuePair<string, Action>("yakin-plan", () => ui.ShowcaseCityCloseUp(landmark.Position)));
+            if (hasCloseUp) shots.Add(new KeyValuePair<string, Action>("yakin-plan", () => ui.ShowcaseCityCloseUp(closeUp, closeUpSpan)));
             shots.Add(new KeyValuePair<string, Action>("ana-ekran", () => ui.ShowcaseHome()));
-            shots.Add(new KeyValuePair<string, Action>("galeri", () => ui.ShowcaseGallery()));
+            shots.Add(new KeyValuePair<string, Action>("galeri", () => ui.ShowcaseGallery("KENT_12")));
         }
 
         // ------------------------------------------------------------------ vitrin şirketi (şehirlerarası, eski arayüz)
@@ -339,15 +342,78 @@ namespace BusTycoon.Game
             return route;
         }
 
-        /// <summary>Her hatta fiyatı tahmini en kârlı değere çeker (iyi yönetilen şirket görünümü).</summary>
-        void SetBestPrices()
+        /// <summary>Her hatta fiyatı tahmini en kârlı değere çeker (iyi yönetilen şirket görünümü). Taban fiyatı
+        /// verilen hatlarda bilet en çok tabanın <see cref="CityPriceCap"/> katı olur.</summary>
+        void SetBestPrices(Dictionary<string, float> basePrices = null)
         {
             var analysis = new PricingAnalysis();
             foreach (var route in session.Routes.Routes)
             {
                 session.Routes.AnalyzePricing(route, 60, analysis);
-                if (analysis.EstimatedBestPrice > 0f) session.Routes.SetTicketPrice(route.routeId, analysis.EstimatedBestPrice);
+                float price = analysis.EstimatedBestPrice;
+                if (basePrices != null && basePrices.TryGetValue(route.routeId, out float basePrice)) price = Mathf.Min(price, basePrice * CityPriceCap);
+                if (price > 0f) session.Routes.SetTicketPrice(route.routeId, price);
             }
+        }
+
+        /// <summary>Kasa geçmişini (ve kasayı) aynı miktarda kaydırır: son 30 günün en düşüğü <see cref="CityCashFloor"/> olur.</summary>
+        static void ShiftCashHistory(CompanyState state)
+        {
+            var history = state.financeHistory;
+            if (history == null || history.Count == 0) return;
+            double low = double.MaxValue;
+            for (int i = Math.Max(0, history.Count - 30); i < history.Count; i++) low = Math.Min(low, history[i].cashAtClose);
+            double shift = CityCashFloor - low;
+            foreach (var day in history) day.cashAtClose += shift;
+            state.cash += shift;
+        }
+
+        /// <summary>Bilet fiyatı görüntüsünün hattı: en kârlılardan, haritanın kenarına en uzak olanı (kartta boşluk kalmasın).</summary>
+        static RouteState PickPriceRoute(List<RouteState> routes, UrbanMap map)
+        {
+            RouteState best = null, fallback = null;
+            float fallbackMargin = float.MinValue;
+            var sorted = new List<RouteState>(routes);
+            sorted.Sort((x, y) => y.LastReport.Profit.CompareTo(x.LastReport.Profit));
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                RouteState route = sorted[i];
+                var mid = new Vector2((route.urbanAX + route.urbanBX) * 0.5f, (route.urbanAY + route.urbanBY) * 0.5f);
+                Rect bounds = map.Bounds;
+                float margin = Mathf.Min(Mathf.Min(mid.x - bounds.xMin, bounds.xMax - mid.x), Mathf.Min(mid.y - bounds.yMin, bounds.yMax - mid.y));
+                if (margin > fallbackMargin) { fallbackMargin = margin; fallback = route; }
+                if (best == null && i < 3 && margin >= 7000f) best = route;
+            }
+            return best ?? fallback;
+        }
+
+        /// <summary>Yakın plan: hatların yakınındaki mekânlardan çevresinde en çok mekân olanı; odak o kümenin ortası.</summary>
+        static bool PickLandmarkCluster(UrbanMap map, List<UrbanLandmark> nearRoutes, out Vector2 center, out float span)
+        {
+            const float Radius = 1100f;
+            center = Vector2.zero;
+            span = 0f;
+            int bestCount = 0;
+            IEnumerable<UrbanLandmark> candidates = nearRoutes.Count > 0 ? (IEnumerable<UrbanLandmark>)nearRoutes : map.Landmarks;
+            foreach (var landmark in candidates)
+            {
+                int count = 0;
+                Vector2 sum = Vector2.zero, min = landmark.Position, max = landmark.Position;
+                foreach (var other in map.Landmarks)
+                {
+                    if ((other.Position - landmark.Position).magnitude > Radius) continue;
+                    count++;
+                    sum += other.Position;
+                    min = new Vector2(Mathf.Min(min.x, other.Position.x), Mathf.Min(min.y, other.Position.y));
+                    max = new Vector2(Mathf.Max(max.x, other.Position.x), Mathf.Max(max.y, other.Position.y));
+                }
+                if (count <= bestCount) continue;
+                bestCount = count;
+                center = sum / count;
+                span = Mathf.Max(max.x - min.x, max.y - min.y);
+            }
+            if (bestCount > 0) Debug.Log($"[Showcase] yakın plan: {bestCount} mekân, {span:0} m");
+            return bestCount > 0;
         }
 
         void AssignIdleBuses(RouteState route)

@@ -110,7 +110,7 @@ namespace BusTycoon.Progression
             if (state.level < model.RequiredCompanyLevel)
             {
                 long remaining = config.XpRequiredForLevel(model.RequiredCompanyLevel) - state.experience;
-                return $"Şirket seviyesi {model.RequiredCompanyLevel} gerekli ({BusTycoon.Core.Money.Format(remaining)} yolcu daha taşıyın).";
+                return $"Şirket seviyesi {model.RequiredCompanyLevel} gerekli ({BusTycoon.Core.Money.Count(remaining)} yolcu daha taşıyın).";
             }
             if (state.reputation < model.RequiredReputation)
                 return $"İtibar {model.RequiredReputation:0} gerekli (şu an {state.reputation:0}).";
