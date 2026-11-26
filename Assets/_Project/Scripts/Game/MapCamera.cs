@@ -39,6 +39,9 @@ namespace BusTycoon.Game
 
         public Camera Camera => cam;
         public float Distance => distance;
+
+        /// <summary>Kamera hedefine vardı (odak geçişi bitti). Vitrin turu görüntüyü bundan sonra alır.</summary>
+        public bool Settled => (target - targetGoal).sqrMagnitude < 0.01f && Mathf.Abs(distance - distanceGoal) < Mathf.Max(0.05f, distanceGoal * 0.01f);
         /// <summary>0 = en yakın, 1 = en uzak (eğim, LOD ve etiketler için).</summary>
         public float Zoom01 => Mathf.InverseLerp(MinDistance, MaxDistance, distance);
         /// <summary>Ana menüde haritanın üzerinde yavaşça süzülür.</summary>

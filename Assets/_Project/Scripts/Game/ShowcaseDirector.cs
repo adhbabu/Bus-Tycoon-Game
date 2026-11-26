@@ -77,6 +77,8 @@ namespace BusTycoon.Game
             if (!tidied)
             {
                 if (Time.unscaledTime - shownAt < SettleSeconds) return;
+                // Kamera yerine oturmadan çekme (yavaş çizimde geçiş uzar); en çok 20 sn bekle
+                if (!ui.ShowcaseCameraSettled && Time.unscaledTime - shownAt < 20f) return;
                 StationView stations = StationView.Instance;
                 if (stations != null && stations.IsActive && stations.IntroProgress < 1f) return; // durağa giriş bitsin
                 ui.ShowcaseTidy();

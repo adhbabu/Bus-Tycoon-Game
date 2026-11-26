@@ -38,6 +38,9 @@ namespace BusTycoon.Game
 
         internal bool ShowcaseNewUi => NewUi;
 
+        /// <summary>Harita kamerası odak geçişini bitirdi (yavaş cihazda geçiş SettleSeconds'tan uzun sürebilir).</summary>
+        internal bool ShowcaseCameraSettled => mapCamera == null || mapCamera.Settled;
+
         /// <summary>Merkez şehrin sokak haritası yüklendi ve kamera şehirde.</summary>
         internal bool ShowcaseCityReady => cityView != null && cityView.Ready && cityView.City == CurrentCity && cameraInCity;
 
