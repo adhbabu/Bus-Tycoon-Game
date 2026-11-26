@@ -115,7 +115,6 @@ namespace BusTycoon.Game
             session.MonthCompleted += OnMonthCompleted;
             session.Bankrupt += OnBankrupt;
 
-            Fmt.Symbol = session.Economy.CurrencySymbol;
             InitToolkit();
             InitCityView();
             InitAds();

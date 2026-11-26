@@ -119,6 +119,7 @@ namespace BusTycoon.Game
             CityData city = session.World.GetCity(local?.CityId) ?? session.World.GetCity("TR_ISTANBUL");
             if (city == null) return;
             session.StartNewGame(companyName, city);
+            session.State.incomeScale = 1f; // yarışta gelir katsayısı yok: hedef kasaya varış süresi aynı kalsın
             session.Clock.SetSpeed(Room.Speed);
             session.Clock.DayLimit = Room.IsHost ? (int?)null : Room.HostDay;
             Report();

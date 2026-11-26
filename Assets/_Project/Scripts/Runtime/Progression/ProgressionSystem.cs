@@ -110,7 +110,7 @@ namespace BusTycoon.Progression
             if (state.level < model.RequiredCompanyLevel)
             {
                 long remaining = config.XpRequiredForLevel(model.RequiredCompanyLevel) - state.experience;
-                return $"Şirket seviyesi {model.RequiredCompanyLevel} gerekli ({remaining:N0} yolcu daha taşıyın).";
+                return $"Şirket seviyesi {model.RequiredCompanyLevel} gerekli ({BusTycoon.Core.Money.Format(remaining)} yolcu daha taşıyın).";
             }
             if (state.reputation < model.RequiredReputation)
                 return $"İtibar {model.RequiredReputation:0} gerekli (şu an {state.reputation:0}).";
@@ -151,7 +151,7 @@ namespace BusTycoon.Progression
             if (state.level < region.RequiredCompanyLevel)
                 return OpResult.Fail($"{region.DisplayName} için şirket seviyesi {region.RequiredCompanyLevel} gerekli.");
             if (!finance.CanAfford(region.OperatingLicenseCost))
-                return OpResult.Fail($"İşletme lisansı için {region.OperatingLicenseCost:N0} gerekli.");
+                return OpResult.Fail($"İşletme lisansı için {BusTycoon.Core.Money.Format(region.OperatingLicenseCost)} gerekli.");
             return OpResult.Ok();
         }
 
@@ -189,7 +189,7 @@ namespace BusTycoon.Progression
             if (OwnsCity(city)) return OpResult.Fail($"{city.DisplayName} lisansı zaten var.");
             if (!IsRegionUnlocked(city.Region)) return OpResult.Fail($"{city.Region.DisplayName} için ülke lisansı gerekli.");
             float price = CityLicensePrice(city);
-            if (!finance.CanAfford(price)) return OpResult.Fail($"{city.DisplayName} lisansı için {price:N0} gerekli.");
+            if (!finance.CanAfford(price)) return OpResult.Fail($"{city.DisplayName} lisansı için {BusTycoon.Core.Money.Format(price)} gerekli.");
             return OpResult.Ok();
         }
 

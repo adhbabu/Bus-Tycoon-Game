@@ -151,8 +151,13 @@ namespace BusTycoon.Game
                 }
             }
 
+            // Telefonda tek satırlık şerit (adım, başlık, düğme): ekran kısa, büyük kart içeriği kapatıyordu
+            Ui.Toggle(tkTutorial, "is-compact", phone);
+            if (phone) tkTutorialKicker.text = $"{step + 1}/{TutorialSteps}";
+            else if (!tkTutorialKicker.text.StartsWith("ÖĞRETİCİ")) tkTutorialKicker.text = $"ÖĞRETİCİ · {step + 1}/{TutorialSteps}";
+
             // Yer: içerik alanının sol altı (haritada kartın sol altı; ana ekranda en kârlı hatların altı)
-            float width = Mathf.Min(380f, content.width * k * (phone ? 0.5f : 0.36f));
+            float width = Mathf.Min(phone ? 460f : 380f, content.width * k * (phone ? 0.62f : 0.36f));
             Ui.Place(tkTutorial, content.x * k + 12f, content.yMax * k - 12f - TutorialHeight(), width, TutorialHeight());
             tkCovered.Add(new Rect(content.x + 12f * u, content.yMax - (12f + TutorialHeight()) * u, width * u, TutorialHeight() * u));
 
@@ -165,7 +170,7 @@ namespace BusTycoon.Game
             if (tkTutorialTarget != null) Ui.Toggle(tkTutorialTarget, "is-pulse", Mathf.Repeat(Time.unscaledTime, 1.2f) < 0.6f);
         }
 
-        float TutorialHeight() => phone ? 138f : 150f;
+        float TutorialHeight() => phone ? 44f : 150f;
 
         VisualElement TabButton(string name)
         {

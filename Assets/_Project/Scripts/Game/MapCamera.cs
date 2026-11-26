@@ -20,7 +20,8 @@ namespace BusTycoon.Game
         const float UserSmooth = 0.11f;     // kullanıcı girdisi: çabuk tepki
         const float FocusSmooth = 0.42f;    // odaklanma (şehre/hatta): sinematik
         const float DriftSmooth = 1.6f;
-        const float FlingDamping = 3.2f;    // süzülmenin sönümü (1/sn)
+        // Süzülmenin sönümü (1/sn): telefonda hızlı kaydırma haritayı ekranlarca "atmasın" (en çok ~1/5 ekran süzülür)
+        const float FlingDamping = 5.5f;
 
         Camera cam;
         Rect bounds, countryBounds;
@@ -115,8 +116,8 @@ namespace BusTycoon.Game
         {
             if (!dragging) return;
             dragging = false;
-            bool recent = Time.unscaledTime - lastDragTime < 0.12f;
-            fling = recent ? Vector3.ClampMagnitude(dragVelocity, distance * 4f) : Vector3.zero;
+            bool recent = Time.unscaledTime - lastDragTime < 0.08f;
+            fling = recent ? Vector3.ClampMagnitude(dragVelocity, distance * 1.25f) : Vector3.zero;
         }
 
         /// <summary>Fareyle sürükleme: imlecin altındaki harita noktası imleçle birlikte hareket eder.</summary>

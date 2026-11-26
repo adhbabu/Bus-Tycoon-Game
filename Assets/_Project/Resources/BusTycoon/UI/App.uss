@@ -1816,6 +1816,18 @@
     padding-bottom: 14px;
 }
 
+/* Liste kalan yere sığar, düğmelerin altına taşmaz (telefonda düğmelerin arkasından görünüyordu) */
+.bt-newgame .bt-sheet__scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 60px;
+}
+
+.bt-newgame .bt-actions {
+    flex-shrink: 0;
+}
+
 .bt-field {
     margin: 0 4px 10px 0;
 }
@@ -2614,6 +2626,8 @@
     font-size: 15px;
     color: #F1F4F5;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .bt-tile__sub {
@@ -2621,6 +2635,61 @@
     color: #8DA1A8;
     white-space: nowrap;
     margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Kutunun yazı sütunu daralabilir: uzun alt yazı kutudan taşmaz, "…" ile biter */
+.bt-tile .bt-col {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Telefon: ana ekran kısa; kutular alçak, "Nasıl oynanır" ve "Haritayı keşfet" gizli (Harita sekmesi zaten var) */
+.bt-home.is-phone .bt-tile {
+    min-height: 40px;
+    padding: 4px 8px 4px 5px;
+    margin-bottom: 6px;
+}
+
+.bt-home.is-phone .bt-tile__box {
+    width: 28px;
+    height: 28px;
+    margin-right: 7px;
+}
+
+.bt-home.is-phone .bt-tile__title {
+    font-size: 13.5px;
+}
+
+.bt-home.is-phone .bt-tile__sub {
+    font-size: 11px;
+}
+
+.bt-home.is-phone .bt-tile--wide {
+    display: none;
+}
+
+.bt-home.is-phone .bt-cta--big {
+    display: none;
+}
+
+.bt-home.is-phone .bt-home-today {
+    padding: 8px 10px;
+}
+
+.bt-home.is-phone .bt-home-minis {
+    margin-top: 6px;
+}
+
+.bt-home.is-phone .bt-mini {
+    min-height: 40px;
+    padding: 4px 6px;
+}
+
+.bt-home.is-phone .bt-home-tiles {
+    margin-top: 6px;
 }
 
 .bt-tile.is-highlight {
@@ -3078,6 +3147,46 @@
     background-color: rgba(0, 0, 0, 0);
     color: #8DA1A8;
     font-size: 12px;
+}
+
+/* Telefon: tek satırlık şerit (adım · başlık · Git · ×); açıklama ve noktalar gizli */
+.bt-tutorial.is-compact {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px 4px 10px;
+    border-radius: 12px;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__dots {
+    display: none;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__text {
+    display: none;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__title {
+    font-size: 13px;
+    margin: 0 0 0 8px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__actions {
+    margin: 0 0 0 6px;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__go {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.bt-tutorial.is-compact .bt-tutorial__skip {
+    font-size: 11px;
 }
 
 .bt-tutorial__go {

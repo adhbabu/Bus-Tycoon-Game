@@ -10,7 +10,10 @@ namespace BusTycoon.Data
     public sealed class EconomyConfig : ScriptableObject
     {
         [Header("Para birimi")]
-        [SerializeField] string currencySymbol = "$";
+        [SerializeField] string currencySymbol = "₺";
+        [Tooltip("Bir oyun günündeki hat gelir ve giderinin katı (bir oyun günü kaç günlük işletme sayılır). " +
+                 "Araç, lisans ve geliştirme fiyatları değişmez: para daha hızlı birikir.")]
+        [SerializeField, Min(1f)] float incomeScale = 10f;
 
         [Header("Talep potansiyeli — çekim (gravity) modeli")]
         [Tooltip("K: Q_ref = K × (NüfusA_mn × NüfusB_mn)^α × MesafeEğrisi(km) × Turizm")]
@@ -130,6 +133,7 @@ namespace BusTycoon.Data
         [SerializeField, Min(0f)] float urbanLicensePerKm = 40f;
 
         public string CurrencySymbol => currencySymbol;
+        public float IncomeScale => incomeScale;
 
         public float DemandScale => demandScale;
         public float PopulationExponent => populationExponent;

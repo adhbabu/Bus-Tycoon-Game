@@ -8,7 +8,7 @@ namespace BusTycoon.Game
     {
         static readonly CultureInfo Culture = CreateCulture();
 
-        public static string Symbol = "$";
+        public static string Symbol => BusTycoon.Core.Money.Symbol;
 
         static CultureInfo CreateCulture()
         {
@@ -20,22 +20,15 @@ namespace BusTycoon.Game
         public static string Upper(string text) =>
             string.IsNullOrEmpty(text) ? string.Empty : text.Replace('i', 'İ').Replace('ı', 'I').ToUpperInvariant();
 
-        public static string Money(double value) =>
-            (value < -0.5 ? "-" : "") + Symbol + Math.Abs(Math.Round(value)).ToString("N0", Culture);
+        // Para: Türk lirası (BusTycoon.Core.Money; iç birim × 40)
+        public static string Money(double value) => BusTycoon.Core.Money.Format(value);
 
-        public static string Signed(double value) => (value >= 0 ? "+" : "") + Money(value);
+        public static string Signed(double value) => BusTycoon.Core.Money.Signed(value);
 
-        /// <summary>1.250.000 → "$1,25 Mn"; 48.200 → "$48,2 B" (bin).</summary>
-        public static string Compact(double value)
-        {
-            double abs = Math.Abs(value);
-            string sign = value < 0 ? "-" : "";
-            if (abs >= 1_000_000) return sign + Symbol + (abs / 1_000_000).ToString("0.##", Culture) + " Mn";
-            if (abs >= 10_000) return sign + Symbol + (abs / 1_000).ToString("0.#", Culture) + " B";
-            return Money(value);
-        }
+        /// <summary>"₺1,25 Mn", "₺48,2 B" (bin), "₺1,2 Mr" (milyar).</summary>
+        public static string Compact(double value) => BusTycoon.Core.Money.Compact(value);
 
-        public static string Price(double value) => Symbol + value.ToString("N2", Culture);
+        public static string Price(double value) => BusTycoon.Core.Money.Price(value);
 
         public static string Pct(float ratio01) => "%" + (ratio01 * 100f).ToString("0", Culture);
 

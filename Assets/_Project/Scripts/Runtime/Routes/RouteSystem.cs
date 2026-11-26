@@ -101,7 +101,7 @@ namespace BusTycoon.Routes
                 return OpResult.Fail("Şehirlerarası hat lisanslı şehirlerinden birinden başlamalı (Şirketim → Şehir lisansları).");
 
             float license = RouteLicenseCost(a, b);
-            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat lisansı için {license:N0} gerekli.");
+            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat lisansı için {BusTycoon.Core.Money.Format(license)} gerekli.");
             return OpResult.Ok();
         }
 
@@ -186,7 +186,7 @@ namespace BusTycoon.Routes
                 return OpResult.Fail($"{city.Region.DisplayName} için işletme lisansınız yok.");
             if (!progression.OwnsCity(city)) return OpResult.Fail($"{city.DisplayName} lisansı yok (Şirketim → Şehir lisansları).");
             float license = economy.GetUrbanLicenseCost(plan.Km);
-            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat ruhsatı için {license:N0} gerekli.");
+            if (!finance.CanAfford(license)) return OpResult.Fail($"Hat ruhsatı için {BusTycoon.Core.Money.Format(license)} gerekli.");
             return OpResult.Ok();
         }
 
@@ -390,7 +390,7 @@ namespace BusTycoon.Routes
             if (route.IsSettingUp)
             {
                 foreach (var bus in busBuffer)
-                    if (bus.Model != null) finance.Charge(bus.Model.InsurancePerDay, LedgerCategory.Insurance, bus.busId);
+                    if (bus.Model != null) finance.Charge(bus.Model.InsurancePerDay * IncomeScale, LedgerCategory.Insurance, bus.busId);
                 route.setupDaysLeft--;
                 if (!route.IsSettingUp) SetupFinished?.Invoke(route);
                 return report;
@@ -457,6 +457,9 @@ namespace BusTycoon.Routes
             return inputs;
         }
 
+        /// <summary>Gelir katsayısı: kayıttaki (çok oyunculuda 1) ya da ekonomi ayarındaki.</summary>
+        public float IncomeScale => state.incomeScale > 0f ? state.incomeScale : economy.IncomeScale;
+
         RouteEconomics.Inputs BuildInputs(CityData a, CityData b, float km, float price, int daysOpen,
             bool autoSchedule, float manualUtilization, float elasticityBias, bool urban = false, float urbanDemand = 0f) => new RouteEconomics.Inputs
         {
@@ -473,6 +476,7 @@ namespace BusTycoon.Routes
             DemandNoise = 1f,
             ElasticityBias = elasticityBias,
             IncludeUnavailableBuses = true,
+            IncomeScale = IncomeScale,
             // Otogar geliştirmeleri şehirlerarası yolcuyu çeker; dolmuş hattını etkilemez
             StationFactor = !urban && stations != null ? stations.RouteDemandFactor(a, b) : 1f
         };

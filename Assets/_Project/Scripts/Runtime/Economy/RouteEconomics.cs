@@ -81,6 +81,8 @@ namespace BusTycoon.Economy
             public float UrbanDemand;
             /// <summary>Önemli gün çarpanı (bayram, maç günü…; 0 ya da 1: etkinlik yok).</summary>
             public float EventFactor;
+            /// <summary>Gelir katsayısı: bir oyun günü kaç günlük işletme (para akışları bununla çarpılır; 0 ya da 1: yok).</summary>
+            public float IncomeScale;
         }
 
         /// <summary>Tek yön sürüş süresi (saat): şehirde trafik hızı, şehirlerarası yolda aracın hızı.</summary>
@@ -215,6 +217,20 @@ namespace BusTycoon.Economy
             // ---------- 5) Memnuniyet ----------
             float priceRatio = f.ReferencePrice > 0f ? f.TicketPrice / f.ReferencePrice : 1f;
             f.Satisfaction = DemandModel.Satisfaction(priceRatio, comfortMix, f.UnmetRatio, cfg);
+
+            // ---------- 6) Oyun günü = birkaç günlük işletme: yalnız para akışları büyür (yolcu ve sefer sayısı günlük kalır)
+            float scale = input.IncomeScale > 1f ? input.IncomeScale : 1f;
+            if (scale > 1f)
+            {
+                f.Revenue *= scale;
+                f.FuelCost *= scale;
+                f.DriverCost *= scale;
+                f.MaintenanceCost *= scale;
+                f.TollCost *= scale;
+                f.TerminalCost *= scale;
+                f.ServiceCost *= scale;
+                f.InsuranceCost *= scale;
+            }
             return f;
         }
     }

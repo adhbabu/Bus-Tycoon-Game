@@ -38,6 +38,8 @@ namespace BusTycoon.Save
         /// en az bir lisanslı şehirden başlar, iki ucu lisanslıysa hat ruhsatı alınmaz. Başlangıç şehri bedava.
         /// </summary>
         public bool cityLicenses;
+        /// <summary>Gelir katsayısı (0: ekonomi ayarındaki, şu an 10). Çok oyunculu yarışta 1 (yarış temposu değişmesin).</summary>
+        public float incomeScale;
         public List<string> ownedCityIds = new List<string>();
         public int tutorialStep;
         /// <summary>Öğretici: oyuncu hat panelinde bileti gördü mü (son adım).</summary>

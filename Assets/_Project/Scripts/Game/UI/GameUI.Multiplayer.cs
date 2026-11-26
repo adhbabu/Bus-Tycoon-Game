@@ -111,8 +111,8 @@ namespace BusTycoon.Game
 
             GUILayout.Label("Oda kur", s.H2);
             GUILayout.BeginHorizontal();
-            ModeCard(MatchMode.Blitz, "Blitz", "$1.000.000 · hızlı (2x)");
-            ModeCard(MatchMode.Normal, "Normal", "$10.000.000 · normal akış (1x)");
+            ModeCard(MatchMode.Blitz, "Blitz", $"{Fmt.Money(1_000_000)} · hızlı (2x)");
+            ModeCard(MatchMode.Normal, "Normal", $"{Fmt.Money(10_000_000)} · normal akış (1x)");
             GUILayout.EndHorizontal();
             Sp(4f);
             if (GUILayout.Button("ODA KUR", s.Primary, Ht(46f)))

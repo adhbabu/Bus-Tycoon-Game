@@ -186,6 +186,7 @@ namespace BusTycoon.Game
                 return;
             }
             Ui.Place(tkHomePage, content.x * k, content.y * k, content.width * k, content.height * k);
+            Ui.Toggle(tkHomePage, "is-phone", phone); // telefonda sıkışık düzen (kısa ekrana sığsın)
             tkCovered.Add(new Rect(0f, 0f, W, H)); // harita çizilmiyor: şehir adları da yok
 
             if (tkCashValue != tkHomeCashShown)

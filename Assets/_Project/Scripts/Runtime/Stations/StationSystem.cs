@@ -203,7 +203,7 @@ namespace BusTycoon.Stations
                 return OpResult.Fail($"{city.Region.DisplayName} için işletme lisansınız yok.");
             if (!IsOperating(city)) return OpResult.Fail("Bu şehre hat açınca durağı geliştirebilirsiniz.");
             float cost = Cost(city, upgrade);
-            if (!finance.CanAfford(cost)) return OpResult.Fail($"Kasada yeterli para yok ({cost:N0} gerekli).");
+            if (!finance.CanAfford(cost)) return OpResult.Fail($"Kasada yeterli para yok ({BusTycoon.Core.Money.Format(cost)} gerekli).");
             return OpResult.Ok();
         }
 

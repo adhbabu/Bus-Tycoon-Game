@@ -585,7 +585,7 @@ namespace BusTycoon.Game
                 "J: görevler · F5: kaydet · Esc: geri / menü"),
             ("Çok oyunculu",
                 "Ana menüde Çok Oyunculu → Oda kur: arkadaşların 5 karakterlik oda kodunla katılır. Herkes kendi şirketini kurar, " +
-                "günler aynı anda ilerler. Blitz'de $1.000.000, Normal'de $10.000.000 kasaya ilk ulaşan kazanır."),
+                $"günler aynı anda ilerler. Blitz'de {Fmt.Money(1_000_000)}, Normal'de {Fmt.Money(10_000_000)} kasaya ilk ulaşan kazanır."),
             ("Dikkat",
                 "Kasa 30 gün üst üste eksi kalırsa iflas edersiniz. Garajda bekleyen otobüsler de sigorta öder.")
         };
