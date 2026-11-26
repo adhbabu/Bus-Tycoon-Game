@@ -379,7 +379,10 @@ namespace BusTycoon.EditorTools
             var textures = new List<(string resource, bool mipmaps)>
             {
                 (DefaultContent.MascotResourcePath, false), (DefaultContent.IconsResourcePath, true), (DefaultContent.BusArtResourcePath, true),
-                (DefaultContent.CityIconsResourcePath, true)
+                (DefaultContent.CityIconsResourcePath, true),
+                // Giriş ekranı logosu ve perdesi: sıkıştırılmasın, ölçeklenmesin (keskin kalsın)
+                (DefaultContent.LogoEmblemResourcePath, true), (DefaultContent.LogoWordmarkResourcePath, true),
+                (DefaultContent.MenuVignetteResourcePath, false)
             };
             // Yeni arayüzün ikonları (mipmap'li: küçük çizilir) ve gradyanları (gerilir; mipmap gerekmez)
             foreach (var (folder, mipmaps) in new[] { ("BusTycoon/UI/Symbols", true), ("BusTycoon/UI/Gradients", false) })

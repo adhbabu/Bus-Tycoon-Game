@@ -5,7 +5,8 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Otobüs modellerinin yandan çizimleri (Resources/BusTycoon/UI/buses.png, Tools/make_bus_art.py):
-    /// 2 sütun × 6 satır, 256×128 px hücre; otobüs sağa bakar. Atlas yoksa hiçbir şey çizilmez.
+    /// 2 sütun × 6 satır, hücre en-boy oranı 2:1 (hücre genişliği = atlas genişliği / 2; 256×128 ya da 2x 512×256);
+    /// otobüs sağa bakar. Atlas yoksa hiçbir şey çizilmez.
     /// </summary>
     public static class UIBusArt
     {
@@ -13,13 +14,16 @@ namespace BusTycoon.Game
         static readonly string[] ModelIds = { "KARTAL_M16", "KARTAL_M19", "ANKA_27", "ANKA_31", "TOROS_46", "TOROS_42C", "ZIRVE_VIP", "ZIRVE_DD",
             "KENT_12", "KENT_12E", "KENT_18" };
         const int Columns = 2;
-        const float CellWidth = 256f, CellHeight = 128f;
+
+        /// <summary>Hücre boyu atlasın genişliğinden: aynı kod 1x ve 2x atlasla çalışır.</summary>
+        static float CellWidth(Texture2D texture) => texture.width / (float)Columns;
+        static float CellHeight(Texture2D texture) => CellWidth(texture) / Aspect;
 
         static Texture2D atlas;
         static bool loaded;
 
         /// <summary>Çizimin en-boy oranı (genişlik / yükseklik).</summary>
-        public const float Aspect = CellWidth / CellHeight;
+        public const float Aspect = 2f;
 
         static Texture2D Atlas
         {
@@ -50,7 +54,8 @@ namespace BusTycoon.Game
             if (texture == null || model == null) return null;
             int index = CellOf(model);
             if (sprites.TryGetValue(index, out Sprite sprite) && sprite != null) return sprite;
-            var rect = new Rect((index % Columns) * CellWidth, texture.height - ((index / Columns) + 1) * CellHeight, CellWidth, CellHeight);
+            float cw = CellWidth(texture), ch = CellHeight(texture);
+            var rect = new Rect((index % Columns) * cw, texture.height - ((index / Columns) + 1) * ch, cw, ch);
             sprite = UnityEngine.Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
             sprites[index] = sprite;
             return sprite;
@@ -63,9 +68,10 @@ namespace BusTycoon.Game
             if (texture == null || model == null || Event.current.type != EventType.Repaint) return;
             int index = CellOf(model);
 
-            float u = (index % Columns) * CellWidth / texture.width;
-            float v = 1f - ((index / Columns) + 1) * CellHeight / texture.height;
-            float w = CellWidth / texture.width, h = CellHeight / texture.height;
+            float cw = CellWidth(texture), ch = CellHeight(texture);
+            float u = (index % Columns) * cw / texture.width;
+            float v = 1f - ((index / Columns) + 1) * ch / texture.height;
+            float w = cw / texture.width, h = ch / texture.height;
             var uv = faceLeft ? new Rect(u + w, v, -w, h) : new Rect(u, v, w, h);
             GUI.DrawTextureWithTexCoords(rect, texture, uv);
         }
