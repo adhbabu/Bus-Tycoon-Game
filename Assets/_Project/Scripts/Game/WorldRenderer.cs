@@ -1119,8 +1119,8 @@ namespace BusTycoon.Game
             appliedLineCount = routeVisuals.Count;
             appliedLineVersion = routeVisualsVersion;
             foreach (var visual in routeVisuals.Values)
-                visual.Line.widthMultiplier = (visual.Route.routeId == selectedRouteId ? 0.34f : 0.24f) * scale;
-            previewLine.widthMultiplier = 0.22f * scale;
+                visual.Line.widthMultiplier = (visual.Route.routeId == selectedRouteId ? 0.24f : 0.17f) * scale;
+            previewLine.widthMultiplier = 0.16f * scale;
         }
 
         int routeVisualsVersion, appliedLineVersion = -1;

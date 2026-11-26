@@ -363,7 +363,7 @@ namespace BusTycoon.Game
 
             // Hatlar: güzergâh boyunca uç uca kapsüller (yuvarlak uçlar köşeleri kapatır); önizleme en üstte
             lineSprites.Clear();
-            float width = unit * 0.85f;
+            float width = unit * 0.55f; // ince çizgi: sokaklar ve duraklar seçilsin
             foreach (Line line in lines.Values) AddLine(line, width);
             if (preview != null) AddLine(preview, width * 1.15f);
             lineSprites.Apply(width * 2f);
