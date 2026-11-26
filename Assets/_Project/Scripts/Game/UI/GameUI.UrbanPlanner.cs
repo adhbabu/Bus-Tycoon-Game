@@ -171,19 +171,15 @@ namespace BusTycoon.Game
             RouteQuote quote = urbanQuote;
             BusModelData model = PlannerModel;
             session.Fleet.GetIdleBuses(busBuffer);
-            int idleSame = 0;
-            foreach (var bus in busBuffer) if (bus.Model == model) idleSame++;
 
+            // Sade teklif: yalnız karar için gerekenler (uzunluk, yolcu, bilet, doluluk, kâr, ruhsat)
             VisualElement card = Ui.El("bt-item", body);
-            KeyValue(card, "Uzunluk / süre", $"{Fmt.Km(quote.DistanceKm)} · {Fmt.Hours(quote.TravelHours)}", null, UIIcon.Ruler);
-            KeyValue(card, "Güzergâhta", $"{urbanPlan.Stops.Count} durak · {urbanPlan.Landmarks.Count} ünlü mekân", null, UIIcon.Pin);
-            KeyValue(card, "Tahmini talep", $"~{Fmt.Num(quote.Forecast.Demand)} yolcu/gün", null, UIIcon.People);
-            KeyValue(card, "Tam hat bileti", $"{Fmt.Price(quote.SuggestedPrice)} · ort. {Fmt.Price(quote.SuggestedPrice * session.Economy.UrbanRideShare)}", "is-blue", UIIcon.Ticket);
-            KeyValue(card, "Önerilen araç", $"{quote.RecommendedBusCount} × {model.DisplayName}", null, UIIcon.Fleet);
-            KeyValue(card, "Garajda bekleyen", $"{busBuffer.Count} araç ({idleSame} adet bu model)", null, UIIcon.Building);
-            KeyValue(card, "Tahmini doluluk", Fmt.Pct(quote.Forecast.LoadFactor), null, UIIcon.Seat);
+            KeyValue(card, "Uzunluk", $"{Fmt.Km(quote.DistanceKm)} · {Fmt.Hours(quote.TravelHours)}", null, UIIcon.Ruler);
+            KeyValue(card, "Yolcu", $"~{Fmt.Num(quote.Forecast.Demand)}/gün", null, UIIcon.People);
+            KeyValue(card, "Tam hat bileti", $"{Fmt.Price(quote.SuggestedPrice)} (ort. {Fmt.Price(quote.SuggestedPrice * session.Economy.UrbanRideShare)})", "is-blue", UIIcon.Ticket);
+            KeyValue(card, "Doluluk", Fmt.Pct(quote.Forecast.LoadFactor), null, UIIcon.Seat);
             KeyValue(card, "Tahmini kâr", $"{Fmt.Signed(quote.Forecast.Profit)}/gün", Tone(quote.Forecast.Profit), UIIcon.ChartUp);
-            KeyValue(card, "Hat ruhsatı", Fmt.Money(quote.LicenseCost), null, UIIcon.Log);
+            KeyValue(card, "Ruhsat", Fmt.Money(quote.LicenseCost), null, UIIcon.Log);
             if (urbanPlan.Landmarks.Count > 0)
             {
                 var names = new List<string>();
@@ -192,20 +188,22 @@ namespace BusTycoon.Game
                 string highlights = EventHighlights(UrbanEvents.KindFame(urbanPlan.Landmarks));
                 if (highlights != null) Ui.Text("bt-item__text is-gold", "Önemli günlerde: " + highlights, UiWeight.Bold, body);
             }
-            Ui.Text("bt-item__text", "Bilet mesafeye göre: kısa binen az, uçtan uca binen tam bilet öder. Tahminler 30 günlük olgun hat içindir.",
-                UiWeight.Regular, body);
 
+            // Panelin altında sabit (kaydırmadan görünür): araç atama ve "Hattı aç"
+            VisualElement footer = tkSheetFooter;
             Button assign = Ui.Button("bt-check", string.Empty, () =>
             {
                 assignIdleOnOpen = !assignIdleOnOpen;
                 tkSheetDirty = true;
-            }, body);
+            }, footer);
             Ui.Toggle(assign, "is-on", assignIdleOnOpen);
             Ui.El("bt-check__box", assign);
-            Ui.Text("bt-check__label", "Garajdaki araçları bu hatta ata", UiWeight.Regular, assign);
+            Ui.Text("bt-check__label", busBuffer.Count > 0
+                ? $"Garajdaki {busBuffer.Count} aracı bu hatta ata (önerilen {quote.RecommendedBusCount})"
+                : $"Garajda araç yok (önerilen {quote.RecommendedBusCount} × {model.DisplayName})", UiWeight.Regular, assign);
 
-            if (!quote.IsValid) Ui.Text("bt-item__text is-down", quote.Error, UiWeight.Bold, body);
-            Button open = ActionButton(body, $"HATTI AÇ  ·  ruhsat {Fmt.Money(quote.LicenseCost)}", () =>
+            if (!quote.IsValid) Ui.Text("bt-item__text is-down", quote.Error, UiWeight.Bold, footer);
+            Button open = ActionButton(footer, $"HATTI AÇ  ·  ruhsat {Fmt.Money(quote.LicenseCost)}", () =>
             {
                 OpenUrbanRouteFromPlanner();
                 tkSheetDirty = true;

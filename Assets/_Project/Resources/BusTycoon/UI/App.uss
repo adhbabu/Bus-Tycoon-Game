@@ -592,6 +592,19 @@
     padding-top: 10px;
 }
 
+/* Panelin altında kaymayan alan (planlayıcıda araç atama ve "Hattı aç") */
+.bt-sheet__footer {
+    flex-shrink: 0;
+    padding-top: 10px;
+    margin-bottom: 8px;
+    border-top-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+}
+
+.bt-sheet__footer .bt-check {
+    margin-bottom: 8px;
+}
+
 .phone .bt-sheet__close {
     width: 46px;
     height: 46px;
@@ -1067,16 +1080,41 @@
     white-space: normal;
 }
 
+/* Galeri: otobüs çizimi kartın üstünde büyük, koyu sahnede (2:1 çizim sahneye sığar, ortalanır) */
+.bt-model__stage {
+    height: 150px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(5, 13, 18, 0.55);
+    overflow: hidden;
+}
+
 .bt-model__art {
-    width: 112px;
-    height: 56px;
-    margin-right: 12px;
-    flex-shrink: 0;
+    flex-grow: 1;
+    margin: 4px 8px 0 8px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .bt-model.is-locked .bt-model__art {
-    opacity: 0.4;
+    opacity: 0.6;
+}
+
+.bt-model__lock {
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #F5C451;
+    background-color: rgba(10, 21, 27, 0.85);
+}
+
+.bt-model__lock.is-owned {
+    color: #3DDC84;
 }
 
 .bt-model.is-locked .bt-model__name {

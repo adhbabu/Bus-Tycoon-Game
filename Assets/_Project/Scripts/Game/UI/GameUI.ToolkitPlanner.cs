@@ -125,8 +125,10 @@ namespace BusTycoon.Game
             Sprite sprite = UIBusArt.Sprite(model);
             if (sprite != null) art.style.backgroundImage = new StyleBackground(sprite);
             VisualElement info = Ui.El("bt-col bt-grow", row);
-            Ui.Text("bt-item__title", $"{model.DisplayName} · {SegmentName(model.Segment)}", UiWeight.Bold, info);
-            Ui.Text("bt-detail__text", $"{model.Seats} koltuk · rahat menzil {Fmt.Km(model.ComfortableRangeKm)}", UiWeight.Regular, info);
+            Ui.Text("bt-item__title", model.DisplayName, UiWeight.Bold, info);
+            Ui.Text("bt-detail__text", urbanPlanning
+                ? $"{SegmentName(model.Segment)} · {model.Seats} {(model.Segment == BusSegment.CityBus ? "yolcu" : "koltuk")}"
+                : $"{SegmentName(model.Segment)} · {model.Seats} koltuk · {Fmt.Km(model.ComfortableRangeKm)}", UiWeight.Regular, info);
             Button next = Ui.Button("bt-step", "›", () => { ChangePlannerModel(+1); tkSheetDirty = true; }, row);
             next.SetEnabled(plannerModelIndex < plannerModels.Count - 1);
         }

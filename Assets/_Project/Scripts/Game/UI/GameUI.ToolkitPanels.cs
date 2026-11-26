@@ -22,6 +22,8 @@ namespace BusTycoon.Game
 
         VisualElement tkSheet;
         ScrollView tkSheetScroll;
+        /// <summary>Panelin altında kaymayan alan (ör. "Hattı aç"): boşsa gizli.</summary>
+        VisualElement tkSheetFooter;
         Label tkSheetTitle, tkSheetSubtitle;
         Panel tkBuiltPanel = Panel.None;
         bool tkSheetDirty;
@@ -48,6 +50,7 @@ namespace BusTycoon.Game
             tkSheetScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden; // içerik yalnız dikeyde kayar
             tkSheetScroll.AddToClassList("bt-sheet__scroll");
             tkSheet.Add(tkSheetScroll);
+            tkSheetFooter = Ui.El("bt-sheet__footer", tkSheet);
             tkSheet.style.display = DisplayStyle.None;
         }
 
@@ -144,6 +147,13 @@ namespace BusTycoon.Game
         {
             VisualElement body = tkSheetScroll.contentContainer;
             body.Clear();
+            tkSheetFooter.Clear();
+            BuildSheetContent(body);
+            Ui.Show(tkSheetFooter, tkSheetFooter.childCount > 0);
+        }
+
+        void BuildSheetContent(VisualElement body)
+        {
             switch (panel)
             {
                 case Panel.Goals:

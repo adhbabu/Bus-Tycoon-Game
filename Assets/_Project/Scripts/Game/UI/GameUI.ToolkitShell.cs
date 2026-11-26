@@ -26,7 +26,7 @@ namespace BusTycoon.Game
         static readonly Color ScreenBackground = new Color(0.055f, 0.102f, 0.129f); // #0E1A21
         /// <summary>İçerik en çok bu kadar geniş (tasarım birimi); geniş ekranda ortalanır.</summary>
         const float MaxContentUnits = 1400f;
-        const float SideColumnUnits = 290f;
+        const float SideColumnUnits = 350f;
 
         /// <summary>Tam sayfa açılan paneller (harita gizlenir). Hat paneli ve planlayıcı haritanın yanında açılır.</summary>
         static bool IsPagePanel(Panel target) =>

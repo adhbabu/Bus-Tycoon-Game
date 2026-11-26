@@ -41,6 +41,7 @@ namespace BusTycoon.Game
             int h = (int)hours;
             int m = (int)Math.Round((hours - h) * 60f);
             if (m == 60) { h++; m = 0; }
+            if (h == 0) return $"{m} dk";
             return m == 0 ? $"{h} sa" : $"{h} sa {m} dk";
         }
 
