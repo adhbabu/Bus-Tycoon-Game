@@ -260,7 +260,8 @@ namespace BusTycoon.Contracts
         {
             BusModelData model = CheapestFit(c) ?? catalog.GetById("SERCE_14");
             float cost = DailyCost(model, c, out _, out _, out _, out _);
-            float margin = (c.minSeats * 4.5f * (c.IsVip ? 2.2f : 1f) + 30f) * IncomeScale;
+            // Kâr payı: araç parası ~7-8 günde çıkar (dolmuş hattı ~6 gün; ihale daha az riskli, sabit gelir)
+            float margin = (c.minSeats * 5.5f * (c.IsVip ? 2.2f : 1f) + 40f) * IncomeScale;
             float perVan = cost * 1.25f + margin;
             perVan *= 1f + 0.08f * c.tier;
             perVan *= 0.9f + (float)rng.NextDouble() * 0.22f;

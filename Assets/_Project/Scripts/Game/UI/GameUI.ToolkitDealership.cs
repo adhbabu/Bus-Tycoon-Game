@@ -125,7 +125,8 @@ namespace BusTycoon.Game
             else if (owned > 0) Ui.Text("bt-model__lock is-owned", $"FİLODA {owned}", UiWeight.Black, stage);
             VisualElement info = Ui.El("bt-col", card);
             Ui.Text("bt-model__name", model.DisplayName, UiWeight.Black, info);
-            Ui.Text("bt-detail__text", $"{model.Manufacturer} · {SegmentName(model.Segment)} · kademe {model.Tier + 1}", UiWeight.Regular, info);
+            Ui.Text("bt-detail__text", model.IsService ? $"{model.Manufacturer} · {SegmentName(model.Segment)}"
+                : $"{model.Manufacturer} · {SegmentName(model.Segment)} · kademe {model.Tier + 1}", UiWeight.Regular, info);
             Detail(info, UIIcon.Seat, $"{model.Seats} {(model.Segment == BusSegment.CityBus ? "yolcu" : "koltuk")} · {model.AverageSpeedKmh:0} km/s");
             if (model.IsService) Detail(info, UIIcon.Road, "Yalnız ihale işleri (servis sözleşmeleri)");
             else if (session.State.vehicleClasses)

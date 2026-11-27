@@ -56,9 +56,12 @@ namespace BusTycoon.Game
             cityRoutesSignature = int.MinValue;
         }
 
+        /// <summary>Mağaza ekran görüntüsü turunda (vitrin) ihale bildirimleri görüntüye girmesin.</summary>
+        static bool ShowcaseRun => LaunchOptions.Get("vitrin") != null || LaunchOptions.Get("showcase") != null;
+
         void OnContractOffer(TransportContract offer)
         {
-            if (!ContractsAvailable) return;
+            if (!ContractsAvailable || ShowcaseRun) return;
             Toast($"Yeni ihale teklifi: {offer.clientName} — {offer.vehicles} servis aracı, günlük {Fmt.Compact(offer.dailyPay)}",
                 UIStyles.Gold, quiet: panel == Panel.Contracts);
         }
@@ -177,7 +180,7 @@ namespace BusTycoon.Game
             foreach (var c in session.Contracts.Active)
             {
                 if (c.cityId != cityView.City.Id || !c.hasSite) continue;
-                DrawUrbanLabel(cam, card, cityView.ToWorld(new Vector2(c.clientX, c.clientY)), "◆ " + c.clientName, s.MapLabelBold, 14f * u);
+                DrawUrbanLabel(cam, card, cityView.ToWorld(new Vector2(c.clientX, c.clientY)), c.clientName, s.MapLabelBold, 14f * u);
             }
         }
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BusTycoon.Contracts;
 using BusTycoon.Data;
 using BusTycoon.Routes;
 using UnityEngine;
@@ -139,6 +140,8 @@ namespace BusTycoon.Game
             bool city = CityMapShown;
             int signature = session.State.currentDay * 397 + routes.Count + (city ? 1 << 20 : 0);
             signature = signature * 31 + session.State.ownedCityIds.Count + (CurrentCity?.Id.GetHashCode() ?? 0);
+            if (ContractsAvailable)
+                foreach (var c in session.Contracts.Active) signature = signature * 31 + c.contractId.GetHashCode();
             if (signature == tkMapSideSignature) return;
             tkMapSideSignature = signature;
             tkMapSideCity = city;
@@ -178,6 +181,24 @@ namespace BusTycoon.Game
                 Ui.Text("bt-mapside__name bt-grow", RouteName(route), UiWeight.Bold, row);
                 float profit = route.HasHistory ? route.LastReport.Profit : 0f;
                 Ui.Text(profit >= 0f ? "bt-mapside__value is-up" : "bt-mapside__value is-down", Fmt.Signed(profit), UiWeight.Bold, row);
+            }
+            // Şehir haritasında o şehrin ihale işleri (servis araçları altın çizgide gidip gelir)
+            if (city && ContractsAvailable && cityView.City != null)
+            {
+                int contracts = 0;
+                foreach (var c in session.Contracts.Active)
+                {
+                    if (c.cityId != cityView.City.Id) continue;
+                    if (contracts == 0) Ui.Text("bt-caps is-green bt-mapside__caption", "İHALE İŞLERİ", UiWeight.Bold, tkMapSideList);
+                    if (++contracts > (phone ? 2 : 4)) break;
+                    TransportContract target = c;
+                    Button row = Ui.Button("bt-row bt-mapside__route", string.Empty, () => ShowContractOnMap(target), tkMapSideList);
+                    VisualElement swatch = Ui.El("bt-mapside__swatch", row);
+                    swatch.pickingMode = PickingMode.Ignore;
+                    swatch.style.backgroundColor = ContractLineColor;
+                    Ui.Text("bt-mapside__name bt-grow", c.clientName, UiWeight.Bold, row);
+                    Ui.Text("bt-mapside__value is-up", Fmt.Compact(c.dailyPay * session.Contracts.Coverage(c)), UiWeight.Bold, row);
+                }
             }
             // Şehir haritasında: duraklar ve mekânlar; Türkiye haritasında: merkez ve hatlı şehirler
             Ui.SetSymbol(tkMapSideMarkerA, city ? "directions_bus" : "star");
