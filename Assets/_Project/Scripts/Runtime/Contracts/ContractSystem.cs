@@ -87,18 +87,11 @@ namespace BusTycoon.Contracts
 
         // ------------------------------------------------------------------ teklifler
 
-        /// <summary>Hiç teklif yoksa ilk teklifleri getirir (yeni oyun, eski kaydın ilk açılışı).</summary>
-        public void EnsureOffers(System.Random rng)
-        {
-            if (!Enabled || state.contractOffers.Count > 0 || state.contracts.Count > 0 || state.contractHistory.Count > 0) return;
-            for (int i = 0; i < 2; i++) AddOffer(rng, firstOffers: true);
-        }
-
-        TransportContract AddOffer(System.Random rng, bool firstOffers = false)
+        TransportContract AddOffer(System.Random rng)
         {
             string cityId = PickCity(rng);
             if (cityId == null) return null;
-            int tier = firstOffers ? 0 : PickTier(rng);
+            int tier = PickTier(rng);
             ClientKind kind = PickKind(rng, tier);
             var offer = new TransportContract
             {
@@ -331,6 +324,10 @@ namespace BusTycoon.Contracts
 
         public int MaxActive => 2 + state.level / 3;
 
+        /// <summary>Teklif gelir mi: öğretici bittiyse ya da ilk günler geçtiyse (yeni oyuncu önce dolmuşunu kursun).</summary>
+        public bool OffersOpen => !state.tutorialActive || state.currentDay >= FirstOfferDay;
+        public const int FirstOfferDay = 5;
+
         /// <summary>Oyuncu işi bırakır: müşteri memnuniyeti puanı düşer, araçlar garaja döner.</summary>
         public OpResult Abandon(string id)
         {
@@ -533,9 +530,12 @@ namespace BusTycoon.Contracts
                 OfferWithdrawn?.Invoke(offer);
             }
 
-            // Yeni teklifler: boş yer varsa çoğu gün bir teklif
-            if (state.contractOffers.Count < MaxOffers && rng.NextDouble() < 0.6) AddOffer(rng);
-            if (state.contractOffers.Count == 0) AddOffer(rng);
+            // Yeni teklifler: boş yer varsa çoğu gün bir teklif. Öğretici sürerken (ilk günler) teklif gelmez.
+            if (OffersOpen)
+            {
+                if (state.contractOffers.Count < MaxOffers && rng.NextDouble() < 0.6) AddOffer(rng);
+                if (state.contractOffers.Count == 0) AddOffer(rng);
+            }
             Changed?.Invoke();
         }
 
