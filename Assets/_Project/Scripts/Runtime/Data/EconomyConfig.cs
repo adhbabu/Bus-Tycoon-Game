@@ -13,7 +13,7 @@ namespace BusTycoon.Data
         [SerializeField] string currencySymbol = "₺";
         [Tooltip("Bir oyun günündeki hat gelir ve giderinin katı (bir oyun günü kaç günlük işletme sayılır). " +
                  "Araç, lisans ve geliştirme fiyatları değişmez: para daha hızlı birikir.")]
-        [SerializeField, Min(1f)] float incomeScale = 10f;
+        [SerializeField, Min(1f)] float incomeScale = 20f; // 10'du: oyuncu "daha çok para gelsin" dedi (Kasım 2026)
 
         [Header("Talep potansiyeli — çekim (gravity) modeli")]
         [Tooltip("K: Q_ref = K × (NüfusA_mn × NüfusB_mn)^α × MesafeEğrisi(km) × Turizm")]
