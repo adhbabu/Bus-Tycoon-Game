@@ -1,15 +1,16 @@
 # Araç modelleri
 
-Oyundaki 11 araç (dolmuş, midibüs, şehirlerarası, konfor, VIP, çift katlı, şehir otobüsü, elektrikli, körüklü) özgün
-tasarımdır; marka, logo ya da yazı yoktur. Hepsi tek bir parametrik üreticiden çıkar: `bus_gen.py`.
+Oyundaki 18 araç (dolmuş, midibüs, şehirlerarası, konfor, VIP, çift katlı, şehir otobüsü, elektrikli, körüklü ve 7 servis
+aracı: "Serçe" ailesi) özgün tasarımdır; marka, logo ya da yazı yoktur. Hepsi tek bir parametrik üreticiden çıkar: `bus_gen.py`.
 
 | Dosya | Ne yapar |
 | --- | --- |
 | `bus_gen.py` | Araç ölçüleri (`vehicle_specs`) ve geometri (gövde kesitleri, camlar, kapılar, tekerlekler, ışıklar). İçe aktarma yok; aynı kod SketchUp'ta da çalışır. `Q["low"]` az çokgenli harita sürümünü verir. |
-| `otobus_imparatoru_araclar.skp` | 11 aracın SketchUp modeli (aynı kodla SketchUp'ta kuruldu). |
+| `otobus_imparatoru_araclar.skp` | 11 otobüsün SketchUp modeli (aynı kodla SketchUp'ta kuruldu). |
+| `otobus_imparatoru_servis_araclari.skp` | 7 servis aracının SketchUp modeli (ihale işleri). |
 | `export_json.py` | Modelleri `vehicles.json` olarak döker (`vehicles.html` için). |
 | `vehicles.html`, `vshots.js` | three.js ile önden-yandan görünüm, saydam PNG (`shots/<KİMLİK>.png`). |
-| `atlas.py` | Görüntülerden galeri atlası: `Resources/BusTycoon/UI/buses.png` (2 sütun × 6 satır, 512×256 hücre). |
+| `atlas.py` | Görüntülerden galeri atlası: `Resources/BusTycoon/UI/buses.png` (3 sütun × 6 satır, 512×256 hücre). |
 | `export_unity.py` | Haritadaki 3B araçlar: `Resources/BusTycoon/Models/vehicles.bytes` (oyunda `VehicleMeshes`). |
 
 Yeniden üretmek:

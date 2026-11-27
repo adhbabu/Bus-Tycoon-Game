@@ -99,6 +99,16 @@ namespace BusTycoon.Progression
             RefreshUnlocks();
         }
 
+        /// <summary>İtibara doğrudan ekler (ihale bitince: memnun müşteri itibarı artırır).</summary>
+        public void AddReputation(float delta)
+        {
+            if (Mathf.Abs(delta) < 0.0001f) return;
+            float previous = state.reputation;
+            state.reputation = Mathf.Clamp(previous + delta, 0f, 100f);
+            if (Mathf.Abs(state.reputation - previous) > 0.0001f) ReputationChanged?.Invoke(state.reputation);
+            RefreshUnlocks();
+        }
+
         // ------------------------------------------------------------------ otobüs kilitleri
 
         public bool IsModelUnlocked(BusModelData model) =>
@@ -121,7 +131,7 @@ namespace BusTycoon.Progression
         public BusModelData GetNextLockedModel()
         {
             foreach (var model in catalog.SortedByTier)
-                if (!IsModelUnlocked(model)) return model;
+                if (!model.IsService && !IsModelUnlocked(model)) return model;
             return null;
         }
 

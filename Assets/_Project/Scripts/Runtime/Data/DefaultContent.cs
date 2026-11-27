@@ -165,6 +165,28 @@ namespace BusTycoon.Data
             new ModelSpec("KENT_18", "Kent 18 Körüklü", "Marmara Kent", BusSegment.CityBus,
                 "18 metre körüklü: 140 yolcu, üç kapı. Şehrin ana caddelerinde yolcu başı en ucuz araç.",
                 165000, 7, 0, 140, 0.35f, 65, 250, 1000000, 0.9f, 1.15f, 52, 0.13f, 26, 0.05f),
+            // Servis araçları (yalnız ihale işleri: okul, fabrika ve şirket servisleri); hatlara atanmaz
+            new ModelSpec("SERCE_9", "Serçe 9", "Serçe Ticari", BusSegment.Service,
+                "Kısa servis vanı: 9 koltuk. Küçük okul ve iş yeri servisleri için ekonomik başlangıç.",
+                15000, 1, 0, 9, 0.35f, 90, 400, 400000, 1f, 1f, 9.5f, 0.04f, 4, 0.1f),
+            new ModelSpec("SERCE_14", "Serçe 14", "Serçe Ticari", BusSegment.Service,
+                "Orta boy, yüksek tavanlı servis: 14 koltuk. Okul ve fabrika servislerinin gözdesi.",
+                21000, 2, 0, 14, 0.4f, 88, 400, 450000, 1f, 1f, 10.5f, 0.045f, 5, 0.1f),
+            new ModelSpec("SERCE_17", "Serçe 17 Uzun", "Serçe Ticari", BusSegment.Service,
+                "Uzun şasi, klimalı: 17 koltuk. Kalabalık vardiya servisleri için.",
+                26000, 3, 0, 17, 0.45f, 86, 450, 450000, 1f, 1f, 11.5f, 0.05f, 5.5f, 0.15f),
+            new ModelSpec("SERCE_19", "Serçe 19 Yüksek Tavan", "Serçe Ticari", BusSegment.Service,
+                "En büyük servis: 19 koltuk, ekstra yüksek tavan, klima. Büyük fabrikaların vardiya servisleri.",
+                30000, 4, 10, 19, 0.5f, 85, 450, 500000, 1f, 1f, 12, 0.055f, 6, 0.15f),
+            new ModelSpec("SERCE_K7", "Serçe Kompakt VIP 7", "Serçe Ticari", BusSegment.Service,
+                "Siyah, kısa burunlu yolcu vanı: 7 deri koltuk, koyu cam, krom ayrıntılar. Yönetici ve havalimanı transferleri.",
+                32000, 4, 25, 7, 0.92f, 100, 600, 500000, 1f, 1f, 8.5f, 0.05f, 7, 0.6f),
+            new ModelSpec("SERCE_14E", "Serçe 14 Elektrik", "Serçe Ticari", BusSegment.Service,
+                "Sessiz elektrikli servis: 14 koltuk, yakıt gideri çok düşük. Çevreci şirketler bunu ister.",
+                36000, 5, 20, 14, 0.5f, 86, 250, 600000, 1f, 1f, 3, 0.03f, 6, 0.1f),
+            new ModelSpec("SERCE_VIP12", "Serçe VIP 12", "Serçe Ticari", BusSegment.Service,
+                "Lacivert metalik, 12 geniş deri koltuk, koyu cam, krom çerçeve. Kurumsal ve otel transferleri.",
+                42000, 6, 30, 12, 0.85f, 90, 600, 500000, 1f, 1f, 11.5f, 0.06f, 8, 0.5f),
         };
 
         /// <summary>Avrupa Paketi'nin otobüsleri (paket sahibiyse katalogda; uydurma markalar). docs/03 tablosuyla aynı.</summary>

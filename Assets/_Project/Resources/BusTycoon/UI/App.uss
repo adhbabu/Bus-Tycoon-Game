@@ -3447,3 +3447,189 @@
     height: 30px;
     -unity-background-image-tint-color: #F5C451;
 }
+
+/* Galeri bölümleri: şehir içi / şehirlerarası / servis */
+.bt-gallery-tabs {
+    flex-direction: row;
+    padding: 4px;
+    margin: 0 4px 12px 0;
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: rgba(42, 74, 82, 0.75);
+    background-color: #0A151B;
+}
+
+.bt-gallery-tab {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 44px;
+    margin: 0 2px;
+    padding: 0 8px;
+    border-width: 0;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.bt-gallery-tab.is-active {
+    border-top-width: 2px;
+    border-color: #F5C451;
+    background-color: #1A2B32;
+}
+
+.bt-gallery-tab__icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 7px;
+    flex-shrink: 0;
+    -unity-background-image-tint-color: #8DA1A8;
+}
+
+.bt-gallery-tab.is-active .bt-gallery-tab__icon {
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-gallery-tab__label {
+    font-size: 13px;
+    color: #8DA1A8;
+    white-space: nowrap;
+}
+
+.bt-gallery-tab.is-active .bt-gallery-tab__label {
+    color: #F1F4F5;
+}
+
+.bt-note__icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    -unity-background-image-tint-color: #5AA9FF;
+}
+
+/* İhaleler */
+.bt-contract-summary .bt-row {
+    align-items: center;
+}
+
+.bt-contract__icon {
+    width: 34px;
+    height: 34px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-image-tint-color: #F5C451;
+}
+
+.bt-contract__score {
+    font-size: 26px;
+    color: #F5C451;
+    -unity-text-align: middle-right;
+    margin-left: 8px;
+}
+
+.bt-contract__bar {
+    height: 8px;
+    margin: 8px 0 6px 0;
+}
+
+.bt-contract.is-active {
+    border-color: rgba(245, 196, 81, 0.35);
+}
+
+.bt-contract__kind {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background-color: rgba(90, 169, 255, 0.18);
+}
+
+.bt-contract__kind.is-school {
+    background-color: rgba(245, 196, 81, 0.2);
+}
+
+.bt-contract__kind.is-factory {
+    background-color: rgba(255, 140, 60, 0.2);
+}
+
+.bt-contract__kind.is-hotel {
+    background-color: rgba(176, 128, 255, 0.22);
+}
+
+.bt-contract__kind.is-hospital {
+    background-color: rgba(61, 220, 132, 0.2);
+}
+
+.bt-contract__kind-icon {
+    width: 24px;
+    height: 24px;
+    -unity-background-image-tint-color: #F1F4F5;
+}
+
+.bt-contract__pills {
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.bt-contract__pills .bt-pill {
+    margin: 0 6px 4px 0;
+}
+
+.bt-contract__money {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.18);
+}
+
+.bt-contract__label {
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    color: #8DA1A8;
+}
+
+.bt-contract__pay {
+    font-size: 20px;
+    color: #F5C451;
+}
+
+.bt-contract__profit {
+    font-size: 16px;
+    -unity-text-align: middle-right;
+}
+
+.bt-contract__van {
+    align-items: center;
+    margin-top: 6px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.bt-contract__van-art {
+    width: 64px;
+    height: 32px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.bt-contract__mini-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    -unity-background-image-tint-color: #8DA1A8;
+}
+
+.bt-btn--small {
+    height: 30px;
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 12px;
+}

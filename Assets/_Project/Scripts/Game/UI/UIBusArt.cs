@@ -5,15 +5,15 @@ namespace BusTycoon.Game
 {
     /// <summary>
     /// Otobüs modellerinin çizimleri (Resources/BusTycoon/UI/buses.png): SketchUp'ta kurulan modellerin önden-yandan
-    /// görünümü (Tools/vehicles: bus_gen.py → vehicles.html → atlas.py). 2 sütun × 6 satır, hücre en-boy oranı 2:1
-    /// (hücre genişliği = atlas genişliği / 2; 256×128 ya da 2x 512×256); otobüs sağa bakar. Atlas yoksa hiçbir şey çizilmez.
+    /// görünümü (Tools/vehicles: bus_gen.py → vehicles.html → atlas.py). 3 sütun × 6 satır, hücre en-boy oranı 2:1
+    /// (hücre genişliği = atlas genişliği / 3; 2x 512×256); otobüs sağa bakar. Atlas yoksa hiçbir şey çizilmez.
     /// </summary>
     public static class UIBusArt
     {
         /// <summary>Hücre sırası Tools/vehicles/atlas.py → IDS ile aynı.</summary>
         static readonly string[] ModelIds = { "KARTAL_M16", "KARTAL_M19", "ANKA_27", "ANKA_31", "TOROS_46", "TOROS_42C", "ZIRVE_VIP", "ZIRVE_DD",
-            "KENT_12", "KENT_12E", "KENT_18" };
-        const int Columns = 2;
+            "KENT_12", "KENT_12E", "KENT_18", "SERCE_K7", "SERCE_9", "SERCE_14", "SERCE_17", "SERCE_19", "SERCE_VIP12", "SERCE_14E" };
+        const int Columns = 3;
 
         /// <summary>Hücre boyu atlasın genişliğinden: aynı kod 1x ve 2x atlasla çalışır.</summary>
         static float CellWidth(Texture2D texture) => texture.width / (float)Columns;
@@ -41,6 +41,7 @@ namespace BusTycoon.Game
         static int CellOf(BusModelData model)
         {
             int index = System.Array.IndexOf(ModelIds, model.Id);
+            if (index < 0 && model.IsService) index = System.Array.IndexOf(ModelIds, "SERCE_14");
             if (index < 0) index = Mathf.Clamp(model.Tier switch { 0 => 0, 1 => 2, 2 => 4, 3 => 5, 4 => 6, _ => 7 }, 0, ModelIds.Length - 1);
             return index;
         }

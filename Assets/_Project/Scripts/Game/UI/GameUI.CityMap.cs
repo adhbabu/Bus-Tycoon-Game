@@ -195,6 +195,8 @@ namespace BusTycoon.Game
             Rect card = NewUi ? MapCardRect : new Rect(0f, SafeTop + TopBarHeight, W, H);
             placedLabels.Clear();
 
+            DrawContractLabels(cam, card); // ihale müşterileri önce (çakışırsa onlar kalır)
+
             // Ünlü mekânlar: uzakta yalnız en ünlüleri
             float fameLimit = distance < 40f ? 0f : distance < 100f ? 0.6f : distance < 260f ? 0.85f : 2f;
             foreach (UrbanLandmark landmark in urbanLabelLandmarks)

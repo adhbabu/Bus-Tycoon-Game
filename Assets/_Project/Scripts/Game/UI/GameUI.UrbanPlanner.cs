@@ -271,7 +271,9 @@ namespace BusTycoon.Game
         {
             if (cityView == null || !cityView.Ready || session.Routes == null) return;
             string cityId = cityView.City.Id;
+            ResolveContractSites();
             int signature = cityId.GetHashCode();
+            AddContractLines(cityId, ref signature, collect: false);
             foreach (var route in session.Routes.Routes)
             {
                 if (!route.IsUrban || route.urbanCityId != cityId) continue;
@@ -288,6 +290,7 @@ namespace BusTycoon.Game
                 cityRouteBuffer.Add((route.routeId, new Vector2(route.urbanAX, route.urbanAY), new Vector2(route.urbanBX, route.urbanBY),
                     world.RouteIdentityColor(route.routeId), route.IsSettingUp ? 0 : ActiveVehicles(route)));
             }
+            AddContractLines(cityId, ref signature, collect: true);
             cityView.SetRoutes(cityRouteBuffer);
         }
     }

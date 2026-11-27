@@ -484,6 +484,12 @@ def build_vehicle(spec):
             box(M, "mirrors", "trim", mx - 0.25, mx + 0.32, s * (h - 0.25), s * (h - 0.13), zt - 0.34, zt - 0.26)
             box(M, "mirrors", "trim", mx + 0.22, mx + 0.34, s * (h - 0.26), s * (h - 0.04), zt - 0.95, zt - 0.3)
             box(M, "mirrors", "mirror_glass", mx + 0.34, mx + 0.345, s * (h - 0.25), s * (h - 0.05), zt - 0.92, zt - 0.33)
+        elif mir == "car":
+            mz = spec.get("mirror_z", 1.1)
+            mx = interp(ftab, mz + 0.06) - cf - 0.02
+            box(M, "mirrors", "paint", mx - 0.16, mx - 0.02, s * h, s * (h + 0.05), mz + 0.02, mz + 0.08)
+            rbox(M, "mirrors", "paint", mx - 0.2, mx - 0.06, s * (h + 0.04) if s > 0 else s * (h + 0.22), s * (h + 0.22) if s > 0 else s * (h + 0.04),
+                 mz, mz + 0.15, 0.04)
         elif mir == "van":
             mz = spec.get("mirror_z", 1.35)
             mx = interp(ftab, mz) - cf - 0.05
@@ -508,19 +514,66 @@ def build_vehicle(spec):
         yb = s * (hf - yin)
         if not Q["low"]:
             surf_rrect(M, "lights", "lamp_surround", ftab, 1.0, z0 - 0.03, z1 + 0.03, min(ya, yb) - 0.03, max(ya, yb) + 0.03, 0.05, 0.010)
-        surf_rrect(M, "lights", "headlamp", ftab, 1.0, z0, z1, min(ya, yb), max(ya, yb), 0.04, 0.016)
-        if not Q["low"]:
+        surf_rrect(M, "lights", spec.get("lamp_mat", "headlamp"), ftab, 1.0, z0, z1, min(ya, yb), max(ya, yb), 0.04, 0.016)
+        if spec.get("lamp_mat") is not None:
+            surf_panels(M, "lights", "headlamp", ftab, 1.0, z1 - 0.035, z1 - 0.012, min(ya, yb) + 0.02, max(ya, yb) - 0.01, 0.019)
+        if not Q["low"] and spec.get("indicators", True):
             surf_rrect(M, "lights", "indicator", ftab, 1.0, z0 - 0.1, z0 - 0.04, min(ya, yb), max(ya, yb), 0.02, 0.014)
     gr = spec.get("grille")
     if gr is not None:
+        gf = spec.get("grille_frame")
+        if gf is not None:
+            surf_panels(M, "grille", gf, ftab, 1.0, gr[0] - 0.03, gr[1] + 0.03, -gr[2] - 0.03, gr[2] + 0.03, 0.008)
         surf_panels(M, "grille", "trim", ftab, 1.0, gr[0], gr[1], -gr[2], gr[2], 0.010)
         k = gr[0] + 0.03
+        gstep = spec.get("grille_step", 0.05)
+        gbar = 0.015 if gstep <= 0.05 else 0.03
+        k = gr[0] + gstep * 0.6
         while k + 0.03 < gr[1] and not Q["low"]:
-            surf_panels(M, "grille", "trim_light", ftab, 1.0, k, k + 0.015, -gr[2] + 0.04, gr[2] - 0.04, 0.013)
-            k += 0.05
+            surf_panels(M, "grille", spec.get("grille_bar", "trim_light"), ftab, 1.0, k, k + gbar, -gr[2] + 0.04, gr[2] - 0.04, 0.013)
+            k += gstep
+    hs = spec.get("head_side")
+    if hs is not None:
+        # far on yuzden kosenin cevresinden dolasip yana dogru geriye uzanir (premium van gibi)
+        hz0 = hs[1]
+        hz1 = hs[2]
+        zs = [hz0]
+        for p_ in ftab:
+            if hz0 < p_[0] < hz1:
+                zs.append(p_[0])
+        zs.append(hz1)
+        nseg = 2 if Q["low"] else 5
+        e = 0.014
+        for s in [-1.0, 1.0]:
+            for zi in range(len(zs) - 1):
+                za_ = zs[zi]
+                zb2_ = zs[zi + 1]
+                for k in range(nseg):
+                    a0_ = math.radians(90.0 * k / nseg)
+                    a1_ = math.radians(90.0 * (k + 1) / nseg)
+                    pts = []
+                    for (zz, aa) in [(za_, a0_), (za_, a1_), (zb2_, a1_), (zb2_, a0_)]:
+                        pts.append((interp(ftab, zz) - cf + (cf + e) * math.sin(aa), s * (h - cf + (cf + e) * math.cos(aa)), zz))
+                    out = (math.sin((a0_ + a1_) / 2.0), s * math.cos((a0_ + a1_) / 2.0), 0.0)
+                    add_poly(M, "lights", spec.get("lamp_mat", "headlamp"), pts, ("d", out))
+            hx0 = interp(ftab, hz1) - cf
+            hx1 = interp(ftab, hz0) - cf
+            y = s * (h + e)
+            add_poly(M, "lights", spec.get("lamp_mat", "headlamp"), [(hx1, y, hz0), (hx0, y, hz1), (hx0 - hs[0], y, hz1),
+                                                                     (hx1 - hs[0] * 0.35, y, hz0 + (hz1 - hz0) * 0.55)], ("d", (0.0, s, 0.0)))
+    rl = spec.get("rails")
+    if rl is not None and not Q["low"]:
+        for s in [-1.0, 1.0]:
+            rbox(M, "roof", "rim_polished", rl[0], rl[1], s * rl[2] - 0.022, s * rl[2] + 0.022, zt - 0.03, zt + 0.035, 0.015)
+    it = spec.get("intake")
+    if it is not None:
+        surf_panels(M, "grille", "trim", ftab, 1.0, it[0], it[1], -it[2], it[2], 0.012)
     # tamponlar
     bx = interp(ftab, zb + 0.1)
-    rbox(M, "bumpers", "trim", bx - 0.12, bx + 0.05, -h + cf * 0.4, h - cf * 0.4, zb - 0.04, zb + spec.get("bumper_h", 0.26), 0.05)
+    bd = spec.get("bumper_d", 0.05)
+    bi = spec.get("bumper_inset", cf * 0.4)
+    if spec.get("front_bumper", True):
+        rbox(M, "bumpers", "trim", bx - 0.12, bx + bd, -h + bi, h - bi, zb - 0.04, zb + spec.get("bumper_h", 0.26), 0.05)
     rx = interp(rtab, zb + 0.1)
     rbox(M, "bumpers", "trim", rx - 0.05, rx + 0.12, -h + cr * 0.4, h - cr * 0.4, zb - 0.04, zb + 0.24, 0.05)
     # arka
@@ -534,6 +587,14 @@ def build_vehicle(spec):
     if rw is not None:
         surf_panels(M, "glazing", "frame", rtab, -1.0, rw[0] - 0.04, rw[1] + 0.04, -hr + 0.1, hr - 0.1, 0.008)
         surf_panels(M, "glass", spec.get("glass", "glass"), rtab, -1.0, rw[0], rw[1], -hr + 0.15, hr - 0.15, 0.012)
+    if spec.get("rear_split") and not Q["low"]:
+        # cift kanatli arka kapi: ortada dikey derz
+        surf_panels(M, "seams", "seam", rtab, -1.0, zb + 0.1, zt - 0.14, -0.009, 0.009, 0.016)
+    fb = spec.get("front_bar")
+    if fb is not None:
+        # elektrikli: kapali on yuz, farlari birlestiren isik cubugu
+        surf_panels(M, "lights", "headlamp", ftab, 1.0, fb[0], fb[1], -hf + yout, hf - yout, 0.014)
+        surf_panels(M, "grille", "trim", ftab, 1.0, 0.56, 0.7, -0.5, 0.5, 0.010)
     eg = spec.get("engine_grille")
     if eg is not None and not Q["low"]:
         k = eg[0]
@@ -650,10 +711,113 @@ def van_spec(L, zt, ac, color_key):
     return s
 
 
+def servis_spec(L, zt, kind, color_key):
+    """Ihale isleri icin servis araci (Serce ailesi): kisa yuvarlak burun, dik on cam, yuksek tavanli modellerde
+    camin ustunde govde rengi tavan kapagi, sagda surgulu kapi, arkada cift kanat, tavanda servis tabelasi."""
+    xf = L / 2.0
+    high = zt > 2.4
+    if high:
+        front = [(0.4, 0.0), (0.78, -0.02), (1.0, -0.16), (1.14, -0.6), (1.98, -1.1), (2.1, -1.16), (zt - 0.07, -1.2),
+                 (zt, -1.28)]
+        shield = (1.18, 1.94)
+        wtop = 1.98
+    else:
+        front = [(0.4, 0.0), (0.78, -0.02), (1.0, -0.16), (1.14, -0.6), (zt - 0.16, -1.14), (zt, -1.24)]
+        shield = (1.18, zt - 0.22)
+        wtop = zt - 0.42
+    s = {
+        "L": L, "w": 2.0, "zb": 0.38, "zt": zt, "rt": 0.18, "R": 0.35, "cf": 0.16, "cr": 0.1,
+        "front": front,
+        "rear": [(0.38, 0.0), (zt, 0.04)],
+        "levels": [1.28, wtop + 0.06],
+        "windows": [(0.22, None, 1.3, wtop, 0.98)],
+        "doors": [],
+        "seams": [(xf - 2.5, xf - 1.56, 0.46, wtop + 0.06, -1.0), (xf - 1.5, xf - 0.88, 0.5, 1.26, 0.0)],
+        "windshield": [shield],
+        "display": None,
+        "headlights": (0.8, 0.97, 0.04, 0.38),
+        "grille": (0.52, 0.76, 0.44),
+        "skirt": 0.0,
+        "mirror": "van",
+        "mirror_z": 1.24,
+        "rear_window": (1.32, wtop - 0.04),
+        "rear_split": True,
+        "taillights": (0.62, 1.22),
+        "axles": [xf - 0.92, -L / 2 + (1.05 if L < 6.0 else 1.3)],
+        "rim": "rim",
+        "stripes": [(None, None, 0.9, 1.1), (None, None, 1.16, 1.2)],
+        "bumper_h": 0.32,
+        "roof": [(xf - 1.98, xf - 1.48, 0.46, 0.15, "sign")],
+        "color": color_key,
+    }
+    if kind == "compact_vip":
+        # kucuk VIP yolcu vani (7 deri koltuk), premium orta boy van oranlari: kisa egimli kaput, kaputla ayni cizgide
+        # yatik on cam, genis krom citali izgara, ince yana uzanan farlar, altta hava girisi, buyuk jant
+        s.update({
+            "w": 1.92, "zb": 0.3, "R": 0.34, "rt": 0.22, "cf": 0.34,
+            "front": [(0.3, -0.04), (0.52, 0.0), (0.74, -0.04), (0.86, -0.1), (0.93, -0.22), (1.0, -0.46), (1.08, -0.76),
+                      (zt - 0.08, -1.7), (zt, -1.82)],
+            "rear": [(0.3, 0.0), (zt - 0.12, 0.05), (zt, 0.12)],
+            "levels": [0.9, 1.04, zt - 0.14],
+            "windows": [(0.14, None, 1.08, zt - 0.2, 0.86)],
+            "seams": [(xf - 2.3, xf - 1.5, 0.4, zt - 0.16, -1.0), (xf - 1.48, xf - 0.98, 0.42, 1.0, 0.0)],
+            "windshield": [(1.12, zt - 0.14)],
+            "headlights": (0.77, 0.9, 0.0, 0.3),
+            "head_side": (0.34, 0.77, 0.9),
+            "lamp_mat": "mirror_glass",
+            "indicators": False,
+            "grille": (0.54, 0.86, 0.4),
+            "grille_step": 0.08,
+            "grille_bar": "rim_polished",
+            "grille_frame": "rim_polished",
+            "front_bumper": False,
+            "intake": (0.34, 0.46, 0.56),
+            "rails": (-L / 2 + 0.35, L / 2 - 2.05, 0.66),
+            "mirror": "car",
+            "mirror_z": 1.08,
+            "rear_window": (1.1, zt - 0.22),
+            "rear_split": False,
+            "taillights": (0.66, 1.1),
+            "axles": [xf - 0.98, -L / 2 + 0.98],
+            "glass": "glass_tint",
+            "door_glass": "glass_tint",
+            "rim": "rim_polished",
+            # krom cam cercevesi ve bel cizgisi: siyah govdede camlar ve cizgi okunsun
+            "stripes": [(None, None, 1.02, 1.04, "rim_polished")],
+            "bumper_h": 0.12,
+            "roof": [],
+        })
+    if kind in ("ac", "vip"):
+        s["roof"].append((-1.5, 0.1, 0.62, 0.2, "roof_unit"))
+    if kind == "vip":
+        s["roof"] = [(-1.5, 0.1, 0.62, 0.18, "roof_unit")]
+        s["glass"] = "glass_tint"
+        s["door_glass"] = "glass_tint"
+        s["rim"] = "rim_polished"
+        # krom cam cercevesi (koyu govdede camlar okunsun) + ince altin serit
+        s["stripes"] = [(None, None, 1.2, 1.235, "rim_polished"), (None, None, wtop + 0.07, wtop + 0.1, "rim_polished"),
+                        (None, None, 1.1, 1.13), (None, None, 0.5, 0.56, "trim_light")]
+        s["grille"] = (0.5, 0.78, 0.48)
+    if kind == "electric":
+        s["grille"] = None
+        s["front_bar"] = (0.99, 1.03)
+        s["stripes"] = [(None, None, 0.9, 1.1), (None, None, 1.16, 1.2)]
+        s["roof"].append((-1.2, 0.0, 0.5, 0.1, "battery"))
+    return s
+
+
 def vehicle_specs():
     V = {}
     V["KARTAL_M16"] = van_spec(6.2, 2.55, False, "minibus")
     V["KARTAL_M19"] = van_spec(7.0, 2.78, True, "minibus")
+    # Servis araclari (yalniz ihale isleri): Serce ailesi
+    V["SERCE_9"] = servis_spec(5.15, 2.25, "", "servis")
+    V["SERCE_14"] = servis_spec(5.95, 2.55, "", "servis")
+    V["SERCE_17"] = servis_spec(6.95, 2.6, "ac", "servis")
+    V["SERCE_19"] = servis_spec(7.4, 2.86, "ac", "servis")
+    V["SERCE_VIP12"] = servis_spec(6.95, 2.7, "vip", "servis_vip")
+    V["SERCE_14E"] = servis_spec(5.95, 2.55, "electric", "servis_e")
+    V["SERCE_K7"] = servis_spec(4.9, 1.9, "compact_vip", "servis_k")
     for (vid, L, two) in [("ANKA_27", 8.1, False), ("ANKA_31", 9.0, True)]:
         xf = L / 2.0
         doors = [(xf - 1.32, xf - 0.34, 0.42, 2.72, True, 1.2)]
@@ -731,6 +895,10 @@ BODY_COLORS = {
     "double": ((226, 72, 62), (250, 250, 250)),
     "city": ((238, 241, 238), (0, 160, 145)),
     "city_e": ((238, 241, 238), (0, 196, 128)),
+    "servis": ((246, 246, 242), (34, 72, 138)),
+    "servis_vip": ((40, 52, 78), (212, 174, 92)),
+    "servis_e": ((246, 246, 242), (0, 186, 118)),
+    "servis_k": ((34, 36, 42), (214, 218, 224)),
 }
 
 MATERIALS = {
@@ -755,12 +923,13 @@ MATERIALS = {
     "roof_unit": ((222, 226, 230), "plastic"),
     "battery": ((206, 212, 218), "plastic"),
     "bellows": ((38, 40, 44), "rubber"),
+    "sign": ((250, 196, 36), "plastic"),
 }
 
 
 def material_table(color_key):
     t = dict(MATERIALS)
     body, stripe = BODY_COLORS[color_key]
-    t["paint"] = (body, "metallic" if color_key == "vip" else "paint")
+    t["paint"] = (body, "metallic" if color_key in ("vip", "servis_vip", "servis_k") else "paint")
     t["stripe"] = (stripe, "paint")
     return t

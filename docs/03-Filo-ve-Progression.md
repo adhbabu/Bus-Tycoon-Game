@@ -73,6 +73,41 @@ classDiagram
 | 2 Standart (Avrupa Paketi) | Nordstar E12 Elektrik | 360.000 | 14 | 45 | 44 | ★★★★☆ | 90 | 800 km | 1,10 | 0,95 | 8 | 36 | 0,6 |
 | 3 Konfor (Avrupa Paketi) | Alpina Reisestar 50 | 340.000 | 15 | 50 | 50 | ★★★★☆ | 95 | 2.200 km | 1,25 | 0,85 | 29 | 38 | 1,0 |
 
+### Servis araçları (yalnız ihale işleri)
+
+`BusSegment.Service`: okul, fabrika, şirket, otel ve hastane servis sözleşmelerinde çalışır; hatlara atanmaz, "sonraki
+kademe" ve takasla yükseltme önerilerine girmez. Galeride ayrı "Servis" bölümünde (galeri üç bölüm: şehir içi,
+şehirlerarası, servis). Özgün "Serçe" ailesi (marka yok); modeller `Tools/vehicles/bus_gen.py` → `servis_spec`.
+
+| Model | Fiyat | Seviye | İtibar | Koltuk | Konfor | Hız | Yakıt L/100 | Sigorta/gün | Not |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| Serçe 9 | 15.000 | 1 | – | 9 | 0,35 | 90 | 9,5 | 4 | Kısa, alçak tavan |
+| Serçe 14 | 21.000 | 2 | – | 14 | 0,40 | 88 | 10,5 | 5 | Yüksek tavan |
+| Serçe 17 Uzun | 26.000 | 3 | – | 17 | 0,45 | 86 | 11,5 | 5,5 | Klimalı, uzun şasi |
+| Serçe 19 Yüksek Tavan | 30.000 | 4 | 10 | 19 | 0,50 | 85 | 12 | 6 | Büyük fabrika servisleri |
+| Serçe Kompakt VIP 7 | 32.000 | 4 | 25 | 7 | 0,92 | 100 | 8,5 | 7 | Siyah, kısa burunlu yolcu vanı (VIP) |
+| Serçe 14 Elektrik | 36.000 | 5 | 20 | 14 | 0,50 | 86 | 3 | 6 | Elektrikli |
+| Serçe VIP 12 | 42.000 | 6 | 30 | 12 | 0,85 | 90 | 11,5 | 8 | Lacivert, deri koltuk (VIP) |
+
+### İhaleler (taşımacılık sözleşmeleri)
+
+`Contracts/ContractSystem.cs` (şehir içi başlangıçlı tek oyunculu oyunda açık):
+
+* **Teklifler:** lisanslı şehirlerdeki okul, fabrika, şirket, otel ve hastaneler (uydurma adlar, `ContractNames`) her gün
+  %60 olasılıkla yeni teklif gönderir (en çok 3–5). Teklif: araç sayısı, en az koltuk, VIP (konfor ≥ 0,8), süre
+  (10–60 gün), günlük ödeme, son cevap günü. Müşterinin büyüklüğü (kademe 0–3) şirket seviyesi ve **müşteri memnuniyeti
+  puanıyla** büyür: büyük fabrikalar 6–9 büyük araç, oteller ve holdingler VIP araç ister.
+* **Pazarlık:** kabul et / reddet / **daha fazla iste** (en çok 2 kez). Firma ödemeyi %10–18 artırır ya da teklifini
+  çeker; şans %62'den başlar, her istekte azalır, memnuniyet puanıyla artar.
+* **Ödeme:** hatlar gibi saniye saniye kasaya akar (`İhale geliri`), çalışan araç sayısıyla orantılı. Giderler yakıt,
+  şoför, bakım ve sigorta olarak işlenir (günde 4 yön + garaj yolu). Ödeme, işe uyan en ucuz aracın giderinin
+  ~1,25 katı + koltuk başı pay (VIP'te 2,2 kat) × kademe.
+* **Memnuniyet:** her gün kapsama (çalışan / istenen araç), araç durumu ve konfordan; eksik araç hızla düşürür
+  (ilk 2 gün tolerans). %33'ün altına düşerse müşteri feshder (puan −8). İş bitince puan güncellenir; memnuniyet
+  %85 üstündeyse 3 günlük ödeme ikramiye ve itibar artışı.
+* **Harita:** müşteri binası ve mahalle (durak) şehir haritasından seçilir; servis araçları ikisi arasında gidip gelir
+  (altın çizgi), müşteri adı haritada yazar.
+
 Her segmentin **farklı bir oyun rolü** vardır; "üst segment her zaman daha iyi" değildir:
 
 | Segment | Güçlü yanı | Zayıf yanı | Nerede kullanılır |

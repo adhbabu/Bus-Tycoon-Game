@@ -122,7 +122,7 @@ namespace BusTycoon.Presentation.UI
         {
             modelOptions.Clear();
             foreach (var model in Session.Catalog.SortedByTier)
-                if (Session.Progression.IsModelUnlocked(model)) modelOptions.Add(model);
+                if (!model.IsService && Session.Progression.IsModelUnlocked(model)) modelOptions.Add(model);
 
             var labels = new List<string>();
             foreach (var model in modelOptions) labels.Add($"{model.DisplayName} ({model.Seats} koltuk)");

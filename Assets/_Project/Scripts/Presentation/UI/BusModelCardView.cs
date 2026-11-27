@@ -54,6 +54,7 @@ namespace BusTycoon.Presentation.UI
             BusSegment.ComfortCoach => "Konfor",
             BusSegment.LuxuryCoach => "Lüks 2+1 VIP",
             BusSegment.DoubleDecker => "Çift Katlı",
+            BusSegment.Service => "Servis aracı",
             _ => segment.ToString()
         };
     }

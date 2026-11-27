@@ -13,7 +13,7 @@ namespace BusTycoon.Game
     /// </summary>
     public sealed partial class GameUI
     {
-        VisualElement tkHomePage, tkHomeRoutes, tkHomeBadge, tkHomeBadgeDot, tkHomeHelpTile, tkHomeCity;
+        VisualElement tkHomePage, tkHomeRoutes, tkHomeBadge, tkHomeBadgeDot, tkHomeHelpTile, tkHomeCity, tkHomeLogTile, tkHomeContractsTile;
         UiCityMinimap tkHomeMinimap;
         Label tkHomeCityTitle, tkHomeCityInfo;
         int tkHomeMinimapLines = -1;
@@ -129,7 +129,9 @@ namespace BusTycoon.Game
             Tile(tiles, "stations", "Duraklar", "storefront", "is-teal", false, () => EnterStationNow(session.Headquarters));
             Tile(tiles, "maintenance", "Bakım", "build", "is-slate", false, () => OpenPage(Panel.Fleet));
             Tile(tiles, "shop", "Otobüs al", "directions_bus", null, true, () => OpenPage(Panel.Dealership));
-            Tile(tiles, "log", "Günlük", "receipt_long", "is-red", false, () => OpenPage(Panel.Log));
+            tkHomeLogTile = Tile(tiles, "log", "Günlük", "receipt_long", "is-red", false, () => OpenPage(Panel.Log));
+            // Şehir içi başlangıçlı oyunda Günlük yerine İhaleler (Günlük ayarlar menüsünde kalır)
+            tkHomeContractsTile = Tile(tiles, "contracts", "İhaleler", "handshake", "is-amber", false, () => OpenPage(Panel.Contracts));
             tkHomeHelpTile = Tile(right, "help", "Nasıl oynanır?", "help", "is-red", false, () => OpenPage(Panel.Help));
             tkHomeHelpTile.AddToClassList("bt-tile--wide");
             tkHomeTileSubs["help"].text = "İpuçları ve kısayollar";
@@ -208,6 +210,7 @@ namespace BusTycoon.Game
 
             int signature = session.State.currentDay * 7919 + session.Routes.Routes.Count * 131 + session.Fleet.Buses.Count * 17 +
                             goals.CompletedCount * 3 + rows + session.Progression.Level * 1009;
+            if (ContractsAvailable) signature = signature * 31 + session.Contracts.Offers.Count * 7 + session.Contracts.Active.Count;
             if (signature == tkHomeSignature) return;
             tkHomeSignature = signature;
             RefreshHome(rows);
@@ -319,6 +322,13 @@ namespace BusTycoon.Game
             tkHomeTileSubs["maintenance"].text = session.Maintenance.Enabled ? "Asistan açık" : "Asistan kapalı";
             tkHomeTileSubs["shop"].text = "Al · sat · yükselt";
             tkHomeTileSubs["log"].text = $"{notes.Log.Count} olay";
+            bool contracts = ContractsAvailable;
+            tkHomeLogTile.style.display = contracts ? DisplayStyle.None : DisplayStyle.Flex;
+            tkHomeContractsTile.style.display = contracts ? DisplayStyle.Flex : DisplayStyle.None;
+            if (contracts)
+                tkHomeTileSubs["contracts"].text = session.Contracts.Offers.Count > 0
+                    ? $"{session.Contracts.Offers.Count} yeni teklif · {session.Contracts.Active.Count} iş"
+                    : $"{session.Contracts.Active.Count} iş sürüyor";
         }
 
         void RouteRow(VisualElement parent, RouteState route)

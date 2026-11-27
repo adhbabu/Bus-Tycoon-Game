@@ -579,6 +579,11 @@ namespace BusTycoon.Game
                 "Otobüsler yıprandıkça bakımı pahalılaşır ve arıza yapar. Filo panelindeki 'Bakım asistanı' yıpranan " +
                 "otobüsleri revizyona sokar, arızalananı hemen tamir edip hattına gönderir; 'Hepsini onar ve hatlara gönder' " +
                 "bütün filoyu onarır ve garajdakileri hatlarına yollar."),
+            ("İhaleler (servis işleri)",
+                "Okullar, fabrikalar, şirketler, oteller ve hastaneler servis aracı ister: Ana ekran ▸ İhaleler. Teklifi kabul et, " +
+                "reddet ya da daha fazla iste (firma kabul edebilir ya da teklifini çekebilir). İşe Galeri ▸ Servis bölümündeki " +
+                "servis araçlarını ata; ödeme her saniye kasaya akar. Eksiksiz ve bakımlı araçla çalışırsan müşteri memnuniyeti artar " +
+                "ve daha büyük, kazançlı işler (VIP transfer, büyük fabrikalar) gelir. Servis araçları hatlarda çalışmaz."),
             ("Kontroller",
                 "Sol tık: seç · Sürükle veya WASD/ok tuşları: kaydır · Tekerlek veya Q/E: yakınlaştır · Sağ tık: seçimi iptal\n" +
                 "Boşluk: duraklat · 1/2/3: hız · N: yeni hat · R: hatlar · F: filo · G: galeri · K: finans · B: bölgeler · " +
