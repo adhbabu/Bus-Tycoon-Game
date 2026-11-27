@@ -27,7 +27,7 @@ receipt_long location_on chevron_right chevron_left arrow_forward pause play_arr
 trending_down my_location add remove storefront warning check_circle swap_horiz sports_score sunny dark_mode target
 distance close lock schedule savings layers sell handyman stadium castle mosque museum fort local_mall school
 person groups apartment flag badge edit info notifications bolt timer speed local_gas_station toll
-location_city palette workspace_premium
+location_city palette workspace_premium handshake airport_shuttle factory business_center local_hospital
 """.split()
 
 

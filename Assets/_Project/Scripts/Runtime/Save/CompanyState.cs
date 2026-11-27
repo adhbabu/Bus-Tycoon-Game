@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BusTycoon.Contracts;
 using BusTycoon.Economy;
 using BusTycoon.Fleet;
 using BusTycoon.Routes;
@@ -84,5 +85,14 @@ namespace BusTycoon.Save
 
         // Duraklar (yalnızca geliştirilenler; geliştirmesiz durak kayıtta yer tutmaz)
         public List<StationState> stations = new List<StationState>();
+
+        // İhaleler (taşımacılık sözleşmeleri): gelen teklifler, süren işler, son biten işler
+        public List<TransportContract> contractOffers = new List<TransportContract>();
+        public List<TransportContract> contracts = new List<TransportContract>();
+        public List<TransportContract> contractHistory = new List<TransportContract>();
+        /// <summary>Müşteri memnuniyeti puanı (0..100; 0: eski kayıt, 50'den başlar).</summary>
+        public float contractScore;
+        public int contractsCompleted;
+        public int nextContractSerial;
     }
 }

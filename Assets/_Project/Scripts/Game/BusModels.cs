@@ -12,22 +12,41 @@ namespace BusTycoon.Game
     /// </summary>
     public static class BusModels
     {
-        /// <summary>Segment renkleri (BusSegment sırası): minibüs, midibüs, şehirlerarası, konfor, lüks VIP, çift katlı.</summary>
+        /// <summary>Gövde renkleri: ilk altısı segmentler (BusSegment sırası: minibüs, midibüs, şehirlerarası, konfor, lüks VIP,
+        /// çift katlı), sonra servis araçları (<see cref="ColorIndex"/>): beyaz/lacivert, siyah VIP, lacivert VIP, beyaz/yeşil elektrikli.</summary>
         public static readonly Color[] SegmentColors =
         {
             new Color(0.95f, 0.95f, 0.93f), new Color(0.3f, 0.8f, 0.8f), new Color(0.3f, 0.55f, 1f),
-            new Color(0.7f, 0.45f, 1f), new Color(1f, 0.78f, 0.25f), new Color(0.95f, 0.35f, 0.3f)
+            new Color(0.7f, 0.45f, 1f), new Color(1f, 0.78f, 0.25f), new Color(0.95f, 0.35f, 0.3f),
+            new Color(0.96f, 0.96f, 0.95f), new Color(0.14f, 0.15f, 0.17f), new Color(0.16f, 0.2f, 0.31f), new Color(0.96f, 0.96f, 0.95f)
         };
 
         static readonly Color[] StripeColors =
         {
-            new Color(1f, 0.57f, 0f), Color.white, Color.white, new Color(1f, 0.77f, 0f), new Color(0.2f, 0.2f, 0.25f), Color.white
+            new Color(1f, 0.57f, 0f), Color.white, Color.white, new Color(1f, 0.77f, 0f), new Color(0.2f, 0.2f, 0.25f), Color.white,
+            new Color(0.13f, 0.28f, 0.54f), new Color(0.84f, 0.85f, 0.88f), new Color(0.83f, 0.68f, 0.36f), new Color(0f, 0.73f, 0.46f)
         };
+
+        const int ServiceColor = 6, ServiceBlack = 7, ServiceNavy = 8, ServiceGreen = 9;
+
+        /// <summary>Modelin renk sırası (<see cref="SegmentColors"/>): segment kademesi, servis araçlarında modele göre.</summary>
+        static int ColorIndex(BusModelData model)
+        {
+            if (model == null) return 2;
+            if (!model.IsService) return Mathf.Clamp(model.Tier, 0, 5);
+            return model.Id switch
+            {
+                "SERCE_K7" => ServiceBlack,
+                "SERCE_VIP12" => ServiceNavy,
+                "SERCE_14E" => ServiceGreen,
+                _ => ServiceColor
+            };
+        }
 
         // Palet yuvaları
         const int Glass = 0, DarkGlass = 1, Roof = 2, RoofUnit = 3, Tire = 4, Hub = 5, Headlight = 6, Taillight = 7, Skirt = 8;
-        const int BodyBase = 9, StripeBase = 15, PaletteSize = 8;
-        const int Frame = 21, Arch = 22, Indicator = 23, Led = 24;
+        const int BodyBase = 9, StripeBase = 19, PaletteSize = 8;
+        const int Frame = 29, Arch = 30, Indicator = 31, Led = 32;
 
         sealed class Shape
         {
@@ -54,14 +73,13 @@ namespace BusTycoon.Game
         }
 
         /// <summary>Modelin boyu (dünya birimi, ölçeklenmeden önce): farların yeri için.</summary>
-        public static float Length(BusModelData model) =>
-            ShapeFor(model != null ? model.Id : string.Empty, model != null ? Mathf.Clamp(model.Tier, 0, SegmentColors.Length - 1) : 2).Length;
+        public static float Length(BusModelData model) => ShapeFor(model != null ? model.Id : string.Empty, ColorIndex(model)).Length;
 
         public static Mesh MeshFor(BusModelData model)
         {
             string key = model != null ? model.Id : string.Empty;
             if (meshes.TryGetValue(key, out Mesh mesh) && mesh != null) return mesh;
-            int segment = model != null ? Mathf.Clamp(model.Tier, 0, SegmentColors.Length - 1) : 2;
+            int segment = ColorIndex(model);
             Shape shape = ShapeFor(key, segment);
             VehicleMeshes.Model source = VehicleMeshes.Get(key) ?? VehicleMeshes.Get(DefaultIdFor(segment));
             mesh = source != null ? FromModel(source, shape, segment) : Build(shape, segment);
@@ -85,6 +103,14 @@ namespace BusTycoon.Game
                 // Avrupa Paketi: elektrikli (tavanda batarya) ve uzun Alp otobüsü (üç dingil, koyu cam)
                 case "NORDSTAR_E12": return new Shape { RoofUnit = true, Length = 0.6f, Height = 0.21f, Axles = new[] { -0.2f, 0.2f } };
                 case "ALPINA_C50": return new Shape { RoofUnit = true, Tinted = true, Length = 0.68f, Height = 0.22f, Axles = new[] { -0.27f, -0.18f, 0.24f } };
+                // Servis araçları (ihale işleri): boyları gerçek oranla, dolmuştan kısa
+                case "SERCE_K7": return new Shape { Van = true, Tinted = true, Length = 0.32f, Height = 0.15f, Width = 0.21f, Wheel = 0.043f, Axles = new[] { -0.1f, 0.1f } };
+                case "SERCE_9": return new Shape { Van = true, Length = 0.33f, Height = 0.17f, Width = 0.22f, Wheel = 0.043f, Axles = new[] { -0.1f, 0.1f } };
+                case "SERCE_14":
+                case "SERCE_14E": return new Shape { Van = true, Length = 0.37f, Height = 0.19f, Width = 0.22f, Wheel = 0.044f, Axles = new[] { -0.11f, 0.11f } };
+                case "SERCE_17": return new Shape { Van = true, RoofUnit = true, Length = 0.42f, Height = 0.19f, Width = 0.22f, Wheel = 0.045f, Axles = new[] { -0.13f, 0.13f } };
+                case "SERCE_19": return new Shape { Van = true, RoofUnit = true, Length = 0.44f, Height = 0.21f, Width = 0.22f, Wheel = 0.045f, Axles = new[] { -0.14f, 0.14f } };
+                case "SERCE_VIP12": return new Shape { Van = true, RoofUnit = true, Tinted = true, Length = 0.42f, Height = 0.2f, Width = 0.22f, Wheel = 0.045f, Axles = new[] { -0.13f, 0.13f } };
             }
             // Bilinmeyen model: segmentin tipik biçimi
             return segment switch
@@ -92,6 +118,7 @@ namespace BusTycoon.Game
                 0 => ShapeFor("KARTAL_M16", 0),
                 1 => ShapeFor("ANKA_27", 1),
                 5 => ShapeFor("ZIRVE_DD", 5),
+                >= ServiceColor => ShapeFor("SERCE_14", segment),
                 _ => ShapeFor("TOROS_46", 2)
             };
         }
@@ -103,6 +130,7 @@ namespace BusTycoon.Game
             3 => "TOROS_42C",
             4 => "ZIRVE_VIP",
             5 => "ZIRVE_DD",
+            >= ServiceColor => "SERCE_14",
             _ => "TOROS_46"
         };
 

@@ -25,7 +25,7 @@ MAT_SLOT = {
     "paint": "body", "stripe": "stripe", "glass": "glass", "glass_tint": "darkglass", "frame": "frame", "seam": "frame",
     "lamp_surround": "frame", "rubber": "tire", "bellows": "tire", "rim": "hub", "rim_polished": "hub", "hub": "hub",
     "hubcap": "hub", "mirror_glass": "hub", "trim": "trim", "trim_light": "trim", "arch": "arch", "headlamp": "headlight",
-    "indicator": "indicator", "taillamp": "taillight", "led": "led", "roof_unit": "roofunit", "battery": "roofunit",
+    "indicator": "indicator", "taillamp": "taillight", "led": "led", "roof_unit": "roofunit", "battery": "roofunit", "sign": "indicator",
 }
 # Avrupa Paketi modelleri: en yakın gövdeden
 ALIASES = {"NORDSTAR_E12": ("TOROS_46", {"roof": [(-2.6, 1.2, 0.95, 0.34, "battery")]}),

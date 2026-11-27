@@ -27,7 +27,7 @@ namespace BusTycoon.Game
         internal static DeviceProfile ProfileOverride = DeviceProfile.Auto;
 
         enum Mode { MainMenu, NewGame, Playing, Multiplayer }
-        enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help, Shop }
+        enum Panel { None, Planner, Route, RouteList, Fleet, Dealership, Finance, Regions, Goals, Log, Help, Shop, Contracts }
         enum Modal { None, Pause, GameOver, Victory, Confirm, MatchEnd }
 
         const string SaveSlot = "save1";
@@ -177,10 +177,12 @@ namespace BusTycoon.Game
             boundFleet.BusDelivered += OnBusDelivered;
             boundStations = session.Stations;
             boundStations.UpgradeCompleted += OnUpgradeCompleted;
+            BindContracts();
         }
 
         void UnbindSystems()
         {
+            UnbindContracts();
             if (boundProgression != null)
             {
                 boundProgression.LevelChanged -= OnLevelChanged;
@@ -1455,6 +1457,7 @@ namespace BusTycoon.Game
             BusSegment.ComfortCoach => "Konfor",
             BusSegment.LuxuryCoach => "Lüks VIP 2+1",
             BusSegment.DoubleDecker => "Çift Katlı",
+            BusSegment.Service => "Servis aracı",
             _ => segment.ToString()
         };
     }

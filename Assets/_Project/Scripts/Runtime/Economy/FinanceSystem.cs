@@ -20,7 +20,9 @@ namespace BusTycoon.Economy
         RegionLicense,
         Other,
         /// <summary>Kayıtlardaki kategori dizileri sıraya bağlı: yeni kategoriler hep sona eklenir.</summary>
-        StationUpgrade
+        StationUpgrade,
+        /// <summary>İhale (servis sözleşmesi) ödemeleri.</summary>
+        ContractIncome
     }
 
     [Serializable]
@@ -55,7 +57,7 @@ namespace BusTycoon.Economy
         {
             LedgerCategory.TicketRevenue, LedgerCategory.Fuel, LedgerCategory.DriverWages, LedgerCategory.Maintenance,
             LedgerCategory.Tolls, LedgerCategory.TerminalFees, LedgerCategory.PassengerService, LedgerCategory.Insurance,
-            LedgerCategory.Repairs
+            LedgerCategory.Repairs, LedgerCategory.ContractIncome
         };
     }
 
@@ -120,7 +122,8 @@ namespace BusTycoon.Economy
         public void Earn(double amount, LedgerCategory category, string reference = null)
         {
             if (amount <= 0) return;
-            Record(amount, category, reference, logTransaction: category != LedgerCategory.TicketRevenue);
+            Record(amount, category, reference, logTransaction: category != LedgerCategory.TicketRevenue &&
+                                                                (category != LedgerCategory.ContractIncome || reference != null));
         }
 
         void Record(double signedAmount, LedgerCategory category, string reference, bool logTransaction)

@@ -26,11 +26,15 @@ namespace BusTycoon.Fleet
         public int deliveryDaysLeft;
         /// <summary>Garaja çekilmeden önceki hattı: bakım asistanı otobüsü buraya geri gönderir.</summary>
         public string lastRouteId;
+        /// <summary>Servis aracının çalıştığı ihale işi (boşsa işte değil). Hatla birlikte dolu olamaz.</summary>
+        public string assignedContractId;
 
         /// <summary>Yükleme sonrası <c>FleetSystem.ResolveModels</c> ile doldurulur; kaydedilmez.</summary>
         [NonSerialized] public BusModelData Model;
 
-        public bool IsAssigned => !string.IsNullOrEmpty(assignedRouteId);
+        /// <summary>Hatta ya da ihale işinde (garajda değil).</summary>
+        public bool IsAssigned => !string.IsNullOrEmpty(assignedRouteId) || !string.IsNullOrEmpty(assignedContractId);
+        public bool OnContract => !string.IsNullOrEmpty(assignedContractId);
         public bool IsAvailableToday => outOfServiceDays <= 0 && deliveryDaysLeft <= 0;
         public bool InDelivery => deliveryDaysLeft > 0;
 

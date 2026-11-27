@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BusTycoon.Contracts;
 using BusTycoon.Data;
 using BusTycoon.Fleet;
 using BusTycoon.Routes;
@@ -105,13 +106,18 @@ namespace BusTycoon.Game
             RouteState route = bus.IsAssigned ? session.Routes.GetRoute(bus.assignedRouteId) : null;
             int signature = bus.Model.Id.GetHashCode();
             signature = signature * 31 + (bus.assignedRouteId?.GetHashCode() ?? 0);
+            signature = signature * 31 + (bus.assignedContractId?.GetHashCode() ?? 0);
             signature = signature * 31 + (bus.IsAvailableToday ? 1 : 0);
             signature = signature * 31 + bus.deliveryDaysLeft * 2 + (AdService.Enabled ? 1 : 0);
             signature = signature * 31 + (route != null && route.HasHistory ? 1 : 0);
             signature = signature * 31 + (expandedBusId == bus.busId ? 1 + session.Routes.Routes.Count : 0);
             if (expandedBusId == bus.busId) // açık atama listesinde hatların otobüs sayıları yazılı
+            {
                 foreach (var candidate in session.Routes.Routes) signature = signature * 31 + session.Fleet.CountBusesOnRoute(candidate.routeId);
-            BusModelData upgrade = BestUnlockedUpgrade(bus.Model);
+                if (bus.Model.IsService && session.Contracts != null)
+                    foreach (var c in session.Contracts.Active) signature = signature * 31 + c.contractId.GetHashCode() + session.Contracts.CountVans(c.contractId);
+            }
+            BusModelData upgrade = bus.Model.IsService ? null : BestUnlockedUpgrade(bus.Model);
             signature = signature * 31 + (upgrade != null ? upgrade.Id.GetHashCode() : 0);
             return signature;
         }
@@ -196,6 +202,8 @@ namespace BusTycoon.Game
             view.Load = view.OutOfService = null;
             view.Repair = view.Overhaul = view.SecondaryOverhaul = view.Trade = null;
             RouteState route = bus.IsAssigned ? session.Routes.GetRoute(bus.assignedRouteId) : null;
+            bool service = bus.Model.IsService;
+            TransportContract contract = bus.OnContract && session.Contracts != null ? session.Contracts.GetContract(bus.assignedContractId) : null;
             string busId = bus.busId;
             if (route != null) card.style.borderLeftColor = world.RouteIdentityColor(route.routeId);
             Ui.Toggle(card, "bt-route", route != null); // hat rengi şeridi
@@ -208,9 +216,12 @@ namespace BusTycoon.Game
             if (bus.InDelivery) Ui.Text("bt-pill is-warning", $"Teslimatta · {bus.deliveryDaysLeft} gün", UiWeight.Bold, header);
             else if (!bus.IsAvailableToday) Ui.Text("bt-pill is-danger", "Arızalı", UiWeight.Bold, header);
             else if (route != null) Ui.Text("bt-pill is-success", "Yolda", UiWeight.Bold, header);
+            else if (contract != null) Ui.Text("bt-pill is-success", "İşte", UiWeight.Bold, header);
             else Ui.Text("bt-pill is-warning", "Garajda", UiWeight.Bold, header);
 
-            Detail(card, UIIcon.Pin, route != null ? $"Hat: {RouteName(route)}" : "Hat: atanmadı (garajda sigorta ödüyor)");
+            if (service)
+                Detail(card, UIIcon.Building, contract != null ? $"İhale işi: {contract.clientName}" : "İş: atanmadı (servis aracı yalnız ihale işlerinde çalışır)");
+            else Detail(card, UIIcon.Pin, route != null ? $"Hat: {RouteName(route)}" : "Hat: atanmadı (garajda sigorta ödüyor)");
             Detail(card, UIIcon.Seat, $"{bus.Model.DisplayName} · {SegmentName(bus.Model.Segment)} · {bus.Model.Seats} koltuk");
             // Sayılar boş kurulur; UpdateFleetCardValues yazar (her gün yalnız onlar değişir)
             if (route != null && route.HasHistory)
@@ -253,6 +264,16 @@ namespace BusTycoon.Game
                     RefreshFleet();
                 }, primary: true);
             }
+            else if (contract != null)
+            {
+                ActionButton(main, "Garaja çek", () =>
+                {
+                    var result = session.Contracts.UnassignVan(busId);
+                    expandedBusId = null;
+                    Toast(result.Message, result ? UIStyles.Blue : UIStyles.Red);
+                    RefreshFleet();
+                });
+            }
             else if (route != null)
             {
                 ActionButton(main, "Garaja çek", () =>
@@ -267,15 +288,15 @@ namespace BusTycoon.Game
             {
                 view.Overhaul = ActionButton(main, string.Empty, () => { Overhaul(busId); RefreshFleet(); });
             }
-            ActionButton(main, expanded ? "Kapat" : "Hatta ata", () =>
+            ActionButton(main, expanded ? "Kapat" : service ? "İşe ata" : "Hatta ata", () =>
             {
                 expandedBusId = expanded ? null : busId;
                 RefreshFleet();
-            }, primary: !expanded && route == null);
+            }, primary: !expanded && route == null && contract == null);
 
             // İkincil eylemler
             VisualElement secondary = Ui.El("bt-actions bt-actions--fill", card);
-            if (route != null) view.SecondaryOverhaul = ActionButton(secondary, string.Empty, () => { Overhaul(busId); RefreshFleet(); });
+            if (route != null || contract != null) view.SecondaryOverhaul = ActionButton(secondary, string.Empty, () => { Overhaul(busId); RefreshFleet(); });
             Button sell = view.Sell = ActionButton(secondary, string.Empty, () =>
             {
                 string nickname = bus.nickname;
@@ -288,7 +309,7 @@ namespace BusTycoon.Game
             });
             sell.AddToClassList("is-danger");
 
-            BusModelData upgrade = view.Upgrade = BestUnlockedUpgrade(bus.Model);
+            BusModelData upgrade = view.Upgrade = service ? null : BestUnlockedUpgrade(bus.Model);
             if (upgrade != null)
             {
                 Button trade = view.Trade = ActionButton(card, string.Empty, () =>
@@ -308,6 +329,11 @@ namespace BusTycoon.Game
             }
 
             if (!expanded) return;
+            if (service)
+            {
+                BuildVanContractChoices(card, bus);
+                return;
+            }
             Ui.Text("bt-item__text", "Hangi hatta çalışsın?", UiWeight.Bold, card);
             foreach (var candidate in session.Routes.Routes)
             {

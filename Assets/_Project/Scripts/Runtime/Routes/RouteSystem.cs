@@ -311,10 +311,12 @@ namespace BusTycoon.Routes
         public bool CanServe(BusModelData model, RouteState route) => route == null || CanServe(model, route.IsUrban);
 
         public bool CanServe(BusModelData model, bool urban) =>
-            model == null || !state.vehicleClasses || (urban ? model.ServesUrban : model.ServesIntercity);
+            model == null || (!model.IsService && (!state.vehicleClasses || (urban ? model.ServesUrban : model.ServesIntercity)));
 
         /// <summary>Kural gereği çalışamıyorsa oyuncuya gösterilecek kısa neden.</summary>
-        public static string ServeError(BusModelData model, bool urban) => urban
+        public static string ServeError(BusModelData model, bool urban) => model != null && model.IsService
+            ? $"{model.DisplayName} servis aracı: yalnız ihale işlerinde çalışır."
+            : urban
             ? $"{model.DisplayName} şehir içi hatta çalışamaz (şehirlerarası otobüs)."
             : $"{model.DisplayName} şehirlerarası hatta çalışamaz (yalnız şehir içi).";
 

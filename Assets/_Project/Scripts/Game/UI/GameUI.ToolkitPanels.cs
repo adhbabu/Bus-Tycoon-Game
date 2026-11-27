@@ -18,7 +18,7 @@ namespace BusTycoon.Game
         static readonly HashSet<Panel> ToolkitPanels = new HashSet<Panel>
         {
             Panel.Goals, Panel.Log, Panel.Help, Panel.Regions, Panel.Finance, Panel.RouteList, Panel.Fleet, Panel.Dealership, Panel.Route, Panel.Planner,
-            Panel.Shop
+            Panel.Shop, Panel.Contracts
         };
 
         VisualElement tkSheet;
@@ -33,7 +33,8 @@ namespace BusTycoon.Game
 
         /// <summary>Tam sayfada iki sütunlu ızgara olarak dizilen paneller (kartlar yan yana).</summary>
         static bool GridPage(Panel target) =>
-            target == Panel.RouteList || target == Panel.Fleet || target == Panel.Dealership || target == Panel.Goals || target == Panel.Regions;
+            target == Panel.RouteList || target == Panel.Fleet || target == Panel.Dealership || target == Panel.Goals || target == Panel.Regions ||
+            target == Panel.Contracts;
 
         /// <summary>Panel yeni arayüzde mi çiziliyor (IMGUI çizmez).</summary>
         bool ToolkitDrawsPanel(Panel target) => NewUi && ToolkitPanels.Contains(target);
@@ -142,6 +143,7 @@ namespace BusTycoon.Game
                 case Panel.Route: return RouteSignature();
                 case Panel.Planner: return urbanPlanning ? UrbanPlannerSignature() : PlannerSignature();
                 case Panel.Shop: return ShopSignature();
+                case Panel.Contracts: return ContractsAvailable ? ContractsSignature() : 0;
                 default: return 0;
             }
         }
@@ -202,6 +204,10 @@ namespace BusTycoon.Game
                 case Panel.Shop:
                     SheetHeader("Dükkan", ShopService.Available ? "İsteğe bağlı paketler" : "Yalnız mobil uygulamada");
                     BuildShop(body);
+                    break;
+                case Panel.Contracts:
+                    if (ContractsAvailable) BuildContracts(body);
+                    else SheetHeader("İhaleler", "Bu oyunda kapalı");
                     break;
             }
         }

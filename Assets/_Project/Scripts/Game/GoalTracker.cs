@@ -170,7 +170,7 @@ namespace BusTycoon.Game
         static bool HasTier(GameSession s, int tier)
         {
             foreach (var bus in s.Fleet.Buses)
-                if (bus.Model != null && bus.Model.Tier >= tier) return true;
+                if (bus.Model != null && !bus.Model.IsService && bus.Model.Tier >= tier) return true;
             return false;
         }
     }

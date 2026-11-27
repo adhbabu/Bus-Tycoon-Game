@@ -28,6 +28,7 @@ namespace BusTycoon.Game
             [LedgerCategory.RegionLicense] = "Bölge lisansı",
             [LedgerCategory.Other] = "Görev ödülü / diğer",
             [LedgerCategory.StationUpgrade] = "Durak geliştirme",
+            [LedgerCategory.ContractIncome] = "İhale geliri",
         };
 
         static readonly Dictionary<LedgerCategory, UIIcon> CategoryIcons = new Dictionary<LedgerCategory, UIIcon>
@@ -47,6 +48,7 @@ namespace BusTycoon.Game
             [LedgerCategory.RegionLicense] = UIIcon.Regions,
             [LedgerCategory.Other] = UIIcon.Gift,
             [LedgerCategory.StationUpgrade] = UIIcon.Sparkles,
+            [LedgerCategory.ContractIncome] = UIIcon.Building,
         };
 
         static UIIcon CategoryIcon(LedgerCategory category) => CategoryIcons.TryGetValue(category, out UIIcon icon) ? icon : UIIcon.Finance;
@@ -451,7 +453,7 @@ namespace BusTycoon.Game
             BusModelData best = null;
             foreach (var model in session.Catalog.SortedByTier)
             {
-                if (model.Tier <= current.Tier || !session.Progression.IsModelUnlocked(model)) continue;
+                if (model.Tier <= current.Tier || model.IsService || !session.Progression.IsModelUnlocked(model)) continue;
                 if (best == null || model.Tier > best.Tier) best = model;
             }
             return best;

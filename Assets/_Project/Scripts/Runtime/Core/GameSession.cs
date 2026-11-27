@@ -7,6 +7,7 @@ using BusTycoon.Progression;
 using BusTycoon.Routes;
 using BusTycoon.Save;
 using BusTycoon.Stations;
+using BusTycoon.Contracts;
 using BusTycoon.World;
 using UnityEngine;
 
@@ -67,6 +68,10 @@ namespace BusTycoon.Core
         public FleetSystem Fleet { get; private set; }
         public RouteSystem Routes { get; private set; }
         public StationSystem Stations { get; private set; }
+        /// <summary>İhaleler: okul, fabrika, şirket servis işleri (şehir içi başlangıçlı oyunda).</summary>
+        public ContractSystem Contracts { get; private set; }
+        /// <summary>Oturumun rastgele sayı üreteci (ihale pazarlığı ve teklifler gibi oyuncu eylemleri için).</summary>
+        public System.Random Random => rng;
         /// <summary>Bakım asistanı: yıpranan otobüsleri revizyona, arızalıları acil tamire, garajdakileri hatlara gönderir.</summary>
         public MaintenanceAssistant Maintenance { get; private set; }
         public bool IsRunning => State != null;
@@ -143,11 +148,13 @@ namespace BusTycoon.Core
             Clock.Tick(Time.unscaledDeltaTime);
             if (Routes == null) return;
             Routes.DayProgress = Clock.DayProgress01;
+            if (Contracts != null) Contracts.DayProgress = Clock.DayProgress01;
             if (Clock.IsPaused || IsBankrupt) return;
             accrualTimer += Time.unscaledDeltaTime;
             if (accrualTimer < AccrualSeconds) return;
             accrualTimer = 0f;
             Routes.Accrue(Clock.DayProgress01);
+            Contracts?.Accrue(Clock.DayProgress01);
         }
 
         // ------------------------------------------------------------------ oturum
@@ -221,10 +228,12 @@ namespace BusTycoon.Core
             Stations = new StationSystem(state, Finance, Progression, World.GetCity);
             Routes = new RouteSystem(state, World, economyConfig, Fleet, Finance, Progression, Stations);
             Maintenance = new MaintenanceAssistant(state, Fleet, Routes, Finance, economyConfig);
+            Contracts = new ContractSystem(state, busCatalog, economyConfig, Fleet, Finance, Progression, World.GetCity);
 
             Clock = new SimulationClock(state.currentDay, secondsPerDay);
             Clock.SetDayProgress(state.dayProgress);
             Routes.DayProgress = Clock.DayProgress01;
+            Contracts.DayProgress = Clock.DayProgress01;
             accrualTimer = 0f;
             Clock.DayEnded += HandleDayEnded;
             Clock.MonthEnded += HandleMonthEnded;
@@ -246,6 +255,7 @@ namespace BusTycoon.Core
             Fleet.BeginDay(rng);
             Stations.AdvanceDay();
             Routes.SimulateDay(rng, report.Routes);
+            Contracts.AdvanceDay(rng);
             Fleet.ChargeIdleInsurance();
 
             double satisfactionSum = 0;

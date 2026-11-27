@@ -185,7 +185,7 @@ namespace BusTycoon.Fleet
             if (state.waitTimes) newBus.deliveryDaysLeft = economy.DeliveryDays(newModel);
             // Yeni araç eski hattına geçer; araç sınıfı kuralı izin vermiyorsa garajda bekler
             var route = string.IsNullOrEmpty(routeId) ? null : state.routes.Find(r => r.routeId == routeId);
-            bool allowed = route != null && (!state.vehicleClasses || (route.IsUrban ? newModel.ServesUrban : newModel.ServesIntercity));
+            bool allowed = route != null && !newModel.IsService && (!state.vehicleClasses || (route.IsUrban ? newModel.ServesUrban : newModel.ServesIntercity));
             if (allowed) SetAssignment(newBus, routeId);
             return OpResult.Ok($"{oldBus.nickname} yerine {newBus.nickname} (net {BusTycoon.Core.Money.Format(netCost)}).");
         }
@@ -199,8 +199,16 @@ namespace BusTycoon.Fleet
         internal void SetAssignment(BusInstance bus, string routeId)
         {
             if (bus.assignedRouteId == routeId) return;
-            if (string.IsNullOrEmpty(routeId) && bus.IsAssigned) bus.lastRouteId = bus.assignedRouteId;
+            if (string.IsNullOrEmpty(routeId) && !string.IsNullOrEmpty(bus.assignedRouteId)) bus.lastRouteId = bus.assignedRouteId;
             bus.assignedRouteId = routeId;
+            BusChanged?.Invoke(bus);
+        }
+
+        /// <summary>Servis aracını ihale işine bağlar (null: garaja). Kurallar <c>ContractSystem.AssignVan</c> içinde.</summary>
+        internal void SetContract(BusInstance bus, string contractId)
+        {
+            if (bus == null || bus.assignedContractId == contractId) return;
+            bus.assignedContractId = contractId;
             BusChanged?.Invoke(bus);
         }
 

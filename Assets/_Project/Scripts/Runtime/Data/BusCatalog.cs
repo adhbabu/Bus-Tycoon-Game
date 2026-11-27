@@ -52,7 +52,7 @@ namespace BusTycoon.Data
             BusModelData best = null;
             foreach (var model in SortedByTier)
             {
-                if (model.Tier <= currentTier) continue;
+                if (model.Tier <= currentTier || model.IsService) continue;
                 if (best == null || model.Tier < best.Tier) best = model;
             }
             return best;
